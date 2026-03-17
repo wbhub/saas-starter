@@ -1,4 +1,4 @@
--- LedgerLift Supabase schema
+-- Generic SaaS Starter Supabase schema
 -- Run in Supabase SQL editor
 
 create extension if not exists "pgcrypto";

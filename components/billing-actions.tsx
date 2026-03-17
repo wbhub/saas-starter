@@ -80,9 +80,11 @@ export function BillingActions({ currentPlanKey, hasSubscription }: Props) {
   const availablePlanKeys = PLAN_KEYS.filter((key) => key !== currentPlanKey);
 
   return (
-    <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
-      <h3 className="text-lg font-semibold text-slate-900">Billing actions</h3>
-      <p className="text-sm text-slate-600">
+    <div className="space-y-4 rounded-xl border app-border-subtle app-surface p-5">
+      <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+        Billing actions
+      </h3>
+      <p className="text-sm text-slate-600 dark:text-slate-300">
         {hasSubscription
           ? "Upgrade, downgrade, or open Stripe Billing Portal."
           : "Choose a plan to start your subscription."}
@@ -107,7 +109,7 @@ export function BillingActions({ currentPlanKey, hasSubscription }: Props) {
                 key={key}
                 onClick={() => changePlan(key)}
                 disabled={loadingAction !== null}
-                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-60"
+                className="rounded-lg border app-border-subtle px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800 disabled:opacity-60"
               >
                 {loadingAction === `change-${key}`
                   ? "Updating..."
@@ -119,7 +121,7 @@ export function BillingActions({ currentPlanKey, hasSubscription }: Props) {
           <button
             onClick={openPortal}
             disabled={loadingAction !== null}
-            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
+            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
           >
             {loadingAction === "portal" ? "Opening..." : "Manage billing"}
           </button>
@@ -127,7 +129,7 @@ export function BillingActions({ currentPlanKey, hasSubscription }: Props) {
       </div>
 
       {message ? (
-        <p className="rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-700">
+        <p className="rounded-lg app-surface-subtle px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
           {message}
         </p>
       ) : null}

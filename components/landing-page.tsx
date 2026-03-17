@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import type { ReactNode } from "react";
 import {
@@ -5,9 +7,15 @@ import {
   BadgeCheck,
   BarChart3,
   CheckCircle2,
+  Clock3,
   CreditCard,
+  Lock,
+  Rocket,
   ShieldCheck,
+  Sparkles,
 } from "lucide-react";
+
+import { ThemeToggle } from "./theme-toggle";
 
 const pricing = [
   {
@@ -29,32 +37,77 @@ const pricing = [
 
 const faqs = [
   {
-    question: "Can I change plans later?",
+    question: "What do I get out of the box?",
     answer:
-      "Yes. Move between Starter, Growth, and Pro from your dashboard billing controls.",
+      "You get a fully wired SaaS skeleton: Supabase auth, protected routes, a user dashboard, Stripe subscriptions and billing portal, and basic profile + billing data models.",
   },
   {
-    question: "How do I manage invoices and cards?",
+    question: "How much work is left for me?",
     answer:
-      "LedgerLift opens Stripe Billing Portal so customers can manage payment methods and invoices securely.",
+      "Most infrastructure is done. You focus on product-specific features, domain models, and UI copy while keeping the existing auth, billing, and routing patterns.",
   },
   {
-    question: "Do you support user-level data access controls?",
+    question: "Can I change pricing and plans easily?",
     answer:
-      "Yes. Supabase row-level security policies keep profile and billing records scoped to each user.",
+      "Yes. You can adjust plan names, prices, and Stripe product IDs in one place, and the checkout + billing portal flows will continue to work.",
+  },
+  {
+    question: "Is this starter production-ready?",
+    answer:
+      "It’s designed as a strong foundation: secure auth with RLS, Stripe webhooks, and an App Router architecture that you can run in production after you’ve added your product logic and testing.",
+  },
+];
+
+const stats = [
+  { label: "Time to first payment flow", value: "< 15 minutes" },
+  { label: "Core SaaS workflows prewired", value: "Auth + Billing + DB" },
+  { label: "Infra designed for scale", value: "Next.js + Supabase + Stripe" },
+];
+
+const highlights = [
+  {
+    title: "Launch faster",
+    text: "Skip repetitive setup and focus on product differentiation from day one.",
+    icon: <Rocket className="h-5 w-5 text-indigo-500 dark:text-indigo-300" />,
+  },
+  {
+    title: "Keep users secure",
+    text: "Auth and row-level policies are already integrated for least-privilege access.",
+    icon: <Lock className="h-5 w-5 text-indigo-500 dark:text-indigo-300" />,
+  },
+  {
+    title: "Ship with confidence",
+    text: "Clean architecture helps your team move quickly without codebase debt.",
+    icon: <Sparkles className="h-5 w-5 text-indigo-500 dark:text-indigo-300" />,
+  },
+];
+
+const steps = [
+  {
+    title: "1. Clone & install",
+    text: "Clone the repo, install dependencies, and add your environment variables.",
+  },
+  {
+    title: "2. Connect Supabase & Stripe",
+    text: "Drop in your Supabase and Stripe keys and run the provided setup commands.",
+  },
+  {
+    title: "3. Customize & launch",
+    text: "Adjust plans, copy, and branding, then deploy to Vercel when you’re ready.",
   },
 ];
 
 export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <header className="border-b border-white/10">
+    <div className="min-h-screen bg-[color:var(--background)] text-[color:var(--foreground)]">
+      <header className="border-b app-border-subtle">
         <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
-          <div className="text-xl font-semibold tracking-tight">LedgerLift</div>
+          <div className="text-xl font-semibold tracking-tight">SaaS Starter</div>
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <Link
               href={isLoggedIn ? "/dashboard" : "/login"}
-              className="rounded-lg border border-white/20 px-4 py-2 text-sm hover:bg-white/10"
+              className="rounded-lg border app-border-subtle px-4 py-2 text-sm hover:bg-[color:var(--surface-subtle)]"
             >
               {isLoggedIn ? "Dashboard" : "Login"}
             </Link>
@@ -68,117 +121,296 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
         </nav>
       </header>
 
-      <main className="mx-auto max-w-6xl px-6 py-16">
-        <section className="grid gap-10 pb-20 md:grid-cols-2 md:items-center">
-          <div>
-            <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-indigo-400/40 px-3 py-1 text-sm text-indigo-200">
-              <BadgeCheck className="h-4 w-4" />
-              Production-ready SaaS starter
-            </p>
-            <h1 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">
-              Launch subscription SaaS faster with LedgerLift.
-            </h1>
-            <p className="mt-5 max-w-xl text-slate-300">
-              A clean Next.js starter with Supabase auth, Stripe subscriptions,
-              protected dashboard, and Vercel-friendly architecture.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link
-                href={isLoggedIn ? "/dashboard" : "/signup"}
-                className="inline-flex items-center gap-2 rounded-lg bg-indigo-500 px-5 py-3 font-medium hover:bg-indigo-400"
-              >
-                Build with LedgerLift
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
-                href="#pricing"
-                className="rounded-lg border border-white/20 px-5 py-3 font-medium hover:bg-white/10"
-              >
-                View Pricing
-              </Link>
-            </div>
-          </div>
+      <main className="mx-auto max-w-6xl px-6 py-14 md:py-20">
+        <div className="space-y-16 md:space-y-20">
+          <section className="relative overflow-hidden rounded-3xl border app-border-subtle app-surface px-6 py-10 md:px-10 md:py-14">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.16),transparent_45%)]" />
+            <div className="relative grid gap-10 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] md:items-center">
+              <div>
+                <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-indigo-400/40 bg-indigo-500/5 px-3 py-1 text-sm app-accent">
+                  <Clock3 className="h-4 w-4" />
+                  Build in days, not months
+                </p>
+                <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">
+                  Turn your SaaS idea into a production-ready app faster.
+                </h1>
+                <p className="app-muted mt-5 max-w-xl text-base">
+                  Stop rebuilding auth, billing, and user infrastructure from
+                  scratch. This starter gives you a polished foundation so you can
+                  focus on features customers actually pay for.
+                </p>
+                <div className="mt-8 flex flex-wrap gap-3">
+                  <Link
+                    href={isLoggedIn ? "/dashboard" : "/signup"}
+                    className="inline-flex items-center gap-2 rounded-lg bg-indigo-500 px-5 py-3 font-medium text-white hover:bg-indigo-400"
+                  >
+                    {isLoggedIn ? "Go to dashboard" : "Start free now"}
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                  <Link
+                    href="#pricing"
+                    className="rounded-lg border app-border-subtle px-5 py-3 font-medium hover:bg-[color:var(--surface-subtle)]"
+                  >
+                    Explore plans
+                  </Link>
+                </div>
+                <div className="mt-8 flex flex-wrap items-center gap-4 text-sm app-muted">
+                  <span className="inline-flex items-center gap-2">
+                    <BadgeCheck className="h-4 w-4 text-emerald-500 dark:text-emerald-300" />
+                    Secure auth flows
+                  </span>
+                  <span className="inline-flex items-center gap-2">
+                    <BadgeCheck className="h-4 w-4 text-emerald-500 dark:text-emerald-300" />
+                    Stripe subscriptions
+                  </span>
+                  <span className="inline-flex items-center gap-2">
+                    <BadgeCheck className="h-4 w-4 text-emerald-500 dark:text-emerald-300" />
+                    Scalable database policies
+                  </span>
+                </div>
+              </div>
 
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-            <div className="grid gap-4">
-              {[
-                "Supabase auth + Postgres with RLS",
-                "Stripe Checkout, billing portal, and webhooks",
-                "User dashboard with plan and subscription state",
-              ].map((item) => (
-                <div key={item} className="flex items-start gap-3">
-                  <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-300" />
-                  <p className="text-sm text-slate-200">{item}</p>
+              <div className="rounded-2xl border app-border-subtle app-surface-subtle p-6">
+                <div className="mb-4">
+                  <h2 className="text-lg font-semibold">What you ship immediately</h2>
+                  <p className="app-muted mt-1 text-sm">
+                    Ready-to-use app flows users expect from day one.
+                  </p>
+                </div>
+                <div className="grid gap-4">
+                  {[
+                    "Account creation, login, and protected routes",
+                    "Stripe Checkout + billing portal + webhook lifecycle",
+                    "Role-safe, user-scoped data access with Supabase RLS",
+                    "App Router structure designed for long-term maintainability",
+                  ].map((item) => (
+                    <div key={item} className="flex items-start gap-3">
+                      <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-500 dark:text-emerald-300" />
+                      <p className="app-muted text-sm">{item}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="space-y-8">
+            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+              <div>
+                <h2 className="text-2xl font-semibold md:text-3xl">
+                  How to get up-and-running
+                </h2>
+                <p className="app-muted mt-2 max-w-2xl">
+                  Go from idea to a running subscription product with three concrete steps,
+                  without getting stuck wiring up infrastructure.
+                </p>
+              </div>
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              {steps.map((step) => (
+                <article
+                  key={step.title}
+                  className="rounded-2xl border app-border-subtle app-surface p-5"
+                >
+                  <h3 className="text-sm font-semibold uppercase tracking-wide app-muted">
+                    {step.title}
+                  </h3>
+                  <p className="mt-2 text-sm app-muted">{step.text}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="rounded-3xl border app-border-subtle app-surface px-6 py-8 md:px-10 md:py-10">
+            <div className="mx-auto max-w-3xl text-center">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] app-muted">
+                Why this starter
+              </p>
+              <h2 className="mt-3 text-2xl font-semibold md:text-3xl">
+                Ship a complete SaaS foundation from day one.
+              </h2>
+              <p className="app-muted mt-3">
+                Auth, billing, and user data flows are already integrated so you can
+                focus on product decisions instead of stitching together infrastructure.
+              </p>
+            </div>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              {stats.map((stat) => (
+                <div
+                  key={stat.label}
+                  className="inline-flex items-center gap-2 rounded-full border app-border-subtle bg-[color:var(--surface-subtle)] px-4 py-2 text-xs md:text-sm"
+                >
+                  <span className="font-medium text-indigo-600 dark:text-indigo-300">
+                    {stat.value}
+                  </span>
+                  <span className="app-muted">· {stat.label}</span>
                 </div>
               ))}
             </div>
-          </div>
-        </section>
+          </section>
 
-        <section className="grid gap-6 pb-20 md:grid-cols-3">
-          <FeatureCard
-            icon={<ShieldCheck className="h-5 w-5 text-indigo-300" />}
-            title="Secure by default"
-            text="RLS-backed access policies and SSR auth flow keep private data private."
-          />
-          <FeatureCard
-            icon={<CreditCard className="h-5 w-5 text-indigo-300" />}
-            title="Revenue ready"
-            text="Recurring subscriptions, plan changes, and billing management are wired end-to-end."
-          />
-          <FeatureCard
-            icon={<BarChart3 className="h-5 w-5 text-indigo-300" />}
-            title="Built to iterate"
-            text="Clean App Router architecture with maintainable server/client boundaries."
-          />
-        </section>
-
-        <section id="pricing" className="pb-20">
-          <h2 className="text-3xl font-semibold text-white">Pricing</h2>
-          <p className="mt-3 text-slate-300">
-            Start lean, then grow usage without changing your stack.
-          </p>
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
-            {pricing.map((tier) => (
-              <article
-                key={tier.name}
-                className="rounded-2xl border border-white/10 bg-white/5 p-6"
-              >
-                <h3 className="text-lg font-semibold text-white">{tier.name}</h3>
-                <p className="mt-2 text-3xl font-semibold text-indigo-300">
-                  {tier.price}
+          <section className="space-y-8">
+            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+              <div>
+                <h2 className="text-3xl font-semibold">Built-in best practices</h2>
+                <p className="app-muted mt-2 max-w-2xl">
+                  The architecture, auth patterns, and billing flows are chosen to
+                  match how modern SaaS products actually operate in production.
                 </p>
-                <p className="mt-3 text-sm text-slate-300">{tier.description}</p>
-                <Link
-                  href={isLoggedIn ? "/dashboard" : "/signup"}
-                  className="mt-6 inline-block rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium hover:bg-indigo-400"
-                >
-                  {isLoggedIn ? "Manage Plan" : `Choose ${tier.name}`}
-                </Link>
-              </article>
-            ))}
-          </div>
-        </section>
+              </div>
+            </div>
+            <div className="grid gap-6 md:grid-cols-3">
+              <FeatureCard
+                icon={<ShieldCheck className="h-5 w-5 text-indigo-500 dark:text-indigo-300" />}
+                title="Secure by default"
+                text="RLS-backed access policies and SSR auth flow keep private data private."
+              />
+              <FeatureCard
+                icon={<CreditCard className="h-5 w-5 text-indigo-500 dark:text-indigo-300" />}
+                title="Revenue ready"
+                text="Recurring subscriptions, plan changes, and billing management are wired end-to-end."
+              />
+              <FeatureCard
+                icon={<BarChart3 className="h-5 w-5 text-indigo-500 dark:text-indigo-300" />}
+                title="Built to iterate"
+                text="Clean App Router architecture with maintainable server/client boundaries."
+              />
+            </div>
+          </section>
 
-        <section className="pb-20">
-          <h2 className="text-3xl font-semibold text-white">FAQ</h2>
-          <div className="mt-8 space-y-4">
-            {faqs.map((faq) => (
-              <article
-                key={faq.question}
-                className="rounded-xl border border-white/10 bg-white/5 p-5"
-              >
-                <h3 className="font-medium text-white">{faq.question}</h3>
-                <p className="mt-2 text-sm text-slate-300">{faq.answer}</p>
+          <section className="space-y-6 rounded-3xl border app-border-subtle app-surface px-6 py-8 md:px-8 md:py-9">
+            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+              <div>
+                <h2 className="text-2xl font-semibold md:text-3xl">Inside the stack</h2>
+                <p className="app-muted mt-2 max-w-2xl">
+                  A predictable layout that makes it obvious where to plug in new
+                  features, without hunting across frameworks or folders.
+                </p>
+              </div>
+            </div>
+            <div className="grid gap-6 md:grid-cols-3">
+              <article className="rounded-2xl border app-border-subtle app-surface-subtle p-5 text-sm">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] app-muted">
+                  Auth & user flows
+                </p>
+                <p className="app-muted mt-2">
+                  Supabase auth client + server helpers, protected routes, and session
+                  handling wired for the App Router.
+                </p>
               </article>
-            ))}
-          </div>
-        </section>
+              <article className="rounded-2xl border app-border-subtle app-surface-subtle p-5 text-sm">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] app-muted">
+                  Billing & Stripe
+                </p>
+                <p className="app-muted mt-2">
+                  Stripe Checkout and Billing Portal routes, webhook handlers, and plan
+                  metadata hooked into the dashboard state.
+                </p>
+              </article>
+              <article className="rounded-2xl border app-border-subtle app-surface-subtle p-5 text-sm">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] app-muted">
+                  App structure
+                </p>
+                <p className="app-muted mt-2">
+                  Opinionated `app/` routes, shared components, and `lib/` helpers that
+                  keep server and client boundaries clear as the app grows.
+                </p>
+              </article>
+            </div>
+          </section>
+
+          <section id="pricing" className="space-y-8">
+            <div>
+              <h2 className="text-3xl font-semibold">Simple pricing for each stage</h2>
+              <p className="app-muted mt-3">
+                Start lean, then scale without rewriting your billing or auth stack.
+              </p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              {pricing.map((tier, idx) => (
+                <article
+                  key={tier.name}
+                  className={`rounded-2xl border app-surface p-6 ${
+                    idx === 1
+                      ? "border-indigo-400/70 shadow-lg shadow-indigo-500/10"
+                      : "app-border-subtle"
+                  }`}
+                >
+                  {idx === 1 ? (
+                    <p className="mb-3 inline-flex rounded-full bg-indigo-500/10 px-3 py-1 text-xs font-medium text-indigo-600 dark:text-indigo-300">
+                      Most popular
+                    </p>
+                  ) : null}
+                  <h3 className="text-lg font-semibold">{tier.name}</h3>
+                  <p className="mt-2 text-3xl font-semibold text-indigo-600 dark:text-indigo-300">
+                    {tier.price}
+                  </p>
+                  <p className="app-muted mt-3 text-sm">{tier.description}</p>
+                  <Link
+                    href={isLoggedIn ? "/dashboard" : "/signup"}
+                    className="mt-6 inline-block rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400"
+                  >
+                    {isLoggedIn ? "Manage Plan" : `Choose ${tier.name}`}
+                  </Link>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="space-y-10">
+            <div className="rounded-3xl border app-border-subtle bg-indigo-500/[0.08] p-8 md:p-10">
+              <div className="grid gap-6 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] md:items-center">
+                <div>
+                  <h2 className="text-3xl font-semibold">
+                    Ready to ship your SaaS faster?
+                  </h2>
+                  <p className="app-muted mt-3 max-w-2xl">
+                    Use this starter as your launchpad and spend your time on the
+                    features that make your product unique.
+                  </p>
+                </div>
+                <div className="flex flex-wrap justify-start gap-3 md:justify-end">
+                  <Link
+                    href={isLoggedIn ? "/dashboard" : "/signup"}
+                    className="inline-flex items-center gap-2 rounded-lg bg-indigo-500 px-5 py-3 font-medium text-white hover:bg-indigo-400"
+                  >
+                    {isLoggedIn ? "Open dashboard" : "Create your account"}
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                  <Link
+                    href="#pricing"
+                    className="rounded-lg border app-border-subtle px-5 py-3 font-medium hover:bg-[color:var(--surface-subtle)]"
+                  >
+                    Compare plans
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h2 className="text-3xl font-semibold">FAQ</h2>
+              <div className="mt-8 grid gap-4 md:grid-cols-2">
+                {faqs.map((faq) => (
+                  <article
+                    key={faq.question}
+                    className="rounded-xl border app-border-subtle app-surface p-5"
+                  >
+                    <h3 className="font-medium">{faq.question}</h3>
+                    <p className="app-muted mt-2 text-sm">{faq.answer}</p>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </section>
+        </div>
       </main>
 
-      <footer className="border-t border-white/10">
-        <div className="mx-auto flex max-w-6xl flex-col justify-between gap-2 px-6 py-6 text-sm text-slate-400 md:flex-row">
-          <p>© {new Date().getFullYear()} LedgerLift. All rights reserved.</p>
+      <footer className="border-t app-border-subtle">
+        <div className="app-muted mx-auto flex max-w-6xl flex-col justify-between gap-2 px-6 py-6 text-sm md:flex-row">
+          <p>
+            © {new Date().getFullYear()} SaaS Starter. You can replace this with
+            your own brand.
+          </p>
           <div className="flex gap-4">
             <a href="https://supabase.com" target="_blank" rel="noreferrer">
               Supabase
@@ -206,10 +438,10 @@ function FeatureCard({
   text: string;
 }) {
   return (
-    <article className="rounded-2xl border border-white/10 bg-white/5 p-6">
+    <article className="app-surface-subtle rounded-2xl border app-border-subtle p-6">
       <div className="mb-3">{icon}</div>
-      <h3 className="text-lg font-semibold text-white">{title}</h3>
-      <p className="mt-2 text-sm text-slate-300">{text}</p>
+      <h3 className="text-lg font-semibold">{title}</h3>
+      <p className="app-muted mt-2 text-sm">{text}</p>
     </article>
   );
 }

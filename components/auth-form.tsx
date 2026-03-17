@@ -51,11 +51,11 @@ export function AuthForm({ mode }: { mode: Mode }) {
   }
 
   return (
-    <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-      <h1 className="text-2xl font-semibold text-slate-900">
-        {isLogin ? "Welcome back to LedgerLift" : "Create your LedgerLift account"}
+    <div className="w-full max-w-md rounded-2xl border app-border-subtle app-surface p-8 shadow-sm">
+      <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50">
+        {isLogin ? "Welcome back" : "Create your account"}
       </h1>
-      <p className="mt-2 text-sm text-slate-600">
+      <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
         {isLogin
           ? "Sign in to manage your SaaS subscription."
           : "Start with secure auth and billing-ready infrastructure."}
@@ -63,17 +63,19 @@ export function AuthForm({ mode }: { mode: Mode }) {
 
       <form className="mt-6 space-y-4" onSubmit={onSubmit}>
         <label className="block">
-          <span className="mb-1 block text-sm font-medium text-slate-700">Email</span>
+          <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200">
+            Email
+          </span>
           <input
             type="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none ring-indigo-300 focus:ring"
+            className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 outline-none ring-indigo-300 focus:ring"
           />
         </label>
         <label className="block">
-          <span className="mb-1 block text-sm font-medium text-slate-700">
+          <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200">
             Password
           </span>
           <input
@@ -82,7 +84,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
             minLength={8}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none ring-indigo-300 focus:ring"
+            className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 outline-none ring-indigo-300 focus:ring"
           />
         </label>
         <button
@@ -95,12 +97,12 @@ export function AuthForm({ mode }: { mode: Mode }) {
       </form>
 
       {message ? (
-        <p className="mt-4 rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-700">
+        <p className="mt-4 rounded-lg app-surface-subtle px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
           {message}
         </p>
       ) : null}
 
-      <p className="mt-5 text-sm text-slate-600">
+      <p className="mt-5 text-sm text-slate-600 dark:text-slate-300">
         {isLogin ? "Need an account?" : "Already have an account?"}{" "}
         <Link
           href={isLogin ? "/signup" : "/login"}
