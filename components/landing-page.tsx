@@ -39,7 +39,7 @@ const faqs = [
   {
     question: "What do I get out of the box?",
     answer:
-      "You get a fully wired SaaS skeleton: Supabase auth, protected routes, a user dashboard, Stripe subscriptions and billing portal, and basic profile + billing data models.",
+      "You get a fully wired SaaS skeleton: Supabase auth, protected routes, a user dashboard, Stripe subscriptions and billing portal, Intercom chat integration, and basic profile + billing data models.",
   },
   {
     question: "How much work is left for me?",
@@ -61,7 +61,7 @@ const faqs = [
 const stats = [
   { label: "Time to first payment flow", value: "< 15 minutes" },
   { label: "Core SaaS workflows prewired", value: "Auth + Billing + DB" },
-  { label: "Infra designed for scale", value: "Next.js + Supabase + Stripe" },
+  { label: "Infra designed for scale", value: "Next.js + Supabase + Stripe + Intercom" },
 ];
 
 const highlights = [
@@ -88,8 +88,8 @@ const steps = [
     text: "Clone the repo, install dependencies, and add your environment variables.",
   },
   {
-    title: "2. Connect Supabase & Stripe",
-    text: "Drop in your Supabase and Stripe keys and run the provided setup commands.",
+    title: "2. Connect Your Stack",
+    text: "Drop in your Supabase, Stripe, and Intercom keys and run the provided setup commands.",
   },
   {
     title: "3. Customize & launch",
@@ -102,7 +102,16 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
     <div className="min-h-screen bg-[color:var(--background)] text-[color:var(--foreground)]">
       <header className="border-b app-border-subtle">
         <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
-          <div className="text-xl font-semibold tracking-tight">SaaS Starter</div>
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-emerald-400 text-white shadow-sm shadow-indigo-500/30">
+              <Sparkles className="h-4 w-4" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xl font-semibold leading-tight tracking-tight">
+                SaaS Starter
+              </span>
+            </div>
+          </div>
           <div className="flex items-center gap-3">
             <ThemeToggle />
             <Link
@@ -132,12 +141,13 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                   Build in days, not months
                 </p>
                 <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">
-                  Turn your SaaS idea into a production-ready app faster.
+                  Turn your SaaS idea into a production-ready app.
                 </h1>
                 <p className="app-muted mt-5 max-w-xl text-base">
-                  Stop rebuilding auth, billing, and user infrastructure from
-                  scratch. This starter gives you a polished foundation so you can
-                  focus on features customers actually pay for.
+                  Stop rebuilding auth, billing, and support infrastructure from
+                  scratch. This starter gives you a polished foundation with
+                  integrated Intercom so you can focus on features customers
+                  actually pay for.
                 </p>
                 <div className="mt-8 flex flex-wrap gap-3">
                   <Link
@@ -167,28 +177,81 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                     <BadgeCheck className="h-4 w-4 text-emerald-500 dark:text-emerald-300" />
                     Scalable database policies
                   </span>
+                  <span className="inline-flex items-center gap-2">
+                    <BadgeCheck className="h-4 w-4 text-emerald-500 dark:text-emerald-300" />
+                    Protected dashboard
+                  </span>
+                  <span className="inline-flex items-center gap-2">
+                    <BadgeCheck className="h-4 w-4 text-emerald-500 dark:text-emerald-300" />
+                    Billing portal
+                  </span>
+                  <span className="inline-flex items-center gap-2">
+                    <BadgeCheck className="h-4 w-4 text-emerald-500 dark:text-emerald-300" />
+                    Intercom chat widget
+                  </span>
                 </div>
               </div>
 
-              <div className="rounded-2xl border app-border-subtle app-surface-subtle p-6">
-                <div className="mb-4">
-                  <h2 className="text-lg font-semibold">What you ship immediately</h2>
-                  <p className="app-muted mt-1 text-sm">
-                    Ready-to-use app flows users expect from day one.
-                  </p>
+              <div className="space-y-4">
+                <div className="rounded-2xl border app-border-subtle app-surface-subtle p-6">
+                  <div className="mb-4">
+                    <h2 className="text-lg font-semibold">What you ship immediately</h2>
+                    <p className="app-muted mt-1 text-sm">
+                      Ready-to-use app flows users expect from day one.
+                    </p>
+                  </div>
+                  <div className="grid gap-4">
+                    {[
+                      "Account creation, login, and protected routes",
+                      "Stripe Checkout + billing portal + webhook lifecycle",
+                      "Intercom widget with user identity bootstrapping for in-app support",
+                      "Role-safe, user-scoped data access with Supabase RLS",
+                      "App Router structure designed for long-term maintainability",
+                    ].map((item) => (
+                      <div key={item} className="flex items-start gap-3">
+                        <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-500 dark:text-emerald-300" />
+                        <p className="app-muted text-sm">{item}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="grid gap-4">
-                  {[
-                    "Account creation, login, and protected routes",
-                    "Stripe Checkout + billing portal + webhook lifecycle",
-                    "Role-safe, user-scoped data access with Supabase RLS",
-                    "App Router structure designed for long-term maintainability",
-                  ].map((item) => (
-                    <div key={item} className="flex items-start gap-3">
-                      <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-500 dark:text-emerald-300" />
-                      <p className="app-muted text-sm">{item}</p>
+
+                <div className="relative overflow-hidden rounded-2xl border app-border-subtle app-surface-subtle p-5">
+                  <div className="pointer-events-none absolute inset-0 opacity-70">
+                    <div className="absolute -top-10 -right-8 h-32 w-32 rounded-full bg-indigo-500/20 blur-2xl" />
+                    <div className="absolute -bottom-10 -left-10 h-36 w-36 rounded-full bg-emerald-500/15 blur-2xl" />
+                  </div>
+                  <div className="relative flex flex-col gap-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] app-muted">
+                      Product snapshot
+                    </p>
+                    <div className="rounded-xl border app-border-subtle bg-[color:var(--background)]/70 p-3 backdrop-blur">
+                      <div className="mb-3 flex items-center justify-between text-xs app-muted">
+                        <span className="inline-flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                          Live metrics
+                        </span>
+                        <span className="rounded-full bg-indigo-500/10 px-2 py-0.5 text-[11px] text-indigo-600 dark:text-indigo-300">
+                          Preview
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 text-xs">
+                        <div className="space-y-1 rounded-lg border app-border-subtle px-3 py-2">
+                          <p className="app-muted text-[11px]">MRR</p>
+                          <p className="text-sm font-semibold">$8.2k</p>
+                        </div>
+                        <div className="space-y-1 rounded-lg border app-border-subtle px-3 py-2">
+                          <p className="app-muted text-[11px]">Active users</p>
+                          <p className="text-sm font-semibold">1,204</p>
+                        </div>
+                        <div className="space-y-1 rounded-lg border app-border-subtle px-3 py-2">
+                          <p className="app-muted text-[11px]">Churn</p>
+                          <p className="text-sm font-semibold">1.2%</p>
+                        </div>
+                      </div>
+                      <div className="mt-3 h-16 rounded-lg border app-border-subtle bg-[linear-gradient(to_right,rgba(129,140,248,0.25),rgba(45,212,191,0.12))]" />
                     </div>
-                  ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -272,8 +335,8 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               />
               <FeatureCard
                 icon={<BarChart3 className="h-5 w-5 text-indigo-500 dark:text-indigo-300" />}
-                title="Built to iterate"
-                text="Clean App Router architecture with maintainable server/client boundaries."
+                title="Support built in"
+                text="Intercom is already wired so users can reach your team from day one."
               />
             </div>
           </section>
@@ -309,11 +372,11 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               </article>
               <article className="rounded-2xl border app-border-subtle app-surface-subtle p-5 text-sm">
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] app-muted">
-                  App structure
+                  Support & Intercom
                 </p>
                 <p className="app-muted mt-2">
-                  Opinionated `app/` routes, shared components, and `lib/` helpers that
-                  keep server and client boundaries clear as the app grows.
+                  Optional Intercom setup loads globally and boots with signed-in
+                  user context so conversations are tied to the right account.
                 </p>
               </article>
             </div>
@@ -323,7 +386,8 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
             <div>
               <h2 className="text-3xl font-semibold">Simple pricing for each stage</h2>
               <p className="app-muted mt-3">
-                Start lean, then scale without rewriting your billing or auth stack.
+                Update your pricing tiers, prices, and plan rules to match your business
+                as it grows.
               </p>
             </div>
             <div className="grid gap-4 md:grid-cols-3">
@@ -336,11 +400,14 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                       : "app-border-subtle"
                   }`}
                 >
-                  {idx === 1 ? (
-                    <p className="mb-3 inline-flex rounded-full bg-indigo-500/10 px-3 py-1 text-xs font-medium text-indigo-600 dark:text-indigo-300">
-                      Most popular
-                    </p>
-                  ) : null}
+                  <p
+                    aria-hidden={idx !== 1}
+                    className={`mb-3 inline-flex items-center rounded-full bg-indigo-500/10 px-3 py-1 text-xs font-medium text-indigo-600 dark:text-indigo-300 ${
+                      idx === 1 ? "" : "invisible"
+                    }`}
+                  >
+                    Most popular
+                  </p>
                   <h3 className="text-lg font-semibold">{tier.name}</h3>
                   <p className="mt-2 text-3xl font-semibold text-indigo-600 dark:text-indigo-300">
                     {tier.price}
