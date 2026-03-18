@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
 export const metadata: Metadata = {
@@ -7,9 +9,15 @@ export const metadata: Metadata = {
   description: "Terms of use for [Company Name].",
 };
 
-export default function TermsOfUsePage() {
+export default async function TermsOfUsePage() {
+  const supabase = await createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
   return (
     <div className="min-h-screen bg-[color:var(--background)] text-[color:var(--foreground)]">
+      <SiteHeader isLoggedIn={Boolean(session)} />
       <main className="px-6 py-12">
         <div className="mx-auto max-w-3xl space-y-8">
           <div className="space-y-3">
