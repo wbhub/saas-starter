@@ -1,0 +1,137 @@
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { FormEvent, useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+
+export function ResetPasswordForm() {
+  const router = useRouter();
+  const [supabase] = useState(() => createClient());
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+  const [hasRecoverySession, setHasRecoverySession] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function checkSession() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      setHasRecoverySession(Boolean(session));
+      setCheckingSession(false);
+    }
+
+    checkSession();
+  }, [supabase]);
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setMessage(null);
+
+    if (password.length < 8) {
+      setMessage("Password must be at least 8 characters.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setMessage("Passwords do not match.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw error;
+      setMessage("Password updated. Redirecting to login...");
+      setTimeout(() => {
+        router.push("/login");
+      }, 1000);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unexpected error");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (checkingSession) {
+    return (
+      <div className="w-full max-w-md rounded-2xl border app-border-subtle app-surface p-8 text-[color:var(--foreground)] shadow-sm">
+        <p className="text-sm text-[color:var(--muted-foreground)]">
+          Verifying your reset link...
+        </p>
+      </div>
+    );
+  }
+
+  if (!hasRecoverySession) {
+    return (
+      <div className="w-full max-w-md rounded-2xl border app-border-subtle app-surface p-8 text-[color:var(--foreground)] shadow-sm">
+        <h1 className="text-2xl font-semibold">Reset link is invalid or expired</h1>
+        <p className="mt-2 text-sm text-[color:var(--muted-foreground)]">
+          Request a new password reset email to continue.
+        </p>
+        <Link
+          href="/forgot-password"
+          className="mt-5 inline-flex rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500"
+        >
+          Request a new link
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full max-w-md rounded-2xl border app-border-subtle app-surface p-8 text-[color:var(--foreground)] shadow-sm">
+      <h1 className="text-2xl font-semibold">Set a new password</h1>
+      <p className="mt-2 text-sm text-[color:var(--muted-foreground)]">
+        Choose a strong password with at least 8 characters.
+      </p>
+
+      <form className="mt-6 space-y-4" onSubmit={onSubmit}>
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium text-[color:var(--foreground)]">
+            New password
+          </span>
+          <input
+            type="password"
+            required
+            minLength={8}
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-[color:var(--foreground)] outline-none ring-[color:var(--ring)] placeholder:text-[color:var(--muted-foreground)] focus:ring-2"
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium text-[color:var(--foreground)]">
+            Confirm password
+          </span>
+          <input
+            type="password"
+            required
+            minLength={8}
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+            className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-[color:var(--foreground)] outline-none ring-[color:var(--ring)] placeholder:text-[color:var(--muted-foreground)] focus:ring-2"
+          />
+        </label>
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+        >
+          {loading ? "Saving..." : "Update password"}
+        </button>
+      </form>
+
+      {message ? (
+        <p className="mt-4 rounded-lg app-surface-subtle px-3 py-2 text-sm text-[color:var(--foreground)]">
+          {message}
+        </p>
+      ) : null}
+    </div>
+  );
+}

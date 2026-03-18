@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BillingActions } from "@/components/billing-actions";
+import { SupportEmailCard } from "@/components/support-email-card";
 import { getPlanByPriceId } from "@/lib/stripe/config";
 import { createClient } from "@/lib/supabase/server";
 import { logout } from "@/app/dashboard/actions";
@@ -155,6 +156,10 @@ export default async function DashboardPage() {
             currentPlanKey={currentPlan?.key ?? null}
             hasSubscription={hasSubscription}
           />
+        </section>
+
+        <section className="mt-4">
+          <SupportEmailCard />
         </section>
       </div>
     </main>

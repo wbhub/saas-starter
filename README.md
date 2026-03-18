@@ -4,8 +4,10 @@ This repo is a small SaaS starter app:
 
 - Marketing/landing page with pricing
 - Email/password auth (Supabase)
+- Forgot password flow (Resend + Supabase recovery link)
 - Protected dashboard that shows the logged‑in user and their subscription state
 - Stripe subscriptions (3 plans) with checkout, plan changes, and billing portal
+- Resend-powered dashboard support email form
 - Optional: Intercom chat widget
 
 You can clone it, rename it, and use it as the base for your own SaaS.
@@ -53,7 +55,14 @@ Follow these steps in order:
      - `STRIPE_SECRET_KEY`
      - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
 
-5. **Set the rest of your `.env.local`**
+5. **Create a Resend account + sender**
+   - Create an API key in Resend and set `RESEND_API_KEY`.
+   - Verify a sending domain (or use a Resend test sender while developing).
+   - Set:
+     - `RESEND_FROM_EMAIL` (for example `SaaS Starter <onboarding@yourdomain.com>`)
+     - `RESEND_SUPPORT_EMAIL` (where support messages should be delivered)
+
+6. **Set the rest of your `.env.local`**
 
    Required variables:
 
@@ -67,9 +76,12 @@ Follow these steps in order:
    - `STRIPE_STARTER_PRICE_ID`
    - `STRIPE_GROWTH_PRICE_ID`
    - `STRIPE_PRO_PRICE_ID`
+  - `RESEND_API_KEY`
+  - `RESEND_FROM_EMAIL`
+  - `RESEND_SUPPORT_EMAIL`
    - `NEXT_PUBLIC_INTERCOM_APP_ID` (optional, for Intercom)
 
-6. **Run Stripe webhook locally (recommended for full flow)**
+7. **Run Stripe webhook locally (recommended for full flow)**
 
    ```bash
    stripe listen --forward-to localhost:3000/api/stripe/webhook
@@ -77,13 +89,13 @@ Follow these steps in order:
 
    - Copy the returned signing secret into `STRIPE_WEBHOOK_SECRET`.
 
-7. **Start the dev server**
+8. **Start the dev server**
 
    ```bash
    npm run dev
    ```
 
-8. **Open the app**
+9. **Open the app**
    - Visit `http://localhost:3000` for the landing page.
    - Use **Sign up** / **Log in**.
    - After logging in, you’ll be taken to the protected dashboard and can start a subscription.
@@ -96,6 +108,7 @@ Follow these steps in order:
 - Tailwind CSS
 - Supabase (Auth + Postgres)
 - Stripe (subscriptions, billing portal)
+- Resend (transactional/support email delivery)
 - Vercel‑ready deployment
 
 ## Project Structure
@@ -103,6 +116,10 @@ Follow these steps in order:
 ```txt
 app/
   api/
+    auth/
+      forgot-password/route.ts
+    resend/
+      support/route.ts
     stripe/
       checkout/route.ts
       change-plan/route.ts
@@ -115,6 +132,8 @@ app/
     loading.tsx
     page.tsx
   login/page.tsx
+  forgot-password/page.tsx
+  reset-password/page.tsx
   signup/page.tsx
   globals.css
   layout.tsx
@@ -122,9 +141,14 @@ app/
 components/
   auth-form.tsx
   billing-actions.tsx
+  forgot-password-form.tsx
   landing-page.tsx
+  reset-password-form.tsx
+  support-email-card.tsx
 lib/
   env.ts
+  resend/
+    server.ts
   utils.ts
   stripe/
     config.ts
@@ -184,3 +208,41 @@ When set, the app loads Intercom globally and boots it with logged-in Supabase u
 - `created_at` = Supabase `user.created_at` (converted to a Unix timestamp)
 
 Note: Intercom will receive these values (PII), so make sure it aligns with your privacy policy.
+
+---
+
+## 6. Resend support email flow
+
+The dashboard includes an **Email support (Resend)** card that sends user messages to your support inbox.
+
+- Route: `POST /api/resend/support`
+- Access: authenticated users only
+- Validation: message length 10-2000 chars
+- Delivery:
+  - `from` = `RESEND_FROM_EMAIL`
+  - `to` = `RESEND_SUPPORT_EMAIL`
+
+If `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, or `RESEND_SUPPORT_EMAIL` are missing, the API route returns a clear configuration error.
+
+---
+
+## 7. Forgot password flow (Resend + Supabase)
+
+The auth flow includes a custom forgot password implementation that uses **Resend** for delivery.
+
+- Request page: `/forgot-password`
+- Request endpoint: `POST /api/auth/forgot-password`
+- Reset page: `/reset-password`
+
+How it works:
+
+1. User enters their email on `/forgot-password`.
+2. The API route creates a Supabase recovery link via Admin API.
+3. The app sends that link through Resend to the user.
+4. Link returns through `/auth/callback`, which exchanges the code for a session and redirects to `/reset-password`.
+5. User sets a new password, then signs in with the updated credentials.
+
+Security notes:
+
+- The request endpoint always returns a generic success message (to avoid leaking whether an email exists).
+- Password updates require a valid recovery session from the email link.
