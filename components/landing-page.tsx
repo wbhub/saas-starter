@@ -9,8 +9,6 @@ import {
   CheckCircle2,
   Clock3,
   CreditCard,
-  Lock,
-  Rocket,
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
@@ -62,24 +60,6 @@ const stats = [
   { label: "Time to first payment flow", value: "< 15 minutes" },
   { label: "Core SaaS workflows prewired", value: "Auth + Billing + DB" },
   { label: "Infra designed for scale", value: "Next.js + Supabase + Stripe + Intercom" },
-];
-
-const highlights = [
-  {
-    title: "Launch faster",
-    text: "Skip repetitive setup and focus on product differentiation from day one.",
-    icon: <Rocket className="h-5 w-5 text-indigo-500 dark:text-indigo-300" />,
-  },
-  {
-    title: "Keep users secure",
-    text: "Auth and row-level policies are already integrated for least-privilege access.",
-    icon: <Lock className="h-5 w-5 text-indigo-500 dark:text-indigo-300" />,
-  },
-  {
-    title: "Ship with confidence",
-    text: "Clean architecture helps your team move quickly without codebase debt.",
-    icon: <Sparkles className="h-5 w-5 text-indigo-500 dark:text-indigo-300" />,
-  },
 ];
 
 const steps = [
@@ -209,50 +189,19 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                       "App Router structure designed for long-term maintainability",
                     ].map((item) => (
                       <div key={item} className="flex items-start gap-3">
-                        <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-500 dark:text-emerald-300" />
+                        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center">
+                          <CheckCircle2
+                            size={20}
+                            className="text-emerald-500 dark:text-emerald-300"
+                            aria-hidden="true"
+                          />
+                        </span>
                         <p className="app-muted text-sm">{item}</p>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="relative overflow-hidden rounded-2xl border app-border-subtle app-surface-subtle p-5">
-                  <div className="pointer-events-none absolute inset-0 opacity-70">
-                    <div className="absolute -top-10 -right-8 h-32 w-32 rounded-full bg-indigo-500/20 blur-2xl" />
-                    <div className="absolute -bottom-10 -left-10 h-36 w-36 rounded-full bg-emerald-500/15 blur-2xl" />
-                  </div>
-                  <div className="relative flex flex-col gap-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] app-muted">
-                      Product snapshot
-                    </p>
-                    <div className="rounded-xl border app-border-subtle bg-[color:var(--background)]/70 p-3 backdrop-blur">
-                      <div className="mb-3 flex items-center justify-between text-xs app-muted">
-                        <span className="inline-flex items-center gap-2">
-                          <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                          Live metrics
-                        </span>
-                        <span className="rounded-full bg-indigo-500/10 px-2 py-0.5 text-[11px] text-indigo-600 dark:text-indigo-300">
-                          Preview
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2 text-xs">
-                        <div className="space-y-1 rounded-lg border app-border-subtle px-3 py-2">
-                          <p className="app-muted text-[11px]">MRR</p>
-                          <p className="text-sm font-semibold">$8.2k</p>
-                        </div>
-                        <div className="space-y-1 rounded-lg border app-border-subtle px-3 py-2">
-                          <p className="app-muted text-[11px]">Active users</p>
-                          <p className="text-sm font-semibold">1,204</p>
-                        </div>
-                        <div className="space-y-1 rounded-lg border app-border-subtle px-3 py-2">
-                          <p className="app-muted text-[11px]">Churn</p>
-                          <p className="text-sm font-semibold">1.2%</p>
-                        </div>
-                      </div>
-                      <div className="mt-3 h-16 rounded-lg border app-border-subtle bg-[linear-gradient(to_right,rgba(129,140,248,0.25),rgba(45,212,191,0.12))]" />
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           </section>
