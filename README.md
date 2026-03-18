@@ -6,6 +6,7 @@ This repo is a small SaaS starter app:
 - Email/password auth (Supabase)
 - Protected dashboard that shows the logged‑in user and their subscription state
 - Stripe subscriptions (3 plans) with checkout, plan changes, and billing portal
+- Optional: Intercom chat widget
 
 You can clone it, rename it, and use it as the base for your own SaaS.
 
@@ -66,6 +67,7 @@ Follow these steps in order:
    - `STRIPE_STARTER_PRICE_ID`
    - `STRIPE_GROWTH_PRICE_ID`
    - `STRIPE_PRO_PRICE_ID`
+   - `NEXT_PUBLIC_INTERCOM_APP_ID` (optional, for Intercom)
 
 6. **Run Stripe webhook locally (recommended for full flow)**
 
@@ -162,3 +164,23 @@ When configuring your Stripe webhook, subscribe at least to:
 - `customer.subscription.created`
 - `customer.subscription.updated`
 - `customer.subscription.deleted`
+
+---
+
+## 5. Optional: Intercom
+
+If you want to enable the Intercom chat widget:
+
+1. Create (or open) your Intercom app and copy its **App ID**.
+2. Set `NEXT_PUBLIC_INTERCOM_APP_ID` in `.env.local`.
+3. Restart your dev server.
+
+Intercom only loads when `NEXT_PUBLIC_INTERCOM_APP_ID` is set.
+
+When set, the app loads Intercom globally and boots it with logged-in Supabase user data when available:
+- `user_id` = Supabase `user.id`
+- `email` = Supabase `user.email`
+- `name` = Supabase `user.user_metadata.full_name` (if present)
+- `created_at` = Supabase `user.created_at` (converted to a Unix timestamp)
+
+Note: Intercom will receive these values (PII), so make sure it aligns with your privacy policy.
