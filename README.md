@@ -12,6 +12,17 @@ This repo is a small SaaS starter app:
 
 You can clone it, rename it, and use it as the base for your own SaaS.
 
+## Prerequisites
+
+- Node.js 18+ (this uses Next.js App Router)
+- A Supabase project with:
+  - Email auth enabled
+  - The schema from `supabase/schema.sql` applied
+- A Stripe account with 3 recurring subscription prices (Starter/Growth/Pro)
+- A Resend account (and a verified `RESEND_FROM_EMAIL` for production)
+- Stripe CLI installed locally (for local webhook testing)
+  - Example: `brew install stripe/stripe-cli/stripe`
+
 ---
 
 ## 1. Quick start (local)
@@ -59,7 +70,7 @@ Follow these steps in order:
    - Create an API key in Resend and set `RESEND_API_KEY`.
    - Verify a sending domain (or use a Resend test sender while developing).
    - Set:
-     - `RESEND_FROM_EMAIL` (for example `SaaS Starter <onboarding@yourdomain.com>`)
+     - `RESEND_FROM_EMAIL` (must be in the format `Name <email@domain.com>`, for example `SaaS Starter <onboarding@resend.dev>`)
      - `RESEND_SUPPORT_EMAIL` (where support messages should be delivered)
 
 6. **Set the rest of your `.env.local`**
@@ -76,9 +87,9 @@ Follow these steps in order:
    - `STRIPE_STARTER_PRICE_ID`
    - `STRIPE_GROWTH_PRICE_ID`
    - `STRIPE_PRO_PRICE_ID`
-  - `RESEND_API_KEY`
-  - `RESEND_FROM_EMAIL`
-  - `RESEND_SUPPORT_EMAIL`
+   - `RESEND_API_KEY`
+   - `RESEND_FROM_EMAIL`
+   - `RESEND_SUPPORT_EMAIL`
    - `NEXT_PUBLIC_INTERCOM_APP_ID` (optional, for Intercom)
 
 7. **Run Stripe webhook locally (recommended for full flow)**
@@ -87,7 +98,10 @@ Follow these steps in order:
    stripe listen --forward-to localhost:3000/api/stripe/webhook
    ```
 
-   - Copy the returned signing secret into `STRIPE_WEBHOOK_SECRET`.
+   Keep this running in a separate terminal; it forwards Stripe events to your local app.
+
+   Copy the returned signing secret (it includes `whsec_...`) into `STRIPE_WEBHOOK_SECRET`.
+   If signature verification fails, double-check you used the latest signing secret shown by `stripe listen`.
 
 8. **Start the dev server**
 
@@ -104,12 +118,19 @@ Follow these steps in order:
 
 ## 2. Tech stack (what’s inside)
 
-- Next.js 15+ (App Router) + TypeScript
+- Next.js 16+ (App Router) + TypeScript
 - Tailwind CSS
 - Supabase (Auth + Postgres)
 - Stripe (subscriptions, billing portal)
 - Resend (transactional/support email delivery)
 - Vercel‑ready deployment
+
+## Available scripts
+
+- `npm run dev` (development)
+- `npm run build` (production build)
+- `npm run start` (run built app)
+- `npm run lint` (eslint)
 
 ## Project Structure
 
@@ -171,12 +192,35 @@ public/
 
 1. Push the repo to GitHub.
 2. Import it in Vercel.
-3. Set **all** environment variables in Vercel Project Settings (same as `.env.local`, but with production URLs/keys).
-4. Set:
+3. Set **all** environment variables in Vercel Project Settings (same as `.env.local`, but with production values).
    - `NEXT_PUBLIC_APP_URL` → your Vercel URL (for example `https://your-app.vercel.app`)
-   - Stripe webhook endpoint → `https://<your-domain>/api/stripe/webhook`
-   - `STRIPE_WEBHOOK_SECRET` → from the Stripe webhook.
-5. Deploy.
+   - `STRIPE_WEBHOOK_SECRET` → from the Stripe webhook (configured in the next step)
+   - The rest (`NEXT_PUBLIC_SUPABASE_*`, `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_*_PRICE_ID`, `RESEND_*`) should match your local `.env.local`.
+4. Update Supabase Auth redirect settings for production:
+   - Set **Site URL** to `https://your-app.vercel.app`
+   - Add redirect URL: `https://your-app.vercel.app/auth/callback`
+5. Configure Stripe webhooks for production:
+   - Create a webhook endpoint pointing to `https://<your-domain>/api/stripe/webhook`
+   - Select these events (at least):
+     - `checkout.session.completed`
+     - `customer.subscription.created`
+     - `customer.subscription.updated`
+     - `customer.subscription.deleted`
+   - Copy the webhook signing secret shown by Stripe into `STRIPE_WEBHOOK_SECRET`.
+6. Deploy.
+
+---
+
+## Deployment checklist
+
+Before your first real customer signs up, confirm:
+
+- Vercel environment variables are set (all `NEXT_PUBLIC_*` + server-side secrets).
+- Supabase Auth redirect URL matches your production domain (`/auth/callback`).
+- Stripe webhook endpoint + `STRIPE_WEBHOOK_SECRET` are correct (so events are verified).
+- `STRIPE_STARTER_PRICE_ID`, `STRIPE_GROWTH_PRICE_ID`, and `STRIPE_PRO_PRICE_ID` point to the prices you intend to sell.
+- Resend delivery is configured: `RESEND_FROM_EMAIL` is verified and `RESEND_SUPPORT_EMAIL` routes to your inbox.
+- Optional Intercom: `NEXT_PUBLIC_INTERCOM_APP_ID` is set if you want the widget in production.
 
 ---
 
@@ -224,6 +268,8 @@ The dashboard includes an **Email support (Resend)** card that sends user messag
 
 If `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, or `RESEND_SUPPORT_EMAIL` are missing, the API route returns a clear configuration error.
 
+Production note: `RESEND_FROM_EMAIL` must be verified in Resend (otherwise delivery will fail).
+
 ---
 
 ## 7. Forgot password flow (Resend + Supabase)
@@ -246,3 +292,41 @@ Security notes:
 
 - The request endpoint always returns a generic success message (to avoid leaking whether an email exists).
 - Password updates require a valid recovery session from the email link.
+
+---
+
+## 8. Legal pages (footer, privacy policy, terms of use)
+
+This starter includes basic legal pages and links in the site footer. Update the placeholders to match your business before deploying.
+
+Placeholders to replace are wrapped in `[]` (including dates, addresses, URLs, and legal names).
+
+1. Update the footer company name
+   - Edit `components/site-footer.tsx`
+   - Replace `[`Company Name`]` in the copyright line:
+     - `© {new Date().getFullYear()} [Company Name]`
+
+2. Update the Privacy Policy page
+   - Edit `app/privacy-policy/page.tsx`
+   - Replace placeholders such as:
+     - `Last updated: [Month DD, YYYY]`
+     - `[Company Name]`, `[Website URL]`, `[Product Name]`
+     - Contact details in the `13. Contact Us` section (e.g. `[Company Legal Name]`, `[Mailing Address]`, `[Privacy Contact Email]`)
+
+3. Update the Terms of Use page
+   - Edit `app/terms-of-use/page.tsx`
+   - Replace placeholders such as:
+     - `Effective date: [Month DD, YYYY]`
+     - `[Website URL]`, `[Product Name]`, `[Company Legal Name]`
+     - Contact details in the `14. Contact Information` section (e.g. `[Company Legal Name]`, `[Mailing Address]`, `[Legal Contact Email]`)
+
+The footer links are wired to the routes `/privacy-policy` and `/terms-of-use` (see `components/site-footer.tsx`).
+
+## Launch notes (branding & pricing)
+
+Besides the legal pages, you’ll likely want to customize:
+
+- Branding and marketing copy (search for “SaaS Starter”): `components/site-header.tsx`, `components/landing-page.tsx`, and the auth pages in `app/*/page.tsx`.
+- Plan display names/prices shown to users: `components/landing-page.tsx` (pricing cards) and billing labels in `lib/stripe/config.ts` / `lib/stripe/plans.ts`. Actual checkout billing still uses the `STRIPE_*_PRICE_ID` env vars.
+
+Note: this starter provides example text only—review it with legal counsel for your jurisdiction.
