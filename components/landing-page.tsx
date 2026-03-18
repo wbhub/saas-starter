@@ -13,6 +13,7 @@ import {
   Sparkles,
 } from "lucide-react";
 
+import { SiteFooter } from "./site-footer";
 import { ThemeToggle } from "./theme-toggle";
 
 const pricing = [
@@ -421,25 +422,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
         </div>
       </main>
 
-      <footer className="border-t app-border-subtle">
-        <div className="app-muted mx-auto flex max-w-6xl flex-col justify-between gap-2 px-6 py-6 text-sm md:flex-row">
-          <p>
-            © {new Date().getFullYear()} SaaS Starter. You can replace this with
-            your own brand.
-          </p>
-          <div className="flex gap-4">
-            <a href="https://supabase.com" target="_blank" rel="noreferrer">
-              Supabase
-            </a>
-            <a href="https://stripe.com" target="_blank" rel="noreferrer">
-              Stripe
-            </a>
-            <a href="https://vercel.com" target="_blank" rel="noreferrer">
-              Vercel
-            </a>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter showTechLinks />
     </div>
   );
 }
