@@ -51,11 +51,11 @@ export function AuthForm({ mode }: { mode: Mode }) {
   }
 
   return (
-    <div className="w-full max-w-md rounded-2xl border app-border-subtle app-surface p-8 shadow-sm">
-      <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50">
+    <div className="w-full max-w-md rounded-2xl border app-border-subtle app-surface p-8 text-[color:var(--foreground)] shadow-sm">
+      <h1 className="text-2xl font-semibold">
         {isLogin ? "Welcome back" : "Create your account"}
       </h1>
-      <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+      <p className="mt-2 text-sm text-[color:var(--muted-foreground)]">
         {isLogin
           ? "Sign in to manage your SaaS subscription."
           : "Start with secure auth and billing-ready infrastructure."}
@@ -63,7 +63,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
 
       <form className="mt-6 space-y-4" onSubmit={onSubmit}>
         <label className="block">
-          <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200">
+          <span className="mb-1 block text-sm font-medium text-[color:var(--foreground)]">
             Email
           </span>
           <input
@@ -71,11 +71,11 @@ export function AuthForm({ mode }: { mode: Mode }) {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 outline-none ring-indigo-300 focus:ring"
+            className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-[color:var(--foreground)] outline-none ring-[color:var(--ring)] placeholder:text-[color:var(--muted-foreground)] focus:ring-2"
           />
         </label>
         <label className="block">
-          <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200">
+          <span className="mb-1 block text-sm font-medium text-[color:var(--foreground)]">
             Password
           </span>
           <input
@@ -84,7 +84,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
             minLength={8}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 outline-none ring-indigo-300 focus:ring"
+            className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-[color:var(--foreground)] outline-none ring-[color:var(--ring)] placeholder:text-[color:var(--muted-foreground)] focus:ring-2"
           />
         </label>
         <button
@@ -97,16 +97,16 @@ export function AuthForm({ mode }: { mode: Mode }) {
       </form>
 
       {message ? (
-        <p className="mt-4 rounded-lg app-surface-subtle px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
+        <p className="mt-4 rounded-lg app-surface-subtle px-3 py-2 text-sm text-[color:var(--foreground)]">
           {message}
         </p>
       ) : null}
 
-      <p className="mt-5 text-sm text-slate-600 dark:text-slate-300">
+      <p className="mt-5 text-sm text-[color:var(--muted-foreground)]">
         {isLogin ? "Need an account?" : "Already have an account?"}{" "}
         <Link
           href={isLogin ? "/signup" : "/login"}
-          className="font-medium text-indigo-600 hover:text-indigo-500"
+          className="font-medium text-[color:var(--accent)] hover:opacity-90"
         >
           {isLogin ? "Sign up" : "Log in"}
         </Link>
