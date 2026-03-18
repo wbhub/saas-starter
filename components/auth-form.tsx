@@ -102,15 +102,35 @@ export function AuthForm({ mode }: { mode: Mode }) {
         </p>
       ) : null}
 
-      <p className="mt-5 text-sm text-[color:var(--muted-foreground)]">
-        {isLogin ? "Need an account?" : "Already have an account?"}{" "}
-        <Link
-          href={isLogin ? "/signup" : "/login"}
-          className="font-medium text-[color:var(--accent)] hover:opacity-90"
-        >
-          {isLogin ? "Sign up" : "Log in"}
-        </Link>
-      </p>
+      {isLogin ? (
+        <div className="mt-5 flex items-center justify-between gap-3 text-sm">
+          <p className="text-[color:var(--muted-foreground)]">
+            Need an account?{" "}
+            <Link
+              href="/signup"
+              className="font-medium text-[color:var(--accent)] hover:opacity-90"
+            >
+              Sign up
+            </Link>
+          </p>
+          <Link
+            href="/forgot-password"
+            className="font-medium text-[color:var(--accent)] hover:opacity-90"
+          >
+            Forgot password?
+          </Link>
+        </div>
+      ) : (
+        <p className="mt-5 text-sm text-[color:var(--muted-foreground)]">
+          Already have an account?{" "}
+          <Link
+            href="/login"
+            className="font-medium text-[color:var(--accent)] hover:opacity-90"
+          >
+            Log in
+          </Link>
+        </p>
+      )}
     </div>
   );
 }
