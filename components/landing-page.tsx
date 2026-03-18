@@ -38,7 +38,7 @@ const faqs = [
   {
     question: "What do I get out of the box?",
     answer:
-      "You get a fully wired SaaS skeleton: Supabase auth, protected routes, a user dashboard, Stripe subscriptions and billing portal, Intercom chat integration, and basic profile + billing data models.",
+      "You get a fully wired SaaS skeleton: Supabase auth, protected routes, a user dashboard, Stripe subscriptions and billing portal, Resend transactional email support, Intercom chat, and basic profile + billing data models.",
   },
   {
     question: "How much work is left for me?",
@@ -60,7 +60,10 @@ const faqs = [
 const stats = [
   { label: "Time to first payment flow", value: "< 15 minutes" },
   { label: "Core SaaS workflows prewired", value: "Auth + Billing + DB" },
-  { label: "Infra designed for scale", value: "Next.js + Supabase + Stripe + Intercom" },
+  {
+    label: "Infra designed for scale",
+    value: "Next.js + Supabase + Stripe + Resend + Intercom",
+  },
 ];
 
 const steps = [
@@ -70,7 +73,7 @@ const steps = [
   },
   {
     title: "2. Connect Your Stack",
-    text: "Drop in your Supabase, Stripe, and Intercom keys and run the provided setup commands.",
+    text: "Drop in your Supabase, Stripe, Resend, and Intercom keys and run the setup commands.",
   },
   {
     title: "3. Customize & launch",
@@ -125,10 +128,10 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                   Turn your SaaS idea into a production-ready app.
                 </h1>
                 <p className="app-muted mt-5 max-w-xl text-base">
-                  Stop rebuilding auth, billing, and support infrastructure from
-                  scratch. This starter gives you a polished foundation with
-                  integrated Intercom so you can focus on features customers
-                  actually pay for.
+                  Stop rebuilding auth, billing, and customer communication
+                  infrastructure from scratch. This starter gives you a polished
+                  foundation with integrated Resend and Intercom so you can focus
+                  on features customers actually pay for.
                 </p>
                 <div className="mt-8 flex flex-wrap gap-3">
                   <Link
@@ -160,11 +163,11 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                   </span>
                   <span className="inline-flex items-center gap-2">
                     <BadgeCheck className="h-4 w-4 text-emerald-500 dark:text-emerald-300" />
-                    Protected dashboard
+                    Billing portal
                   </span>
                   <span className="inline-flex items-center gap-2">
                     <BadgeCheck className="h-4 w-4 text-emerald-500 dark:text-emerald-300" />
-                    Billing portal
+                    Resend email integration
                   </span>
                   <span className="inline-flex items-center gap-2">
                     <BadgeCheck className="h-4 w-4 text-emerald-500 dark:text-emerald-300" />
@@ -185,6 +188,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                     {[
                       "Account creation, login, and protected routes",
                       "Stripe Checkout + billing portal + webhook lifecycle",
+                      "Resend-powered transactional email plumbing for support and product notifications",
                       "Intercom widget with user identity bootstrapping for in-app support",
                       "Role-safe, user-scoped data access with Supabase RLS",
                       "App Router structure designed for long-term maintainability",
@@ -285,8 +289,8 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               />
               <FeatureCard
                 icon={<BarChart3 className="h-5 w-5 text-indigo-500 dark:text-indigo-300" />}
-                title="Support built in"
-                text="Intercom is already wired so users can reach your team from day one."
+                title="Customer communication built in"
+                text="Resend sends transactional emails, while Intercom provides in-app support chat."
               />
             </div>
           </section>
@@ -322,11 +326,11 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               </article>
               <article className="rounded-2xl border app-border-subtle app-surface-subtle p-5 text-sm">
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] app-muted">
-                  Support & Intercom
+                  Support & messaging
                 </p>
                 <p className="app-muted mt-2">
-                  Optional Intercom setup loads globally and boots with signed-in
-                  user context so conversations are tied to the right account.
+                  Resend delivers transactional support and product emails.
+                  Intercom uses signed-in user context for in-app conversations.
                 </p>
               </article>
             </div>
