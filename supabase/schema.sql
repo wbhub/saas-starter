@@ -50,7 +50,9 @@ create table if not exists public.stripe_webhook_events (
   id uuid primary key default gen_random_uuid(),
   stripe_event_id text not null unique,
   event_type text not null,
-  processed_at timestamptz not null default timezone('utc', now())
+  processed_at timestamptz not null default timezone('utc', now()),
+  claim_expires_at timestamptz,
+  completed_at timestamptz
 );
 
 create table if not exists public.rate_limit_windows (
@@ -74,6 +76,7 @@ create unique index if not exists ux_subscriptions_one_live_per_user
 on public.subscriptions(user_id)
 where status in ('incomplete', 'trialing', 'active', 'past_due', 'unpaid', 'paused');
 create index if not exists idx_stripe_webhook_events_processed_at on public.stripe_webhook_events(processed_at desc);
+create index if not exists idx_stripe_webhook_events_completed_at on public.stripe_webhook_events(completed_at desc);
 create index if not exists idx_rate_limit_windows_reset_at on public.rate_limit_windows(reset_at desc);
 
 create or replace function public.set_updated_at()
@@ -345,6 +348,18 @@ add column if not exists stripe_event_created_at timestamptz;
 
 alter table public.subscriptions
 add column if not exists stripe_subscription_created_at timestamptz;
+
+alter table public.stripe_webhook_events
+add column if not exists claim_expires_at timestamptz;
+
+alter table public.stripe_webhook_events
+add column if not exists completed_at timestamptz;
+
+-- Backfill legacy dedupe rows created before claim tracking.
+update public.stripe_webhook_events
+set completed_at = processed_at
+where completed_at is null
+  and claim_expires_at is null;
 
 alter table public.subscriptions
 add constraint subscriptions_status_check

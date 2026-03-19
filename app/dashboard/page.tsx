@@ -64,13 +64,13 @@ export default async function DashboardPage() {
   ]);
 
   if (profileResult.error) {
-    throw new Error(`Failed to load dashboard profile: ${profileResult.error.message}`);
+    console.error("Failed to load dashboard profile", profileResult.error);
+    throw new Error("Failed to load dashboard data");
   }
 
   if (subscriptionResult.error) {
-    throw new Error(
-      `Failed to load dashboard subscription: ${subscriptionResult.error.message}`,
-    );
+    console.error("Failed to load dashboard subscription", subscriptionResult.error);
+    throw new Error("Failed to load dashboard data");
   }
 
   const profile = profileResult.data;
