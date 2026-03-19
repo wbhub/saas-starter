@@ -12,8 +12,9 @@ function bearerToken(request: Request) {
 
 /**
  * Scheduled cleanup for `stripe_webhook_events` (runs the same deletes as the opportunistic
- * prune in the Stripe webhook, but every time). Protect with `CRON_SECRET`: call with
- * `Authorization: Bearer <CRON_SECRET>` or `?secret=<CRON_SECRET>` (for providers that cannot set headers).
+ * prune in the Stripe webhook, but every time). Protect with `CRON_SECRET` via
+ * `Authorization: Bearer <CRON_SECRET>` only — never pass secrets in the URL (query strings
+ * end up in access logs, browser history, and referrers).
  */
 export async function GET(request: Request) {
   const secret = env.CRON_SECRET?.trim();
@@ -21,8 +22,7 @@ export async function GET(request: Request) {
     return jsonError("Cron is not configured.", 503);
   }
 
-  const token =
-    bearerToken(request) ?? new URL(request.url).searchParams.get("secret")?.trim();
+  const token = bearerToken(request);
   if (!token || token !== secret) {
     return jsonError("Unauthorized.", 401);
   }

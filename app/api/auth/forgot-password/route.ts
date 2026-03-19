@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { env } from "@/lib/env";
 import { getResendClient, getResendFromEmail } from "@/lib/resend/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -14,8 +14,6 @@ type ForgotPasswordPayload = {
 
 const GENERIC_SUCCESS_MESSAGE =
   "If an account exists for that email, a reset link has been sent.";
-const GENERIC_FAILURE_MESSAGE =
-  "Unable to process password reset requests right now. Please try again shortly.";
 
 function isProviderOutageError(error: unknown) {
   if (!error || typeof error !== "object") {
@@ -35,6 +33,57 @@ function isProviderOutageError(error: unknown) {
     combined.includes("network") ||
     combined.includes("service unavailable")
   );
+}
+
+async function sendPasswordResetEmailInBackground(email: string) {
+  try {
+    const supabaseAdmin = createAdminClient();
+    const { data, error } = await supabaseAdmin.auth.admin.generateLink({
+      type: "recovery",
+      email,
+      options: {
+        redirectTo: `${env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/reset-password`,
+      },
+    });
+
+    if (error) {
+      logger.error(
+        isProviderOutageError(error)
+          ? "Forgot-password: recovery link failed (provider outage)"
+          : "Failed to generate password reset link",
+        error,
+      );
+      return;
+    }
+
+    if (!data.properties?.action_link) {
+      logger.error("Password reset link missing from Supabase response");
+      return;
+    }
+
+    try {
+      const resend = getResendClient();
+      const fromEmail = getResendFromEmail();
+
+      await resend.emails.send({
+        from: fromEmail,
+        to: email,
+        subject: "Reset your password",
+        text: [
+          "We received a request to reset your password.",
+          "",
+          "Use this link to continue:",
+          data.properties.action_link,
+          "",
+          "If you did not request this, you can ignore this email.",
+        ].join("\n"),
+      });
+    } catch (sendError) {
+      logger.error("Failed to send password reset email", sendError);
+    }
+  } catch (error) {
+    logger.error("Forgot-password: background job failed", error);
+  }
 }
 
 export async function POST(request: Request) {
@@ -70,57 +119,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: GENERIC_SUCCESS_MESSAGE });
   }
 
-  try {
-    const supabaseAdmin = createAdminClient();
-    const { data, error } = await supabaseAdmin.auth.admin.generateLink({
-      type: "recovery",
-      email,
-      options: {
-        redirectTo: `${env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/reset-password`,
-      },
-    });
+  after(() => sendPasswordResetEmailInBackground(email));
 
-    if (error) {
-      logger.error("Failed to generate password reset link", error);
-      if (isProviderOutageError(error)) {
-        return NextResponse.json({ message: GENERIC_FAILURE_MESSAGE }, { status: 503 });
-      }
-      return NextResponse.json({ message: GENERIC_SUCCESS_MESSAGE });
-    }
-
-    if (!data.properties?.action_link) {
-      logger.error("Password reset link missing from Supabase response");
-      return NextResponse.json({ message: GENERIC_SUCCESS_MESSAGE });
-    }
-
-    try {
-      const resend = getResendClient();
-      const fromEmail = getResendFromEmail();
-
-      await resend.emails.send({
-        from: fromEmail,
-        to: email,
-        subject: "Reset your password",
-        text: [
-          "We received a request to reset your password.",
-          "",
-          "Use this link to continue:",
-          data.properties.action_link,
-          "",
-          "If you did not request this, you can ignore this email.",
-        ].join("\n"),
-      });
-    } catch (error) {
-      logger.error("Failed to send password reset email", error);
-      return NextResponse.json({ message: GENERIC_SUCCESS_MESSAGE });
-    }
-
-    return NextResponse.json({ message: GENERIC_SUCCESS_MESSAGE });
-  } catch (error) {
-    logger.error("Forgot-password route failed", error);
-    if (isProviderOutageError(error)) {
-      return NextResponse.json({ message: GENERIC_FAILURE_MESSAGE }, { status: 503 });
-    }
-    return NextResponse.json({ message: GENERIC_SUCCESS_MESSAGE });
-  }
+  return NextResponse.json({ message: GENERIC_SUCCESS_MESSAGE });
 }

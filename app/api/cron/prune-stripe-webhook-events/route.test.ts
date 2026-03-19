@@ -63,7 +63,7 @@ describe("GET /api/cron/prune-stripe-webhook-events", () => {
     await expect(response.json()).resolves.toEqual({ ok: true });
   });
 
-  it("accepts secret via query string", async () => {
+  it("returns 401 when secret is only in the query string (not supported)", async () => {
     process.env.CRON_SECRET = "qs-secret";
     const prune = vi.fn().mockResolvedValue(undefined);
     vi.doMock("@/lib/stripe/webhook-event-prune", () => ({
@@ -77,7 +77,7 @@ describe("GET /api/cron/prune-stripe-webhook-events", () => {
       ),
     );
 
-    expect(response.status).toBe(200);
-    expect(prune).toHaveBeenCalled();
+    expect(response.status).toBe(401);
+    expect(prune).not.toHaveBeenCalled();
   });
 });

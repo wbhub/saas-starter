@@ -1,5 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("next/server", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("next/server")>();
+  return {
+    ...actual,
+    /** Run scheduled work on a microtask so Vitest can flush it without request AsyncLocalStorage. */
+    after: (task: Parameters<typeof actual.after>[0]) => {
+      void Promise.resolve(
+        typeof task === "function" ? (task as () => unknown)() : task,
+      );
+    },
+  };
+});
+
 describe("POST /api/auth/forgot-password", () => {
   beforeEach(() => {
     vi.resetModules();
@@ -97,8 +110,10 @@ describe("POST /api/auth/forgot-password", () => {
       limit: 3,
       windowMs: 10 * 60 * 1000,
     });
-    expect(generateLink).toHaveBeenCalledTimes(1);
-    expect(send).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() => {
+      expect(generateLink).toHaveBeenCalledTimes(1);
+      expect(send).toHaveBeenCalledTimes(1);
+    });
   });
 
   it("returns generic success for non-outage generateLink errors", async () => {
@@ -148,15 +163,17 @@ describe("POST /api/auth/forgot-password", () => {
     await expect(response.json()).resolves.toEqual({
       message: "If an account exists for that email, a reset link has been sent.",
     });
-    expect(consoleError).toHaveBeenCalledWith(
-      "Failed to generate password reset link",
-      expect.objectContaining({ message: "supabase down" }),
-    );
+    await vi.waitFor(() => {
+      expect(consoleError).toHaveBeenCalledWith(
+        "Failed to generate password reset link",
+        expect.objectContaining({ message: "supabase down" }),
+      );
+    });
 
     consoleError.mockRestore();
   });
 
-  it("returns 503 for provider outage errors", async () => {
+  it("returns generic success when generateLink fails with provider outage (logged in background)", async () => {
     const checkRateLimit = vi
       .fn()
       .mockResolvedValueOnce({ allowed: true, retryAfterSeconds: 0 })
@@ -189,6 +206,8 @@ describe("POST /api/auth/forgot-password", () => {
       env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
     }));
 
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+
     const { POST } = await import("./route");
     const response = await POST(
       new Request("http://localhost/api/auth/forgot-password", {
@@ -198,10 +217,18 @@ describe("POST /api/auth/forgot-password", () => {
       }),
     );
 
-    expect(response.status).toBe(503);
+    expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
-      message: "Unable to process password reset requests right now. Please try again shortly.",
+      message: "If an account exists for that email, a reset link has been sent.",
     });
+    await vi.waitFor(() => {
+      expect(consoleError).toHaveBeenCalledWith(
+        "Forgot-password: recovery link failed (provider outage)",
+        expect.objectContaining({ status: 503, message: "service unavailable" }),
+      );
+    });
+
+    consoleError.mockRestore();
   });
 });
 
