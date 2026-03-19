@@ -116,7 +116,7 @@ export async function syncSubscription(
     return;
   }
 
-  const { error } = await getAdminClient().rpc("sync_stripe_subscription_atomic", {
+  const { data, error } = await getAdminClient().rpc("sync_stripe_subscription_atomic", {
     p_user_id: userId,
     p_stripe_customer_id: stripeCustomerId,
     p_stripe_subscription_id: subscription.id,
@@ -131,5 +131,19 @@ export async function syncSubscription(
 
   if (error) {
     throw new Error(`Failed to sync subscription transactionally: ${error.message}`);
+  }
+
+  const applied = Array.isArray(data) ? data[0] : data;
+  if (typeof applied !== "boolean") {
+    throw new Error("Unexpected sync rpc response: expected boolean result.");
+  }
+
+  if (!applied) {
+    console.warn("Stripe subscription sync ignored stale event", {
+      subscriptionId: subscription.id,
+      stripeCustomerId,
+      userId,
+      eventCreatedAt,
+    });
   }
 }

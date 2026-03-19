@@ -4,6 +4,7 @@ import { getPlanByKey } from "@/lib/stripe/config";
 import { stripe } from "@/lib/stripe/server";
 import { env } from "@/lib/env";
 import { upsertStripeCustomer } from "@/lib/stripe/sync";
+import { requireJsonContentType } from "@/lib/http/content-type";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 
 const LIVE_SUBSCRIPTION_STATUSES = [
@@ -75,6 +76,11 @@ function getScopedIdempotencyKey(baseKey: string | undefined, scope: string) {
 }
 
 export async function POST(req: Request) {
+  const contentTypeError = requireJsonContentType(req);
+  if (contentTypeError) {
+    return contentTypeError;
+  }
+
   const supabase = await createClient();
   const {
     data: { user },

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { env } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import { getClientIp } from "@/lib/http/client-ip";
+import { requireJsonContentType } from "@/lib/http/content-type";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 
 type SignupPayload = {
@@ -14,6 +15,11 @@ function isValidEmail(email: string) {
 }
 
 export async function POST(request: Request) {
+  const contentTypeError = requireJsonContentType(request);
+  if (contentTypeError) {
+    return contentTypeError;
+  }
+
   const body = (await request.json().catch(() => null)) as SignupPayload | null;
   const email = body?.email?.trim().toLowerCase() ?? "";
   const password = body?.password ?? "";

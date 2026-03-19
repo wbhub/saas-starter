@@ -6,6 +6,7 @@ import {
   getResendSupportEmail,
 } from "@/lib/resend/server";
 import { getClientIp } from "@/lib/http/client-ip";
+import { requireJsonContentType } from "@/lib/http/content-type";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 
 type SupportPayload = {
@@ -14,6 +15,11 @@ type SupportPayload = {
 };
 
 export async function POST(request: Request) {
+  const contentTypeError = requireJsonContentType(request);
+  if (contentTypeError) {
+    return contentTypeError;
+  }
+
   const supabase = await createClient();
   const {
     data: { user },

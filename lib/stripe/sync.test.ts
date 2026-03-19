@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 function createAdminMock(
   userMapping: { user_id: string } | null = { user_id: "user_123" },
 ) {
-  const rpc = vi.fn().mockResolvedValue({ error: null });
+  const rpc = vi.fn().mockResolvedValue({ data: true, error: null });
 
   const stripeCustomersQuery = {
     select: vi.fn().mockReturnThis(),
@@ -241,5 +241,49 @@ describe("syncSubscription", () => {
     } as never);
 
     expect(adminMock.rpc).not.toHaveBeenCalled();
+  });
+
+  it("does not throw when rpc reports stale event was ignored", async () => {
+    const adminMock = createAdminMock();
+    adminMock.rpc.mockResolvedValue({ data: false, error: null });
+
+    vi.doMock("@/lib/supabase/admin", () => ({
+      createAdminClient: () => adminMock,
+    }));
+    vi.doMock("@/lib/stripe/server", () => ({
+      stripe: {
+        customers: { retrieve: vi.fn() },
+      },
+    }));
+    const consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const { syncSubscription } = await import("./sync");
+
+    await expect(
+      syncSubscription({
+        id: "sub_stale_ignored",
+        created: 1_700_000_000,
+        status: "active",
+        customer: "cus_123",
+        cancel_at_period_end: false,
+        items: {
+          data: [
+            {
+              price: { id: "price_starter" },
+              current_period_start: 1_700_000_000,
+              current_period_end: 1_700_086_400,
+            },
+          ],
+        },
+      } as never),
+    ).resolves.toBeUndefined();
+
+    expect(consoleWarn).toHaveBeenCalledWith(
+      "Stripe subscription sync ignored stale event",
+      expect.objectContaining({
+        subscriptionId: "sub_stale_ignored",
+      }),
+    );
+    consoleWarn.mockRestore();
   });
 });

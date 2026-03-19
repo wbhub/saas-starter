@@ -5,6 +5,7 @@ import { env } from "@/lib/env";
 import { stripe } from "@/lib/stripe/server";
 import { syncSubscription, upsertStripeCustomer } from "@/lib/stripe/sync";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireJsonContentType } from "@/lib/http/content-type";
 
 const WEBHOOK_EVENT_RETENTION_DAYS = 30;
 const WEBHOOK_SIGNATURE_TOLERANCE_SECONDS = 300;
@@ -33,47 +34,29 @@ async function claimWebhookEvent(event: Stripe.Event) {
     throw new Error(`Failed to claim webhook event: ${error.message}`);
   }
 
-  const { data: existing, error: loadError } = await supabase
+  const { data: reclaimedRows, error: reclaimError } = await supabase
     .from("stripe_webhook_events")
-    .select("completed_at,claim_expires_at")
-    .eq("stripe_event_id", event.id)
-    .maybeSingle<{
-      completed_at: string | null;
-      claim_expires_at: string | null;
-    }>();
-  if (loadError) {
-    throw new Error(`Failed to inspect webhook event claim: ${loadError.message}`);
-  }
-
-  if (!existing || existing.completed_at) {
-    return { claimed: false as const };
-  }
-
-  if (existing.claim_expires_at && existing.claim_expires_at > nowIso) {
-    return { claimed: false as const };
-  }
-
-  const { error: clearStaleError } = await supabase
-    .from("stripe_webhook_events")
-    .delete()
+    .update({
+      event_type: event.type,
+      processed_at: nowIso,
+      claim_expires_at: claimedUntil,
+      completed_at: null,
+    })
     .eq("stripe_event_id", event.id)
     .is("completed_at", null)
-    .lt("claim_expires_at", nowIso);
-  if (clearStaleError) {
-    throw new Error(`Failed to clear stale webhook claim: ${clearStaleError.message}`);
+    .lt("claim_expires_at", nowIso)
+    .select("stripe_event_id")
+    .limit(1);
+
+  if (reclaimError) {
+    throw new Error(`Failed to reclaim stale webhook event claim: ${reclaimError.message}`);
   }
 
-  const { error: retryError } = await supabase
-    .from("stripe_webhook_events")
-    .insert(claimRow);
-  if (!retryError) {
+  if ((reclaimedRows ?? []).length > 0) {
     return { claimed: true as const };
   }
-  if (retryError.code === "23505") {
-    return { claimed: false as const };
-  }
 
-  throw new Error(`Failed to claim webhook event after stale clear: ${retryError.message}`);
+  return { claimed: false as const };
 }
 
 async function pruneOldWebhookEvents() {
@@ -168,6 +151,11 @@ async function ensureStripeCustomerOwnership(
 }
 
 export async function POST(req: Request) {
+  const contentTypeError = requireJsonContentType(req);
+  if (contentTypeError) {
+    return contentTypeError;
+  }
+
   const signature = (await headers()).get("stripe-signature");
   if (!signature) {
     return NextResponse.json(

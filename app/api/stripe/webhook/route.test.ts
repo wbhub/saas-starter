@@ -81,6 +81,7 @@ describe("POST /api/stripe/webhook", () => {
     const response = await POST(
       new Request("http://localhost/api/stripe/webhook", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: "{}",
       }),
     );
@@ -88,6 +89,42 @@ describe("POST /api/stripe/webhook", () => {
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
       error: "Missing Stripe signature",
+    });
+  });
+
+  it("enforces application/json content type", async () => {
+    vi.doMock("next/headers", () => ({
+      headers: async () =>
+        new Headers({
+          "stripe-signature": "t=1,v1=test",
+        }),
+    }));
+    vi.doMock("@/lib/env", () => ({
+      env: { STRIPE_WEBHOOK_SECRET: "whsec_test" },
+    }));
+    vi.doMock("@/lib/stripe/server", () => ({
+      stripe: {
+        webhooks: { constructEvent: vi.fn() },
+      },
+    }));
+    vi.doMock("@/lib/stripe/sync", () => ({
+      syncSubscription: vi.fn(),
+      upsertStripeCustomer: vi.fn(),
+    }));
+    vi.doMock("@/lib/supabase/admin", () => ({
+      createAdminClient: vi.fn(),
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/stripe/webhook", {
+        method: "POST",
+      }),
+    );
+
+    expect(response.status).toBe(415);
+    await expect(response.json()).resolves.toEqual({
+      error: "Content-Type must be application/json.",
     });
   });
 
@@ -122,6 +159,7 @@ describe("POST /api/stripe/webhook", () => {
     const response = await POST(
       new Request("http://localhost/api/stripe/webhook", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: '{"id":"evt_bad"}',
       }),
     );
@@ -174,6 +212,7 @@ describe("POST /api/stripe/webhook", () => {
     const response = await POST(
       new Request("http://localhost/api/stripe/webhook", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: "{}",
       }),
     );
@@ -244,6 +283,7 @@ describe("POST /api/stripe/webhook", () => {
     const response = await POST(
       new Request("http://localhost/api/stripe/webhook", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: "{}",
       }),
     );

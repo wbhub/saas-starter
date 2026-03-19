@@ -47,7 +47,7 @@ export async function GET(request: Request) {
 
   const rateLimit = await checkRateLimit({
     key: getCallbackRateLimitKey(request),
-    limit: 30,
+    limit: 10,
     windowMs: 60 * 1000,
   });
   if (!rateLimit.allowed) {

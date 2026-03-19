@@ -3,6 +3,7 @@ import { env } from "@/lib/env";
 import { getResendClient, getResendFromEmail } from "@/lib/resend/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getClientIp } from "@/lib/http/client-ip";
+import { requireJsonContentType } from "@/lib/http/content-type";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 
 type ForgotPasswordPayload = {
@@ -40,6 +41,11 @@ function isProviderOutageError(error: unknown) {
 }
 
 export async function POST(request: Request) {
+  const contentTypeError = requireJsonContentType(request);
+  if (contentTypeError) {
+    return contentTypeError;
+  }
+
   const body = (await request.json().catch(() => null)) as
     | ForgotPasswordPayload
     | null;

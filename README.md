@@ -229,6 +229,26 @@ Before your first real customer signs up, confirm:
 
 ---
 
+## Trusted proxy header requirements
+
+Rate-limited auth/support endpoints use client IP when `TRUST_PROXY_HEADERS=true`. Enable this only when your edge/load balancer enforces trusted forwarding headers.
+
+- Keep `TRUST_PROXY_HEADERS=false` unless requests always pass through trusted infrastructure.
+- Your proxy must remove any incoming spoofed forwarding headers from the public request and then set its own canonical client IP header.
+- Set `TRUSTED_PROXY_HEADER_NAMES` to the exact header(s) your proxy controls (comma-separated, in priority order).
+- If multiple proxies are involved, ensure the outermost trusted proxy rewrites the header chain consistently.
+
+Example:
+
+```env
+TRUST_PROXY_HEADERS=true
+TRUSTED_PROXY_HEADER_NAMES=x-forwarded-for
+```
+
+If this is misconfigured, attackers can spoof IPs and weaken rate limits.
+
+---
+
 ## 4. Stripe events (for reference)
 
 When configuring your Stripe webhook, subscribe at least to:

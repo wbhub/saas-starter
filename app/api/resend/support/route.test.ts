@@ -6,6 +6,79 @@ describe("POST /api/resend/support", () => {
     vi.clearAllMocks();
   });
 
+  it("enforces application/json content type", async () => {
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: vi.fn(),
+    }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn(),
+    }));
+    vi.doMock("@/lib/http/client-ip", () => ({
+      getClientIp: vi.fn(),
+    }));
+    vi.doMock("@/lib/resend/server", () => ({
+      getResendClient: vi.fn(),
+      getResendFromEmail: vi.fn(),
+      getResendSupportEmail: vi.fn(),
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/resend/support", { method: "POST" }),
+    );
+
+    expect(response.status).toBe(415);
+    await expect(response.json()).resolves.toEqual({
+      error: "Content-Type must be application/json.",
+    });
+  });
+
+  it("returns 429 when support endpoint is rate limited", async () => {
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          getUser: async () => ({
+            data: {
+              user: { id: "user_123", email: "user@example.com" },
+            },
+          }),
+        },
+      }),
+    }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi
+        .fn()
+        .mockResolvedValueOnce({ allowed: false, retryAfterSeconds: 12 })
+        .mockResolvedValueOnce({ allowed: true, retryAfterSeconds: 0 }),
+    }));
+    vi.doMock("@/lib/http/client-ip", () => ({
+      getClientIp: () => "198.51.100.1",
+    }));
+    vi.doMock("@/lib/resend/server", () => ({
+      getResendClient: vi.fn(),
+      getResendFromEmail: vi.fn(),
+      getResendSupportEmail: vi.fn(),
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/resend/support", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subject: "Need help",
+          message: "This is a valid support request message.",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get("Retry-After")).toBe("12");
+    await expect(response.json()).resolves.toEqual({
+      error: "Too many requests. Please try again shortly.",
+    });
+  });
+
   it("rejects oversized subject from direct callers", async () => {
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: async () => ({
@@ -34,6 +107,7 @@ describe("POST /api/resend/support", () => {
     const response = await POST(
       new Request("http://localhost/api/resend/support", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           subject: "x".repeat(121),
           message: "This is a valid message body with enough length.",

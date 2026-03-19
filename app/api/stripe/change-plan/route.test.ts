@@ -62,6 +62,7 @@ describe("POST /api/stripe/change-plan", () => {
     const response = await POST(
       new Request("http://localhost/api/stripe/change-plan", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ planKey: "growth" }),
       }),
     );
@@ -154,7 +155,10 @@ describe("POST /api/stripe/change-plan", () => {
     const response = await POST(
       new Request("http://localhost/api/stripe/change-plan", {
         method: "POST",
-        headers: { "x-idempotency-key": "client-retry-1" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-idempotency-key": "client-retry-1",
+        },
         body: JSON.stringify({ planKey: "growth" }),
       }),
     );
@@ -252,6 +256,7 @@ describe("POST /api/stripe/change-plan", () => {
     const response = await POST(
       new Request("http://localhost/api/stripe/change-plan", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ planKey: "growth" }),
       }),
     );

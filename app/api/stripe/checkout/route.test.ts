@@ -55,6 +55,7 @@ describe("POST /api/stripe/checkout", () => {
     const response = await POST(
       new Request("http://localhost/api/stripe/checkout", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ planKey: "starter" }),
       }),
     );
@@ -136,7 +137,10 @@ describe("POST /api/stripe/checkout", () => {
     const response = await POST(
       new Request("http://localhost/api/stripe/checkout", {
         method: "POST",
-        headers: { "x-idempotency-key": "client-key-1" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-idempotency-key": "client-key-1",
+        },
         body: JSON.stringify({ planKey: "starter" }),
       }),
     );
@@ -236,6 +240,7 @@ describe("POST /api/stripe/checkout", () => {
     const response = await POST(
       new Request("http://localhost/api/stripe/checkout", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ planKey: "starter" }),
       }),
     );

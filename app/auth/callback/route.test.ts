@@ -13,6 +13,12 @@ describe("GET /auth/callback", () => {
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: vi.fn(),
     }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),
+    }));
+    vi.doMock("@/lib/http/client-ip", () => ({
+      getClientIp: vi.fn().mockReturnValue("198.51.100.1"),
+    }));
 
     const { GET } = await import("./route");
     const response = await GET(
@@ -36,6 +42,12 @@ describe("GET /auth/callback", () => {
         },
       }),
     }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),
+    }));
+    vi.doMock("@/lib/http/client-ip", () => ({
+      getClientIp: vi.fn().mockReturnValue("198.51.100.1"),
+    }));
 
     const { GET } = await import("./route");
     const response = await GET(
@@ -57,6 +69,12 @@ describe("GET /auth/callback", () => {
         },
       }),
     }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),
+    }));
+    vi.doMock("@/lib/http/client-ip", () => ({
+      getClientIp: vi.fn().mockReturnValue("198.51.100.1"),
+    }));
 
     const { GET } = await import("./route");
     const response = await GET(
@@ -67,5 +85,35 @@ describe("GET /auth/callback", () => {
 
     expect(response.status).toBe(307);
     expect(response.headers.get("location")).toBe("https://app.example.com/dashboard");
+  });
+
+  it("uses 10 requests per minute callback rate limit", async () => {
+    const checkRateLimit = vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 });
+
+    vi.doMock("@/lib/env", () => ({
+      env: { NEXT_PUBLIC_APP_URL: "https://app.example.com" },
+    }));
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          exchangeCodeForSession: async () => ({ error: null }),
+        },
+      }),
+    }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit,
+    }));
+    vi.doMock("@/lib/http/client-ip", () => ({
+      getClientIp: vi.fn().mockReturnValue("198.51.100.1"),
+    }));
+
+    const { GET } = await import("./route");
+    await GET(new Request("http://localhost/auth/callback?code=test"));
+
+    expect(checkRateLimit).toHaveBeenCalledWith({
+      key: "auth-callback:ip:198.51.100.1",
+      limit: 10,
+      windowMs: 60 * 1000,
+    });
   });
 });

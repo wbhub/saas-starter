@@ -69,5 +69,90 @@ describe("Dashboard page billing selection", () => {
       "paused",
     ]);
   });
+
+  it("redirects to login when there is no authenticated user", async () => {
+    const redirect = vi.fn(() => {
+      throw new Error("redirected");
+    });
+
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          getUser: async () => ({ data: { user: null } }),
+        },
+      }),
+    }));
+    vi.doMock("next/navigation", () => ({
+      redirect,
+    }));
+    vi.doMock("@/lib/stripe/config", () => ({
+      getPlanByPriceId: vi.fn(() => null),
+    }));
+    vi.doMock("@/app/dashboard/actions", () => ({
+      logout: vi.fn(),
+    }));
+
+    const DashboardPage = (await import("./page")).default;
+    await expect(DashboardPage()).rejects.toThrow("redirected");
+
+    expect(redirect).toHaveBeenCalledWith("/login");
+  });
+
+  it("throws when profile query fails", async () => {
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          getUser: async () => ({
+            data: {
+              user: {
+                id: "user_123",
+                email: "user@example.com",
+                created_at: "2026-01-01T00:00:00Z",
+              },
+            },
+          }),
+        },
+        from: vi.fn((table: string) => {
+          if (table === "profiles") {
+            return {
+              select: vi.fn().mockReturnThis(),
+              eq: vi.fn().mockReturnThis(),
+              maybeSingle: vi
+                .fn()
+                .mockResolvedValue({ data: null, error: { message: "boom" } }),
+            };
+          }
+
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            in: vi.fn().mockReturnThis(),
+            order: vi.fn().mockReturnThis(),
+            limit: vi.fn().mockReturnThis(),
+            maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+          };
+        }),
+      }),
+    }));
+    vi.doMock("next/navigation", () => ({
+      redirect: vi.fn(),
+    }));
+    vi.doMock("@/lib/stripe/config", () => ({
+      getPlanByPriceId: vi.fn(() => null),
+    }));
+    vi.doMock("@/app/dashboard/actions", () => ({
+      logout: vi.fn(),
+    }));
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const DashboardPage = (await import("./page")).default;
+    await expect(DashboardPage()).rejects.toThrow("Failed to load dashboard data");
+
+    expect(consoleError).toHaveBeenCalledWith(
+      "Failed to load dashboard profile",
+      expect.objectContaining({ message: "boom" }),
+    );
+    consoleError.mockRestore();
+  });
 });
 

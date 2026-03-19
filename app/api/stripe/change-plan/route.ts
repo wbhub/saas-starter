@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getPlanByKey } from "@/lib/stripe/config";
 import { stripe } from "@/lib/stripe/server";
 import { syncSubscription } from "@/lib/stripe/sync";
+import { requireJsonContentType } from "@/lib/http/content-type";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 
 function parsePlanKey(body: unknown) {
@@ -48,6 +49,11 @@ async function isOwnedStripeSubscription(userId: string, subscriptionId: string)
 }
 
 export async function POST(req: Request) {
+  const contentTypeError = requireJsonContentType(req);
+  if (contentTypeError) {
+    return contentTypeError;
+  }
+
   const supabase = await createClient();
   const {
     data: { user },

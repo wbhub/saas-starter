@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { stripe } from "@/lib/stripe/server";
 import { env } from "@/lib/env";
+import { requireJsonContentType } from "@/lib/http/content-type";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 
 async function isOwnedStripeCustomer(userId: string, customerId: string) {
@@ -13,7 +14,12 @@ async function isOwnedStripeCustomer(userId: string, customerId: string) {
   return customer.metadata?.supabase_user_id === userId;
 }
 
-export async function POST() {
+export async function POST(request: Request) {
+  const contentTypeError = requireJsonContentType(request);
+  if (contentTypeError) {
+    return contentTypeError;
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
