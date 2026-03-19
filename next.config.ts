@@ -10,6 +10,8 @@ const securityHeaders = [
     key: "Strict-Transport-Security",
     value: "max-age=31536000; includeSubDomains; preload",
   },
+  // CSP is intentionally set in proxy.ts per-request to support nonces.
+  // Do not set a static CSP header here, or it can conflict with nonce-based policy.
 ];
 
 const nextConfig: NextConfig = {

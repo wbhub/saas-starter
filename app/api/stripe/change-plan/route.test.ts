@@ -39,6 +39,9 @@ describe("POST /api/stripe/change-plan", () => {
     vi.doMock("@/lib/stripe/sync", () => ({
       syncSubscription: vi.fn(),
     }));
+    vi.doMock("@/lib/stripe/seat-sync-retries", () => ({
+      enqueueSeatSyncRetry: vi.fn().mockResolvedValue(undefined),
+    }));
     vi.doMock("@/lib/team-context", () => ({
       getTeamContextForUser: vi.fn().mockResolvedValue({
         teamId: "team_123",
@@ -132,6 +135,9 @@ describe("POST /api/stripe/change-plan", () => {
     vi.doMock("@/lib/stripe/sync", () => ({
       syncSubscription,
     }));
+    vi.doMock("@/lib/stripe/seat-sync-retries", () => ({
+      enqueueSeatSyncRetry: vi.fn().mockResolvedValue(undefined),
+    }));
     vi.doMock("@/lib/team-context", () => ({
       getTeamContextForUser: vi.fn().mockResolvedValue({
         teamId: "team_123",
@@ -190,7 +196,7 @@ describe("POST /api/stripe/change-plan", () => {
     expect(syncSubscription).toHaveBeenCalledOnce();
   });
 
-  it("returns success with syncPending when immediate sync fails", async () => {
+  it("returns 500 when Stripe plan updates but local sync fails", async () => {
     const maybeSingle = vi.fn().mockResolvedValue({
       data: { stripe_subscription_id: "sub_123", status: "active" },
       error: null,
@@ -237,8 +243,12 @@ describe("POST /api/stripe/change-plan", () => {
     vi.doMock("@/lib/stripe/config", () => ({
       getPlanByKey: () => ({ key: "growth", priceId: "price_growth" }),
     }));
+    const enqueueSeatSyncRetry = vi.fn().mockResolvedValue(undefined);
     vi.doMock("@/lib/stripe/sync", () => ({
       syncSubscription: vi.fn().mockRejectedValue(new Error("db write failed")),
+    }));
+    vi.doMock("@/lib/stripe/seat-sync-retries", () => ({
+      enqueueSeatSyncRetry,
     }));
     vi.doMock("@/lib/team-context", () => ({
       getTeamContextForUser: vi.fn().mockResolvedValue({
@@ -282,9 +292,17 @@ describe("POST /api/stripe/change-plan", () => {
       }),
     );
 
-    expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ ok: true, syncPending: true });
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({
+      error: "Plan changed, but local billing sync failed. Please retry shortly.",
+      planChanged: true,
+    });
     expect(update).toHaveBeenCalledOnce();
+    expect(enqueueSeatSyncRetry).toHaveBeenCalledWith({
+      teamId: "team_123",
+      source: "billing.plan.change",
+      error: expect.any(Error),
+    });
   });
 });
 

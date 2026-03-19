@@ -75,7 +75,9 @@ export async function syncTeamSeatQuantity(
       teamId,
       liveSubscriptionId,
     });
-    return { updated: false as const, reason: "missing_subscription_item" as const };
+    throw new Error(
+      `Live subscription ${liveSubscriptionId} has no items and cannot be synchronized.`,
+    );
   }
 
   const currentQuantity = Math.max(1, firstItem.quantity ?? 1);

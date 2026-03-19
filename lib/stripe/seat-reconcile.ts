@@ -1,6 +1,11 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { LIVE_SUBSCRIPTION_STATUSES } from "@/lib/stripe/plans";
 import { syncTeamSeatQuantity } from "@/lib/stripe/seats";
+import {
+  clearSeatSyncRetry,
+  enqueueSeatSyncRetry,
+  listDueSeatSyncRetryTeamIds,
+} from "@/lib/stripe/seat-sync-retries";
 import { logger } from "@/lib/logger";
 import { stripe } from "@/lib/stripe/server";
 import { resolveTeamIdFromStripeCustomer } from "@/lib/stripe/sync";
@@ -13,6 +18,7 @@ type ReconcileOptions = {
   batchSize?: number;
   includeStripeDiscovery?: boolean;
   stripePageLimit?: number;
+  retryBatchSize?: number;
 };
 
 async function collectTeamIdsFromDatabase(batchSize: number) {
@@ -110,8 +116,20 @@ export async function reconcileTeamSeatQuantities(options: ReconcileOptions = {}
   const batchSize = Math.max(1, options.batchSize ?? 500);
   const includeStripeDiscovery = options.includeStripeDiscovery ?? true;
   const stripePageLimit = Math.max(1, options.stripePageLimit ?? 20);
+  const retryBatchSize = Math.max(1, options.retryBatchSize ?? 500);
 
   const teamIdSet = await collectTeamIdsFromDatabase(batchSize);
+  let queuedRetries = 0;
+  try {
+    const dueRetryTeamIds = await listDueSeatSyncRetryTeamIds(retryBatchSize);
+    queuedRetries = dueRetryTeamIds.length;
+    for (const teamId of dueRetryTeamIds) {
+      teamIdSet.add(teamId);
+    }
+  } catch (error) {
+    logger.error("Failed to load due seat sync retries for reconciliation run", error);
+  }
+
   let discoveredFromStripe = 0;
   let stripePagesScanned = 0;
 
@@ -130,6 +148,14 @@ export async function reconcileTeamSeatQuantities(options: ReconcileOptions = {}
       await syncTeamSeatQuantity(teamId, {
         idempotencyKey: `seat-reconcile:${teamId}`,
       });
+      try {
+        await clearSeatSyncRetry(teamId);
+      } catch (clearError) {
+        logger.error("Failed to clear seat sync retry after successful reconciliation", {
+          teamId,
+          error: clearError,
+        });
+      }
       synced += 1;
     } catch (syncError) {
       failed += 1;
@@ -137,6 +163,18 @@ export async function reconcileTeamSeatQuantities(options: ReconcileOptions = {}
         teamId,
         error: syncError,
       });
+      try {
+        await enqueueSeatSyncRetry({
+          teamId,
+          source: "cron.reconcile-seat-quantities",
+          error: syncError,
+        });
+      } catch (retryError) {
+        logger.error("Failed to enqueue seat sync retry during reconciliation", {
+          teamId,
+          error: retryError,
+        });
+      }
     }
   }
 
@@ -144,6 +182,7 @@ export async function reconcileTeamSeatQuantities(options: ReconcileOptions = {}
     scannedTeams: teamIds.length,
     synced,
     failed,
+    queuedRetries,
     discoveredFromStripe,
     stripePagesScanned,
   };

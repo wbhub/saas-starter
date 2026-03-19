@@ -30,6 +30,16 @@ type TeamMembershipRow = {
   user_id: string;
   role: "owner" | "admin" | "member";
   created_at: string;
+  profiles:
+    | {
+        id: string;
+        full_name: string | null;
+      }
+    | {
+        id: string;
+        full_name: string | null;
+      }[]
+    | null;
 };
 
 type PendingInviteRow = {
@@ -37,11 +47,6 @@ type PendingInviteRow = {
   email: string;
   role: "admin" | "member";
   expires_at: string;
-};
-
-type ProfileNameRow = {
-  id: string;
-  full_name: string | null;
 };
 
 export default async function DashboardPage() {
@@ -118,7 +123,7 @@ export default async function DashboardPage() {
   const [membershipResult, pendingInvitesResult] = await Promise.allSettled([
     supabase
       .from("team_memberships")
-      .select("user_id,role,created_at")
+      .select("user_id,role,created_at,profiles(id,full_name)")
       .eq("team_id", teamContext.teamId)
       .order("created_at", { ascending: true })
       .returns<TeamMembershipRow[]>(),
@@ -154,26 +159,12 @@ export default async function DashboardPage() {
     logger.error("Failed to load pending team invites", pendingInvitesResult.reason);
   }
 
-  const memberUserIds = memberships.map((row) => row.user_id);
-  let profileNames: ProfileNameRow[] = [];
-  if (memberUserIds.length) {
-    try {
-      const profileNamesResult = await supabase
-        .from("profiles")
-        .select("id,full_name")
-        .in("id", memberUserIds)
-        .returns<ProfileNameRow[]>();
-      if (profileNamesResult.error) {
-        logger.error("Failed to load team member profiles", profileNamesResult.error);
-      } else {
-        profileNames = profileNamesResult.data ?? [];
-      }
-    } catch (error) {
-      logger.error("Failed to load team member profiles", error);
-    }
-  }
-
-  const profileNameMap = new Map(profileNames.map((row) => [row.id, row.full_name]));
+  const profileNameMap = new Map(
+    memberships.map((row) => {
+      const joinedProfile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
+      return [row.user_id, joinedProfile?.full_name ?? null] as const;
+    }),
+  );
   const teamMembers = memberships.map((row) => ({
     userId: row.user_id,
     fullName: profileNameMap.get(row.user_id) ?? null,

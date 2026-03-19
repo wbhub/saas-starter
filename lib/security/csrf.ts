@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { randomBytes } from "node:crypto";
 import { env } from "@/lib/env";
 
 export const CSRF_COOKIE_NAME = "csrf_token";
@@ -54,7 +55,7 @@ function isBrowserRequestFromAllowedOrigin(request: Request) {
 }
 
 export function createCsrfToken() {
-  return crypto.randomUUID().replace(/-/g, "");
+  return randomBytes(24).toString("base64url");
 }
 
 export function ensureTokenShape(token: string) {

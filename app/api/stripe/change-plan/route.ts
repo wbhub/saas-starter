@@ -10,6 +10,7 @@ import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { LIVE_SUBSCRIPTION_STATUSES } from "@/lib/stripe/plans";
+import { enqueueSeatSyncRetry } from "@/lib/stripe/seat-sync-retries";
 import { parsePlanKey } from "@/lib/validation";
 import { logger } from "@/lib/logger";
 import { getTeamContextForUser } from "@/lib/team-context";
@@ -164,19 +165,37 @@ export async function POST(req: Request) {
       });
       return NextResponse.json({ ok: true });
     } catch (syncError) {
-      logger.error("Plan changed in Stripe but local sync failed; awaiting webhook recovery", syncError);
+      logger.error("Plan changed in Stripe but local sync failed", syncError);
+      try {
+        await enqueueSeatSyncRetry({
+          teamId: teamContext.teamId,
+          source: "billing.plan.change",
+          error: syncError,
+        });
+      } catch (retryError) {
+        logger.error("Failed to enqueue retry after plan-change sync failure", retryError, {
+          teamId: teamContext.teamId,
+          stripeSubscriptionId: stripeSubscription.id,
+        });
+      }
       logAuditEvent({
         action: "billing.plan.change",
-        outcome: "success",
+        outcome: "failure",
         actorUserId: user.id,
         teamId: teamContext.teamId,
         metadata: {
           targetPlanKey: plan.key,
           stripeSubscriptionId: stripeSubscription.id,
-          syncPending: true,
+          reason: "post_change_sync_failed",
         },
       });
-      return NextResponse.json({ ok: true, syncPending: true });
+      return NextResponse.json(
+        {
+          error: "Plan changed, but local billing sync failed. Please retry shortly.",
+          planChanged: true,
+        },
+        { status: 500 },
+      );
     }
   } catch (error) {
     logger.error("Failed to change Stripe subscription plan", error);

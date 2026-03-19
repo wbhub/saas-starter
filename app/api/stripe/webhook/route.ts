@@ -18,23 +18,29 @@ import {
 } from "@/lib/stripe/webhook-constants";
 import { pruneStripeWebhookEventRows } from "@/lib/stripe/webhook-event-prune";
 
+function createClaimToken() {
+  return crypto.randomUUID();
+}
+
 async function claimWebhookEvent(event: Stripe.Event) {
   const supabase = createAdminClient();
   const claimedUntil = new Date(
     Date.now() + WEBHOOK_CLAIM_TTL_SECONDS * 1000,
   ).toISOString();
   const nowIso = new Date().toISOString();
+  const claimToken = createClaimToken();
   const claimRow = {
     stripe_event_id: event.id,
     event_type: event.type,
     processed_at: nowIso,
     claim_expires_at: claimedUntil,
     completed_at: null,
+    claim_token: claimToken,
   };
 
   const { error } = await supabase.from("stripe_webhook_events").insert(claimRow);
   if (!error) {
-    return { claimed: true as const };
+    return { claimed: true as const, claimToken };
   }
 
   if (error.code !== "23505") {
@@ -48,6 +54,7 @@ async function claimWebhookEvent(event: Stripe.Event) {
       processed_at: nowIso,
       claim_expires_at: claimedUntil,
       completed_at: null,
+      claim_token: claimToken,
     })
     .eq("stripe_event_id", event.id)
     .is("completed_at", null)
@@ -60,13 +67,13 @@ async function claimWebhookEvent(event: Stripe.Event) {
   }
 
   if ((reclaimedRows ?? []).length > 0) {
-    return { claimed: true as const };
+    return { claimed: true as const, claimToken };
   }
 
-  return { claimed: false as const };
+  return { claimed: false as const, claimToken: null };
 }
 
-async function releaseWebhookEventClaim(eventId: string) {
+async function releaseWebhookEventClaim(eventId: string, claimToken: string) {
   const supabase = createAdminClient();
   const { error } = await supabase
     .from("stripe_webhook_events")
@@ -74,6 +81,7 @@ async function releaseWebhookEventClaim(eventId: string) {
       claim_expires_at: new Date().toISOString(),
     })
     .eq("stripe_event_id", eventId)
+    .eq("claim_token", claimToken)
     .is("completed_at", null);
 
   if (error) {
@@ -81,7 +89,27 @@ async function releaseWebhookEventClaim(eventId: string) {
   }
 }
 
-async function markWebhookEventProcessed(eventId: string) {
+async function extendWebhookEventClaim(eventId: string, claimToken: string) {
+  const supabase = createAdminClient();
+  const nextClaimExpiresAt = new Date(
+    Date.now() + WEBHOOK_CLAIM_TTL_SECONDS * 1000,
+  ).toISOString();
+  const { error } = await supabase
+    .from("stripe_webhook_events")
+    .update({
+      claim_expires_at: nextClaimExpiresAt,
+      processed_at: new Date().toISOString(),
+    })
+    .eq("stripe_event_id", eventId)
+    .eq("claim_token", claimToken)
+    .is("completed_at", null);
+
+  if (error) {
+    throw new Error(`Failed to extend webhook event claim: ${error.message}`);
+  }
+}
+
+async function markWebhookEventProcessed(eventId: string, claimToken: string) {
   const supabase = createAdminClient();
   const { error } = await supabase
     .from("stripe_webhook_events")
@@ -90,6 +118,7 @@ async function markWebhookEventProcessed(eventId: string) {
       claim_expires_at: null,
     })
     .eq("stripe_event_id", eventId)
+    .eq("claim_token", claimToken)
     .is("completed_at", null);
 
   if (error) {
@@ -173,12 +202,32 @@ export async function POST(req: Request) {
   }
 
   let claimed = false;
+  let claimToken: string | null = null;
+  let claimHeartbeat: ReturnType<typeof setInterval> | null = null;
   try {
     const claim = await claimWebhookEvent(event);
     if (!claim.claimed) {
       return NextResponse.json({ received: true });
     }
     claimed = true;
+    claimToken = claim.claimToken;
+    if (!claimToken) {
+      throw new Error("Webhook event was claimed without a claim token.");
+    }
+    const activeClaimToken = claimToken;
+
+    const heartbeatIntervalMs = Math.max(
+      1_000,
+      Math.floor((WEBHOOK_CLAIM_TTL_SECONDS * 1000) / 2),
+    );
+    claimHeartbeat = setInterval(() => {
+      void extendWebhookEventClaim(event.id, activeClaimToken).catch((error) => {
+        logger.error("Failed to extend webhook claim heartbeat", error, {
+          eventId: event.id,
+        });
+      });
+    }, heartbeatIntervalMs);
+
     await pruneStripeWebhookEventRows({ sampleRate: WEBHOOK_PRUNE_SAMPLE_RATE });
 
     switch (event.type) {
@@ -236,16 +285,24 @@ export async function POST(req: Request) {
         break;
     }
 
-    await markWebhookEventProcessed(event.id);
+    await markWebhookEventProcessed(event.id, activeClaimToken);
   } catch (error) {
-    if (claimed) {
-      await releaseWebhookEventClaim(event.id);
+    if (claimHeartbeat) {
+      clearInterval(claimHeartbeat);
+      claimHeartbeat = null;
+    }
+    if (claimed && claimToken) {
+      await releaseWebhookEventClaim(event.id, claimToken);
     }
     logger.error("Stripe webhook handling failed", error);
     return NextResponse.json(
       { error: "Webhook handling failed." },
       { status: 500 },
     );
+  }
+
+  if (claimHeartbeat) {
+    clearInterval(claimHeartbeat);
   }
 
   return NextResponse.json({ received: true });

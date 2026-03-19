@@ -24,6 +24,26 @@ const invitePayloadSchema = z.object({
   role: z.string().trim().toLowerCase(),
 });
 
+async function deleteExpiredInvitesForEmail({
+  supabase,
+  teamId,
+  email,
+}: {
+  supabase: Awaited<ReturnType<typeof createClient>>;
+  teamId: string;
+  email: string;
+}) {
+  const { error } = await supabase
+    .from("team_invites")
+    .delete()
+    .eq("team_id", teamId)
+    .eq("email", email)
+    .is("accepted_at", null)
+    .lt("expires_at", new Date().toISOString());
+
+  return error;
+}
+
 export async function POST(request: Request) {
   const csrfError = verifyCsrfProtection(request);
   if (csrfError) {
@@ -106,23 +126,39 @@ export async function POST(request: Request) {
   const tokenHash = hashInviteToken(token);
   const expiresAt = getInviteExpiryIso();
 
-  // Clear expired pending invites for this team/email before inserting a fresh one.
-  await supabase
-    .from("team_invites")
-    .delete()
-    .eq("team_id", teamContext.teamId)
-    .eq("email", email)
-    .is("accepted_at", null)
-    .lt("expires_at", new Date().toISOString());
+  const cleanupError = await deleteExpiredInvitesForEmail({
+    supabase,
+    teamId: teamContext.teamId,
+    email,
+  });
+  if (cleanupError) {
+    logger.error("Failed to cleanup expired invites before insert", cleanupError);
+  }
 
-  const { error: insertError } = await supabase.from("team_invites").insert({
+  const inviteInsert = {
     team_id: teamContext.teamId,
     email,
     role,
     token_hash: tokenHash,
     invited_by: user.id,
     expires_at: expiresAt,
-  });
+  };
+  let { error: insertError } = await supabase.from("team_invites").insert(inviteInsert);
+
+  if (insertError?.code === "23505") {
+    // Retry once after cleanup to handle races where a stale invite row causes
+    // a transient unique-constraint conflict.
+    const retryCleanupError = await deleteExpiredInvitesForEmail({
+      supabase,
+      teamId: teamContext.teamId,
+      email,
+    });
+    if (retryCleanupError) {
+      logger.error("Failed to cleanup expired invites before retry insert", retryCleanupError);
+    }
+    const retryInsertResult = await supabase.from("team_invites").insert(inviteInsert);
+    insertError = retryInsertResult.error;
+  }
 
   if (insertError) {
     if (insertError.code === "23505") {

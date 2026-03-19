@@ -22,12 +22,16 @@ function createWebhookEventsTableMocks() {
     }),
   }));
 
-  const updateEqIs = vi.fn().mockResolvedValue({ error: null });
-  const update = vi.fn(() => ({
-    eq: vi.fn().mockReturnValue({
-      is: updateEqIs,
-    }),
-  }));
+  const updateIs = vi.fn().mockReturnThis();
+  const updateLimit = vi.fn().mockResolvedValue({ data: [], error: null });
+  const updateBuilder = {
+    eq: vi.fn().mockReturnThis(),
+    is: updateIs,
+    lt: vi.fn().mockReturnThis(),
+    select: vi.fn().mockReturnThis(),
+    limit: updateLimit,
+  };
+  const update = vi.fn(() => updateBuilder);
 
   const from = vi.fn((table: string) => {
     if (table !== "stripe_webhook_events") {
@@ -47,7 +51,7 @@ function createWebhookEventsTableMocks() {
     maybeSingle,
     deleteLt,
     deleteByEqIsLt,
-    updateEqIs,
+    updateIs,
   };
 }
 
@@ -248,11 +252,12 @@ describe("POST /api/stripe/webhook", () => {
       processed_at: expect.any(String),
       claim_expires_at: expect.any(String),
       completed_at: null,
+      claim_token: expect.any(String),
     });
     // Prune runs both completed and stale-claim cleanup.
     expect(tableMocks.deleteLt).toHaveBeenCalledTimes(2);
     // Event is marked complete after successful processing.
-    expect(tableMocks.updateEqIs).toHaveBeenCalledTimes(1);
+    expect(tableMocks.updateIs).toHaveBeenCalledTimes(1);
 
     mathRandomSpy.mockRestore();
   });
@@ -338,7 +343,7 @@ describe("POST /api/stripe/webhook", () => {
       metadata: { supabase_team_id: "team_123" },
     });
     expect(upsertStripeCustomer).toHaveBeenCalledWith("team_123", "cus_123");
-    expect(tableMocks.updateEqIs).toHaveBeenCalledTimes(1);
+    expect(tableMocks.updateIs).toHaveBeenCalledTimes(1);
 
     mathRandomSpy.mockRestore();
   });

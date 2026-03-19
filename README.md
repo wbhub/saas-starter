@@ -257,7 +257,7 @@ Before your first real customer signs up, confirm:
   You should see a single CSP header whose `script-src` includes a `nonce-` token in production. `next.config.ts` adds other security headers (`Strict-Transport-Security`, `X-Frame-Options`, etc.) for all routes; CSP nonces and Supabase/Stripe/Intercom allowances are applied in `proxy.ts`.
 
 - **Stripe webhook dedupe cleanup (optional):** The webhook handler opportunistically prunes old rows in `stripe_webhook_events`. For low-traffic apps, add a scheduled job (e.g. Vercel Cron) that calls `GET /api/cron/prune-stripe-webhook-events` with `Authorization: Bearer <CRON_SECRET>`. Set `CRON_SECRET` in the environment; if it is unset, the route returns 503.
-- **Seat reconciliation cron (recommended):** Add a scheduled job that calls `GET /api/cron/reconcile-seat-quantities` with `Authorization: Bearer <CRON_SECRET>`. This reconciles Stripe subscription quantity against current team member counts and self-heals missed seat syncs.
+- **Seat reconciliation cron (recommended):** Add a scheduled job that calls `GET /api/cron/reconcile-seat-quantities` with `Authorization: Bearer <CRON_SECRET>`. This reconciles Stripe subscription quantity against current team member counts, drains the durable `seat_sync_retries` queue, and self-heals missed seat syncs.
 
 ---
 
