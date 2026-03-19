@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getClientIp } from "@/lib/http/client-ip";
+import { getClientRateLimitIdentifier } from "@/lib/http/client-ip";
 import { requireJsonContentType } from "@/lib/http/content-type";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { isValidEmail } from "@/lib/validation";
@@ -19,15 +19,13 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as LoginPayload | null;
   const email = body?.email?.trim().toLowerCase() ?? "";
   const password = body?.password ?? "";
-  const clientIp = getClientIp(request);
+  const clientId = getClientRateLimitIdentifier(request);
 
-  const ipRateLimitPromise = clientIp
-    ? checkRateLimit({
-        key: `auth-login:ip:${clientIp}`,
-        limit: 20,
-        windowMs: 10 * 60 * 1000,
-      })
-    : Promise.resolve({ allowed: true, retryAfterSeconds: 0 });
+  const ipRateLimitPromise = checkRateLimit({
+    key: `auth-login:${clientId.keyType}:${clientId.value}`,
+    limit: 20,
+    windowMs: 10 * 60 * 1000,
+  });
 
   const emailRateLimitPromise = isValidEmail(email)
     ? checkRateLimit({

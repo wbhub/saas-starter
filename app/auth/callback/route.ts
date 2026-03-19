@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { env } from "@/lib/env";
 import { getClientIp } from "@/lib/http/client-ip";
 import { createClient } from "@/lib/supabase/server";
@@ -25,50 +25,107 @@ function getSafeNextPath(next: string | null) {
   }
 }
 
-function getCallbackRateLimitKey(request: Request) {
+const CALLBACK_RATE_LIMIT_COOKIE = "auth_callback_client";
+const CALLBACK_RATE_LIMIT_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
+const PASSWORD_RECOVERY_COOKIE = "auth_password_recovery";
+const PASSWORD_RECOVERY_COOKIE_MAX_AGE_SECONDS = 10 * 60;
+
+function getCallbackClientId(request: NextRequest) {
+  const existing = request.cookies.get(CALLBACK_RATE_LIMIT_COOKIE)?.value;
+  if (existing && /^[a-zA-Z0-9_-]{10,}$/.test(existing)) {
+    return { value: existing, isNew: false };
+  }
+
+  return {
+    value: crypto.randomUUID(),
+    isNew: true,
+  };
+}
+
+function getCallbackRateLimitKey(request: NextRequest, callbackClientId: string) {
   const clientIp = getClientIp(request);
   if (clientIp) {
     return `auth-callback:ip:${clientIp}`;
   }
 
-  // Fallback keeps anonymous traffic scoped better than a single shared "unknown" bucket.
-  const userAgent = request.headers.get("user-agent")?.slice(0, 120) ?? "unknown";
-  return `auth-callback:ua:${userAgent}`;
+  return `auth-callback:client:${callbackClientId}`;
 }
 
 function toAbsoluteUrl(pathnameWithQuery: string) {
   return new URL(pathnameWithQuery, env.NEXT_PUBLIC_APP_URL).toString();
 }
 
-export async function GET(request: Request) {
+function maybeSetCallbackCookie(response: NextResponse, request: NextRequest, isNew: boolean, value: string) {
+  if (!isNew) return response;
+
+  response.cookies.set({
+    name: CALLBACK_RATE_LIMIT_COOKIE,
+    value,
+    httpOnly: true,
+    sameSite: "lax",
+    secure: request.nextUrl.protocol === "https:",
+    path: "/",
+    maxAge: CALLBACK_RATE_LIMIT_COOKIE_MAX_AGE_SECONDS,
+  });
+  return response;
+}
+
+function maybeSetPasswordRecoveryCookie(
+  response: NextResponse,
+  request: NextRequest,
+  safeNextPath: string,
+) {
+  if (!safeNextPath.startsWith("/reset-password")) {
+    return response;
+  }
+
+  response.cookies.set({
+    name: PASSWORD_RECOVERY_COOKIE,
+    value: "1",
+    httpOnly: true,
+    sameSite: "lax",
+    secure: request.nextUrl.protocol === "https:",
+    path: "/reset-password",
+    maxAge: PASSWORD_RECOVERY_COOKIE_MAX_AGE_SECONDS,
+  });
+  return response;
+}
+
+export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const safeNext = getSafeNextPath(searchParams.get("next"));
+  const callbackClientId = getCallbackClientId(request);
 
   const rateLimit = await checkRateLimit({
-    key: getCallbackRateLimitKey(request),
+    key: getCallbackRateLimitKey(request, callbackClientId.value),
     limit: 10,
     windowMs: 60 * 1000,
   });
   if (!rateLimit.allowed) {
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: "Too many callback attempts. Please wait and try again." },
       {
         status: 429,
         headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
       },
     );
+    return maybeSetCallbackCookie(response, request, callbackClientId.isNew, callbackClientId.value);
   }
 
   if (!code) {
-    return NextResponse.redirect(toAbsoluteUrl("/login?error=missing_code"));
+    const response = NextResponse.redirect(toAbsoluteUrl("/login?error=missing_code"));
+    return maybeSetCallbackCookie(response, request, callbackClientId.isNew, callbackClientId.value);
   }
 
   const supabase = await createClient();
   const { error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
-    return NextResponse.redirect(toAbsoluteUrl("/login?error=invalid_code"));
+    const response = NextResponse.redirect(toAbsoluteUrl("/login?error=invalid_code"));
+    return maybeSetCallbackCookie(response, request, callbackClientId.isNew, callbackClientId.value);
   }
 
-  return NextResponse.redirect(toAbsoluteUrl(safeNext));
+  const response = NextResponse.redirect(toAbsoluteUrl(safeNext));
+  maybeSetPasswordRecoveryCookie(response, request, safeNext);
+  return maybeSetCallbackCookie(response, request, callbackClientId.isNew, callbackClientId.value);
 }

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { env } from "@/lib/env";
 import { getResendClient, getResendFromEmail } from "@/lib/resend/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getClientIp } from "@/lib/http/client-ip";
+import { getClientRateLimitIdentifier } from "@/lib/http/client-ip";
 import { requireJsonContentType } from "@/lib/http/content-type";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { isValidEmail } from "@/lib/validation";
@@ -16,7 +16,6 @@ const GENERIC_SUCCESS_MESSAGE =
   "If an account exists for that email, a reset link has been sent.";
 const GENERIC_FAILURE_MESSAGE =
   "Unable to process password reset requests right now. Please try again shortly.";
-const UNKNOWN_IP_RATE_LIMIT_KEY = "unknown";
 
 function isProviderOutageError(error: unknown) {
   if (!error || typeof error !== "object") {
@@ -48,9 +47,9 @@ export async function POST(request: Request) {
     | ForgotPasswordPayload
     | null;
   const email = body?.email?.trim().toLowerCase() ?? "";
-  const clientIp = getClientIp(request) ?? UNKNOWN_IP_RATE_LIMIT_KEY;
+  const clientId = getClientRateLimitIdentifier(request);
   const ipRateLimit = await checkRateLimit({
-    key: `forgot-password:ip:${clientIp}`,
+    key: `forgot-password:${clientId.keyType}:${clientId.value}`,
     limit: 10,
     windowMs: 10 * 60 * 1000,
   });

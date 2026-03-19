@@ -5,7 +5,7 @@ import {
   getResendFromEmail,
   getResendSupportEmail,
 } from "@/lib/resend/server";
-import { getClientIp } from "@/lib/http/client-ip";
+import { getClientRateLimitIdentifier } from "@/lib/http/client-ip";
 import { requireJsonContentType } from "@/lib/http/content-type";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { logger } from "@/lib/logger";
@@ -30,20 +30,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const clientIp = getClientIp(request);
+  const clientId = getClientRateLimitIdentifier(request);
   const userRateLimitPromise = checkRateLimit({
     key: `support:user:${user.id}`,
     limit: 5,
     windowMs: 10 * 60 * 1000,
   });
 
-  const ipRateLimitPromise = clientIp
-    ? checkRateLimit({
-        key: `support:ip:${clientIp}`,
-        limit: 20,
-        windowMs: 10 * 60 * 1000,
-      })
-    : Promise.resolve({ allowed: true, retryAfterSeconds: 0 });
+  const ipRateLimitPromise = checkRateLimit({
+    key: `support:${clientId.keyType}:${clientId.value}`,
+    limit: 20,
+    windowMs: 10 * 60 * 1000,
+  });
 
   const [userRateLimit, ipRateLimit] = await Promise.all([
     userRateLimitPromise,

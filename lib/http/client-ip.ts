@@ -58,3 +58,39 @@ export function getClientIp(request: Request) {
   return null;
 }
 
+function normalizeRateLimitToken(value: string) {
+  const normalized = value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ":")
+    .replace(/^:|:$/g, "");
+
+  return normalized.slice(0, 160) || "unknown";
+}
+
+function buildClientFingerprint(request: Request) {
+  const userAgent = request.headers.get("user-agent")?.slice(0, 120) ?? "unknown";
+  const acceptLanguage = request.headers.get("accept-language")?.slice(0, 120) ?? "unknown";
+  const secChUa = request.headers.get("sec-ch-ua")?.slice(0, 120) ?? "unknown";
+  const secChUaPlatform =
+    request.headers.get("sec-ch-ua-platform")?.slice(0, 120) ?? "unknown";
+
+  return normalizeRateLimitToken(
+    `${userAgent}|${acceptLanguage}|${secChUa}|${secChUaPlatform}`,
+  );
+}
+
+export function getClientRateLimitIdentifier(request: Request) {
+  const clientIp = getClientIp(request);
+  if (clientIp) {
+    return {
+      keyType: "ip" as const,
+      value: clientIp,
+    };
+  }
+
+  return {
+    keyType: "fingerprint" as const,
+    value: buildClientFingerprint(request),
+  };
+}
+
