@@ -50,9 +50,14 @@ function hasValidRecoveryMarker() {
 
 type ResetPasswordFormProps = {
   hasRecoveryProof: boolean;
+  recoveryUserId: string;
 };
 
-export function ResetPasswordForm({ hasRecoveryProof }: ResetPasswordFormProps) {
+type ResetPasswordResponse = {
+  error?: string;
+};
+
+export function ResetPasswordForm({ hasRecoveryProof, recoveryUserId }: ResetPasswordFormProps) {
   const router = useRouter();
   const [supabase] = useState(() => createClient());
   const [password, setPassword] = useState("");
@@ -64,14 +69,6 @@ export function ResetPasswordForm({ hasRecoveryProof }: ResetPasswordFormProps) 
   const [messageType, setMessageType] = useState<"error" | "success">("success");
   const messageId = "reset-password-message";
   const passwordHintId = "reset-password-hint";
-
-  async function clearRecoveryCookie() {
-    await fetch("/reset-password/complete", {
-      method: "POST",
-      credentials: "same-origin",
-      cache: "no-store",
-    });
-  }
 
   useEffect(() => {
     let active = true;
@@ -92,7 +89,8 @@ export function ResetPasswordForm({ hasRecoveryProof }: ResetPasswordFormProps) 
         data: { session },
       } = await supabase.auth.getSession();
       const hasRecoverySessionProof = hasRecoveryProof || hasValidRecoveryMarker();
-      setHasRecoverySession(Boolean(session) && hasRecoverySessionProof);
+      const isRecoveredUser = session?.user.id === recoveryUserId;
+      setHasRecoverySession(Boolean(session) && hasRecoverySessionProof && isRecoveredUser);
       setCheckingSession(false);
     }
 
@@ -102,7 +100,7 @@ export function ResetPasswordForm({ hasRecoveryProof }: ResetPasswordFormProps) 
       active = false;
       subscription.unsubscribe();
     };
-  }, [hasRecoveryProof, supabase]);
+  }, [hasRecoveryProof, recoveryUserId, supabase]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -129,11 +127,17 @@ export function ResetPasswordForm({ hasRecoveryProof }: ResetPasswordFormProps) 
         return;
       }
 
-      const { error } = await supabase.auth.updateUser({ password });
-      if (error) throw error;
-
-      // Best effort cleanup for the short-lived recovery proof cookie.
-      await clearRecoveryCookie().catch(() => undefined);
+      const response = await fetch("/reset-password/submit", {
+        method: "POST",
+        credentials: "same-origin",
+        cache: "no-store",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as ResetPasswordResponse | null;
+        throw new Error(payload?.error ?? "Unable to update password. Please try again.");
+      }
       clearRecoveryMarker();
       setMessageType("success");
       setMessage("Password updated. Redirecting to login...");

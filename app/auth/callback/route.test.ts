@@ -1,4 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { NextRequest } from "next/server";
+
+function makeRequest(url: string) {
+  return new NextRequest(url);
+}
 
 describe("GET /auth/callback", () => {
   beforeEach(() => {
@@ -21,9 +26,7 @@ describe("GET /auth/callback", () => {
     }));
 
     const { GET } = await import("./route");
-    const response = await GET(
-      new Request("http://localhost/auth/callback?next=/dashboard"),
-    );
+    const response = await GET(makeRequest("http://localhost/auth/callback?next=/dashboard"));
 
     expect(response.status).toBe(307);
     expect(response.headers.get("location")).toBe(
@@ -38,7 +41,10 @@ describe("GET /auth/callback", () => {
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: async () => ({
         auth: {
-          exchangeCodeForSession: async () => ({ error: null }),
+          exchangeCodeForSession: async () => ({
+            data: { session: { user: { id: "user_123" } } },
+            error: null,
+          }),
         },
       }),
     }));
@@ -51,7 +57,7 @@ describe("GET /auth/callback", () => {
 
     const { GET } = await import("./route");
     const response = await GET(
-      new Request("https://evil.example/auth/callback?code=test&next=/dashboard"),
+      makeRequest("https://evil.example/auth/callback?code=test&next=/dashboard"),
     );
 
     expect(response.status).toBe(307);
@@ -65,7 +71,10 @@ describe("GET /auth/callback", () => {
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: async () => ({
         auth: {
-          exchangeCodeForSession: async () => ({ error: null }),
+          exchangeCodeForSession: async () => ({
+            data: { session: { user: { id: "user_123" } } },
+            error: null,
+          }),
         },
       }),
     }));
@@ -78,7 +87,7 @@ describe("GET /auth/callback", () => {
 
     const { GET } = await import("./route");
     const response = await GET(
-      new Request(
+      makeRequest(
         "https://app.example.com/auth/callback?code=test&next=%2Fdashboard%0D%0ALocation%3A%20https%3A%2F%2Fevil.example",
       ),
     );
@@ -96,7 +105,10 @@ describe("GET /auth/callback", () => {
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: async () => ({
         auth: {
-          exchangeCodeForSession: async () => ({ error: null }),
+          exchangeCodeForSession: async () => ({
+            data: { session: { user: { id: "user_123" } } },
+            error: null,
+          }),
         },
       }),
     }));
@@ -108,7 +120,7 @@ describe("GET /auth/callback", () => {
     }));
 
     const { GET } = await import("./route");
-    await GET(new Request("http://localhost/auth/callback?code=test"));
+    await GET(makeRequest("http://localhost/auth/callback?code=test"));
 
     expect(checkRateLimit).toHaveBeenCalledWith({
       key: "auth-callback:ip:198.51.100.1",

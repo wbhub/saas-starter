@@ -14,7 +14,7 @@ describe("POST /api/resend/support", () => {
       checkRateLimit: vi.fn(),
     }));
     vi.doMock("@/lib/http/client-ip", () => ({
-      getClientIp: vi.fn(),
+      getClientRateLimitIdentifier: vi.fn(),
     }));
     vi.doMock("@/lib/resend/server", () => ({
       getResendClient: vi.fn(),
@@ -52,7 +52,7 @@ describe("POST /api/resend/support", () => {
         .mockResolvedValueOnce({ allowed: true, retryAfterSeconds: 0 }),
     }));
     vi.doMock("@/lib/http/client-ip", () => ({
-      getClientIp: () => "198.51.100.1",
+      getClientRateLimitIdentifier: () => ({ keyType: "ip", value: "198.51.100.1" }),
     }));
     vi.doMock("@/lib/resend/server", () => ({
       getResendClient: vi.fn(),
@@ -95,7 +95,7 @@ describe("POST /api/resend/support", () => {
       checkRateLimit: async () => ({ allowed: true, retryAfterSeconds: 0 }),
     }));
     vi.doMock("@/lib/http/client-ip", () => ({
-      getClientIp: () => "198.51.100.1",
+      getClientRateLimitIdentifier: () => ({ keyType: "ip", value: "198.51.100.1" }),
     }));
     vi.doMock("@/lib/resend/server", () => ({
       getResendClient: vi.fn(),

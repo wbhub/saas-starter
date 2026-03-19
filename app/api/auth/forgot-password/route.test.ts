@@ -11,7 +11,7 @@ describe("POST /api/auth/forgot-password", () => {
       checkRateLimit: async () => ({ allowed: false, retryAfterSeconds: 60 }),
     }));
     vi.doMock("@/lib/http/client-ip", () => ({
-      getClientIp: () => "198.51.100.1",
+      getClientRateLimitIdentifier: () => ({ keyType: "ip", value: "198.51.100.1" }),
     }));
     vi.doMock("@/lib/supabase/admin", () => ({
       createAdminClient: vi.fn(),
@@ -54,7 +54,10 @@ describe("POST /api/auth/forgot-password", () => {
       checkRateLimit,
     }));
     vi.doMock("@/lib/http/client-ip", () => ({
-      getClientIp: () => null,
+      getClientRateLimitIdentifier: () => ({
+        keyType: "fingerprint",
+        value: "unknown:unknown:unknown:unknown",
+      }),
     }));
     vi.doMock("@/lib/supabase/admin", () => ({
       createAdminClient: () => ({
@@ -85,7 +88,7 @@ describe("POST /api/auth/forgot-password", () => {
     expect(response.status).toBe(200);
     expect(checkRateLimit).toHaveBeenCalledTimes(2);
     expect(checkRateLimit).toHaveBeenNthCalledWith(1, {
-      key: "forgot-password:ip:unknown",
+      key: "forgot-password:fingerprint:unknown:unknown:unknown:unknown",
       limit: 10,
       windowMs: 10 * 60 * 1000,
     });
@@ -113,7 +116,7 @@ describe("POST /api/auth/forgot-password", () => {
       checkRateLimit,
     }));
     vi.doMock("@/lib/http/client-ip", () => ({
-      getClientIp: () => "198.51.100.1",
+      getClientRateLimitIdentifier: () => ({ keyType: "ip", value: "198.51.100.1" }),
     }));
     vi.doMock("@/lib/supabase/admin", () => ({
       createAdminClient: () => ({
@@ -167,7 +170,7 @@ describe("POST /api/auth/forgot-password", () => {
       checkRateLimit,
     }));
     vi.doMock("@/lib/http/client-ip", () => ({
-      getClientIp: () => "198.51.100.1",
+      getClientRateLimitIdentifier: () => ({ keyType: "ip", value: "198.51.100.1" }),
     }));
     vi.doMock("@/lib/supabase/admin", () => ({
       createAdminClient: () => ({

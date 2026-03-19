@@ -1,0 +1,88 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { NextRequest } from "next/server";
+
+function makeRequest(
+  url: string,
+  body: Record<string, unknown>,
+  cookieHeader?: string,
+) {
+  return new NextRequest(url, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      ...(cookieHeader ? { cookie: cookieHeader } : {}),
+    },
+    body: JSON.stringify(body),
+  });
+}
+
+describe("POST /reset-password/submit", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+  });
+
+  it("rejects requests without recovery proof cookies", async () => {
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: vi.fn(),
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      makeRequest("http://localhost/reset-password/submit", { password: "password123" }),
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      error: "Reset link is invalid or expired. Please request a new link.",
+    });
+  });
+
+  it("rejects requests when session user differs from recovery user", async () => {
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          getUser: async () => ({ data: { user: { id: "user_b" } } }),
+        },
+      }),
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      makeRequest(
+        "http://localhost/reset-password/submit",
+        { password: "password123" },
+        "auth_password_recovery=1; auth_password_recovery_user=user_a",
+      ),
+    );
+
+    expect(response.status).toBe(403);
+  });
+
+  it("updates password and clears recovery cookies when proof matches session user", async () => {
+    const updateUser = vi.fn().mockResolvedValue({ error: null });
+
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          getUser: async () => ({ data: { user: { id: "user_a" } } }),
+          updateUser,
+        },
+      }),
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      makeRequest(
+        "http://localhost/reset-password/submit",
+        { password: "password123" },
+        "auth_password_recovery=1; auth_password_recovery_user=user_a",
+      ),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ ok: true });
+    expect(updateUser).toHaveBeenCalledWith({ password: "password123" });
+    expect(response.headers.get("set-cookie")).toContain("auth_password_recovery=;");
+  });
+});

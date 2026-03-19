@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -44,37 +43,13 @@ export const metadata: Metadata = {
   },
 };
 
-const themeInitializationScript = `
-(() => {
-  try {
-    const key = "saas-starter-theme";
-    const stored = localStorage.getItem(key);
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const theme = stored === "light" || stored === "dark"
-      ? stored
-      : (prefersDark ? "dark" : "light");
-    const root = document.documentElement;
-    root.dataset.theme = theme;
-    root.classList.toggle("dark", theme === "dark");
-  } catch {}
-})();
-`;
-
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const nonce = (await headers()).get("x-nonce") ?? undefined;
-
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <script
-          nonce={nonce}
-          dangerouslySetInnerHTML={{ __html: themeInitializationScript }}
-        />
-      </head>
       <body className={`${inter.variable} font-sans antialiased`}>
         <ThemeProvider>
           {children}
