@@ -2,7 +2,9 @@ import Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { stripe } from "@/lib/stripe/server";
 
-const adminClient = createAdminClient();
+function getAdminClient() {
+  return createAdminClient();
+}
 
 const TRACKED_STATUSES = [
   "incomplete",
@@ -33,7 +35,7 @@ function getSubscriptionCreatedIso(subscriptionCreatedUnix?: number) {
 async function getUserIdFromStripeCustomer(
   stripeCustomerId: string,
 ) {
-  const { data: mapping, error } = await adminClient
+  const { data: mapping, error } = await getAdminClient()
     .from("stripe_customers")
     .select("user_id")
     .eq("stripe_customer_id", stripeCustomerId)
@@ -61,7 +63,7 @@ export async function upsertStripeCustomer(
   userId: string,
   stripeCustomerId: string,
 ) {
-  const { error } = await adminClient.from("stripe_customers").upsert(
+  const { error } = await getAdminClient().from("stripe_customers").upsert(
     {
       user_id: userId,
       stripe_customer_id: stripeCustomerId,
@@ -114,7 +116,7 @@ export async function syncSubscription(
     return;
   }
 
-  const { error } = await adminClient.rpc("sync_stripe_subscription_atomic", {
+  const { error } = await getAdminClient().rpc("sync_stripe_subscription_atomic", {
     p_user_id: userId,
     p_stripe_customer_id: stripeCustomerId,
     p_stripe_subscription_id: subscription.id,

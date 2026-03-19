@@ -5,21 +5,24 @@ import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 
 function getSafeNextPath(next: string | null) {
-  if (
-    !next ||
-    !next.startsWith("/") ||
-    next.startsWith("//") ||
-    next.includes("://")
-  ) {
+  if (!next) {
     return "/dashboard";
   }
 
   // Prevent header injection and malformed redirect values.
-  if (/[\u0000-\u001F\u007F]/.test(next)) {
+  if (/[\u0000-\u001F\u007F]/.test(next) || next.includes("\\")) {
     return "/dashboard";
   }
 
-  return next;
+  try {
+    const parsed = new URL(next, "http://localhost");
+    if (parsed.origin !== "http://localhost" || !parsed.pathname.startsWith("/")) {
+      return "/dashboard";
+    }
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return "/dashboard";
+  }
 }
 
 function getCallbackRateLimitKey(request: Request) {

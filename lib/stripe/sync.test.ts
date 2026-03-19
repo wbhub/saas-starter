@@ -1,73 +1,43 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+function createAdminMock(
+  userMapping: { user_id: string } | null = { user_id: "user_123" },
+) {
+  const rpc = vi.fn().mockResolvedValue({ error: null });
+
+  const stripeCustomersQuery = {
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    maybeSingle: vi
+      .fn()
+      .mockResolvedValue({ data: userMapping, error: null }),
+  };
+
+  const from = vi.fn((table: string) => {
+    if (table === "stripe_customers") {
+      return stripeCustomersQuery;
+    }
+    throw new Error(`Unexpected table: ${table}`);
+  });
+
+  return { from, rpc };
+}
+
 describe("syncSubscription", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
   });
 
-  it("reconciles existing live subscriptions before upsert", async () => {
-    const stripeCustomersMaybeSingle = vi
-      .fn()
-      .mockResolvedValue({ data: { user_id: "user_123" }, error: null });
-    const stripeCustomersUpsert = vi.fn().mockResolvedValue({ error: null });
-    const stripeCustomersQuery = {
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      maybeSingle: stripeCustomersMaybeSingle,
-      upsert: stripeCustomersUpsert,
-    };
-
-    const closeLiveIn = vi.fn().mockResolvedValue({ error: null });
-    const subscriptionsUpdateChain = {
-      eq: vi.fn().mockReturnThis(),
-      neq: vi.fn().mockReturnThis(),
-      in: closeLiveIn,
-    };
-    const subscriptionsUpdate = vi.fn().mockReturnValue(subscriptionsUpdateChain);
-    const subscriptionsUpsert = vi.fn().mockResolvedValue({ error: null });
-    const existingRowMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
-    const competingIn = vi.fn().mockResolvedValue({ data: [], error: null });
-    const subscriptionsSelect = vi.fn((columns: string) => {
-      if (columns === "stripe_event_created_at") {
-        return {
-          eq: vi.fn().mockReturnThis(),
-          maybeSingle: existingRowMaybeSingle,
-        };
-      }
-      if (columns === "stripe_subscription_id,stripe_subscription_created_at") {
-        return {
-          eq: vi.fn().mockReturnThis(),
-          neq: vi.fn().mockReturnThis(),
-          in: competingIn,
-        };
-      }
-      throw new Error(`Unexpected select: ${columns}`);
-    });
-    const subscriptionsQuery = {
-      select: subscriptionsSelect,
-      update: subscriptionsUpdate,
-      upsert: subscriptionsUpsert,
-    };
-
-    const from = vi.fn((table: string) => {
-      if (table === "stripe_customers") {
-        return stripeCustomersQuery;
-      }
-      if (table === "subscriptions") {
-        return subscriptionsQuery;
-      }
-      throw new Error(`Unexpected table: ${table}`);
-    });
+  it("calls atomic rpc with correct params for active subscription", async () => {
+    const adminMock = createAdminMock();
 
     vi.doMock("@/lib/supabase/admin", () => ({
-      createAdminClient: () => ({ from }),
+      createAdminClient: () => adminMock,
     }));
     vi.doMock("@/lib/stripe/server", () => ({
       stripe: {
-        customers: {
-          retrieve: vi.fn(),
-        },
+        customers: { retrieve: vi.fn() },
       },
     }));
 
@@ -90,61 +60,29 @@ describe("syncSubscription", () => {
       },
     } as never);
 
-    expect(subscriptionsUpdate).toHaveBeenCalled();
-    expect(closeLiveIn).toHaveBeenCalledOnce();
-    expect(subscriptionsUpsert).toHaveBeenCalledWith(
+    expect(adminMock.rpc).toHaveBeenCalledWith(
+      "sync_stripe_subscription_atomic",
       expect.objectContaining({
-        stripe_subscription_id: "sub_new",
-        stripe_subscription_created_at: "2023-11-14T22:15:00.000Z",
+        p_user_id: "user_123",
+        p_stripe_customer_id: "cus_123",
+        p_stripe_subscription_id: "sub_new",
+        p_stripe_price_id: "price_starter",
+        p_status: "active",
+        p_stripe_subscription_created_at: "2023-11-14T22:15:00.000Z",
+        p_cancel_at_period_end: false,
       }),
-      { onConflict: "stripe_subscription_id" },
     );
   });
 
-  it("skips reconciliation update for canceled subscriptions", async () => {
-    const stripeCustomersQuery = {
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      maybeSingle: vi.fn().mockResolvedValue({ data: { user_id: "user_123" }, error: null }),
-      upsert: vi.fn().mockResolvedValue({ error: null }),
-    };
-
-    const subscriptionsUpdate = vi.fn();
-    const subscriptionsUpsert = vi.fn().mockResolvedValue({ error: null });
-    const existingRowMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
-    const subscriptionsSelect = vi.fn((columns: string) => {
-      if (columns === "stripe_event_created_at") {
-        return {
-          eq: vi.fn().mockReturnThis(),
-          maybeSingle: existingRowMaybeSingle,
-        };
-      }
-      throw new Error(`Unexpected select: ${columns}`);
-    });
-    const subscriptionsQuery = {
-      select: subscriptionsSelect,
-      update: subscriptionsUpdate,
-      upsert: subscriptionsUpsert,
-    };
-
-    const from = vi.fn((table: string) => {
-      if (table === "stripe_customers") {
-        return stripeCustomersQuery;
-      }
-      if (table === "subscriptions") {
-        return subscriptionsQuery;
-      }
-      throw new Error(`Unexpected table: ${table}`);
-    });
+  it("calls atomic rpc for canceled subscriptions", async () => {
+    const adminMock = createAdminMock();
 
     vi.doMock("@/lib/supabase/admin", () => ({
-      createAdminClient: () => ({ from }),
+      createAdminClient: () => adminMock,
     }));
     vi.doMock("@/lib/stripe/server", () => ({
       stripe: {
-        customers: {
-          retrieve: vi.fn(),
-        },
+        customers: { retrieve: vi.fn() },
       },
     }));
 
@@ -167,57 +105,24 @@ describe("syncSubscription", () => {
       },
     } as never);
 
-    expect(subscriptionsUpdate).not.toHaveBeenCalled();
-    expect(subscriptionsUpsert).toHaveBeenCalledOnce();
+    expect(adminMock.rpc).toHaveBeenCalledWith(
+      "sync_stripe_subscription_atomic",
+      expect.objectContaining({
+        p_status: "canceled",
+        p_cancel_at_period_end: true,
+      }),
+    );
   });
 
-  it("ignores out-of-order stale webhook snapshots", async () => {
-    const stripeCustomersQuery = {
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      maybeSingle: vi.fn().mockResolvedValue({ data: { user_id: "user_123" }, error: null }),
-      upsert: vi.fn().mockResolvedValue({ error: null }),
-    };
-
-    const subscriptionsUpdate = vi.fn();
-    const subscriptionsUpsert = vi.fn().mockResolvedValue({ error: null });
-    const existingRowMaybeSingle = vi.fn().mockResolvedValue({
-      data: { stripe_event_created_at: "2026-03-19T10:00:00.000Z" },
-      error: null,
-    });
-    const subscriptionsSelect = vi.fn((columns: string) => {
-      if (columns === "stripe_event_created_at") {
-        return {
-          eq: vi.fn().mockReturnThis(),
-          maybeSingle: existingRowMaybeSingle,
-        };
-      }
-      throw new Error(`Unexpected select: ${columns}`);
-    });
-    const subscriptionsQuery = {
-      select: subscriptionsSelect,
-      update: subscriptionsUpdate,
-      upsert: subscriptionsUpsert,
-    };
-
-    const from = vi.fn((table: string) => {
-      if (table === "stripe_customers") {
-        return stripeCustomersQuery;
-      }
-      if (table === "subscriptions") {
-        return subscriptionsQuery;
-      }
-      throw new Error(`Unexpected table: ${table}`);
-    });
+  it("passes event timestamp through to rpc", async () => {
+    const adminMock = createAdminMock();
 
     vi.doMock("@/lib/supabase/admin", () => ({
-      createAdminClient: () => ({ from }),
+      createAdminClient: () => adminMock,
     }));
     vi.doMock("@/lib/stripe/server", () => ({
       stripe: {
-        customers: {
-          retrieve: vi.fn(),
-        },
+        customers: { retrieve: vi.fn() },
       },
     }));
 
@@ -245,70 +150,23 @@ describe("syncSubscription", () => {
       },
     );
 
-    expect(subscriptionsUpdate).not.toHaveBeenCalled();
-    expect(subscriptionsUpsert).not.toHaveBeenCalled();
+    expect(adminMock.rpc).toHaveBeenCalledWith(
+      "sync_stripe_subscription_atomic",
+      expect.objectContaining({
+        p_stripe_event_created_at: "2023-11-14T22:13:20.000Z",
+      }),
+    );
   });
 
-  it("processes equal-timestamp webhook snapshots for same subscription", async () => {
-    const stripeCustomersQuery = {
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      maybeSingle: vi.fn().mockResolvedValue({ data: { user_id: "user_123" }, error: null }),
-      upsert: vi.fn().mockResolvedValue({ error: null }),
-    };
-
-    const closeLiveIn = vi.fn().mockResolvedValue({ error: null });
-    const subscriptionsUpdateChain = {
-      eq: vi.fn().mockReturnThis(),
-      neq: vi.fn().mockReturnThis(),
-      in: closeLiveIn,
-    };
-    const subscriptionsUpdate = vi.fn().mockReturnValue(subscriptionsUpdateChain);
-    const subscriptionsUpsert = vi.fn().mockResolvedValue({ error: null });
-    const existingRowMaybeSingle = vi.fn().mockResolvedValue({
-      data: { stripe_event_created_at: "2023-11-14T22:13:20.000Z" },
-      error: null,
-    });
-    const subscriptionsSelect = vi.fn((columns: string) => {
-      if (columns === "stripe_event_created_at") {
-        return {
-          eq: vi.fn().mockReturnThis(),
-          maybeSingle: existingRowMaybeSingle,
-        };
-      }
-      if (columns === "stripe_subscription_id,stripe_subscription_created_at") {
-        return {
-          eq: vi.fn().mockReturnThis(),
-          neq: vi.fn().mockReturnThis(),
-          in: vi.fn().mockResolvedValue({ data: [], error: null }),
-        };
-      }
-      throw new Error(`Unexpected select: ${columns}`);
-    });
-    const subscriptionsQuery = {
-      select: subscriptionsSelect,
-      update: subscriptionsUpdate,
-      upsert: subscriptionsUpsert,
-    };
-
-    const from = vi.fn((table: string) => {
-      if (table === "stripe_customers") {
-        return stripeCustomersQuery;
-      }
-      if (table === "subscriptions") {
-        return subscriptionsQuery;
-      }
-      throw new Error(`Unexpected table: ${table}`);
-    });
+  it("delegates equal-timestamp ordering to atomic rpc", async () => {
+    const adminMock = createAdminMock();
 
     vi.doMock("@/lib/supabase/admin", () => ({
-      createAdminClient: () => ({ from }),
+      createAdminClient: () => adminMock,
     }));
     vi.doMock("@/lib/stripe/server", () => ({
       stripe: {
-        customers: {
-          retrieve: vi.fn(),
-        },
+        customers: { retrieve: vi.fn() },
       },
     }));
 
@@ -336,70 +194,29 @@ describe("syncSubscription", () => {
       },
     );
 
-    expect(subscriptionsUpdate).toHaveBeenCalledOnce();
-    expect(closeLiveIn).toHaveBeenCalledOnce();
-    expect(subscriptionsUpsert).toHaveBeenCalledOnce();
+    expect(adminMock.rpc).toHaveBeenCalledOnce();
+    expect(adminMock.rpc).toHaveBeenCalledWith(
+      "sync_stripe_subscription_atomic",
+      expect.objectContaining({
+        p_stripe_subscription_id: "sub_equal",
+        p_stripe_event_created_at: "2023-11-14T22:13:20.000Z",
+      }),
+    );
   });
 
-  it("does not promote an older duplicate live subscription", async () => {
-    const stripeCustomersQuery = {
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      maybeSingle: vi.fn().mockResolvedValue({ data: { user_id: "user_123" }, error: null }),
-      upsert: vi.fn().mockResolvedValue({ error: null }),
-    };
-
-    const subscriptionsUpdate = vi.fn();
-    const subscriptionsUpsert = vi.fn().mockResolvedValue({ error: null });
-    const existingRowMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
-    const competingIn = vi.fn().mockResolvedValue({
-      data: [
-        {
-          stripe_subscription_id: "sub_real",
-          stripe_subscription_created_at: "2026-03-19T10:00:00.000Z",
-        },
-      ],
-      error: null,
-    });
-    const subscriptionsSelect = vi.fn((columns: string) => {
-      if (columns === "stripe_event_created_at") {
-        return {
-          eq: vi.fn().mockReturnThis(),
-          maybeSingle: existingRowMaybeSingle,
-        };
-      }
-      if (columns === "stripe_subscription_id,stripe_subscription_created_at") {
-        return {
-          eq: vi.fn().mockReturnThis(),
-          neq: vi.fn().mockReturnThis(),
-          in: competingIn,
-        };
-      }
-      throw new Error(`Unexpected select: ${columns}`);
-    });
-    const subscriptionsQuery = {
-      select: subscriptionsSelect,
-      update: subscriptionsUpdate,
-      upsert: subscriptionsUpsert,
-    };
-
-    const from = vi.fn((table: string) => {
-      if (table === "stripe_customers") {
-        return stripeCustomersQuery;
-      }
-      if (table === "subscriptions") {
-        return subscriptionsQuery;
-      }
-      throw new Error(`Unexpected table: ${table}`);
-    });
+  it("skips sync when no user mapping exists", async () => {
+    const adminMock = createAdminMock(null);
 
     vi.doMock("@/lib/supabase/admin", () => ({
-      createAdminClient: () => ({ from }),
+      createAdminClient: () => adminMock,
     }));
     vi.doMock("@/lib/stripe/server", () => ({
       stripe: {
         customers: {
-          retrieve: vi.fn(),
+          retrieve: vi.fn().mockResolvedValue({
+            id: "cus_orphan",
+            metadata: {},
+          }),
         },
       },
     }));
@@ -407,10 +224,10 @@ describe("syncSubscription", () => {
     const { syncSubscription } = await import("./sync");
 
     await syncSubscription({
-      id: "sub_duplicate",
+      id: "sub_orphan",
       created: 1_700_000_000,
       status: "active",
-      customer: "cus_123",
+      customer: "cus_orphan",
       cancel_at_period_end: false,
       items: {
         data: [
@@ -423,7 +240,6 @@ describe("syncSubscription", () => {
       },
     } as never);
 
-    expect(subscriptionsUpdate).not.toHaveBeenCalled();
-    expect(subscriptionsUpsert).not.toHaveBeenCalled();
+    expect(adminMock.rpc).not.toHaveBeenCalled();
   });
 });

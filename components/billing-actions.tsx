@@ -13,6 +13,7 @@ type PostJsonOptions = {
 };
 
 const IDEMPOTENCY_TTL_MS = 10_000;
+const SYNC_PENDING_RELOAD_DELAY_MS = 4_000;
 
 async function postJson(
   path: string,
@@ -38,6 +39,7 @@ async function postJson(
   return (await response.json()) as {
     url?: string;
     ok?: boolean;
+    syncPending?: boolean;
   };
 }
 
@@ -111,8 +113,9 @@ export function BillingActions({ currentPlanKey, hasSubscription }: Props) {
   async function changePlan(planKey: string) {
     setLoadingAction(`change-${planKey}`);
     setMessage(null);
+    let waitForSyncRefresh = false;
     try {
-      await postJson(
+      const payload = await postJson(
         "/api/stripe/change-plan",
         { planKey },
         {
@@ -121,12 +124,24 @@ export function BillingActions({ currentPlanKey, hasSubscription }: Props) {
           },
         },
       );
+      if (payload.syncPending) {
+        waitForSyncRefresh = true;
+        setLoadingAction("sync-pending");
+        setMessage("Plan updated in Stripe. Sync in progress. Refreshing shortly...");
+        window.setTimeout(() => {
+          window.location.reload();
+        }, SYNC_PENDING_RELOAD_DELAY_MS);
+        return;
+      }
+
       setMessage("Plan updated. Refreshing billing details...");
       window.location.reload();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Plan change failed");
     } finally {
-      setLoadingAction(null);
+      if (!waitForSyncRefresh) {
+        setLoadingAction(null);
+      }
     }
   }
 

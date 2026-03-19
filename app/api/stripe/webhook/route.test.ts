@@ -1,5 +1,56 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+function createWebhookEventsTableMocks() {
+  const insert = vi.fn().mockResolvedValue({ error: null });
+  const maybeSingle = vi.fn().mockResolvedValue({
+    data: { completed_at: null, claim_expires_at: null },
+    error: null,
+  });
+  const select = vi.fn(() => ({
+    eq: vi.fn().mockReturnValue({
+      maybeSingle,
+    }),
+  }));
+
+  const deleteLt = vi.fn().mockResolvedValue({ error: null });
+  const deleteByEqIsLt = vi.fn().mockResolvedValue({ error: null });
+  const del = vi.fn(() => ({
+    not: vi.fn().mockReturnValue({ lt: deleteLt }),
+    is: vi.fn().mockReturnValue({ lt: deleteLt }),
+    eq: vi.fn().mockReturnValue({
+      is: vi.fn().mockReturnValue({ lt: deleteByEqIsLt }),
+    }),
+  }));
+
+  const updateEqIs = vi.fn().mockResolvedValue({ error: null });
+  const update = vi.fn(() => ({
+    eq: vi.fn().mockReturnValue({
+      is: updateEqIs,
+    }),
+  }));
+
+  const from = vi.fn((table: string) => {
+    if (table !== "stripe_webhook_events") {
+      throw new Error(`Unexpected table: ${table}`);
+    }
+    return {
+      insert,
+      select,
+      delete: del,
+      update,
+    };
+  });
+
+  return {
+    from,
+    insert,
+    maybeSingle,
+    deleteLt,
+    deleteByEqIsLt,
+    updateEqIs,
+  };
+}
+
 describe("POST /api/stripe/webhook", () => {
   beforeEach(() => {
     vi.resetModules();
@@ -79,6 +130,7 @@ describe("POST /api/stripe/webhook", () => {
       '{"id":"evt_bad"}',
       "t=1,v1=invalid",
       "whsec_test",
+      300,
     );
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
@@ -88,9 +140,7 @@ describe("POST /api/stripe/webhook", () => {
 
   it("prunes old dedupe rows after claiming a webhook event", async () => {
     const mathRandomSpy = vi.spyOn(Math, "random").mockReturnValue(0);
-    const lt = vi.fn().mockResolvedValue({ error: null });
-    const eq = vi.fn().mockResolvedValue({ error: null });
-    const insert = vi.fn().mockResolvedValue({ error: null });
+    const tableMocks = createWebhookEventsTableMocks();
 
     vi.doMock("next/headers", () => ({
       headers: async () =>
@@ -117,18 +167,7 @@ describe("POST /api/stripe/webhook", () => {
       upsertStripeCustomer: vi.fn(),
     }));
     vi.doMock("@/lib/supabase/admin", () => ({
-      createAdminClient: () => ({
-        from: vi.fn((table: string) => {
-          if (table !== "stripe_webhook_events") {
-            throw new Error(`Unexpected table: ${table}`);
-          }
-
-          return {
-            insert,
-            delete: vi.fn(() => ({ lt, eq })),
-          };
-        }),
-      }),
+      createAdminClient: () => ({ from: tableMocks.from }),
     }));
 
     const { POST } = await import("./route");
@@ -141,18 +180,24 @@ describe("POST /api/stripe/webhook", () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ received: true });
-    expect(insert).toHaveBeenCalledWith({
+    expect(tableMocks.insert).toHaveBeenCalledWith({
       stripe_event_id: "evt_123",
       event_type: "invoice.created",
+      processed_at: expect.any(String),
+      claim_expires_at: expect.any(String),
+      completed_at: null,
     });
-    expect(lt).toHaveBeenCalledTimes(1);
+    // Prune runs both completed and stale-claim cleanup.
+    expect(tableMocks.deleteLt).toHaveBeenCalledTimes(2);
+    // Event is marked complete after successful processing.
+    expect(tableMocks.updateEqIs).toHaveBeenCalledTimes(1);
 
     mathRandomSpy.mockRestore();
   });
 
   it("stamps Stripe customer ownership metadata on checkout completion", async () => {
     const mathRandomSpy = vi.spyOn(Math, "random").mockReturnValue(1);
-    const insert = vi.fn().mockResolvedValue({ error: null });
+    const tableMocks = createWebhookEventsTableMocks();
     const upsertStripeCustomer = vi.fn().mockResolvedValue(undefined);
     const customerRetrieve = vi.fn().mockResolvedValue({ id: "cus_123", metadata: {} });
     const customerUpdate = vi.fn().mockResolvedValue({ id: "cus_123" });
@@ -192,18 +237,7 @@ describe("POST /api/stripe/webhook", () => {
       upsertStripeCustomer,
     }));
     vi.doMock("@/lib/supabase/admin", () => ({
-      createAdminClient: () => ({
-        from: vi.fn((table: string) => {
-          if (table !== "stripe_webhook_events") {
-            throw new Error(`Unexpected table: ${table}`);
-          }
-
-          return {
-            insert,
-            delete: vi.fn(() => ({ lt: vi.fn(), eq: vi.fn() })),
-          };
-        }),
-      }),
+      createAdminClient: () => ({ from: tableMocks.from }),
     }));
 
     const { POST } = await import("./route");
@@ -221,6 +255,7 @@ describe("POST /api/stripe/webhook", () => {
       metadata: { supabase_user_id: "user_123" },
     });
     expect(upsertStripeCustomer).toHaveBeenCalledWith("user_123", "cus_123");
+    expect(tableMocks.updateEqIs).toHaveBeenCalledTimes(1);
 
     mathRandomSpy.mockRestore();
   });
