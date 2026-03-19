@@ -54,6 +54,7 @@ type ResetPasswordFormProps = {
 };
 
 type ResetPasswordResponse = {
+  ok?: boolean;
   error?: string;
 };
 

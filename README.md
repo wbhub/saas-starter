@@ -226,6 +226,26 @@ Before your first real customer signs up, confirm:
 - Resend delivery is configured: `RESEND_FROM_EMAIL` is verified and `RESEND_SUPPORT_EMAIL` routes to your inbox.
 - Optional Intercom: `NEXT_PUBLIC_INTERCOM_APP_ID` and `INTERCOM_IDENTITY_SECRET` are set if you want verified Intercom identity in production.
 - `TRUST_PROXY_HEADERS` is only enabled if your deployment injects trusted proxy IP headers.
+- **CSP (production):** After deploy, confirm the root [`proxy.ts`](proxy.ts) runs and sets `Content-Security-Policy`. A successful `next build` lists **Proxy (Middleware)** in the build summary; that is this file. Quick check against your live origin (HTML page, not a JSON API):
+
+  ```bash
+  curl -sI https://YOUR_DOMAIN/ | grep -i content-security-policy
+  ```
+
+  You should see a single CSP header whose `script-src` includes a `nonce-` token in production. `next.config.ts` adds other security headers (`Strict-Transport-Security`, `X-Frame-Options`, etc.) for all routes; CSP nonces and Supabase/Stripe/Intercom allowances are applied in `proxy.ts`.
+
+- **Stripe webhook dedupe cleanup (optional):** The webhook handler opportunistically prunes old rows in `stripe_webhook_events`. For low-traffic apps, add a scheduled job (e.g. Vercel Cron) that calls `GET /api/cron/prune-stripe-webhook-events` with `Authorization: Bearer <CRON_SECRET>` (or `?secret=<CRON_SECRET>`). Set `CRON_SECRET` in the environment; if it is unset, the route returns 503.
+
+---
+
+## JSON API responses (convention)
+
+New and hardened routes should prefer shared helpers in [`lib/http/api-json.ts`](lib/http/api-json.ts):
+
+- Success: `{ "ok": true, ... }` (extra fields allowed).
+- Client errors and most failures: `{ "ok": false, "error": "message" }` with an appropriate HTTP status.
+
+Older routes may still return `{ "error": "..." }` without `ok`; migrate gradually when touching an endpoint.
 
 ---
 
@@ -321,6 +341,7 @@ Security notes:
 
 - The request endpoint always returns a generic success message (to avoid leaking whether an email exists).
 - Password updates require a valid recovery session from the email link.
+- `POST /reset-password/submit` is rate limited per client identifier (same distributed limiter as other auth routes).
 
 ---
 
