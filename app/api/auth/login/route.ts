@@ -54,7 +54,7 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!isValidEmail(email) || password.length < 8) {
+  if (!isValidEmail(email) || password.length < 8 || password.length > 128) {
     return NextResponse.json({ error: "Invalid email or password." }, { status: 400 });
   }
 

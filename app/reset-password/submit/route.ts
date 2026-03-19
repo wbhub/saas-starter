@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { jsonError, jsonSuccess } from "@/lib/http/api-json";
 import { getClientRateLimitIdentifier } from "@/lib/http/client-ip";
 import { requireJsonContentType } from "@/lib/http/content-type";
+import { logger } from "@/lib/logger";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 
@@ -32,8 +33,8 @@ export async function POST(request: NextRequest) {
 
   const body = (await request.json().catch(() => null)) as ResetPasswordPayload | null;
   const password = body?.password ?? "";
-  if (password.length < 8) {
-    return jsonError("Password must be at least 8 characters.", 400);
+  if (password.length < 8 || password.length > 128) {
+    return jsonError("Password must be between 8 and 128 characters.", 400);
   }
 
   const hasRecoveryProof = request.cookies.get(PASSWORD_RECOVERY_COOKIE)?.value === "1";
@@ -58,7 +59,8 @@ export async function POST(request: NextRequest) {
 
   const { error } = await supabase.auth.updateUser({ password });
   if (error) {
-    return jsonError(error.message, 400);
+    logger.error("Password update failed", error);
+    return jsonError("Unable to update password. Please try again.", 400);
   }
 
   const response = jsonSuccess();
