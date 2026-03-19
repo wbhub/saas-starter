@@ -12,6 +12,7 @@ describe("GET /api/cron/reconcile-seat-quantities", () => {
         scannedTeams: 0,
         synced: 0,
         failed: 0,
+        queuedRetries: 0,
         discoveredFromStripe: 0,
         stripePagesScanned: 0,
       }),
@@ -61,6 +62,7 @@ describe("GET /api/cron/reconcile-seat-quantities", () => {
       scannedTeams: 3,
       synced: 3,
       failed: 0,
+      queuedRetries: 1,
       discoveredFromStripe: 1,
       stripePagesScanned: 1,
     });
@@ -82,6 +84,7 @@ describe("GET /api/cron/reconcile-seat-quantities", () => {
       scannedTeams: 3,
       synced: 3,
       failed: 0,
+      queuedRetries: 1,
       discoveredFromStripe: 1,
       stripePagesScanned: 1,
     });

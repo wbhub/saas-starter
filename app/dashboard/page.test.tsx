@@ -34,7 +34,17 @@ describe("Dashboard page billing selection", () => {
       order: vi.fn().mockReturnThis(),
       returns: vi
         .fn()
-        .mockResolvedValue({ data: [{ user_id: "user_123", role: "owner", created_at: "2026-01-01T00:00:00Z" }], error: null }),
+        .mockResolvedValue({
+          data: [
+            {
+              user_id: "user_123",
+              role: "owner",
+              created_at: "2026-01-01T00:00:00Z",
+              profiles: { id: "user_123", full_name: "Test User" },
+            },
+          ],
+          error: null,
+        }),
     };
     const teamInvitesQuery = {
       select: vi.fn().mockReturnThis(),
@@ -44,13 +54,6 @@ describe("Dashboard page billing selection", () => {
       order: vi.fn().mockReturnThis(),
       returns: vi.fn().mockResolvedValue({ data: [], error: null }),
     };
-    const profileNamesQuery = {
-      select: vi.fn().mockReturnThis(),
-      in: vi.fn().mockReturnThis(),
-      returns: vi.fn().mockResolvedValue({ data: [], error: null }),
-    };
-    let profileTableReads = 0;
-
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: async () => ({
         auth: {
@@ -66,8 +69,7 @@ describe("Dashboard page billing selection", () => {
         },
         from: vi.fn((table: string) => {
           if (table === "profiles") {
-            profileTableReads += 1;
-            return profileTableReads === 1 ? profilesQuery : profileNamesQuery;
+            return profilesQuery;
           }
           if (table === "subscriptions") {
             return subscriptionsQuery;
@@ -110,6 +112,9 @@ describe("Dashboard page billing selection", () => {
       "unpaid",
       "paused",
     ]);
+    expect(teamMembershipsQuery.select).toHaveBeenCalledWith(
+      "user_id,role,created_at,profiles(id,full_name)",
+    );
   });
 
   it("redirects to login when there is no authenticated user", async () => {

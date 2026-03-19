@@ -7,6 +7,7 @@ import { getTeamContextForUser } from "@/lib/team-context";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { syncTeamSeatQuantity } from "@/lib/stripe/seats";
+import { enqueueSeatSyncRetry } from "@/lib/stripe/seat-sync-retries";
 import { logger } from "@/lib/logger";
 
 type TeamMembershipRow = {
@@ -156,6 +157,35 @@ export async function DELETE(request: Request, context: TeamMembersRouteContext)
   } catch (error) {
     seatSynced = false;
     logger.error("Removed member but failed to sync Stripe seats", error);
+    try {
+      await enqueueSeatSyncRetry({
+        teamId: teamContext.teamId,
+        source: "team.member.remove",
+        error,
+      });
+    } catch (retryError) {
+      logger.error("Failed to enqueue seat sync retry after member removal", retryError, {
+        teamId: teamContext.teamId,
+      });
+    }
+  }
+
+  if (!seatSynced) {
+    logAuditEvent({
+      action: "team.member.remove",
+      outcome: "failure",
+      actorUserId: user.id,
+      teamId: teamContext.teamId,
+      resourceId: targetUserId,
+      metadata: { reason: "seat_sync_failed" },
+    });
+    return NextResponse.json(
+      {
+        error: "Member removed, but billing sync failed. Please retry shortly.",
+        memberRemoved: true,
+      },
+      { status: 500 },
+    );
   }
 
   logAuditEvent({
@@ -167,5 +197,5 @@ export async function DELETE(request: Request, context: TeamMembersRouteContext)
     metadata: { seatSynced },
   });
 
-  return NextResponse.json({ ok: true, seatSynced });
+  return NextResponse.json({ ok: true, seatSynced: true });
 }

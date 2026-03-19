@@ -85,6 +85,7 @@ create table if not exists public.stripe_webhook_events (
   stripe_event_id text not null unique,
   event_type text not null,
   processed_at timestamptz not null default timezone('utc', now()),
+  claim_token text,
   claim_expires_at timestamptz,
   completed_at timestamptz
 );
@@ -106,6 +107,17 @@ create table if not exists public.audit_events (
   resource_id text,
   metadata jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default timezone('utc', now())
+);
+
+create table if not exists public.seat_sync_retries (
+  team_id uuid primary key references public.teams(id) on delete cascade,
+  reason text not null,
+  attempt_count integer not null default 0 check (attempt_count >= 0),
+  last_error text,
+  next_attempt_at timestamptz not null default timezone('utc', now()),
+  last_attempt_at timestamptz,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
 );
 
 create index if not exists idx_profiles_created_at on public.profiles(created_at desc);
@@ -141,6 +153,7 @@ create index if not exists idx_audit_events_created_at on public.audit_events(cr
 create index if not exists idx_audit_events_action_created_at on public.audit_events(action, created_at desc);
 create index if not exists idx_audit_events_team_id_created_at on public.audit_events(team_id, created_at desc);
 create index if not exists idx_audit_events_actor_user_id_created_at on public.audit_events(actor_user_id, created_at desc);
+create index if not exists idx_seat_sync_retries_next_attempt_at on public.seat_sync_retries(next_attempt_at asc);
 
 create or replace function public.set_updated_at()
 returns trigger
@@ -214,6 +227,11 @@ for each row execute function public.set_updated_at();
 drop trigger if exists rate_limit_windows_set_updated_at on public.rate_limit_windows;
 create trigger rate_limit_windows_set_updated_at
 before update on public.rate_limit_windows
+for each row execute function public.set_updated_at();
+
+drop trigger if exists seat_sync_retries_set_updated_at on public.seat_sync_retries;
+create trigger seat_sync_retries_set_updated_at
+before update on public.seat_sync_retries
 for each row execute function public.set_updated_at();
 
 create or replace function public.check_rate_limit(
@@ -629,9 +647,13 @@ alter table public.team_invites enable row level security;
 alter table public.stripe_webhook_events enable row level security;
 alter table public.rate_limit_windows enable row level security;
 alter table public.audit_events enable row level security;
+alter table public.seat_sync_retries enable row level security;
 
 alter table public.subscriptions
 add column if not exists seat_quantity integer;
+
+alter table public.stripe_webhook_events
+add column if not exists claim_token text;
 
 update public.subscriptions
 set seat_quantity = 1

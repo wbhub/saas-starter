@@ -287,4 +287,32 @@ describe("syncSubscription", () => {
     );
     consoleWarn.mockRestore();
   });
+
+  it("throws when subscription has no items", async () => {
+    const adminMock = createAdminMock();
+
+    vi.doMock("@/lib/supabase/admin", () => ({
+      createAdminClient: () => adminMock,
+    }));
+    vi.doMock("@/lib/stripe/server", () => ({
+      stripe: {
+        customers: { retrieve: vi.fn() },
+      },
+    }));
+
+    const { syncSubscription } = await import("./sync");
+
+    await expect(
+      syncSubscription({
+        id: "sub_missing_items",
+        created: 1_700_000_000,
+        status: "active",
+        customer: "cus_123",
+        cancel_at_period_end: false,
+        items: { data: [] },
+      } as never),
+    ).rejects.toThrow("has no items and cannot be synchronized");
+
+    expect(adminMock.rpc).not.toHaveBeenCalled();
+  });
 });

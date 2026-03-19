@@ -31,6 +31,12 @@ export function AuthForm({
   const isLogin = mode === "login";
   const messageId = `${mode}-auth-message`;
   const passwordHintId = `${mode}-password-hint`;
+  const passwordDescribedBy = [
+    !isLogin ? passwordHintId : "",
+    message ? messageId : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -109,6 +115,7 @@ export function AuthForm({
           <input
             type="email"
             required
+            autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             aria-describedby={message ? messageId : undefined}
@@ -124,16 +131,19 @@ export function AuthForm({
             type="password"
             required
             minLength={8}
+            autoComplete={isLogin ? "current-password" : "new-password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            aria-describedby={`${passwordHintId}${message ? ` ${messageId}` : ""}`}
+            aria-describedby={passwordDescribedBy || undefined}
             aria-invalid={messageType === "error" && Boolean(message)}
             className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-[color:var(--foreground)] outline-none ring-[color:var(--ring)] placeholder:text-[color:var(--muted-foreground)] focus:ring-2"
           />
         </label>
-        <p id={passwordHintId} className="text-xs text-[color:var(--muted-foreground)]">
-          Use 8-128 chars with uppercase, lowercase, number, and symbol.
-        </p>
+        {!isLogin ? (
+          <p id={passwordHintId} className="text-xs text-[color:var(--muted-foreground)]">
+            Use 8-128 chars with uppercase, lowercase, number, and symbol.
+          </p>
+        ) : null}
         <button
           type="submit"
           disabled={loading}

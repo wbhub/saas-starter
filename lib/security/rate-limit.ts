@@ -12,7 +12,9 @@ type RateLimitResult = {
   retryAfterSeconds: number;
 };
 
-const PRODUCTION_FALLBACK_RETRY_AFTER_SECONDS = 60;
+const PRODUCTION_FAIL_OPEN_WINDOW_MS = 5 * SECOND_MS;
+const PRODUCTION_CIRCUIT_BREAKER_FAILURE_THRESHOLD = 3;
+const PRODUCTION_CIRCUIT_BREAKER_COOLDOWN_MS = 30 * SECOND_MS;
 
 type InMemoryRateLimitRecord = {
   count: number;
@@ -20,6 +22,11 @@ type InMemoryRateLimitRecord = {
 };
 
 type InMemoryRateLimitStore = Map<string, InMemoryRateLimitRecord>;
+type CircuitBreakerState = {
+  consecutiveFailures: number;
+  firstFailureAt: number;
+  openUntil: number;
+};
 
 const FALLBACK_SWEEP_INTERVAL_MS = 30 * SECOND_MS;
 const FALLBACK_MAX_ENTRIES = 10_000;
@@ -27,6 +34,7 @@ const FALLBACK_MAX_ENTRIES = 10_000;
 declare global {
   var __saasStarterRateLimitStore: InMemoryRateLimitStore | undefined;
   var __saasStarterRateLimitLastSweepAt: number | undefined;
+  var __saasStarterRateLimitCircuitBreaker: CircuitBreakerState | undefined;
 }
 
 function getStore(): InMemoryRateLimitStore {
@@ -66,6 +74,25 @@ function cleanupExpiredEntries(store: InMemoryRateLimitStore, now: number) {
   }
 }
 
+function getCircuitBreakerState(): CircuitBreakerState {
+  if (!globalThis.__saasStarterRateLimitCircuitBreaker) {
+    globalThis.__saasStarterRateLimitCircuitBreaker = {
+      consecutiveFailures: 0,
+      firstFailureAt: 0,
+      openUntil: 0,
+    };
+  }
+
+  return globalThis.__saasStarterRateLimitCircuitBreaker;
+}
+
+function resetCircuitBreaker() {
+  const state = getCircuitBreakerState();
+  state.consecutiveFailures = 0;
+  state.firstFailureAt = 0;
+  state.openUntil = 0;
+}
+
 function fallbackCheckRateLimit({
   key,
   limit,
@@ -98,6 +125,14 @@ export async function checkRateLimit({
   limit,
   windowMs,
 }: RateLimitOptions): Promise<RateLimitResult> {
+  const isProduction = process.env.NODE_ENV === "production";
+  const now = Date.now();
+  const circuitBreaker = getCircuitBreakerState();
+
+  if (isProduction && circuitBreaker.openUntil > now) {
+    return fallbackCheckRateLimit({ key, limit, windowMs });
+  }
+
   try {
     const supabase = createAdminClient();
     const windowSeconds = Math.max(1, Math.ceil(windowMs / 1000));
@@ -122,14 +157,39 @@ export async function checkRateLimit({
         retryAfterSeconds: Math.max(0, Math.floor(row.retry_after_seconds)),
       };
     }
+
+    if (isProduction) {
+      resetCircuitBreaker();
+    }
   } catch (error) {
-    if (process.env.NODE_ENV === "production") {
-      // Fail closed in production to avoid silently weakening rate limits.
-      console.error("Distributed rate limit check failed; denying request in production", error);
-      return {
-        allowed: false,
-        retryAfterSeconds: PRODUCTION_FALLBACK_RETRY_AFTER_SECONDS,
-      };
+    if (isProduction) {
+      const state = getCircuitBreakerState();
+      state.consecutiveFailures += 1;
+      if (state.consecutiveFailures === 1) {
+        state.firstFailureAt = now;
+      }
+
+      const failOpenWindowActive = now - state.firstFailureAt <= PRODUCTION_FAIL_OPEN_WINDOW_MS;
+      if (
+        state.consecutiveFailures >= PRODUCTION_CIRCUIT_BREAKER_FAILURE_THRESHOLD &&
+        !failOpenWindowActive
+      ) {
+        state.openUntil = now + PRODUCTION_CIRCUIT_BREAKER_COOLDOWN_MS;
+      }
+
+      if (failOpenWindowActive) {
+        console.error(
+          "Distributed rate limit check failed; temporarily allowing traffic while fail-open window is active",
+          error,
+        );
+        return { allowed: true, retryAfterSeconds: 0 };
+      }
+
+      console.error(
+        "Distributed rate limit check failed in production; using in-memory fallback",
+        error,
+      );
+      return fallbackCheckRateLimit({ key, limit, windowMs });
     }
 
     console.error("Distributed rate limit check failed, using development fallback", error);

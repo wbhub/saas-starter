@@ -43,6 +43,7 @@ export function TeamInviteCard({
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"member" | "admin">("member");
   const [submitting, setSubmitting] = useState(false);
+  const [removingUserId, setRemovingUserId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
 
@@ -96,6 +97,14 @@ export function TeamInviteCard({
   }
 
   async function removeMember(targetUserId: string) {
+    const confirmed = window.confirm(
+      "Remove this member from the team? They will immediately lose access.",
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    setRemovingUserId(targetUserId);
     setFeedback(null);
 
     try {
@@ -114,6 +123,8 @@ export function TeamInviteCard({
       router.refresh();
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : "Failed to remove member.");
+    } finally {
+      setRemovingUserId(null);
     }
   }
 
@@ -159,10 +170,11 @@ export function TeamInviteCard({
             {canRemoveMember(member) ? (
               <button
                 type="button"
+                disabled={removingUserId !== null}
                 onClick={() => removeMember(member.userId)}
-                className="ml-2 rounded-md border border-rose-300/60 px-2 py-0.5 text-xs text-rose-700 hover:bg-rose-50 dark:border-rose-700/60 dark:text-rose-200 dark:hover:bg-rose-950/30"
+                className="ml-2 rounded-md border border-rose-300/60 px-2 py-0.5 text-xs text-rose-700 hover:bg-rose-50 disabled:opacity-60 dark:border-rose-700/60 dark:text-rose-200 dark:hover:bg-rose-950/30"
               >
-                Remove
+                {removingUserId === member.userId ? "Removing..." : "Remove"}
               </button>
             ) : null}
           </div>

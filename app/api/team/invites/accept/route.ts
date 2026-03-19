@@ -10,6 +10,7 @@ import { checkRateLimit } from "@/lib/security/rate-limit";
 import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { hashInviteToken } from "@/lib/team-invites";
 import { syncTeamSeatQuantity } from "@/lib/stripe/seats";
+import { enqueueSeatSyncRetry } from "@/lib/stripe/seat-sync-retries";
 import { logger } from "@/lib/logger";
 const acceptInvitePayloadSchema = z.object({
   token: z.string().trim().min(10).max(256),
@@ -128,14 +129,45 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unable to accept invite." }, { status: 500 });
   }
 
+  let seatSynced = true;
   if (rpcRow.team_id) {
     try {
       await syncTeamSeatQuantity(rpcRow.team_id, {
         idempotencyKey: `seat-sync:accept-invite:${rpcRow.team_id}:${user.id}`,
       });
     } catch (error) {
+      seatSynced = false;
       logger.error("Accepted invite but failed to sync Stripe seat quantity", error);
+      try {
+        await enqueueSeatSyncRetry({
+          teamId: rpcRow.team_id,
+          source: "team.invite.accept",
+          error,
+        });
+      } catch (retryError) {
+        logger.error("Failed to enqueue seat sync retry after invite acceptance", retryError, {
+          teamId: rpcRow.team_id,
+        });
+      }
     }
+  }
+
+  if (!seatSynced) {
+    logAuditEvent({
+      action: "team.invite.accept",
+      outcome: "failure",
+      actorUserId: user.id,
+      teamId: rpcRow.team_id,
+      metadata: { reason: "seat_sync_failed" },
+    });
+    return NextResponse.json(
+      {
+        error: "Invite accepted, but billing sync failed. Please retry shortly.",
+        inviteAccepted: true,
+        teamName: rpcRow.team_name ?? "Team",
+      },
+      { status: 500 },
+    );
   }
 
   logAuditEvent({
@@ -143,6 +175,7 @@ export async function POST(request: Request) {
     outcome: "success",
     actorUserId: user.id,
     teamId: rpcRow.team_id,
+    metadata: { seatSynced: true },
   });
 
   return NextResponse.json({

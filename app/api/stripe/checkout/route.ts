@@ -192,6 +192,7 @@ export async function POST(req: Request) {
     }
 
     if (!customerId) {
+      const customerIdempotencyKey = getScopedIdempotencyKey(idempotencyKey, "customer");
       const customer = await stripe.customers.create(
         {
           email: user.email,
@@ -200,8 +201,8 @@ export async function POST(req: Request) {
             supabase_user_id: user.id,
           },
         },
-        getScopedIdempotencyKey(idempotencyKey, "customer")
-          ? { idempotencyKey: getScopedIdempotencyKey(idempotencyKey, "customer") }
+        customerIdempotencyKey
+          ? { idempotencyKey: customerIdempotencyKey }
           : undefined,
       );
       customerId = customer.id;
@@ -215,6 +216,7 @@ export async function POST(req: Request) {
       );
     }
 
+    const sessionIdempotencyKey = getScopedIdempotencyKey(idempotencyKey, "session");
     const session = await stripe.checkout.sessions.create(
       {
         mode: "subscription",
@@ -229,8 +231,8 @@ export async function POST(req: Request) {
           supabase_user_id: user.id,
         },
       },
-      getScopedIdempotencyKey(idempotencyKey, "session")
-        ? { idempotencyKey: getScopedIdempotencyKey(idempotencyKey, "session") }
+      sessionIdempotencyKey
+        ? { idempotencyKey: sessionIdempotencyKey }
         : undefined,
     );
 

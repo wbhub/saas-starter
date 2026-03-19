@@ -143,7 +143,9 @@ export async function syncSubscription(
       stripeCustomerId,
       teamId,
     });
-    return;
+    throw new Error(
+      `Stripe subscription ${subscription.id} has no items and cannot be synchronized.`,
+    );
   }
 
   const { data, error } = await getAdminClient().rpc("sync_stripe_subscription_atomic", {
