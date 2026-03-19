@@ -5,14 +5,12 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getClientIp } from "@/lib/http/client-ip";
 import { requireJsonContentType } from "@/lib/http/content-type";
 import { checkRateLimit } from "@/lib/security/rate-limit";
+import { isValidEmail } from "@/lib/validation";
+import { logger } from "@/lib/logger";
 
 type ForgotPasswordPayload = {
   email?: string;
 };
-
-function isValidEmail(email: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
 
 const GENERIC_SUCCESS_MESSAGE =
   "If an account exists for that email, a reset link has been sent.";
@@ -84,7 +82,7 @@ export async function POST(request: Request) {
     });
 
     if (error) {
-      console.error("Failed to generate password reset link", error);
+      logger.error("Failed to generate password reset link", error);
       if (isProviderOutageError(error)) {
         return NextResponse.json({ message: GENERIC_FAILURE_MESSAGE }, { status: 503 });
       }
@@ -92,7 +90,7 @@ export async function POST(request: Request) {
     }
 
     if (!data.properties?.action_link) {
-      console.error("Password reset link missing from Supabase response");
+      logger.error("Password reset link missing from Supabase response");
       return NextResponse.json({ message: GENERIC_SUCCESS_MESSAGE });
     }
 
@@ -114,14 +112,13 @@ export async function POST(request: Request) {
         ].join("\n"),
       });
     } catch (error) {
-      console.error("Failed to send password reset email", error);
+      logger.error("Failed to send password reset email", error);
       return NextResponse.json({ message: GENERIC_SUCCESS_MESSAGE });
     }
 
     return NextResponse.json({ message: GENERIC_SUCCESS_MESSAGE });
   } catch (error) {
-    // Keep response generic to avoid leaking account existence.
-    console.error("Forgot-password route failed", error);
+    logger.error("Forgot-password route failed", error);
     if (isProviderOutageError(error)) {
       return NextResponse.json({ message: GENERIC_FAILURE_MESSAGE }, { status: 503 });
     }

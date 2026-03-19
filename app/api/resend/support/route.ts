@@ -8,6 +8,7 @@ import {
 import { getClientIp } from "@/lib/http/client-ip";
 import { requireJsonContentType } from "@/lib/http/content-type";
 import { checkRateLimit } from "@/lib/security/rate-limit";
+import { logger } from "@/lib/logger";
 
 type SupportPayload = {
   subject?: string;
@@ -116,7 +117,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    console.error("Failed to send support email", error);
+    logger.error("Failed to send support email", error);
     return NextResponse.json(
       { error: "Unable to send support email right now. Please try again." },
       { status: 500 },

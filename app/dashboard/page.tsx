@@ -6,6 +6,8 @@ import { getPlanByPriceId } from "@/lib/stripe/config";
 import { createClient } from "@/lib/supabase/server";
 import { logout } from "@/app/dashboard/actions";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LIVE_SUBSCRIPTION_STATUSES, type SubscriptionStatus } from "@/lib/stripe/plans";
+import { logger } from "@/lib/logger";
 
 type ProfileRow = {
   id: string;
@@ -14,28 +16,11 @@ type ProfileRow = {
 };
 
 type SubscriptionRow = {
-  status:
-    | "incomplete"
-    | "incomplete_expired"
-    | "trialing"
-    | "active"
-    | "past_due"
-    | "canceled"
-    | "unpaid"
-    | "paused";
+  status: SubscriptionStatus;
   stripe_price_id: string;
   current_period_end: string | null;
   cancel_at_period_end: boolean;
 };
-
-const BILLING_SUBSCRIPTION_STATUSES: ReadonlyArray<SubscriptionRow["status"]> = [
-  "incomplete",
-  "trialing",
-  "active",
-  "past_due",
-  "unpaid",
-  "paused",
-];
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -57,19 +42,19 @@ export default async function DashboardPage() {
       .from("subscriptions")
       .select("status,stripe_price_id,current_period_end,cancel_at_period_end")
       .eq("user_id", user.id)
-      .in("status", BILLING_SUBSCRIPTION_STATUSES)
+      .in("status", LIVE_SUBSCRIPTION_STATUSES)
       .order("current_period_end", { ascending: false })
       .limit(1)
       .maybeSingle<SubscriptionRow>(),
   ]);
 
   if (profileResult.error) {
-    console.error("Failed to load dashboard profile", profileResult.error);
+    logger.error("Failed to load dashboard profile", profileResult.error);
     throw new Error("Failed to load dashboard data");
   }
 
   if (subscriptionResult.error) {
-    console.error("Failed to load dashboard subscription", subscriptionResult.error);
+    logger.error("Failed to load dashboard subscription", subscriptionResult.error);
     throw new Error("Failed to load dashboard data");
   }
 
@@ -80,7 +65,7 @@ export default async function DashboardPage() {
   const currentPlan = getPlanByPriceId(subscription?.stripe_price_id);
   const status = subscription?.status;
   const hasSubscription =
-    status !== undefined && BILLING_SUBSCRIPTION_STATUSES.includes(status);
+    status !== undefined && LIVE_SUBSCRIPTION_STATUSES.includes(status);
 
   return (
     <main className="min-h-screen bg-[color:var(--background)] text-[color:var(--foreground)]">

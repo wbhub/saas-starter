@@ -1,3 +1,26 @@
+export const ALL_SUBSCRIPTION_STATUSES = [
+  "incomplete",
+  "incomplete_expired",
+  "trialing",
+  "active",
+  "past_due",
+  "canceled",
+  "unpaid",
+  "paused",
+] as const;
+
+export type SubscriptionStatus = (typeof ALL_SUBSCRIPTION_STATUSES)[number];
+
+/** Statuses that represent an in-force subscription (excludes terminal states). */
+export const LIVE_SUBSCRIPTION_STATUSES: readonly SubscriptionStatus[] = [
+  "incomplete",
+  "trialing",
+  "active",
+  "past_due",
+  "unpaid",
+  "paused",
+];
+
 export const PLAN_KEYS = ["starter", "growth", "pro"] as const;
 export type PlanKey = (typeof PLAN_KEYS)[number];
 
