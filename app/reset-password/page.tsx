@@ -1,10 +1,15 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { Sparkles } from "lucide-react";
 import { ResetPasswordForm } from "@/components/reset-password-form";
 import { SiteFooter } from "@/components/site-footer";
 import { ThemeToggle } from "@/components/theme-toggle";
 
-export default function ResetPasswordPage() {
+const PASSWORD_RECOVERY_COOKIE = "auth_password_recovery";
+
+export default async function ResetPasswordPage() {
+  const hasRecoveryProof = (await cookies()).get(PASSWORD_RECOVERY_COOKIE)?.value === "1";
+
   return (
     <div className="flex min-h-screen flex-col bg-[color:var(--background)] text-[color:var(--foreground)]">
       <header className="border-b app-border-subtle">
@@ -39,7 +44,7 @@ export default function ResetPasswordPage() {
       </header>
 
       <main className="flex flex-1 flex-col items-center justify-center px-4 py-12">
-        <ResetPasswordForm />
+        <ResetPasswordForm hasRecoveryProof={hasRecoveryProof} />
       </main>
 
       <SiteFooter />

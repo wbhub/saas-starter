@@ -5,7 +5,54 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-export function ResetPasswordForm() {
+const RECOVERY_MARKER_KEY = "saas-starter-password-recovery";
+const RECOVERY_MARKER_MAX_AGE_MS = 15 * 60 * 1000;
+
+function saveRecoveryMarker() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.sessionStorage.setItem(
+    RECOVERY_MARKER_KEY,
+    JSON.stringify({ issuedAt: Date.now() }),
+  );
+}
+
+function clearRecoveryMarker() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.sessionStorage.removeItem(RECOVERY_MARKER_KEY);
+}
+
+function hasValidRecoveryMarker() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const raw = window.sessionStorage.getItem(RECOVERY_MARKER_KEY);
+  if (!raw) {
+    return false;
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as { issuedAt?: unknown };
+    if (typeof parsed.issuedAt !== "number") {
+      return false;
+    }
+    return Date.now() - parsed.issuedAt <= RECOVERY_MARKER_MAX_AGE_MS;
+  } catch {
+    return false;
+  }
+}
+
+type ResetPasswordFormProps = {
+  hasRecoveryProof: boolean;
+};
+
+export function ResetPasswordForm({ hasRecoveryProof }: ResetPasswordFormProps) {
   const router = useRouter();
   const [supabase] = useState(() => createClient());
   const [password, setPassword] = useState("");
@@ -18,17 +65,44 @@ export function ResetPasswordForm() {
   const messageId = "reset-password-message";
   const passwordHintId = "reset-password-hint";
 
+  async function clearRecoveryCookie() {
+    await fetch("/reset-password/complete", {
+      method: "POST",
+      credentials: "same-origin",
+      cache: "no-store",
+    });
+  }
+
   useEffect(() => {
+    let active = true;
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        saveRecoveryMarker();
+        if (active) {
+          setHasRecoverySession(true);
+        }
+      }
+    });
+
     async function checkSession() {
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      setHasRecoverySession(Boolean(session));
+      const hasRecoverySessionProof = hasRecoveryProof || hasValidRecoveryMarker();
+      setHasRecoverySession(Boolean(session) && hasRecoverySessionProof);
       setCheckingSession(false);
     }
 
     checkSession();
-  }, [supabase]);
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
+  }, [hasRecoveryProof, supabase]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -49,8 +123,18 @@ export function ResetPasswordForm() {
     setLoading(true);
 
     try {
+      if (!(hasRecoveryProof || hasValidRecoveryMarker())) {
+        setMessageType("error");
+        setMessage("Reset link is invalid or expired. Please request a new link.");
+        return;
+      }
+
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
+
+      // Best effort cleanup for the short-lived recovery proof cookie.
+      await clearRecoveryCookie().catch(() => undefined);
+      clearRecoveryMarker();
       setMessageType("success");
       setMessage("Password updated. Redirecting to login...");
       setTimeout(() => {
