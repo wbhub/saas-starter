@@ -12,7 +12,7 @@ afterEach(() => {
 });
 
 describe("getClientIp", () => {
-  it("does not trust proxy headers by default", () => {
+  it("returns null when proxy headers are not trusted", () => {
     delete process.env.TRUST_PROXY_HEADERS;
     const request = new Request("https://example.com", {
       headers: {
@@ -22,14 +22,14 @@ describe("getClientIp", () => {
     });
 
     const ip = getClientIp(request);
-    expect(ip).toMatch(/^unknown:[a-f0-9]{16}$/);
+    expect(ip).toBeNull();
   });
 
   it("uses trusted proxy headers when explicitly enabled", () => {
     process.env.TRUST_PROXY_HEADERS = "true";
     const request = new Request("https://example.com", {
       headers: {
-        "x-vercel-forwarded-for": "198.51.100.10",
+        "x-forwarded-for": "198.51.100.10",
       },
     });
 

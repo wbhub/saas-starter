@@ -13,6 +13,21 @@ const TRACKED_STATUSES = [
   "paused",
 ] as const;
 
+const LIVE_SUBSCRIPTION_STATUSES = [
+  "incomplete",
+  "trialing",
+  "active",
+  "past_due",
+  "unpaid",
+  "paused",
+] as const;
+
+function isLiveSubscriptionStatus(status: string) {
+  return LIVE_SUBSCRIPTION_STATUSES.includes(
+    status as (typeof LIVE_SUBSCRIPTION_STATUSES)[number],
+  );
+}
+
 function toIsoOrNull(value?: number | null) {
   if (!value) return null;
   return new Date(value * 1000).toISOString();
@@ -86,6 +101,26 @@ export async function syncSubscription(subscription: Stripe.Subscription) {
   if (!item) return;
 
   const supabase = createAdminClient();
+  if (isLiveSubscriptionStatus(status)) {
+    // Keep one live subscription row per user to match DB invariant.
+    const { error: closeOtherLiveSubscriptionsError } = await supabase
+      .from("subscriptions")
+      .update({
+        status: "canceled",
+        cancel_at_period_end: true,
+        current_period_end: new Date().toISOString(),
+      })
+      .eq("user_id", userId)
+      .neq("stripe_subscription_id", subscription.id)
+      .in("status", [...LIVE_SUBSCRIPTION_STATUSES]);
+
+    if (closeOtherLiveSubscriptionsError) {
+      throw new Error(
+        `Failed to reconcile existing live subscriptions: ${closeOtherLiveSubscriptionsError.message}`,
+      );
+    }
+  }
+
   const { error } = await supabase.from("subscriptions").upsert(
     {
       user_id: userId,

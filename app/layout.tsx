@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { IntercomProvider } from "@/components/intercom-provider";
+import { env } from "@/lib/env";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -26,7 +27,7 @@ export default function RootLayout({
       <body className={`${inter.variable} font-sans antialiased`}>
         <ThemeProvider>
           <Suspense fallback={null}>
-            <IntercomProvider appId={process.env.NEXT_PUBLIC_INTERCOM_APP_ID} />
+            <IntercomProvider appId={env.NEXT_PUBLIC_INTERCOM_APP_ID} />
           </Suspense>
           {children}
         </ThemeProvider>

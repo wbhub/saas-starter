@@ -22,9 +22,12 @@ export async function POST(request: Request) {
     | null;
   const email = body?.email?.trim().toLowerCase() ?? "";
   const clientIp = getClientIp(request);
+  const ipRateLimitKey = clientIp
+    ? `forgot-password:ip:${clientIp}`
+    : "forgot-password:ip:unavailable";
 
   const ipRateLimit = await checkRateLimit({
-    key: `forgot-password:ip:${clientIp}`,
+    key: ipRateLimitKey,
     limit: 10,
     windowMs: 10 * 60 * 1000,
   });

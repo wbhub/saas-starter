@@ -30,11 +30,13 @@ export async function POST(request: Request) {
     windowMs: 10 * 60 * 1000,
   });
 
-  const ipRateLimitPromise = checkRateLimit({
-    key: `support:ip:${clientIp}`,
-    limit: 20,
-    windowMs: 10 * 60 * 1000,
-  });
+  const ipRateLimitPromise = clientIp
+    ? checkRateLimit({
+        key: `support:ip:${clientIp}`,
+        limit: 20,
+        windowMs: 10 * 60 * 1000,
+      })
+    : Promise.resolve({ allowed: true, retryAfterSeconds: 0 });
 
   const [userRateLimit, ipRateLimit] = await Promise.all([
     userRateLimitPromise,

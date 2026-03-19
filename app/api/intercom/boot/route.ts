@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { signIntercomUserId } from "@/lib/intercom/signature";
+import { env } from "@/lib/env";
 
 type IntercomBootResponse = {
   user: {
@@ -22,7 +23,7 @@ export async function GET() {
     return NextResponse.json<IntercomBootResponse>({ user: null });
   }
 
-  const identitySecret = process.env.INTERCOM_IDENTITY_SECRET;
+  const identitySecret = env.INTERCOM_IDENTITY_SECRET;
   if (!identitySecret) {
     // Fail closed: do not expose spoofable identifiers without a signed hash.
     return NextResponse.json<IntercomBootResponse>({ user: null });

@@ -1,5 +1,5 @@
-import { createHash } from "crypto";
 import { isIP } from "net";
+import { env } from "@/lib/env";
 
 function extractFirstValidIp(value: string | null) {
   if (!value) return null;
@@ -18,34 +18,43 @@ function extractFirstValidIp(value: string | null) {
   return null;
 }
 
-function createFallbackFingerprint(request: Request) {
-  const userAgent = request.headers.get("user-agent") ?? "";
-  const acceptLanguage = request.headers.get("accept-language") ?? "";
-  const forwardedHost = request.headers.get("x-forwarded-host") ?? "";
-  return createHash("sha256")
-    .update(`${userAgent}|${acceptLanguage}|${forwardedHost}`)
-    .digest("hex")
-    .slice(0, 16);
+const DEFAULT_TRUSTED_PROXY_HEADER_KEYS = [
+  "x-forwarded-for",
+  "x-vercel-forwarded-for",
+  "cf-connecting-ip",
+  "fly-client-ip",
+  "fastly-client-ip",
+  "x-real-ip",
+];
+
+function getTrustedProxyHeaderKeys() {
+  const configured = env.TRUSTED_PROXY_HEADER_NAMES;
+  if (!configured) {
+    return DEFAULT_TRUSTED_PROXY_HEADER_KEYS;
+  }
+
+  const keys = configured
+    .split(",")
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+
+  if (keys.length === 0) {
+    return DEFAULT_TRUSTED_PROXY_HEADER_KEYS;
+  }
+
+  return [...new Set(keys)];
 }
 
 export function getClientIp(request: Request) {
-  const trustProxyHeaders = process.env.TRUST_PROXY_HEADERS === "true";
-  if (!trustProxyHeaders) {
-    return `unknown:${createFallbackFingerprint(request)}`;
+  if (!env.TRUST_PROXY_HEADERS) {
+    return null;
   }
 
-  const trustedHeaderKeys = [
-    "x-vercel-forwarded-for",
-    "cf-connecting-ip",
-    "fly-client-ip",
-    "fastly-client-ip",
-  ];
-
-  for (const headerKey of trustedHeaderKeys) {
+  for (const headerKey of getTrustedProxyHeaderKeys()) {
     const trustedIp = extractFirstValidIp(request.headers.get(headerKey));
     if (trustedIp) return trustedIp;
   }
 
-  return `unknown:${createFallbackFingerprint(request)}`;
+  return null;
 }
 
