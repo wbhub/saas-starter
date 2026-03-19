@@ -25,6 +25,23 @@ function generateCspNonce() {
 }
 
 function buildCspHeader(nonce: string) {
+  // Keep development ergonomics intact (Next dev overlays/HMR/devtools rely on
+  // inline/eval/websocket behavior that strict production CSP blocks).
+  if (process.env.NODE_ENV !== "production") {
+    return [
+      "default-src 'self'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'",
+      "object-src 'none'",
+      "img-src 'self' data: blob: https: http:",
+      "style-src 'self' 'unsafe-inline'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https: http:",
+      "connect-src 'self' ws: wss: https: http:",
+      "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
+    ].join("; ");
+  }
+
   const supabaseOrigin = getSupabaseOrigin();
   const intercomEnabled = Boolean(process.env.NEXT_PUBLIC_INTERCOM_APP_ID);
 

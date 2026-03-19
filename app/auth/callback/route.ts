@@ -28,6 +28,7 @@ function getSafeNextPath(next: string | null) {
 const CALLBACK_RATE_LIMIT_COOKIE = "auth_callback_client";
 const CALLBACK_RATE_LIMIT_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
 const PASSWORD_RECOVERY_COOKIE = "auth_password_recovery";
+const PASSWORD_RECOVERY_USER_COOKIE = "auth_password_recovery_user";
 const PASSWORD_RECOVERY_COOKIE_MAX_AGE_SECONDS = 10 * 60;
 
 function getCallbackClientId(request: NextRequest) {
@@ -70,10 +71,11 @@ function maybeSetCallbackCookie(response: NextResponse, request: NextRequest, is
   return response;
 }
 
-function maybeSetPasswordRecoveryCookie(
+function maybeSetPasswordRecoveryCookies(
   response: NextResponse,
   request: NextRequest,
   safeNextPath: string,
+  recoveryUserId: string,
 ) {
   if (!safeNextPath.startsWith("/reset-password")) {
     return response;
@@ -82,6 +84,15 @@ function maybeSetPasswordRecoveryCookie(
   response.cookies.set({
     name: PASSWORD_RECOVERY_COOKIE,
     value: "1",
+    httpOnly: true,
+    sameSite: "lax",
+    secure: request.nextUrl.protocol === "https:",
+    path: "/reset-password",
+    maxAge: PASSWORD_RECOVERY_COOKIE_MAX_AGE_SECONDS,
+  });
+  response.cookies.set({
+    name: PASSWORD_RECOVERY_USER_COOKIE,
+    value: recoveryUserId,
     httpOnly: true,
     sameSite: "lax",
     secure: request.nextUrl.protocol === "https:",
@@ -119,13 +130,21 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  const { data, error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
     const response = NextResponse.redirect(toAbsoluteUrl("/login?error=invalid_code"));
     return maybeSetCallbackCookie(response, request, callbackClientId.isNew, callbackClientId.value);
   }
 
+  const recoveredUserId = data.session?.user.id;
+  if (safeNext.startsWith("/reset-password") && !recoveredUserId) {
+    const response = NextResponse.redirect(toAbsoluteUrl("/login?error=invalid_code"));
+    return maybeSetCallbackCookie(response, request, callbackClientId.isNew, callbackClientId.value);
+  }
+
   const response = NextResponse.redirect(toAbsoluteUrl(safeNext));
-  maybeSetPasswordRecoveryCookie(response, request, safeNext);
+  if (recoveredUserId) {
+    maybeSetPasswordRecoveryCookies(response, request, safeNext, recoveredUserId);
+  }
   return maybeSetCallbackCookie(response, request, callbackClientId.isNew, callbackClientId.value);
 }
