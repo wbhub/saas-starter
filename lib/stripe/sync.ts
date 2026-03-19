@@ -20,11 +20,15 @@ async function getUserIdFromStripeCustomer(
 ) {
   const supabase = createAdminClient();
 
-  const { data: mapping } = await supabase
+  const { data: mapping, error } = await supabase
     .from("stripe_customers")
     .select("user_id")
     .eq("stripe_customer_id", stripeCustomerId)
     .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to load stripe customer mapping: ${error.message}`);
+  }
 
   if (mapping?.user_id) {
     return mapping.user_id;
@@ -46,13 +50,17 @@ export async function upsertStripeCustomer(
 ) {
   const supabase = createAdminClient();
 
-  await supabase.from("stripe_customers").upsert(
+  const { error } = await supabase.from("stripe_customers").upsert(
     {
       user_id: userId,
       stripe_customer_id: stripeCustomerId,
     },
     { onConflict: "user_id" },
   );
+
+  if (error) {
+    throw new Error(`Failed to upsert stripe customer: ${error.message}`);
+  }
 }
 
 export async function syncSubscription(subscription: Stripe.Subscription) {
@@ -75,7 +83,7 @@ export async function syncSubscription(subscription: Stripe.Subscription) {
   if (!item) return;
 
   const supabase = createAdminClient();
-  await supabase.from("subscriptions").upsert(
+  const { error } = await supabase.from("subscriptions").upsert(
     {
       user_id: userId,
       stripe_subscription_id: subscription.id,
@@ -88,4 +96,8 @@ export async function syncSubscription(subscription: Stripe.Subscription) {
     },
     { onConflict: "stripe_subscription_id" },
   );
+
+  if (error) {
+    throw new Error(`Failed to sync subscription: ${error.message}`);
+  }
 }

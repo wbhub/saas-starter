@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+
 export default function DashboardError({
   error,
   reset,
@@ -7,6 +9,11 @@ export default function DashboardError({
   error: Error;
   reset: () => void;
 }) {
+  useEffect(() => {
+    // Keep full details in the browser console for debugging.
+    console.error("Dashboard rendering failed:", error);
+  }, [error]);
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-[color:var(--background)] px-4 text-[color:var(--foreground)]">
       <div className="max-w-md rounded-xl border border-red-200 bg-white p-6 text-center dark:border-red-500/60 dark:bg-slate-900">
@@ -14,7 +21,7 @@ export default function DashboardError({
           Dashboard error
         </h2>
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-          {error.message}
+          Something went wrong while loading your dashboard. Please try again.
         </p>
         <button
           onClick={reset}

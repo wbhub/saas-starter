@@ -33,11 +33,19 @@ create table if not exists public.subscriptions (
   updated_at timestamptz not null default timezone('utc', now())
 );
 
+create table if not exists public.stripe_webhook_events (
+  id uuid primary key default gen_random_uuid(),
+  stripe_event_id text not null unique,
+  event_type text not null,
+  processed_at timestamptz not null default timezone('utc', now())
+);
+
 create index if not exists idx_profiles_created_at on public.profiles(created_at desc);
 create index if not exists idx_stripe_customers_user_id on public.stripe_customers(user_id);
 create index if not exists idx_subscriptions_user_id on public.subscriptions(user_id);
 create index if not exists idx_subscriptions_status on public.subscriptions(status);
 create index if not exists idx_subscriptions_period_end on public.subscriptions(current_period_end desc);
+create index if not exists idx_stripe_webhook_events_processed_at on public.stripe_webhook_events(processed_at desc);
 
 create or replace function public.set_updated_at()
 returns trigger
@@ -85,6 +93,7 @@ for each row execute procedure public.handle_new_user();
 alter table public.profiles enable row level security;
 alter table public.stripe_customers enable row level security;
 alter table public.subscriptions enable row level security;
+alter table public.stripe_webhook_events enable row level security;
 
 drop policy if exists "Users can read own profile" on public.profiles;
 create policy "Users can read own profile"
