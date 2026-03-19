@@ -7,6 +7,7 @@ import { syncSubscription, upsertStripeCustomer } from "@/lib/stripe/sync";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const WEBHOOK_EVENT_RETENTION_DAYS = 30;
+const WEBHOOK_SIGNATURE_TOLERANCE_SECONDS = 300;
 
 async function claimWebhookEvent(event: Stripe.Event) {
   const supabase = createAdminClient();
@@ -101,6 +102,7 @@ export async function POST(req: Request) {
       body,
       signature,
       env.STRIPE_WEBHOOK_SECRET,
+      WEBHOOK_SIGNATURE_TOLERANCE_SECONDS,
     );
   } catch (error) {
     console.error("Stripe webhook signature verification failed", error);
