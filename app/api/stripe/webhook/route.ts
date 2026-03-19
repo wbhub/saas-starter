@@ -3,7 +3,11 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { env } from "@/lib/env";
 import { stripe } from "@/lib/stripe/server";
-import { syncSubscription, upsertStripeCustomer } from "@/lib/stripe/sync";
+import {
+  resolveDefaultTeamIdForUser,
+  syncSubscription,
+  upsertStripeCustomer,
+} from "@/lib/stripe/sync";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireJsonContentType } from "@/lib/http/content-type";
 import { logger } from "@/lib/logger";
@@ -93,7 +97,7 @@ async function markWebhookEventProcessed(eventId: string) {
 }
 
 async function ensureStripeCustomerOwnership(
-  userId: string,
+  teamId: string,
   customerId: string,
 ) {
   const customer = await stripe.customers.retrieve(customerId);
@@ -101,8 +105,8 @@ async function ensureStripeCustomerOwnership(
     throw new Error("Stripe customer was deleted before ownership sync.");
   }
 
-  const currentOwner = customer.metadata?.supabase_user_id;
-  if (currentOwner && currentOwner !== userId) {
+  const currentOwner = customer.metadata?.supabase_team_id;
+  if (currentOwner && currentOwner !== teamId) {
     throw new Error("Stripe customer ownership metadata mismatch.");
   }
 
@@ -110,10 +114,29 @@ async function ensureStripeCustomerOwnership(
     await stripe.customers.update(customerId, {
       metadata: {
         ...customer.metadata,
-        supabase_user_id: userId,
+        supabase_team_id: teamId,
       },
     });
   }
+}
+
+async function resolveTeamIdFromSessionReference(referenceId: string) {
+  const supabase = createAdminClient();
+  const teamLookup = await supabase
+    .from("teams")
+    .select("id")
+    .eq("id", referenceId)
+    .maybeSingle<{ id: string }>();
+
+  if (teamLookup.error) {
+    throw new Error(`Failed to resolve checkout reference as team: ${teamLookup.error.message}`);
+  }
+
+  if (teamLookup.data?.id) {
+    return teamLookup.data.id;
+  }
+
+  return resolveDefaultTeamIdForUser(referenceId);
 }
 
 export async function POST(req: Request) {
@@ -164,11 +187,24 @@ export async function POST(req: Request) {
           typeof session.customer === "string"
             ? session.customer
             : session.customer?.id;
-        const userId = session.client_reference_id;
+        const metadata = session.metadata ?? {};
+        let teamId = metadata.supabase_team_id ?? null;
+        const userId = metadata.supabase_user_id ?? null;
+        const sessionReferenceId = session.client_reference_id;
 
-        if (customerId && userId) {
-          await ensureStripeCustomerOwnership(userId, customerId);
-          await upsertStripeCustomer(userId, customerId);
+        if (!teamId && sessionReferenceId) {
+          // Compatibility path for older sessions where client_reference_id
+          // may contain either a team id (new) or user id (legacy).
+          teamId = await resolveTeamIdFromSessionReference(sessionReferenceId);
+        }
+
+        if (!teamId && userId) {
+          teamId = await resolveDefaultTeamIdForUser(userId);
+        }
+
+        if (customerId && teamId) {
+          await ensureStripeCustomerOwnership(teamId, customerId);
+          await upsertStripeCustomer(teamId, customerId);
         }
 
         // Sync the subscription immediately for resilience — don't rely

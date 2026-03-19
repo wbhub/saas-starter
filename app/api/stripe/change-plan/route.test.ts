@@ -39,6 +39,13 @@ describe("POST /api/stripe/change-plan", () => {
     vi.doMock("@/lib/stripe/sync", () => ({
       syncSubscription: vi.fn(),
     }));
+    vi.doMock("@/lib/team-context", () => ({
+      getTeamContextForUser: vi.fn().mockResolvedValue({
+        teamId: "team_123",
+        teamName: "Acme Team",
+        role: "owner",
+      }),
+    }));
     vi.doMock("@/lib/stripe/server", () => ({
       stripe: {
         subscriptions: {
@@ -52,7 +59,7 @@ describe("POST /api/stripe/change-plan", () => {
         customers: {
           retrieve: vi.fn().mockResolvedValue({
             id: "cus_123",
-            metadata: { supabase_user_id: "different-user" },
+            metadata: { supabase_team_id: "other_team" },
           }),
         },
       },
@@ -125,6 +132,13 @@ describe("POST /api/stripe/change-plan", () => {
     vi.doMock("@/lib/stripe/sync", () => ({
       syncSubscription,
     }));
+    vi.doMock("@/lib/team-context", () => ({
+      getTeamContextForUser: vi.fn().mockResolvedValue({
+        teamId: "team_123",
+        teamName: "Acme Team",
+        role: "owner",
+      }),
+    }));
     vi.doMock("@/lib/stripe/server", () => ({
       stripe: {
         subscriptions: {
@@ -145,7 +159,7 @@ describe("POST /api/stripe/change-plan", () => {
         customers: {
           retrieve: vi.fn().mockResolvedValue({
             id: "cus_123",
-            metadata: { supabase_user_id: "user_123" },
+            metadata: { supabase_team_id: "team_123" },
           }),
         },
       },
@@ -168,10 +182,10 @@ describe("POST /api/stripe/change-plan", () => {
     expect(update).toHaveBeenCalledWith(
       "sub_123",
       {
-        items: [{ id: "si_123", price: "price_growth" }],
+        items: [{ id: "si_123", price: "price_growth", quantity: 1 }],
         proration_behavior: "create_prorations",
       },
-      { idempotencyKey: "change-plan:user_123:growth:client-retry-1" },
+      { idempotencyKey: "change-plan:team_123:growth:client-retry-1" },
     );
     expect(syncSubscription).toHaveBeenCalledOnce();
   });
@@ -226,6 +240,13 @@ describe("POST /api/stripe/change-plan", () => {
     vi.doMock("@/lib/stripe/sync", () => ({
       syncSubscription: vi.fn().mockRejectedValue(new Error("db write failed")),
     }));
+    vi.doMock("@/lib/team-context", () => ({
+      getTeamContextForUser: vi.fn().mockResolvedValue({
+        teamId: "team_123",
+        teamName: "Acme Team",
+        role: "owner",
+      }),
+    }));
     vi.doMock("@/lib/stripe/server", () => ({
       stripe: {
         subscriptions: {
@@ -246,7 +267,7 @@ describe("POST /api/stripe/change-plan", () => {
         customers: {
           retrieve: vi.fn().mockResolvedValue({
             id: "cus_123",
-            metadata: { supabase_user_id: "user_123" },
+            metadata: { supabase_team_id: "team_123" },
           }),
         },
       },

@@ -9,16 +9,17 @@ import { checkRateLimit } from "@/lib/security/rate-limit";
 import { LIVE_SUBSCRIPTION_STATUSES } from "@/lib/stripe/plans";
 import { parsePlanKey } from "@/lib/validation";
 import { logger } from "@/lib/logger";
+import { getTeamContextForUser } from "@/lib/team-context";
 
 const CHECKOUT_IN_FLIGHT_WINDOW_MS = 10 * 1000;
 
-async function isOwnedStripeCustomer(userId: string, customerId: string) {
+async function isOwnedStripeCustomer(teamId: string, customerId: string) {
   const customer = await stripe.customers.retrieve(customerId);
   if ("deleted" in customer) {
     return false;
   }
 
-  return customer.metadata?.supabase_user_id === userId;
+  return customer.metadata?.supabase_team_id === teamId;
 }
 
 async function hasLiveStripeSubscription(customerId: string) {
@@ -33,14 +34,14 @@ async function hasLiveStripeSubscription(customerId: string) {
   );
 }
 
-function getCheckoutIdempotencyKey(request: Request, userId: string, planKey: string) {
+function getCheckoutIdempotencyKey(request: Request, teamId: string, planKey: string) {
   const rawKey = request.headers.get("x-idempotency-key")?.trim();
   if (!rawKey) {
     return undefined;
   }
 
   const safeKey = rawKey.slice(0, 80);
-  return `checkout:${userId}:${planKey}:${safeKey}`;
+  return `checkout:${teamId}:${planKey}:${safeKey}`;
 }
 
 function getScopedIdempotencyKey(baseKey: string | undefined, scope: string) {
@@ -49,6 +50,22 @@ function getScopedIdempotencyKey(baseKey: string | undefined, scope: string) {
   }
 
   return `${baseKey}:${scope}`;
+}
+
+async function getTeamSeatCount(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  teamId: string,
+) {
+  const { count, error } = await supabase
+    .from("team_memberships")
+    .select("id", { count: "exact", head: true })
+    .eq("team_id", teamId);
+
+  if (error) {
+    throw new Error(`Failed to load team seat count: ${error.message}`);
+  }
+
+  return Math.max(1, count ?? 1);
 }
 
 export async function POST(req: Request) {
@@ -66,8 +83,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const teamContext = await getTeamContextForUser(supabase, user.id);
+  if (!teamContext) {
+    return NextResponse.json(
+      { error: "No team membership found for this account." },
+      { status: 403 },
+    );
+  }
+
   const rateLimit = await checkRateLimit({
-    key: `stripe-checkout:user:${user.id}`,
+    key: `stripe-checkout:team:${teamContext.teamId}`,
     limit: 10,
     windowMs: 60 * 1000,
   });
@@ -91,10 +116,10 @@ export async function POST(req: Request) {
   if (!plan) {
     return NextResponse.json({ error: "Invalid plan selected" }, { status: 400 });
   }
-  const idempotencyKey = getCheckoutIdempotencyKey(req, user.id, plan.key);
+  const idempotencyKey = getCheckoutIdempotencyKey(req, teamContext.teamId, plan.key);
 
   const inFlightCheckout = await checkRateLimit({
-    key: `stripe-checkout:inflight:${user.id}:${plan.key}`,
+    key: `stripe-checkout:inflight:${teamContext.teamId}:${plan.key}`,
     limit: 1,
     windowMs: CHECKOUT_IN_FLIGHT_WINDOW_MS,
   });
@@ -112,7 +137,7 @@ export async function POST(req: Request) {
     await supabase
       .from("subscriptions")
       .select("stripe_subscription_id")
-      .eq("user_id", user.id)
+      .eq("team_id", teamContext.teamId)
       .in("status", LIVE_SUBSCRIPTION_STATUSES)
       .order("current_period_end", { ascending: false })
       .limit(1)
@@ -135,7 +160,7 @@ export async function POST(req: Request) {
   const { data: customerRow, error: customerRowError } = await supabase
     .from("stripe_customers")
     .select("stripe_customer_id")
-    .eq("user_id", user.id)
+    .eq("team_id", teamContext.teamId)
     .maybeSingle();
 
   if (customerRowError) {
@@ -148,8 +173,10 @@ export async function POST(req: Request) {
   let customerId = customerRow?.stripe_customer_id;
 
   try {
+    const seatCount = await getTeamSeatCount(supabase, teamContext.teamId);
+
     if (customerId) {
-      const isOwned = await isOwnedStripeCustomer(user.id, customerId);
+      const isOwned = await isOwnedStripeCustomer(teamContext.teamId, customerId);
       if (!isOwned) {
         customerId = undefined;
       }
@@ -160,6 +187,7 @@ export async function POST(req: Request) {
         {
           email: user.email,
           metadata: {
+            supabase_team_id: teamContext.teamId,
             supabase_user_id: user.id,
           },
         },
@@ -168,7 +196,7 @@ export async function POST(req: Request) {
           : undefined,
       );
       customerId = customer.id;
-      await upsertStripeCustomer(user.id, customerId);
+      await upsertStripeCustomer(teamContext.teamId, customerId);
     }
 
     if (await hasLiveStripeSubscription(customerId)) {
@@ -182,12 +210,13 @@ export async function POST(req: Request) {
       {
         mode: "subscription",
         customer: customerId,
-        client_reference_id: user.id,
+        client_reference_id: teamContext.teamId,
         payment_method_types: ["card"],
-        line_items: [{ price: plan.priceId, quantity: 1 }],
+        line_items: [{ price: plan.priceId, quantity: seatCount }],
         success_url: `${env.NEXT_PUBLIC_APP_URL}/dashboard?checkout=success`,
         cancel_url: `${env.NEXT_PUBLIC_APP_URL}/dashboard?checkout=canceled`,
         metadata: {
+          supabase_team_id: teamContext.teamId,
           supabase_user_id: user.id,
         },
       },

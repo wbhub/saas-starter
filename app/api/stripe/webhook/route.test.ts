@@ -70,6 +70,7 @@ describe("POST /api/stripe/webhook", () => {
       },
     }));
     vi.doMock("@/lib/stripe/sync", () => ({
+      resolveDefaultTeamIdForUser: vi.fn(),
       syncSubscription: vi.fn(),
       upsertStripeCustomer: vi.fn(),
     }));
@@ -108,6 +109,7 @@ describe("POST /api/stripe/webhook", () => {
       },
     }));
     vi.doMock("@/lib/stripe/sync", () => ({
+      resolveDefaultTeamIdForUser: vi.fn(),
       syncSubscription: vi.fn(),
       upsertStripeCustomer: vi.fn(),
     }));
@@ -148,6 +150,7 @@ describe("POST /api/stripe/webhook", () => {
       },
     }));
     vi.doMock("@/lib/stripe/sync", () => ({
+      resolveDefaultTeamIdForUser: vi.fn(),
       syncSubscription: vi.fn(),
       upsertStripeCustomer: vi.fn(),
     }));
@@ -201,11 +204,31 @@ describe("POST /api/stripe/webhook", () => {
       },
     }));
     vi.doMock("@/lib/stripe/sync", () => ({
+      resolveDefaultTeamIdForUser: vi.fn(),
       syncSubscription: vi.fn(),
       upsertStripeCustomer: vi.fn(),
     }));
     vi.doMock("@/lib/supabase/admin", () => ({
-      createAdminClient: () => ({ from: tableMocks.from }),
+      createAdminClient: () => ({
+        from: vi.fn((table: string) => {
+          if (table === "stripe_webhook_events") {
+            return tableMocks.from(table);
+          }
+
+          if (table === "teams") {
+            return {
+              select: vi.fn().mockReturnThis(),
+              eq: vi.fn().mockReturnThis(),
+              maybeSingle: vi.fn().mockResolvedValue({
+                data: { id: "team_123" },
+                error: null,
+              }),
+            };
+          }
+
+          throw new Error(`Unexpected table: ${table}`);
+        }),
+      }),
     }));
 
     const { POST } = await import("./route");
@@ -260,7 +283,7 @@ describe("POST /api/stripe/webhook", () => {
             data: {
               object: {
                 customer: "cus_123",
-                client_reference_id: "user_123",
+                client_reference_id: "team_123",
               },
             },
           })),
@@ -272,11 +295,31 @@ describe("POST /api/stripe/webhook", () => {
       },
     }));
     vi.doMock("@/lib/stripe/sync", () => ({
+      resolveDefaultTeamIdForUser: vi.fn(),
       syncSubscription: vi.fn(),
       upsertStripeCustomer,
     }));
     vi.doMock("@/lib/supabase/admin", () => ({
-      createAdminClient: () => ({ from: tableMocks.from }),
+      createAdminClient: () => ({
+        from: vi.fn((table: string) => {
+          if (table === "stripe_webhook_events") {
+            return tableMocks.from(table);
+          }
+
+          if (table === "teams") {
+            return {
+              select: vi.fn().mockReturnThis(),
+              eq: vi.fn().mockReturnThis(),
+              maybeSingle: vi.fn().mockResolvedValue({
+                data: { id: "team_123" },
+                error: null,
+              }),
+            };
+          }
+
+          throw new Error(`Unexpected table: ${table}`);
+        }),
+      }),
     }));
 
     const { POST } = await import("./route");
@@ -292,10 +335,93 @@ describe("POST /api/stripe/webhook", () => {
     await expect(response.json()).resolves.toEqual({ received: true });
     expect(customerRetrieve).toHaveBeenCalledWith("cus_123");
     expect(customerUpdate).toHaveBeenCalledWith("cus_123", {
-      metadata: { supabase_user_id: "user_123" },
+      metadata: { supabase_team_id: "team_123" },
     });
-    expect(upsertStripeCustomer).toHaveBeenCalledWith("user_123", "cus_123");
+    expect(upsertStripeCustomer).toHaveBeenCalledWith("team_123", "cus_123");
     expect(tableMocks.updateEqIs).toHaveBeenCalledTimes(1);
+
+    mathRandomSpy.mockRestore();
+  });
+
+  it("resolves legacy user-based checkout references to team ownership", async () => {
+    const mathRandomSpy = vi.spyOn(Math, "random").mockReturnValue(1);
+    const tableMocks = createWebhookEventsTableMocks();
+    const upsertStripeCustomer = vi.fn().mockResolvedValue(undefined);
+    const resolveDefaultTeamIdForUser = vi.fn().mockResolvedValue("team_legacy");
+    const customerRetrieve = vi.fn().mockResolvedValue({ id: "cus_legacy", metadata: {} });
+    const customerUpdate = vi.fn().mockResolvedValue({ id: "cus_legacy" });
+
+    vi.doMock("next/headers", () => ({
+      headers: async () =>
+        new Headers({
+          "stripe-signature": "t=1,v1=test",
+        }),
+    }));
+    vi.doMock("@/lib/env", () => ({
+      env: { STRIPE_WEBHOOK_SECRET: "whsec_test" },
+    }));
+    vi.doMock("@/lib/stripe/server", () => ({
+      stripe: {
+        webhooks: {
+          constructEvent: vi.fn(() => ({
+            id: "evt_checkout_legacy",
+            created: 1_700_000_000,
+            type: "checkout.session.completed",
+            data: {
+              object: {
+                customer: "cus_legacy",
+                client_reference_id: "user_legacy",
+              },
+            },
+          })),
+        },
+        customers: {
+          retrieve: customerRetrieve,
+          update: customerUpdate,
+        },
+      },
+    }));
+    vi.doMock("@/lib/stripe/sync", () => ({
+      resolveDefaultTeamIdForUser,
+      syncSubscription: vi.fn(),
+      upsertStripeCustomer,
+    }));
+    vi.doMock("@/lib/supabase/admin", () => ({
+      createAdminClient: () => ({
+        from: vi.fn((table: string) => {
+          if (table === "stripe_webhook_events") {
+            return tableMocks.from(table);
+          }
+
+          if (table === "teams") {
+            return {
+              select: vi.fn().mockReturnThis(),
+              eq: vi.fn().mockReturnThis(),
+              maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+            };
+          }
+
+          throw new Error(`Unexpected table: ${table}`);
+        }),
+      }),
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/stripe/webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ received: true });
+    expect(resolveDefaultTeamIdForUser).toHaveBeenCalledWith("user_legacy");
+    expect(customerUpdate).toHaveBeenCalledWith("cus_legacy", {
+      metadata: { supabase_team_id: "team_legacy" },
+    });
+    expect(upsertStripeCustomer).toHaveBeenCalledWith("team_legacy", "cus_legacy");
 
     mathRandomSpy.mockRestore();
   });
