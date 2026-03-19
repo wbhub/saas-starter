@@ -28,6 +28,31 @@ function getChangePlanIdempotencyKey(request: Request, teamId: string, planKey: 
   return `change-plan:${teamId}:${planKey}:${safeKey}`;
 }
 
+async function isLocalSubscriptionSynced(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  teamId: string,
+  stripeSubscriptionId: string,
+  stripePriceId: string,
+) {
+  const { data, error } = await supabase
+    .from("subscriptions")
+    .select("stripe_price_id,status")
+    .eq("team_id", teamId)
+    .eq("stripe_subscription_id", stripeSubscriptionId)
+    .limit(1)
+    .maybeSingle<{ stripe_price_id: string; status: string }>();
+
+  if (error) {
+    throw new Error(`Failed to verify local subscription sync: ${error.message}`);
+  }
+
+  return (
+    !!data &&
+    data.stripe_price_id === stripePriceId &&
+    LIVE_SUBSCRIPTION_STATUSES.includes(data.status)
+  );
+}
+
 export async function POST(req: Request) {
   const csrfError = verifyCsrfProtection(req);
   if (csrfError) {
@@ -156,6 +181,15 @@ export async function POST(req: Request) {
       await syncSubscription(updated, {
         eventCreatedUnix: Math.floor(Date.now() / 1000),
       });
+      const localSyncComplete = await isLocalSubscriptionSynced(
+        supabase,
+        teamContext.teamId,
+        stripeSubscription.id,
+        plan.priceId,
+      );
+      if (!localSyncComplete) {
+        throw new Error("Subscription sync completed, but local state does not match target plan.");
+      }
       logAuditEvent({
         action: "billing.plan.change",
         outcome: "success",

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
+import { parse as parseCookieHeader } from "cookie";
 import { env } from "@/lib/env";
 
 export const CSRF_COOKIE_NAME = "csrf_token";
@@ -11,22 +12,8 @@ function parseCookieValue(cookieHeader: string | null, name: string) {
   if (!cookieHeader) {
     return "";
   }
-
-  const cookies = cookieHeader.split(";");
-  for (const cookie of cookies) {
-    const [rawName, ...rawValueParts] = cookie.trim().split("=");
-    if (rawName !== name) {
-      continue;
-    }
-    const rawValue = rawValueParts.join("=");
-    try {
-      return decodeURIComponent(rawValue);
-    } catch {
-      return rawValue;
-    }
-  }
-
-  return "";
+  const parsed = parseCookieHeader(cookieHeader);
+  return parsed[name] ?? "";
 }
 
 function toOrigin(value: string) {

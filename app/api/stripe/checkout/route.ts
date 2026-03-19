@@ -5,7 +5,6 @@ import { createClient } from "@/lib/supabase/server";
 import { getPlanByKey } from "@/lib/stripe/config";
 import { stripe } from "@/lib/stripe/server";
 import { env } from "@/lib/env";
-import { upsertStripeCustomer } from "@/lib/stripe/sync";
 import { requireJsonContentType } from "@/lib/http/content-type";
 import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
 import { checkRateLimit } from "@/lib/security/rate-limit";
@@ -55,6 +54,43 @@ function getScopedIdempotencyKey(baseKey: string | undefined, scope: string) {
   }
 
   return `${baseKey}:${scope}`;
+}
+
+async function claimTeamStripeCustomer(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  teamId: string,
+  createdCustomerId: string,
+) {
+  const { error: claimError } = await supabase.from("stripe_customers").upsert(
+    {
+      team_id: teamId,
+      stripe_customer_id: createdCustomerId,
+    },
+    {
+      onConflict: "team_id",
+      ignoreDuplicates: true,
+    },
+  );
+
+  if (claimError) {
+    throw new Error(`Failed to claim Stripe customer mapping: ${claimError.message}`);
+  }
+
+  const { data: mapping, error: mappingError } = await supabase
+    .from("stripe_customers")
+    .select("stripe_customer_id")
+    .eq("team_id", teamId)
+    .maybeSingle<{ stripe_customer_id: string }>();
+
+  if (mappingError) {
+    throw new Error(`Failed to load Stripe customer mapping: ${mappingError.message}`);
+  }
+
+  if (!mapping?.stripe_customer_id) {
+    throw new Error("Stripe customer mapping was not created.");
+  }
+
+  return mapping.stripe_customer_id;
 }
 
 async function getTeamSeatCount(
@@ -205,8 +241,23 @@ export async function POST(req: Request) {
           ? { idempotencyKey: customerIdempotencyKey }
           : undefined,
       );
-      customerId = customer.id;
-      await upsertStripeCustomer(teamContext.teamId, customerId);
+      customerId = await claimTeamStripeCustomer(
+        supabase,
+        teamContext.teamId,
+        customer.id,
+      );
+      if (customerId !== customer.id) {
+        // Another request won the team mapping race. Best-effort cleanup
+        // prevents orphan customer buildup from duplicate creates.
+        await stripe.customers.del(customer.id).catch((cleanupError) => {
+          logger.warn("Failed to cleanup duplicate Stripe customer after race", {
+            teamId: teamContext.teamId,
+            duplicateCustomerId: customer.id,
+            mappedCustomerId: customerId,
+            error: cleanupError,
+          });
+        });
+      }
     }
 
     if (await hasLiveStripeSubscription(customerId)) {

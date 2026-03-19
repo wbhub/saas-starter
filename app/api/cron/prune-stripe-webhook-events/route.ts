@@ -2,6 +2,8 @@ import { env } from "@/lib/env";
 import { jsonError, jsonSuccess } from "@/lib/http/api-json";
 import { pruneStripeWebhookEventRows } from "@/lib/stripe/webhook-event-prune";
 import { timingSafeEqual } from "crypto";
+import { RATE_LIMITS } from "@/lib/constants/rate-limits";
+import { checkRateLimit } from "@/lib/security/rate-limit";
 
 function bearerToken(request: Request) {
   const auth = request.headers.get("authorization");
@@ -16,6 +18,10 @@ function safeCompare(a: string, b: string) {
     return false;
   }
   return timingSafeEqual(Buffer.from(a), Buffer.from(b));
+}
+
+function getClientIp(request: Request) {
+  return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
 }
 
 /**
@@ -33,6 +39,16 @@ export async function GET(request: Request) {
   const token = bearerToken(request);
   if (!token || !safeCompare(token, secret)) {
     return jsonError("Unauthorized.", 401);
+  }
+
+  const rateLimit = await checkRateLimit({
+    key: `cron:prune-stripe-webhook-events:${getClientIp(request)}`,
+    ...RATE_LIMITS.cronByClientIp,
+  });
+  if (!rateLimit.allowed) {
+    return jsonError("Too many requests.", 429, {
+      headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
+    });
   }
 
   await pruneStripeWebhookEventRows();

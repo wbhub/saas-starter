@@ -239,7 +239,6 @@ export async function POST(req: Request) {
             : session.customer?.id;
         const metadata = session.metadata ?? {};
         let teamId = metadata.supabase_team_id ?? null;
-        const userId = metadata.supabase_user_id ?? null;
         const sessionReferenceId = session.client_reference_id;
 
         if (!teamId && sessionReferenceId) {
@@ -248,8 +247,10 @@ export async function POST(req: Request) {
           teamId = await resolveTeamIdFromSessionReference(sessionReferenceId);
         }
 
-        if (!teamId && userId) {
-          teamId = await resolveDefaultTeamIdForUser(userId);
+        if (!teamId) {
+          throw new Error(
+            `Checkout session ${session.id} is missing supabase_team_id metadata.`,
+          );
         }
 
         if (customerId && teamId) {
