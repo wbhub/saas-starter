@@ -23,7 +23,7 @@ export async function POST(request: Request) {
   const email = body?.email?.trim().toLowerCase() ?? "";
   const clientIp = getClientIp(request);
 
-  const ipRateLimit = checkRateLimit({
+  const ipRateLimit = await checkRateLimit({
     key: `forgot-password:ip:${clientIp}`,
     limit: 10,
     windowMs: 10 * 60 * 1000,
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: GENERIC_SUCCESS_MESSAGE });
   }
 
-  const emailRateLimit = checkRateLimit({
+  const emailRateLimit = await checkRateLimit({
     key: `forgot-password:email:${email}`,
     limit: 3,
     windowMs: 10 * 60 * 1000,

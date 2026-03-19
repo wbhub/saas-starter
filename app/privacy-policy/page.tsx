@@ -28,8 +28,8 @@ export default async function PrivacyPolicyPage() {
             <p className="app-muted text-sm">
               This Privacy Policy explains how [Company Name] (&quot;Company,&quot;
               &quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) collects, uses,
-              discloses, and safeguards personal information when you use [Website
-              URL], [Product Name], and related services (collectively, the
+              discloses, and safeguards personal information when you use
+              [Website URL], [Product Name], and related services (collectively, the
               &quot;Services&quot;).
             </p>
           </div>
@@ -163,7 +163,8 @@ export default async function PrivacyPolicyPage() {
             Depending on your location, you may have rights to access, correct,
             delete, or port your personal data; object to or restrict processing;
             and withdraw consent. To exercise these rights, contact us at [Privacy
-            Contact Email]. We may need to verify your identity before completing a
+            Contact Email].
+            We may need to verify your identity before completing a
             request.
           </p>
           <p className="app-muted text-sm">

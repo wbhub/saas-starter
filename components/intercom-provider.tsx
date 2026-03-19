@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 type IntercomUser = {
   id?: string | null;
   email?: string | null;
   name?: string | null;
   createdAt?: string | null;
+  userHash?: string | null;
 };
 
 type IntercomProviderProps = {
@@ -21,6 +23,7 @@ type IntercomSettings = {
   email?: string;
   name?: string;
   created_at?: number;
+  user_hash?: string;
 };
 
 type IntercomCommand = (
@@ -37,6 +40,25 @@ declare global {
 
 const INTERCOM_SCRIPT_ID = "intercom-widget-script";
 const INTERCOM_BASE_URL = "https://widget.intercom.io/widget/";
+
+type IntercomBootPayload = {
+  user: {
+    id: string;
+    email: string | null;
+    name: string | null;
+    createdAt: string;
+    userHash: string;
+  } | null;
+};
+
+async function fetchIntercomBootUser() {
+  const response = await fetch("/api/intercom/boot", { cache: "no-store" });
+  if (!response.ok) {
+    return null;
+  }
+  const payload = (await response.json()) as IntercomBootPayload;
+  return payload.user;
+}
 
 function buildSettings(appId: string, user?: IntercomUser | null): IntercomSettings {
   const settings: IntercomSettings = {
@@ -62,6 +84,10 @@ function buildSettings(appId: string, user?: IntercomUser | null): IntercomSetti
     }
   }
 
+  if (user?.userHash) {
+    settings.user_hash = user.userHash;
+  }
+
   return settings;
 }
 
@@ -80,13 +106,57 @@ function loadIntercomScript(appId: string) {
 export function IntercomProvider({ appId, user }: IntercomProviderProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [resolvedUser, setResolvedUser] = useState<IntercomUser | null | undefined>(
+    user,
+  );
+
+  useEffect(() => {
+    setResolvedUser(user);
+  }, [user]);
+
+  useEffect(() => {
+    if (!appId || user !== undefined) {
+      return;
+    }
+
+    const supabase = createClient();
+    let isMounted = true;
+
+    const refreshIntercomUser = () => {
+      fetchIntercomBootUser()
+        .then((intercomUser) => {
+          if (!isMounted) return;
+          setResolvedUser(intercomUser);
+        })
+        .catch(() => {
+          if (!isMounted) return;
+          setResolvedUser(null);
+        });
+    };
+
+    refreshIntercomUser();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
+      refreshIntercomUser();
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [appId, user]);
 
   const settings = useMemo(() => {
     if (!appId) {
       return null;
     }
-    return buildSettings(appId, user);
-  }, [appId, user]);
+    if (resolvedUser === undefined) {
+      return null;
+    }
+    return buildSettings(appId, resolvedUser);
+  }, [appId, resolvedUser]);
 
   useEffect(() => {
     if (!settings) {

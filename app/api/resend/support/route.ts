@@ -24,17 +24,22 @@ export async function POST(request: Request) {
   }
 
   const clientIp = getClientIp(request);
-  const userRateLimit = checkRateLimit({
+  const userRateLimitPromise = checkRateLimit({
     key: `support:user:${user.id}`,
     limit: 5,
     windowMs: 10 * 60 * 1000,
   });
 
-  const ipRateLimit = checkRateLimit({
+  const ipRateLimitPromise = checkRateLimit({
     key: `support:ip:${clientIp}`,
     limit: 20,
     windowMs: 10 * 60 * 1000,
   });
+
+  const [userRateLimit, ipRateLimit] = await Promise.all([
+    userRateLimitPromise,
+    ipRateLimitPromise,
+  ]);
 
   if (!userRateLimit.allowed || !ipRateLimit.allowed) {
     const retryAfterSeconds = Math.max(
@@ -53,6 +58,13 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as SupportPayload | null;
   const subject = (body?.subject?.trim() ?? "").replace(/[\r\n]+/g, " ");
   const message = body?.message?.trim() ?? "";
+
+  if (subject.length > 120) {
+    return NextResponse.json(
+      { error: "Subject must be 120 characters or less." },
+      { status: 400 },
+    );
+  }
 
   if (message.length < 10) {
     return NextResponse.json(

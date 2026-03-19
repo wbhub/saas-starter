@@ -14,10 +14,28 @@ type ProfileRow = {
 };
 
 type SubscriptionRow = {
-  status: "active" | "trialing" | "past_due" | "canceled" | "unpaid";
+  status:
+    | "incomplete"
+    | "incomplete_expired"
+    | "trialing"
+    | "active"
+    | "past_due"
+    | "canceled"
+    | "unpaid"
+    | "paused";
   stripe_price_id: string;
   current_period_end: string | null;
+  cancel_at_period_end: boolean;
 };
+
+const BILLING_SUBSCRIPTION_STATUSES: ReadonlyArray<SubscriptionRow["status"]> = [
+  "incomplete",
+  "trialing",
+  "active",
+  "past_due",
+  "unpaid",
+  "paused",
+];
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -29,7 +47,7 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  const [{ data: profile }, { data: subscription }] = await Promise.all([
+  const [profileResult, subscriptionResult] = await Promise.all([
     supabase
       .from("profiles")
       .select("id,full_name,created_at")
@@ -37,18 +55,32 @@ export default async function DashboardPage() {
       .maybeSingle<ProfileRow>(),
     supabase
       .from("subscriptions")
-      .select("status,stripe_price_id,current_period_end")
+      .select("status,stripe_price_id,current_period_end,cancel_at_period_end")
       .eq("user_id", user.id)
+      .in("status", BILLING_SUBSCRIPTION_STATUSES)
       .order("current_period_end", { ascending: false })
       .limit(1)
       .maybeSingle<SubscriptionRow>(),
   ]);
 
+  if (profileResult.error) {
+    throw new Error(`Failed to load dashboard profile: ${profileResult.error.message}`);
+  }
+
+  if (subscriptionResult.error) {
+    throw new Error(
+      `Failed to load dashboard subscription: ${subscriptionResult.error.message}`,
+    );
+  }
+
+  const profile = profileResult.data;
+  const subscription = subscriptionResult.data;
+  const displayName = profile?.full_name?.trim() || user.email || "there";
+
   const currentPlan = getPlanByPriceId(subscription?.stripe_price_id);
   const status = subscription?.status;
   const hasSubscription =
-    status !== undefined &&
-    ["active", "trialing", "past_due", "unpaid"].includes(status);
+    status !== undefined && BILLING_SUBSCRIPTION_STATUSES.includes(status);
 
   return (
     <main className="min-h-screen bg-[color:var(--background)] text-[color:var(--foreground)]">
@@ -58,15 +90,17 @@ export default async function DashboardPage() {
             <div className="mt-1 hidden md:block">
               <ThemeToggle />
             </div>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              App Dashboard
-            </p>
-            <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50">
-              Welcome, {profile?.full_name ?? user.email}
-            </h1>
-            <p className="text-sm text-slate-600 dark:text-slate-300">
-              {user.email}
-            </p>
+            <div className="space-y-1">
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                App Dashboard
+              </p>
+              <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50">
+                Welcome, {displayName}
+              </h1>
+              <p className="text-sm text-slate-600 dark:text-slate-300">
+                {user.email}
+              </p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <div className="md:hidden">
@@ -136,6 +170,11 @@ export default async function DashboardPage() {
                     {subscription.status}
                   </dd>
                 </div>
+                {subscription.cancel_at_period_end ? (
+                  <div className="rounded-md border border-amber-300/60 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-700/60 dark:bg-amber-950/30 dark:text-amber-200">
+                    Scheduled to cancel at period end.
+                  </div>
+                ) : null}
                 <div className="flex items-center justify-between">
                   <dt className="text-slate-500 dark:text-slate-400">
                     Period end

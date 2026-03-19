@@ -4,6 +4,15 @@ import { stripe } from "@/lib/stripe/server";
 import { env } from "@/lib/env";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 
+async function isOwnedStripeCustomer(userId: string, customerId: string) {
+  const customer = await stripe.customers.retrieve(customerId);
+  if ("deleted" in customer) {
+    return false;
+  }
+
+  return customer.metadata?.supabase_user_id === userId;
+}
+
 export async function POST() {
   const supabase = await createClient();
   const {
@@ -14,7 +23,7 @@ export async function POST() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const rateLimit = checkRateLimit({
+  const rateLimit = await checkRateLimit({
     key: `stripe-portal:user:${user.id}`,
     limit: 20,
     windowMs: 60 * 1000,
@@ -50,6 +59,17 @@ export async function POST() {
   }
 
   try {
+    const isOwned = await isOwnedStripeCustomer(user.id, customerRow.stripe_customer_id);
+    if (!isOwned) {
+      return NextResponse.json(
+        {
+          error:
+            "Billing identity mismatch detected. Start a new checkout to re-link your account.",
+        },
+        { status: 409 },
+      );
+    }
+
     const session = await stripe.billingPortal.sessions.create({
       customer: customerRow.stripe_customer_id,
       return_url: `${env.NEXT_PUBLIC_APP_URL}/dashboard`,

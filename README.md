@@ -91,6 +91,8 @@ Follow these steps in order:
    - `RESEND_FROM_EMAIL`
    - `RESEND_SUPPORT_EMAIL`
    - `NEXT_PUBLIC_INTERCOM_APP_ID` (optional, for Intercom)
+   - `INTERCOM_IDENTITY_SECRET` (required if Intercom identity verification is enabled)
+   - `TRUST_PROXY_HEADERS` (`true` only when your deployment is behind a trusted proxy)
 
 7. **Run Stripe webhook locally (recommended for full flow)**
 
@@ -131,6 +133,8 @@ Follow these steps in order:
 - `npm run build` (production build)
 - `npm run start` (run built app)
 - `npm run lint` (eslint)
+- `npm run test` (run unit tests)
+- `npm run test:watch` (watch mode tests)
 
 ## Project Structure
 
@@ -195,7 +199,7 @@ public/
 3. Set **all** environment variables in Vercel Project Settings (same as `.env.local`, but with production values).
    - `NEXT_PUBLIC_APP_URL` → your Vercel URL (for example `https://your-app.vercel.app`)
    - `STRIPE_WEBHOOK_SECRET` → from the Stripe webhook (configured in the next step)
-   - The rest (`NEXT_PUBLIC_SUPABASE_*`, `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_*_PRICE_ID`, `RESEND_*`) should match your local `.env.local`.
+   - The rest (`NEXT_PUBLIC_SUPABASE_*`, `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_*_PRICE_ID`, `RESEND_*`, `NEXT_PUBLIC_INTERCOM_APP_ID`, `INTERCOM_IDENTITY_SECRET`, `TRUST_PROXY_HEADERS`) should match your local `.env.local`.
 4. Update Supabase Auth redirect settings for production:
    - Set **Site URL** to `https://your-app.vercel.app`
    - Add redirect URL: `https://your-app.vercel.app/auth/callback`
@@ -220,7 +224,8 @@ Before your first real customer signs up, confirm:
 - Stripe webhook endpoint + `STRIPE_WEBHOOK_SECRET` are correct (so events are verified).
 - `STRIPE_STARTER_PRICE_ID`, `STRIPE_GROWTH_PRICE_ID`, and `STRIPE_PRO_PRICE_ID` point to the prices you intend to sell.
 - Resend delivery is configured: `RESEND_FROM_EMAIL` is verified and `RESEND_SUPPORT_EMAIL` routes to your inbox.
-- Optional Intercom: `NEXT_PUBLIC_INTERCOM_APP_ID` is set if you want the widget in production.
+- Optional Intercom: `NEXT_PUBLIC_INTERCOM_APP_ID` and `INTERCOM_IDENTITY_SECRET` are set if you want verified Intercom identity in production.
+- `TRUST_PROXY_HEADERS` is only enabled if your deployment injects trusted proxy IP headers.
 
 ---
 
@@ -240,16 +245,20 @@ When configuring your Stripe webhook, subscribe at least to:
 If you want to enable the Intercom chat widget:
 
 1. Create (or open) your Intercom app and copy its **App ID**.
-2. Set `NEXT_PUBLIC_INTERCOM_APP_ID` in `.env.local`.
-3. Restart your dev server.
+2. Generate an **Identity Verification secret** in Intercom.
+3. Set both in `.env.local`:
+   - `NEXT_PUBLIC_INTERCOM_APP_ID`
+   - `INTERCOM_IDENTITY_SECRET`
+4. Restart your dev server.
 
 Intercom only loads when `NEXT_PUBLIC_INTERCOM_APP_ID` is set.
 
-When set, the app loads Intercom globally and boots it with logged-in Supabase user data when available:
+When configured, the app loads Intercom globally and boots with server-verified Supabase user data:
 - `user_id` = Supabase `user.id`
 - `email` = Supabase `user.email`
 - `name` = Supabase `user.user_metadata.full_name` (if present)
 - `created_at` = Supabase `user.created_at` (converted to a Unix timestamp)
+- `user_hash` = HMAC-SHA256 signature generated on the server (`INTERCOM_IDENTITY_SECRET`)
 
 Note: Intercom will receive these values (PII), so make sure it aligns with your privacy policy.
 
@@ -297,30 +306,13 @@ Security notes:
 
 ## 8. Legal pages (footer, privacy policy, terms of use)
 
-This starter includes basic legal pages and links in the site footer. Update the placeholders to match your business before deploying.
+This starter now includes filled default legal text and footer branding so you can run the app without placeholder tokens.
 
-Placeholders to replace are wrapped in `[]` (including dates, addresses, URLs, and legal names).
+Before production, review and update these files for your legal entity and jurisdiction:
 
-1. Update the footer company name
-   - Edit `components/site-footer.tsx`
-   - Replace `[`Company Name`]` in the copyright line:
-     - `© {new Date().getFullYear()} [Company Name]`
-
-2. Update the Privacy Policy page
-   - Edit `app/privacy-policy/page.tsx`
-   - Replace placeholders such as:
-     - `Last updated: [Month DD, YYYY]`
-     - `[Company Name]`, `[Website URL]`, `[Product Name]`
-     - Contact details in the `13. Contact Us` section (e.g. `[Company Legal Name]`, `[Mailing Address]`, `[Privacy Contact Email]`)
-
-3. Update the Terms of Use page
-   - Edit `app/terms-of-use/page.tsx`
-   - Replace placeholders such as:
-     - `Effective date: [Month DD, YYYY]`
-     - `[Website URL]`, `[Product Name]`, `[Company Legal Name]`
-     - Contact details in the `14. Contact Information` section (e.g. `[Company Legal Name]`, `[Mailing Address]`, `[Legal Contact Email]`)
-
-The footer links are wired to the routes `/privacy-policy` and `/terms-of-use` (see `components/site-footer.tsx`).
+- `components/site-footer.tsx`
+- `app/privacy-policy/page.tsx`
+- `app/terms-of-use/page.tsx`
 
 ## Launch notes (branding & pricing)
 

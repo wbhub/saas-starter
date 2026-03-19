@@ -5,6 +5,20 @@ import { stripe } from "@/lib/stripe/server";
 import { syncSubscription } from "@/lib/stripe/sync";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 
+async function isOwnedStripeSubscription(userId: string, subscriptionId: string) {
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  const customerId =
+    typeof subscription.customer === "string"
+      ? subscription.customer
+      : subscription.customer.id;
+  const customer = await stripe.customers.retrieve(customerId);
+  if ("deleted" in customer) {
+    return false;
+  }
+
+  return customer.metadata?.supabase_user_id === userId;
+}
+
 export async function POST(req: Request) {
   const supabase = await createClient();
   const {
@@ -15,7 +29,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const rateLimit = checkRateLimit({
+  const rateLimit = await checkRateLimit({
     key: `stripe-change-plan:user:${user.id}`,
     limit: 10,
     windowMs: 60 * 1000,
@@ -40,7 +54,14 @@ export async function POST(req: Request) {
     .from("subscriptions")
     .select("stripe_subscription_id,status")
     .eq("user_id", user.id)
-    .in("status", ["active", "trialing", "past_due", "unpaid"])
+    .in("status", [
+      "incomplete",
+      "trialing",
+      "active",
+      "past_due",
+      "unpaid",
+      "paused",
+    ])
     .order("current_period_end", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -60,6 +81,20 @@ export async function POST(req: Request) {
   }
 
   try {
+    const isOwned = await isOwnedStripeSubscription(
+      user.id,
+      subscriptionRow.stripe_subscription_id,
+    );
+    if (!isOwned) {
+      return NextResponse.json(
+        {
+          error:
+            "Billing identity mismatch detected. Start a new checkout to re-link your account.",
+        },
+        { status: 409 },
+      );
+    }
+
     const stripeSubscription = await stripe.subscriptions.retrieve(
       subscriptionRow.stripe_subscription_id,
     );

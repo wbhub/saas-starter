@@ -2,12 +2,15 @@ import Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { stripe } from "@/lib/stripe/server";
 
-const ACTIVE_STATUSES = [
-  "active",
+const TRACKED_STATUSES = [
+  "incomplete",
+  "incomplete_expired",
   "trialing",
+  "active",
   "past_due",
   "canceled",
   "unpaid",
+  "paused",
 ] as const;
 
 function toIsoOrNull(value?: number | null) {
@@ -65,7 +68,7 @@ export async function upsertStripeCustomer(
 
 export async function syncSubscription(subscription: Stripe.Subscription) {
   const status = subscription.status;
-  if (!ACTIVE_STATUSES.includes(status as (typeof ACTIVE_STATUSES)[number])) {
+  if (!TRACKED_STATUSES.includes(status as (typeof TRACKED_STATUSES)[number])) {
     return;
   }
 

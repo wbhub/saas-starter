@@ -6,7 +6,46 @@ import { env } from "@/lib/env";
 import { upsertStripeCustomer } from "@/lib/stripe/sync";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 
-const LIVE_SUBSCRIPTION_STATUSES = ["active", "trialing", "past_due", "unpaid"];
+const LIVE_SUBSCRIPTION_STATUSES = [
+  "incomplete",
+  "trialing",
+  "active",
+  "past_due",
+  "unpaid",
+  "paused",
+];
+
+async function isOwnedStripeCustomer(userId: string, customerId: string) {
+  const customer = await stripe.customers.retrieve(customerId);
+  if ("deleted" in customer) {
+    return false;
+  }
+
+  return customer.metadata?.supabase_user_id === userId;
+}
+
+async function hasLiveStripeSubscription(customerId: string) {
+  const subscriptions = await stripe.subscriptions.list({
+    customer: customerId,
+    status: "all",
+    limit: 100,
+  });
+
+  return subscriptions.data.some((subscription) =>
+    LIVE_SUBSCRIPTION_STATUSES.includes(subscription.status),
+  );
+}
+
+function getCheckoutIdempotencyKey(request: Request, userId: string, planKey: string) {
+  const rawKey = request.headers.get("x-idempotency-key")?.trim();
+  if (!rawKey) {
+    return undefined;
+  }
+
+  // Keep keys bounded and user/plan scoped.
+  const safeKey = rawKey.slice(0, 80);
+  return `checkout:${userId}:${planKey}:${safeKey}`;
+}
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -18,7 +57,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const rateLimit = checkRateLimit({
+  const rateLimit = await checkRateLimit({
     key: `stripe-checkout:user:${user.id}`,
     limit: 10,
     windowMs: 60 * 1000,
@@ -34,7 +73,8 @@ export async function POST(req: Request) {
   }
 
   const body = (await req.json().catch(() => null)) as { planKey?: string } | null;
-  const plan = getPlanByKey(body?.planKey ?? "");
+  const planKey = body?.planKey ?? "";
+  const plan = getPlanByKey(planKey);
   if (!plan) {
     return NextResponse.json({ error: "Invalid plan selected" }, { status: 400 });
   }
@@ -79,6 +119,14 @@ export async function POST(req: Request) {
   let customerId = customerRow?.stripe_customer_id;
 
   try {
+    if (customerId) {
+      const isOwned = await isOwnedStripeCustomer(user.id, customerId);
+      if (!isOwned) {
+        // Do not trust stale or tampered mappings.
+        customerId = undefined;
+      }
+    }
+
     if (!customerId) {
       const customer = await stripe.customers.create({
         email: user.email,
@@ -90,6 +138,14 @@ export async function POST(req: Request) {
       await upsertStripeCustomer(user.id, customerId);
     }
 
+    if (await hasLiveStripeSubscription(customerId)) {
+      return NextResponse.json(
+        { error: "You already have an active subscription." },
+        { status: 409 },
+      );
+    }
+
+    const idempotencyKey = getCheckoutIdempotencyKey(req, user.id, plan.key);
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       customer: customerId,
@@ -98,7 +154,10 @@ export async function POST(req: Request) {
       line_items: [{ price: plan.priceId, quantity: 1 }],
       success_url: `${env.NEXT_PUBLIC_APP_URL}/dashboard?checkout=success`,
       cancel_url: `${env.NEXT_PUBLIC_APP_URL}/dashboard?checkout=canceled`,
-    });
+      metadata: {
+        supabase_user_id: user.id,
+      },
+    }, idempotencyKey ? { idempotencyKey } : undefined);
 
     return NextResponse.json({ url: session.url });
   } catch (error) {

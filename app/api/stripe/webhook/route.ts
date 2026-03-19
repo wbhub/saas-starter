@@ -24,6 +24,18 @@ async function claimWebhookEvent(event: Stripe.Event) {
   throw new Error(`Failed to claim webhook event: ${error.message}`);
 }
 
+async function releaseWebhookEventClaim(eventId: string) {
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("stripe_webhook_events")
+    .delete()
+    .eq("stripe_event_id", eventId);
+
+  if (error) {
+    console.error("Failed to release webhook event claim", error);
+  }
+}
+
 export async function POST(req: Request) {
   const signature = (await headers()).get("stripe-signature");
   if (!signature) {
@@ -50,11 +62,13 @@ export async function POST(req: Request) {
     );
   }
 
+  let claimed = false;
   try {
     const claim = await claimWebhookEvent(event);
     if (!claim.claimed) {
       return NextResponse.json({ received: true });
     }
+    claimed = true;
 
     switch (event.type) {
       case "checkout.session.completed": {
@@ -81,6 +95,9 @@ export async function POST(req: Request) {
         break;
     }
   } catch (error) {
+    if (claimed) {
+      await releaseWebhookEventClaim(event.id);
+    }
     console.error("Stripe webhook handling failed", error);
     return NextResponse.json(
       { error: "Webhook handling failed." },

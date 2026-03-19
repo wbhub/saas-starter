@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import type { ReactNode } from "react";
 import {
@@ -15,24 +13,7 @@ import {
 
 import { SiteFooter } from "./site-footer";
 import { ThemeToggle } from "./theme-toggle";
-
-const pricing = [
-  {
-    name: "Starter",
-    price: "$25/mo",
-    description: "Perfect for founders validating a new product.",
-  },
-  {
-    name: "Growth",
-    price: "$50/mo",
-    description: "For teams scaling activation and retention.",
-  },
-  {
-    name: "Pro",
-    price: "$100/mo",
-    description: "For businesses that need reliability at scale.",
-  },
-];
+import { PLAN_CATALOG } from "@/lib/stripe/plans";
 
 const faqs = [
   {
@@ -345,7 +326,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
               </p>
             </div>
             <div className="grid gap-4 md:grid-cols-3">
-              {pricing.map((tier, idx) => (
+              {PLAN_CATALOG.map((tier, idx) => (
                 <article
                   key={tier.name}
                   className={`rounded-2xl border app-surface p-6 ${
@@ -364,7 +345,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                   </p>
                   <h3 className="text-lg font-semibold">{tier.name}</h3>
                   <p className="mt-2 text-3xl font-semibold text-indigo-600 dark:text-indigo-300">
-                    {tier.price}
+                    {tier.priceLabel}
                   </p>
                   <p className="app-muted mt-3 text-sm">{tier.description}</p>
                   <Link
