@@ -66,6 +66,29 @@ describe("POST /reset-password/submit", () => {
     });
   });
 
+  it("rejects overlong passwords", async () => {
+    const createClient = vi.fn();
+
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),
+    }));
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient,
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      makeRequest("http://localhost/reset-password/submit", { password: "a".repeat(129) }),
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      ok: false,
+      error: "Password must be between 8 and 128 characters.",
+    });
+    expect(createClient).not.toHaveBeenCalled();
+  });
+
   it("rejects requests when session user differs from recovery user", async () => {
     vi.doMock("@/lib/security/rate-limit", () => ({
       checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),

@@ -1,6 +1,7 @@
 import { env } from "@/lib/env";
 import { jsonError, jsonSuccess } from "@/lib/http/api-json";
 import { pruneStripeWebhookEventRows } from "@/lib/stripe/webhook-event-prune";
+import { timingSafeEqual } from "crypto";
 
 function bearerToken(request: Request) {
   const auth = request.headers.get("authorization");
@@ -8,6 +9,13 @@ function bearerToken(request: Request) {
     return null;
   }
   return auth.slice("Bearer ".length).trim();
+}
+
+function safeCompare(a: string, b: string) {
+  if (a.length !== b.length) {
+    return false;
+  }
+  return timingSafeEqual(Buffer.from(a), Buffer.from(b));
 }
 
 /**
@@ -23,7 +31,7 @@ export async function GET(request: Request) {
   }
 
   const token = bearerToken(request);
-  if (!token || token !== secret) {
+  if (!token || !safeCompare(token, secret)) {
     return jsonError("Unauthorized.", 401);
   }
 
