@@ -5,14 +5,15 @@ import { env } from "@/lib/env";
 import { requireJsonContentType } from "@/lib/http/content-type";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { logger } from "@/lib/logger";
+import { getTeamContextForUser } from "@/lib/team-context";
 
-async function isOwnedStripeCustomer(userId: string, customerId: string) {
+async function isOwnedStripeCustomer(teamId: string, customerId: string) {
   const customer = await stripe.customers.retrieve(customerId);
   if ("deleted" in customer) {
     return false;
   }
 
-  return customer.metadata?.supabase_user_id === userId;
+  return customer.metadata?.supabase_team_id === teamId;
 }
 
 export async function POST(request: Request) {
@@ -30,8 +31,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const teamContext = await getTeamContextForUser(supabase, user.id);
+  if (!teamContext) {
+    return NextResponse.json(
+      { error: "No team membership found for this account." },
+      { status: 403 },
+    );
+  }
+
   const rateLimit = await checkRateLimit({
-    key: `stripe-portal:user:${user.id}`,
+    key: `stripe-portal:team:${teamContext.teamId}`,
     limit: 20,
     windowMs: 60 * 1000,
   });
@@ -48,7 +57,7 @@ export async function POST(request: Request) {
   const { data: customerRow, error: customerRowError } = await supabase
     .from("stripe_customers")
     .select("stripe_customer_id")
-    .eq("user_id", user.id)
+    .eq("team_id", teamContext.teamId)
     .maybeSingle();
 
   if (customerRowError) {
@@ -66,7 +75,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const isOwned = await isOwnedStripeCustomer(user.id, customerRow.stripe_customer_id);
+    const isOwned = await isOwnedStripeCustomer(teamContext.teamId, customerRow.stripe_customer_id);
     if (!isOwned) {
       return NextResponse.json(
         {

@@ -28,6 +28,28 @@ describe("Dashboard page billing selection", () => {
       limit: vi.fn().mockReturnThis(),
       maybeSingle: subscriptionMaybeSingle,
     };
+    const teamMembershipsQuery = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      returns: vi
+        .fn()
+        .mockResolvedValue({ data: [{ user_id: "user_123", role: "owner", created_at: "2026-01-01T00:00:00Z" }], error: null }),
+    };
+    const teamInvitesQuery = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      is: vi.fn().mockReturnThis(),
+      gt: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      returns: vi.fn().mockResolvedValue({ data: [], error: null }),
+    };
+    const profileNamesQuery = {
+      select: vi.fn().mockReturnThis(),
+      in: vi.fn().mockReturnThis(),
+      returns: vi.fn().mockResolvedValue({ data: [], error: null }),
+    };
+    let profileTableReads = 0;
 
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: async () => ({
@@ -42,9 +64,22 @@ describe("Dashboard page billing selection", () => {
             },
           }),
         },
-        from: vi.fn((table: string) =>
-          table === "profiles" ? profilesQuery : subscriptionsQuery,
-        ),
+        from: vi.fn((table: string) => {
+          if (table === "profiles") {
+            profileTableReads += 1;
+            return profileTableReads === 1 ? profilesQuery : profileNamesQuery;
+          }
+          if (table === "subscriptions") {
+            return subscriptionsQuery;
+          }
+          if (table === "team_memberships") {
+            return teamMembershipsQuery;
+          }
+          if (table === "team_invites") {
+            return teamInvitesQuery;
+          }
+          throw new Error(`Unexpected table: ${table}`);
+        }),
       }),
     }));
     vi.doMock("next/navigation", () => ({
@@ -55,6 +90,13 @@ describe("Dashboard page billing selection", () => {
     }));
     vi.doMock("@/app/dashboard/actions", () => ({
       logout: vi.fn(),
+    }));
+    vi.doMock("@/lib/team-context", () => ({
+      getTeamContextForUser: vi.fn().mockResolvedValue({
+        teamId: "team_123",
+        teamName: "Acme Team",
+        role: "owner",
+      }),
     }));
 
     const DashboardPage = (await import("./page")).default;
@@ -90,6 +132,9 @@ describe("Dashboard page billing selection", () => {
     }));
     vi.doMock("@/app/dashboard/actions", () => ({
       logout: vi.fn(),
+    }));
+    vi.doMock("@/lib/team-context", () => ({
+      getTeamContextForUser: vi.fn(),
     }));
 
     const DashboardPage = (await import("./page")).default;
@@ -142,6 +187,13 @@ describe("Dashboard page billing selection", () => {
     }));
     vi.doMock("@/app/dashboard/actions", () => ({
       logout: vi.fn(),
+    }));
+    vi.doMock("@/lib/team-context", () => ({
+      getTeamContextForUser: vi.fn().mockResolvedValue({
+        teamId: "team_123",
+        teamName: "Acme Team",
+        role: "owner",
+      }),
     }));
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
 

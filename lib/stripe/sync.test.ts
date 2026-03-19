@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 function createAdminMock(
-  userMapping: { user_id: string } | null = { user_id: "user_123" },
+  teamMapping: { team_id: string } | null = { team_id: "team_123" },
 ) {
   const rpc = vi.fn().mockResolvedValue({ data: true, error: null });
 
@@ -10,7 +10,7 @@ function createAdminMock(
     eq: vi.fn().mockReturnThis(),
     maybeSingle: vi
       .fn()
-      .mockResolvedValue({ data: userMapping, error: null }),
+      .mockResolvedValue({ data: teamMapping, error: null }),
   };
 
   const from = vi.fn((table: string) => {
@@ -63,10 +63,11 @@ describe("syncSubscription", () => {
     expect(adminMock.rpc).toHaveBeenCalledWith(
       "sync_stripe_subscription_atomic",
       expect.objectContaining({
-        p_user_id: "user_123",
+        p_team_id: "team_123",
         p_stripe_customer_id: "cus_123",
         p_stripe_subscription_id: "sub_new",
         p_stripe_price_id: "price_starter",
+        p_seat_quantity: 1,
         p_status: "active",
         p_stripe_subscription_created_at: "2023-11-14T22:15:00.000Z",
         p_cancel_at_period_end: false,

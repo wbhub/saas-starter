@@ -6,14 +6,41 @@ import { SiteFooter } from "@/components/site-footer";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function LoginPage() {
+function getSafeNextPath(nextValue: string | string[] | undefined) {
+  const next = Array.isArray(nextValue) ? nextValue[0] : nextValue;
+  if (!next) {
+    return "/dashboard";
+  }
+
+  if (/[\u0000-\u001F\u007F]/.test(next) || next.includes("\\")) {
+    return "/dashboard";
+  }
+
+  try {
+    const parsed = new URL(next, "http://localhost");
+    if (parsed.origin !== "http://localhost" || !parsed.pathname.startsWith("/")) {
+      return "/dashboard";
+    }
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return "/dashboard";
+  }
+}
+
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string | string[] }>;
+}) {
   const supabase = await createClient();
+  const params = await searchParams;
+  const safeNext = getSafeNextPath(params.next);
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (user) {
-    redirect("/dashboard");
+    redirect(safeNext);
   }
 
   return (
@@ -50,7 +77,7 @@ export default async function LoginPage() {
       </header>
 
       <main className="flex flex-1 flex-col items-center justify-center px-4 py-12">
-        <AuthForm mode="login" />
+        <AuthForm mode="login" redirectTo={safeNext} />
         <Link
           href="/"
           className="mt-6 text-sm text-[color:var(--muted-foreground)] hover:text-[color:var(--foreground)]"

@@ -22,6 +22,9 @@ describe("POST /api/stripe/portal", () => {
     vi.doMock("@/lib/security/rate-limit", () => ({
       checkRateLimit: vi.fn(),
     }));
+    vi.doMock("@/lib/team-context", () => ({
+      getTeamContextForUser: vi.fn(),
+    }));
 
     const { POST } = await import("./route");
     const response = await POST(
@@ -55,6 +58,9 @@ describe("POST /api/stripe/portal", () => {
     }));
     vi.doMock("@/lib/security/rate-limit", () => ({
       checkRateLimit: vi.fn(),
+    }));
+    vi.doMock("@/lib/team-context", () => ({
+      getTeamContextForUser: vi.fn(),
     }));
 
     const { POST } = await import("./route");
@@ -95,7 +101,7 @@ describe("POST /api/stripe/portal", () => {
         customers: {
           retrieve: vi
             .fn()
-            .mockResolvedValue({ id: "cus_123", metadata: { supabase_user_id: "user_123" } }),
+            .mockResolvedValue({ id: "cus_123", metadata: { supabase_team_id: "team_123" } }),
         },
         billingPortal: { sessions: { create: createPortalSession } },
       },
@@ -105,6 +111,13 @@ describe("POST /api/stripe/portal", () => {
     }));
     vi.doMock("@/lib/security/rate-limit", () => ({
       checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),
+    }));
+    vi.doMock("@/lib/team-context", () => ({
+      getTeamContextForUser: vi.fn().mockResolvedValue({
+        teamId: "team_123",
+        teamName: "Acme Team",
+        role: "owner",
+      }),
     }));
 
     const { POST } = await import("./route");

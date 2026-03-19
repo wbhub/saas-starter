@@ -23,12 +23,12 @@ function getSubscriptionCreatedIso(subscriptionCreatedUnix?: number) {
   return new Date(unixSeconds * 1000).toISOString();
 }
 
-async function getUserIdFromStripeCustomer(
+export async function resolveTeamIdFromStripeCustomer(
   stripeCustomerId: string,
 ) {
   const { data: mapping, error } = await getAdminClient()
     .from("stripe_customers")
-    .select("user_id")
+    .select("team_id")
     .eq("stripe_customer_id", stripeCustomerId)
     .maybeSingle();
 
@@ -36,8 +36,8 @@ async function getUserIdFromStripeCustomer(
     throw new Error(`Failed to load stripe customer mapping: ${error.message}`);
   }
 
-  if (mapping?.user_id) {
-    return mapping.user_id;
+  if (mapping?.team_id) {
+    return mapping.team_id;
   }
 
   const customer = await stripe.customers.retrieve(stripeCustomerId);
@@ -46,20 +46,59 @@ async function getUserIdFromStripeCustomer(
     return null;
   }
 
+  const teamId = customer.metadata?.supabase_team_id;
+  if (teamId) {
+    return teamId;
+  }
+
   const userId = customer.metadata?.supabase_user_id;
-  return userId ?? null;
+  if (!userId) {
+    return null;
+  }
+
+  return resolveDefaultTeamIdForUser(userId);
+}
+
+export async function resolveDefaultTeamIdForUser(userId: string) {
+  const profileResult = await getAdminClient()
+    .from("profiles")
+    .select("active_team_id")
+    .eq("id", userId)
+    .maybeSingle<{ active_team_id: string | null }>();
+
+  if (profileResult.error) {
+    throw new Error(`Failed to load active team from profile: ${profileResult.error.message}`);
+  }
+
+  if (profileResult.data?.active_team_id) {
+    return profileResult.data.active_team_id;
+  }
+
+  const membershipResult = await getAdminClient()
+    .from("team_memberships")
+    .select("team_id")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle<{ team_id: string }>();
+
+  if (membershipResult.error) {
+    throw new Error(`Failed to load fallback team membership: ${membershipResult.error.message}`);
+  }
+
+  return membershipResult.data?.team_id ?? null;
 }
 
 export async function upsertStripeCustomer(
-  userId: string,
+  teamId: string,
   stripeCustomerId: string,
 ) {
   const { error } = await getAdminClient().from("stripe_customers").upsert(
     {
-      user_id: userId,
+      team_id: teamId,
       stripe_customer_id: stripeCustomerId,
     },
-    { onConflict: "user_id" },
+    { onConflict: "team_id" },
   );
 
   if (error) {
@@ -85,9 +124,9 @@ export async function syncSubscription(
       ? subscription.customer
       : subscription.customer.id;
 
-  const userId = await getUserIdFromStripeCustomer(stripeCustomerId);
-  if (!userId) {
-    logger.warn("No user mapping found for Stripe customer during sync", {
+  const teamId = await resolveTeamIdFromStripeCustomer(stripeCustomerId);
+  if (!teamId) {
+    logger.warn("No team mapping found for Stripe customer during sync", {
       stripeCustomerId,
       subscriptionId: subscription.id,
     });
@@ -102,16 +141,17 @@ export async function syncSubscription(
     logger.warn("Stripe subscription has no items during sync", {
       subscriptionId: subscription.id,
       stripeCustomerId,
-      userId,
+      teamId,
     });
     return;
   }
 
   const { data, error } = await getAdminClient().rpc("sync_stripe_subscription_atomic", {
-    p_user_id: userId,
+    p_team_id: teamId,
     p_stripe_customer_id: stripeCustomerId,
     p_stripe_subscription_id: subscription.id,
     p_stripe_price_id: item.price.id,
+    p_seat_quantity: Math.max(1, item.quantity ?? 1),
     p_status: status,
     p_stripe_subscription_created_at: subscriptionCreatedAt,
     p_current_period_start: toIsoOrNull(item.current_period_start),
@@ -133,7 +173,7 @@ export async function syncSubscription(
     logger.warn("Stripe subscription sync ignored stale event", {
       subscriptionId: subscription.id,
       stripeCustomerId,
-      userId,
+      teamId,
       eventCreatedAt,
     });
   }

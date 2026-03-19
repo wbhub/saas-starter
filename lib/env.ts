@@ -18,7 +18,8 @@ type OptionalEnvKey =
   | "INTERCOM_IDENTITY_SECRET"
   | "NEXT_PUBLIC_INTERCOM_APP_ID"
   | "TRUST_PROXY_HEADERS"
-  | "TRUSTED_PROXY_HEADER_NAMES";
+  | "TRUSTED_PROXY_HEADER_NAMES"
+  | "STRIPE_SEAT_PRORATION_BEHAVIOR";
 
 function ensureEnv(key: ServerEnvKey) {
   const value = process.env[key];
@@ -87,5 +88,8 @@ export const env = {
   },
   get CRON_SECRET() {
     return optionalEnv("CRON_SECRET");
+  },
+  get STRIPE_SEAT_PRORATION_BEHAVIOR() {
+    return optionalEnv("STRIPE_SEAT_PRORATION_BEHAVIOR");
   },
 };

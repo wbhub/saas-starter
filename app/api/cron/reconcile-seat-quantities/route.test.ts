@@ -1,0 +1,89 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+describe("GET /api/cron/reconcile-seat-quantities", () => {
+  const originalCron = process.env.CRON_SECRET;
+
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+    delete process.env.CRON_SECRET;
+    vi.doMock("@/lib/stripe/seat-reconcile", () => ({
+      reconcileTeamSeatQuantities: vi.fn().mockResolvedValue({
+        scannedTeams: 0,
+        synced: 0,
+        failed: 0,
+        discoveredFromStripe: 0,
+        stripePagesScanned: 0,
+      }),
+    }));
+  });
+
+  afterEach(() => {
+    if (originalCron === undefined) {
+      delete process.env.CRON_SECRET;
+    } else {
+      process.env.CRON_SECRET = originalCron;
+    }
+  });
+
+  it("returns 503 when CRON_SECRET is not set", async () => {
+    const { GET } = await import("./route");
+    const response = await GET(
+      new Request("http://localhost/api/cron/reconcile-seat-quantities"),
+    );
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      ok: false,
+      error: "Cron is not configured.",
+    });
+  });
+
+  it("returns 401 when bearer token is invalid", async () => {
+    process.env.CRON_SECRET = "expected";
+    const { GET } = await import("./route");
+    const response = await GET(
+      new Request("http://localhost/api/cron/reconcile-seat-quantities", {
+        headers: { authorization: "Bearer wrong" },
+      }),
+    );
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({
+      ok: false,
+      error: "Unauthorized.",
+    });
+  });
+
+  it("runs seat reconciliation when bearer token matches", async () => {
+    process.env.CRON_SECRET = "expected";
+    const reconcile = vi.fn().mockResolvedValue({
+      scannedTeams: 3,
+      synced: 3,
+      failed: 0,
+      discoveredFromStripe: 1,
+      stripePagesScanned: 1,
+    });
+    vi.doMock("@/lib/stripe/seat-reconcile", () => ({
+      reconcileTeamSeatQuantities: reconcile,
+    }));
+
+    const { GET } = await import("./route");
+    const response = await GET(
+      new Request("http://localhost/api/cron/reconcile-seat-quantities", {
+        headers: { authorization: "Bearer expected" },
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(reconcile).toHaveBeenCalledWith();
+    await expect(response.json()).resolves.toEqual({
+      ok: true,
+      scannedTeams: 3,
+      synced: 3,
+      failed: 0,
+      discoveredFromStripe: 1,
+      stripePagesScanned: 1,
+    });
+  });
+});

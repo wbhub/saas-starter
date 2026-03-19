@@ -8,6 +8,9 @@ import { logout } from "@/app/dashboard/actions";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LIVE_SUBSCRIPTION_STATUSES, type SubscriptionStatus } from "@/lib/stripe/plans";
 import { logger } from "@/lib/logger";
+import { getTeamContextForUser } from "@/lib/team-context";
+import { TeamInviteCard } from "@/components/team-invite-card";
+import { NoTeamCard } from "@/components/no-team-card";
 
 type ProfileRow = {
   id: string;
@@ -18,8 +21,27 @@ type ProfileRow = {
 type SubscriptionRow = {
   status: SubscriptionStatus;
   stripe_price_id: string;
+  seat_quantity: number;
   current_period_end: string | null;
   cancel_at_period_end: boolean;
+};
+
+type TeamMembershipRow = {
+  user_id: string;
+  role: "owner" | "admin" | "member";
+  created_at: string;
+};
+
+type PendingInviteRow = {
+  id: string;
+  email: string;
+  role: "admin" | "member";
+  expires_at: string;
+};
+
+type ProfileNameRow = {
+  id: string;
+  full_name: string | null;
 };
 
 export default async function DashboardPage() {
@@ -38,14 +60,7 @@ export default async function DashboardPage() {
       .select("id,full_name,created_at")
       .eq("id", user.id)
       .maybeSingle<ProfileRow>(),
-    supabase
-      .from("subscriptions")
-      .select("status,stripe_price_id,current_period_end,cancel_at_period_end")
-      .eq("user_id", user.id)
-      .in("status", LIVE_SUBSCRIPTION_STATUSES)
-      .order("current_period_end", { ascending: false })
-      .limit(1)
-      .maybeSingle<SubscriptionRow>(),
+    getTeamContextForUser(supabase, user.id),
   ]);
 
   if (profileResult.error) {
@@ -53,19 +68,92 @@ export default async function DashboardPage() {
     throw new Error("Failed to load dashboard data");
   }
 
-  if (subscriptionResult.error) {
-    logger.error("Failed to load dashboard subscription", subscriptionResult.error);
+  if (!subscriptionResult) {
+    return (
+      <main className="min-h-screen bg-[color:var(--background)] px-6 py-10 text-[color:var(--foreground)]">
+        <NoTeamCard />
+      </main>
+    );
+  }
+
+  const subscriptionFetchResult = await supabase
+    .from("subscriptions")
+    .select("status,stripe_price_id,seat_quantity,current_period_end,cancel_at_period_end")
+    .eq("team_id", subscriptionResult.teamId)
+    .in("status", LIVE_SUBSCRIPTION_STATUSES)
+    .order("current_period_end", { ascending: false })
+    .limit(1)
+    .maybeSingle<SubscriptionRow>();
+
+  if (subscriptionFetchResult.error) {
+    logger.error("Failed to load dashboard subscription", subscriptionFetchResult.error);
     throw new Error("Failed to load dashboard data");
   }
 
   const profile = profileResult.data;
-  const subscription = subscriptionResult.data;
+  const subscription = subscriptionFetchResult.data;
   const displayName = profile?.full_name?.trim() || user.email || "there";
 
   const currentPlan = getPlanByPriceId(subscription?.stripe_price_id);
   const status = subscription?.status;
   const hasSubscription =
     status !== undefined && LIVE_SUBSCRIPTION_STATUSES.includes(status);
+
+  const [membershipResult, pendingInvitesResult] = await Promise.all([
+    supabase
+      .from("team_memberships")
+      .select("user_id,role,created_at")
+      .eq("team_id", subscriptionResult.teamId)
+      .order("created_at", { ascending: true })
+      .returns<TeamMembershipRow[]>(),
+    supabase
+      .from("team_invites")
+      .select("id,email,role,expires_at")
+      .eq("team_id", subscriptionResult.teamId)
+      .is("accepted_at", null)
+      .gt("expires_at", new Date().toISOString())
+      .order("created_at", { ascending: false })
+      .returns<PendingInviteRow[]>(),
+  ]);
+
+  if (membershipResult.error) {
+    logger.error("Failed to load team members", membershipResult.error);
+    throw new Error("Failed to load dashboard data");
+  }
+
+  if (pendingInvitesResult.error) {
+    logger.error("Failed to load pending team invites", pendingInvitesResult.error);
+    throw new Error("Failed to load dashboard data");
+  }
+
+  const memberUserIds = (membershipResult.data ?? []).map((row) => row.user_id);
+  const profileNamesResult = memberUserIds.length
+    ? await supabase
+        .from("profiles")
+        .select("id,full_name")
+        .in("id", memberUserIds)
+        .returns<ProfileNameRow[]>()
+    : { data: [], error: null };
+
+  if (profileNamesResult.error) {
+    logger.error("Failed to load team member profiles", profileNamesResult.error);
+    throw new Error("Failed to load dashboard data");
+  }
+
+  const profileNameMap = new Map(
+    (profileNamesResult.data ?? []).map((row) => [row.id, row.full_name]),
+  );
+  const teamMembers = (membershipResult.data ?? []).map((row) => ({
+    userId: row.user_id,
+    fullName: profileNameMap.get(row.user_id) ?? null,
+    role: row.role,
+  }));
+  const pendingInvites = (pendingInvitesResult.data ?? []).map((row) => ({
+    id: row.id,
+    email: row.email,
+    role: row.role,
+    expiresAt: row.expires_at,
+  }));
 
   return (
     <main className="min-h-screen bg-[color:var(--background)] text-[color:var(--foreground)]">
@@ -121,6 +209,18 @@ export default async function DashboardPage() {
                 </dd>
               </div>
               <div className="flex items-center justify-between">
+                <dt className="text-slate-500 dark:text-slate-400">Team</dt>
+                <dd className="max-w-[220px] truncate text-slate-800 dark:text-slate-100">
+                  {subscriptionResult.teamName ?? "My Team"}
+                </dd>
+              </div>
+              <div className="flex items-center justify-between">
+                <dt className="text-slate-500 dark:text-slate-400">Role</dt>
+                <dd className="text-slate-800 dark:text-slate-100 capitalize">
+                  {subscriptionResult.role}
+                </dd>
+              </div>
+              <div className="flex items-center justify-between">
                 <dt className="text-slate-500 dark:text-slate-400">
                   Member since
                 </dt>
@@ -155,6 +255,12 @@ export default async function DashboardPage() {
                     {subscription.status}
                   </dd>
                 </div>
+                <div className="flex items-center justify-between">
+                  <dt className="text-slate-500 dark:text-slate-400">Seats</dt>
+                  <dd className="text-slate-800 dark:text-slate-100">
+                    {subscription.seat_quantity}
+                  </dd>
+                </div>
                 {subscription.cancel_at_period_end ? (
                   <div className="rounded-md border border-amber-300/60 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-700/60 dark:bg-amber-950/30 dark:text-amber-200">
                     Scheduled to cancel at period end.
@@ -184,6 +290,17 @@ export default async function DashboardPage() {
 
         <section className="mt-4">
           <SupportEmailCard />
+        </section>
+
+        <section className="mt-4">
+          <TeamInviteCard
+            canInvite={subscriptionResult.role === "owner" || subscriptionResult.role === "admin"}
+            teamName={subscriptionResult.teamName ?? "My Team"}
+            members={teamMembers}
+            pendingInvites={pendingInvites}
+            currentUserId={user.id}
+            currentUserRole={subscriptionResult.role}
+          />
         </section>
       </div>
     </main>

@@ -8,15 +8,16 @@ import { checkRateLimit } from "@/lib/security/rate-limit";
 import { LIVE_SUBSCRIPTION_STATUSES } from "@/lib/stripe/plans";
 import { parsePlanKey } from "@/lib/validation";
 import { logger } from "@/lib/logger";
+import { getTeamContextForUser } from "@/lib/team-context";
 
-function getChangePlanIdempotencyKey(request: Request, userId: string, planKey: string) {
+function getChangePlanIdempotencyKey(request: Request, teamId: string, planKey: string) {
   const rawKey = request.headers.get("x-idempotency-key")?.trim();
   if (!rawKey) {
     return undefined;
   }
 
   const safeKey = rawKey.slice(0, 80);
-  return `change-plan:${userId}:${planKey}:${safeKey}`;
+  return `change-plan:${teamId}:${planKey}:${safeKey}`;
 }
 
 export async function POST(req: Request) {
@@ -34,8 +35,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const teamContext = await getTeamContextForUser(supabase, user.id);
+  if (!teamContext) {
+    return NextResponse.json(
+      { error: "No team membership found for this account." },
+      { status: 403 },
+    );
+  }
+
   const rateLimit = await checkRateLimit({
-    key: `stripe-change-plan:user:${user.id}`,
+    key: `stripe-change-plan:team:${teamContext.teamId}`,
     limit: 10,
     windowMs: 60 * 1000,
   });
@@ -59,12 +68,12 @@ export async function POST(req: Request) {
   if (!plan) {
     return NextResponse.json({ error: "Invalid target plan" }, { status: 400 });
   }
-  const idempotencyKey = getChangePlanIdempotencyKey(req, user.id, plan.key);
+  const idempotencyKey = getChangePlanIdempotencyKey(req, teamContext.teamId, plan.key);
 
   const { data: subscriptionRow, error: subscriptionRowError } = await supabase
     .from("subscriptions")
     .select("stripe_subscription_id,status")
-    .eq("user_id", user.id)
+    .eq("team_id", teamContext.teamId)
     .in("status", LIVE_SUBSCRIPTION_STATUSES)
     .order("current_period_end", { ascending: false })
     .limit(1)
@@ -96,7 +105,7 @@ export async function POST(req: Request) {
         : stripeSubscription.customer.id;
     const customer = await stripe.customers.retrieve(customerId);
 
-    if ("deleted" in customer || customer.metadata?.supabase_user_id !== user.id) {
+    if ("deleted" in customer || customer.metadata?.supabase_team_id !== teamContext.teamId) {
       return NextResponse.json(
         {
           error:
@@ -125,7 +134,7 @@ export async function POST(req: Request) {
     const updated = await stripe.subscriptions.update(
       stripeSubscription.id,
       {
-        items: [{ id: firstItem.id, price: plan.priceId }],
+        items: [{ id: firstItem.id, price: plan.priceId, quantity: firstItem.quantity ?? 1 }],
         proration_behavior: "create_prorations",
       },
       idempotencyKey ? { idempotencyKey } : undefined,

@@ -1,0 +1,129 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+describe("reconcileTeamSeatQuantities", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+  });
+
+  it("paginates database teams and includes Stripe discovery", async () => {
+    const syncTeamSeatQuantity = vi.fn().mockResolvedValue({ updated: true });
+    const resolveTeamIdFromStripeCustomer = vi.fn().mockResolvedValue("team_c");
+    const list = vi.fn().mockResolvedValue({
+      data: [
+        { id: "sub_1", status: "active", customer: "cus_1" },
+        { id: "sub_2", status: "canceled", customer: "cus_2" },
+      ],
+      has_more: false,
+    });
+
+    const range = vi
+      .fn()
+      .mockResolvedValueOnce({
+        data: [{ team_id: "team_a" }, { team_id: "team_b" }],
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: [],
+        error: null,
+      });
+
+    vi.doMock("@/lib/supabase/admin", () => ({
+      createAdminClient: () => ({
+        from: vi.fn(() => ({
+          select: vi.fn().mockReturnThis(),
+          in: vi.fn().mockReturnThis(),
+          order: vi.fn().mockReturnThis(),
+          range: vi.fn(() => ({
+            returns: range,
+          })),
+        })),
+      }),
+    }));
+    vi.doMock("@/lib/stripe/seats", () => ({
+      syncTeamSeatQuantity,
+    }));
+    vi.doMock("@/lib/stripe/server", () => ({
+      stripe: {
+        subscriptions: {
+          list,
+        },
+      },
+    }));
+    vi.doMock("@/lib/stripe/sync", () => ({
+      resolveTeamIdFromStripeCustomer,
+    }));
+
+    const { reconcileTeamSeatQuantities } = await import("./seat-reconcile");
+    const result = await reconcileTeamSeatQuantities({
+      batchSize: 2,
+      includeStripeDiscovery: true,
+      stripePageLimit: 1,
+    });
+
+    expect(result).toEqual({
+      scannedTeams: 3,
+      synced: 3,
+      failed: 0,
+      discoveredFromStripe: 1,
+      stripePagesScanned: 1,
+    });
+    expect(syncTeamSeatQuantity).toHaveBeenCalledTimes(3);
+    expect(list).toHaveBeenCalledWith({ status: "all", limit: 100 });
+    expect(resolveTeamIdFromStripeCustomer).toHaveBeenCalledWith("cus_1");
+  });
+
+  it("can skip Stripe discovery", async () => {
+    const syncTeamSeatQuantity = vi.fn().mockResolvedValue({ updated: true });
+    const range = vi
+      .fn()
+      .mockResolvedValueOnce({
+        data: [{ team_id: "team_a" }],
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: [],
+        error: null,
+      });
+
+    vi.doMock("@/lib/supabase/admin", () => ({
+      createAdminClient: () => ({
+        from: vi.fn(() => ({
+          select: vi.fn().mockReturnThis(),
+          in: vi.fn().mockReturnThis(),
+          order: vi.fn().mockReturnThis(),
+          range: vi.fn(() => ({
+            returns: range,
+          })),
+        })),
+      }),
+    }));
+    vi.doMock("@/lib/stripe/seats", () => ({
+      syncTeamSeatQuantity,
+    }));
+    vi.doMock("@/lib/stripe/server", () => ({
+      stripe: {
+        subscriptions: {
+          list: vi.fn(),
+        },
+      },
+    }));
+    vi.doMock("@/lib/stripe/sync", () => ({
+      resolveTeamIdFromStripeCustomer: vi.fn(),
+    }));
+
+    const { reconcileTeamSeatQuantities } = await import("./seat-reconcile");
+    const result = await reconcileTeamSeatQuantities({
+      batchSize: 100,
+      includeStripeDiscovery: false,
+    });
+
+    expect(result).toEqual({
+      scannedTeams: 1,
+      synced: 1,
+      failed: 0,
+      discoveredFromStripe: 0,
+      stripePagesScanned: 0,
+    });
+  });
+});

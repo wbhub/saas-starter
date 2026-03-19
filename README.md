@@ -5,8 +5,10 @@ This repo is a small SaaS starter app:
 - Marketing/landing page with pricing
 - Email/password auth (Supabase)
 - Forgot password flow (Resend + Supabase recovery link)
-- Protected dashboard that shows the logged‑in user and their subscription state
+- Protected dashboard that shows the logged‑in user, active team, and team subscription state
 - Stripe subscriptions (3 plans) with checkout, plan changes, and billing portal
+- Team invite flow (owners/admins can invite members by email)
+- Team member removal flow (owners/admins can remove members; seat billing re-syncs)
 - Resend-powered dashboard support email form
 - Optional: Intercom chat widget
 
@@ -92,6 +94,7 @@ Follow these steps in order:
    - `RESEND_SUPPORT_EMAIL`
    - `NEXT_PUBLIC_INTERCOM_APP_ID` (optional, for Intercom)
    - `INTERCOM_IDENTITY_SECRET` (required if Intercom identity verification is enabled)
+   - `STRIPE_SEAT_PRORATION_BEHAVIOR` (optional: `create_prorations` or `none`; default `create_prorations`)
    - `TRUST_PROXY_HEADERS` (`true` only when your deployment is behind a trusted proxy)
 
 7. **Run Stripe webhook locally (recommended for full flow)**
@@ -126,6 +129,25 @@ Follow these steps in order:
 - Stripe (subscriptions, billing portal)
 - Resend (transactional/support email delivery)
 - Vercel‑ready deployment
+
+## Team model (multi-member)
+
+This starter now uses a team-based data model:
+
+- Every new user gets a default team and an `owner` membership via `handle_new_user()`.
+- Billing is team-scoped (`stripe_customers.team_id`, `subscriptions.team_id`), so multiple team members share the same subscription state.
+- Billing is per-seat: Stripe subscription item quantity follows active team member count.
+- Team memberships are role-based (`owner`, `admin`, `member`) and enforced via RLS (`is_team_member(...)`).
+- `profiles.active_team_id` controls which team context the app uses for dashboard/billing actions.
+- If a user loses all memberships, they can recover a personal team from the dashboard.
+- Invite flow:
+  - `POST /api/team/invites` creates + emails an invite link (owner/admin only)
+  - `/invite/[token]` lets an authenticated user accept via `POST /api/team/invites/accept`
+
+If your database was created with the old single-user schema, migrate in this order:
+
+1. Run `supabase/migrate-single-user-to-teams.sql` once (backfills team rows + team ids).
+2. Then run `supabase/schema.sql` to apply the full team-based schema + policies.
 
 ## Available scripts
 
@@ -199,7 +221,7 @@ public/
 3. Set **all** environment variables in Vercel Project Settings (same as `.env.local`, but with production values).
    - `NEXT_PUBLIC_APP_URL` → your Vercel URL (for example `https://your-app.vercel.app`)
    - `STRIPE_WEBHOOK_SECRET` → from the Stripe webhook (configured in the next step)
-   - The rest (`NEXT_PUBLIC_SUPABASE_*`, `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_*_PRICE_ID`, `RESEND_*`, `NEXT_PUBLIC_INTERCOM_APP_ID`, `INTERCOM_IDENTITY_SECRET`, `TRUST_PROXY_HEADERS`) should match your local `.env.local`.
+   - The rest (`NEXT_PUBLIC_SUPABASE_*`, `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_*_PRICE_ID`, `RESEND_*`, `NEXT_PUBLIC_INTERCOM_APP_ID`, `INTERCOM_IDENTITY_SECRET`, `STRIPE_SEAT_PRORATION_BEHAVIOR`, `TRUST_PROXY_HEADERS`) should match your local `.env.local`.
 4. Update Supabase Auth redirect settings for production:
    - Set **Site URL** to `https://your-app.vercel.app`
    - Add redirect URL: `https://your-app.vercel.app/auth/callback`
@@ -235,6 +257,7 @@ Before your first real customer signs up, confirm:
   You should see a single CSP header whose `script-src` includes a `nonce-` token in production. `next.config.ts` adds other security headers (`Strict-Transport-Security`, `X-Frame-Options`, etc.) for all routes; CSP nonces and Supabase/Stripe/Intercom allowances are applied in `proxy.ts`.
 
 - **Stripe webhook dedupe cleanup (optional):** The webhook handler opportunistically prunes old rows in `stripe_webhook_events`. For low-traffic apps, add a scheduled job (e.g. Vercel Cron) that calls `GET /api/cron/prune-stripe-webhook-events` with `Authorization: Bearer <CRON_SECRET>`. Set `CRON_SECRET` in the environment; if it is unset, the route returns 503.
+- **Seat reconciliation cron (recommended):** Add a scheduled job that calls `GET /api/cron/reconcile-seat-quantities` with `Authorization: Bearer <CRON_SECRET>`. This reconciles Stripe subscription quantity against current team member counts and self-heals missed seat syncs.
 
 ---
 

@@ -13,7 +13,13 @@ type AuthApiResponse = {
   sessionCreated?: boolean;
 };
 
-export function AuthForm({ mode }: { mode: Mode }) {
+export function AuthForm({
+  mode,
+  redirectTo = "/dashboard",
+}: {
+  mode: Mode;
+  redirectTo?: string;
+}) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -43,7 +49,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
           throw new Error(payload?.error ?? "Unable to log in.");
         }
 
-        router.push("/dashboard");
+        router.push(redirectTo);
         router.refresh();
       } else {
         const response = await fetch("/api/auth/signup", {
