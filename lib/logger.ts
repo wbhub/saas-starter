@@ -45,7 +45,11 @@ function emitStructured(level: LogLevel, message: string, context?: Record<strin
 export const logger = {
   info(message: string, context?: Record<string, unknown>) {
     if (!IS_PRODUCTION) {
-      context ? console.log(message, context) : console.log(message);
+      if (context) {
+        console.log(message, context);
+      } else {
+        console.log(message);
+      }
       return;
     }
     emitStructured("info", message, context);
@@ -53,7 +57,11 @@ export const logger = {
 
   warn(message: string, context?: Record<string, unknown>) {
     if (!IS_PRODUCTION) {
-      context ? console.warn(message, context) : console.warn(message);
+      if (context) {
+        console.warn(message, context);
+      } else {
+        console.warn(message);
+      }
       return;
     }
     emitStructured("warn", message, context);

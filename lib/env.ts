@@ -14,6 +14,7 @@ type ServerEnvKey =
   | "RESEND_SUPPORT_EMAIL";
 
 type OptionalEnvKey =
+  | "CRON_SECRET"
   | "INTERCOM_IDENTITY_SECRET"
   | "NEXT_PUBLIC_INTERCOM_APP_ID"
   | "TRUST_PROXY_HEADERS"
@@ -83,5 +84,8 @@ export const env = {
   },
   get TRUSTED_PROXY_HEADER_NAMES() {
     return optionalEnv("TRUSTED_PROXY_HEADER_NAMES");
+  },
+  get CRON_SECRET() {
+    return optionalEnv("CRON_SECRET");
   },
 };

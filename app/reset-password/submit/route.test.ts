@@ -22,7 +22,34 @@ describe("POST /reset-password/submit", () => {
     vi.clearAllMocks();
   });
 
+  it("returns 429 when rate limited", async () => {
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({
+        allowed: false,
+        retryAfterSeconds: 42,
+      }),
+    }));
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: vi.fn(),
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      makeRequest("http://localhost/reset-password/submit", { password: "password123" }),
+    );
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get("Retry-After")).toBe("42");
+    await expect(response.json()).resolves.toEqual({
+      ok: false,
+      error: "Too many password reset attempts. Please try again later.",
+    });
+  });
+
   it("rejects requests without recovery proof cookies", async () => {
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),
+    }));
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: vi.fn(),
     }));
@@ -34,11 +61,15 @@ describe("POST /reset-password/submit", () => {
 
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({
+      ok: false,
       error: "Reset link is invalid or expired. Please request a new link.",
     });
   });
 
   it("rejects requests when session user differs from recovery user", async () => {
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),
+    }));
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: async () => ({
         auth: {
@@ -62,6 +93,9 @@ describe("POST /reset-password/submit", () => {
   it("updates password and clears recovery cookies when proof matches session user", async () => {
     const updateUser = vi.fn().mockResolvedValue({ error: null });
 
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),
+    }));
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: async () => ({
         auth: {

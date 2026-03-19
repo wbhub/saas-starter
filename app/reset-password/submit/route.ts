@@ -1,5 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { jsonError, jsonSuccess } from "@/lib/http/api-json";
+import { getClientRateLimitIdentifier } from "@/lib/http/client-ip";
 import { requireJsonContentType } from "@/lib/http/content-type";
+import { checkRateLimit } from "@/lib/security/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 
 const PASSWORD_RECOVERY_COOKIE = "auth_password_recovery";
@@ -15,21 +18,30 @@ export async function POST(request: NextRequest) {
     return contentTypeError;
   }
 
+  const clientId = getClientRateLimitIdentifier(request);
+  const rateLimit = await checkRateLimit({
+    key: `reset-password-submit:${clientId.keyType}:${clientId.value}`,
+    limit: 15,
+    windowMs: 10 * 60 * 1000,
+  });
+  if (!rateLimit.allowed) {
+    return jsonError("Too many password reset attempts. Please try again later.", 429, {
+      headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
+    });
+  }
+
   const body = (await request.json().catch(() => null)) as ResetPasswordPayload | null;
   const password = body?.password ?? "";
   if (password.length < 8) {
-    return NextResponse.json(
-      { error: "Password must be at least 8 characters." },
-      { status: 400 },
-    );
+    return jsonError("Password must be at least 8 characters.", 400);
   }
 
   const hasRecoveryProof = request.cookies.get(PASSWORD_RECOVERY_COOKIE)?.value === "1";
   const recoveryUserId = request.cookies.get(PASSWORD_RECOVERY_USER_COOKIE)?.value ?? "";
   if (!hasRecoveryProof || !recoveryUserId) {
-    return NextResponse.json(
-      { error: "Reset link is invalid or expired. Please request a new link." },
-      { status: 403 },
+    return jsonError(
+      "Reset link is invalid or expired. Please request a new link.",
+      403,
     );
   }
 
@@ -38,18 +50,18 @@ export async function POST(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user || user.id !== recoveryUserId) {
-    return NextResponse.json(
-      { error: "Reset link is invalid or expired. Please request a new link." },
-      { status: 403 },
+    return jsonError(
+      "Reset link is invalid or expired. Please request a new link.",
+      403,
     );
   }
 
   const { error } = await supabase.auth.updateUser({ password });
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    return jsonError(error.message, 400);
   }
 
-  const response = NextResponse.json({ ok: true });
+  const response = jsonSuccess();
   const secure = request.nextUrl.protocol === "https:";
   response.cookies.set({
     name: PASSWORD_RECOVERY_COOKIE,

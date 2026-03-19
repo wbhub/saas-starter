@@ -7,10 +7,11 @@ import { syncSubscription, upsertStripeCustomer } from "@/lib/stripe/sync";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireJsonContentType } from "@/lib/http/content-type";
 import { logger } from "@/lib/logger";
-
-const WEBHOOK_EVENT_RETENTION_DAYS = 30;
-const WEBHOOK_SIGNATURE_TOLERANCE_SECONDS = 300;
-const WEBHOOK_CLAIM_TTL_SECONDS = 5 * 60;
+import {
+  WEBHOOK_CLAIM_TTL_SECONDS,
+  WEBHOOK_SIGNATURE_TOLERANCE_SECONDS,
+} from "@/lib/stripe/webhook-constants";
+import { pruneStripeWebhookEventRows } from "@/lib/stripe/webhook-event-prune";
 
 async function claimWebhookEvent(event: Stripe.Event) {
   const supabase = createAdminClient();
@@ -58,41 +59,6 @@ async function claimWebhookEvent(event: Stripe.Event) {
   }
 
   return { claimed: false as const };
-}
-
-async function pruneOldWebhookEvents() {
-  const shouldPrune = Math.random() < 0.05;
-  if (!shouldPrune) {
-    return;
-  }
-
-  const retentionCutoff = new Date(
-    Date.now() - WEBHOOK_EVENT_RETENTION_DAYS * 24 * 60 * 60 * 1000,
-  ).toISOString();
-  const staleClaimCutoff = new Date(
-    Date.now() - WEBHOOK_CLAIM_TTL_SECONDS * 2 * 1000,
-  ).toISOString();
-
-  const supabase = createAdminClient();
-  const { error: completedPruneError } = await supabase
-    .from("stripe_webhook_events")
-    .delete()
-    .not("completed_at", "is", null)
-    .lt("completed_at", retentionCutoff);
-
-  if (completedPruneError) {
-    logger.error("Failed to prune completed webhook events", completedPruneError);
-  }
-
-  const { error: staleClaimPruneError } = await supabase
-    .from("stripe_webhook_events")
-    .delete()
-    .is("completed_at", null)
-    .lt("processed_at", staleClaimCutoff);
-
-  if (staleClaimPruneError) {
-    logger.error("Failed to prune stale webhook claims", staleClaimPruneError);
-  }
 }
 
 async function releaseWebhookEventClaim(eventId: string) {
@@ -189,7 +155,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ received: true });
     }
     claimed = true;
-    await pruneOldWebhookEvents();
+    await pruneStripeWebhookEventRows({ sampleRate: 0.05 });
 
     switch (event.type) {
       case "checkout.session.completed": {
