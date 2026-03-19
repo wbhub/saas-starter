@@ -15,6 +15,7 @@ function serializeError(error: unknown): Record<string, unknown> {
       err: {
         name: error.name,
         message: error.message,
+        stack: error.stack,
       },
     };
   }

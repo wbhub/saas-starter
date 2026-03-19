@@ -234,7 +234,7 @@ Before your first real customer signs up, confirm:
 
   You should see a single CSP header whose `script-src` includes a `nonce-` token in production. `next.config.ts` adds other security headers (`Strict-Transport-Security`, `X-Frame-Options`, etc.) for all routes; CSP nonces and Supabase/Stripe/Intercom allowances are applied in `proxy.ts`.
 
-- **Stripe webhook dedupe cleanup (optional):** The webhook handler opportunistically prunes old rows in `stripe_webhook_events`. For low-traffic apps, add a scheduled job (e.g. Vercel Cron) that calls `GET /api/cron/prune-stripe-webhook-events` with `Authorization: Bearer <CRON_SECRET>` (or `?secret=<CRON_SECRET>`). Set `CRON_SECRET` in the environment; if it is unset, the route returns 503.
+- **Stripe webhook dedupe cleanup (optional):** The webhook handler opportunistically prunes old rows in `stripe_webhook_events`. For low-traffic apps, add a scheduled job (e.g. Vercel Cron) that calls `GET /api/cron/prune-stripe-webhook-events` with `Authorization: Bearer <CRON_SECRET>`. Set `CRON_SECRET` in the environment; if it is unset, the route returns 503.
 
 ---
 
@@ -339,7 +339,7 @@ How it works:
 
 Security notes:
 
-- The request endpoint always returns a generic success message (to avoid leaking whether an email exists).
+- The request endpoint always returns a generic success message (to avoid leaking whether an email exists). Link generation and email delivery run **after** the HTTP response via Next.js `after()`, so response time does not reflect whether Supabase/Resend work succeeded—monitor logs/alerts for `Forgot-password:` / `Failed to generate` / `Failed to send` instead of relying on a 503 from this route.
 - Password updates require a valid recovery session from the email link.
 - `POST /reset-password/submit` is rate limited per client identifier (same distributed limiter as other auth routes).
 
