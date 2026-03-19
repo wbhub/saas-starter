@@ -1,10 +1,6 @@
 import Link from "next/link";
 
-type SiteFooterProps = {
-  showTechLinks?: boolean;
-};
-
-export function SiteFooter({ showTechLinks: _showTechLinks = false }: SiteFooterProps) {
+export function SiteFooter() {
   return (
     <footer className="border-t app-border-subtle">
       <div className="app-muted mx-auto flex max-w-6xl flex-col justify-between gap-3 px-6 py-6 text-sm md:flex-row md:items-center">

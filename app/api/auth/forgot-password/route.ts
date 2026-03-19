@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { env } from "@/lib/env";
 import { getResendClient, getResendFromEmail } from "@/lib/resend/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getClientIp } from "@/lib/http/client-ip";
+import { checkRateLimit } from "@/lib/security/rate-limit";
 
 type ForgotPasswordPayload = {
   email?: string;
@@ -19,8 +21,27 @@ export async function POST(request: Request) {
     | ForgotPasswordPayload
     | null;
   const email = body?.email?.trim().toLowerCase() ?? "";
+  const clientIp = getClientIp(request);
+
+  const ipRateLimit = checkRateLimit({
+    key: `forgot-password:ip:${clientIp}`,
+    limit: 10,
+    windowMs: 10 * 60 * 1000,
+  });
+  if (!ipRateLimit.allowed) {
+    return NextResponse.json({ message: GENERIC_SUCCESS_MESSAGE });
+  }
 
   if (!isValidEmail(email)) {
+    return NextResponse.json({ message: GENERIC_SUCCESS_MESSAGE });
+  }
+
+  const emailRateLimit = checkRateLimit({
+    key: `forgot-password:email:${email}`,
+    limit: 3,
+    windowMs: 10 * 60 * 1000,
+  });
+  if (!emailRateLimit.allowed) {
     return NextResponse.json({ message: GENERIC_SUCCESS_MESSAGE });
   }
 

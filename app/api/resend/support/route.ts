@@ -5,6 +5,8 @@ import {
   getResendFromEmail,
   getResendSupportEmail,
 } from "@/lib/resend/server";
+import { getClientIp } from "@/lib/http/client-ip";
+import { checkRateLimit } from "@/lib/security/rate-limit";
 
 type SupportPayload = {
   subject?: string;
@@ -21,8 +23,35 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const clientIp = getClientIp(request);
+  const userRateLimit = checkRateLimit({
+    key: `support:user:${user.id}`,
+    limit: 5,
+    windowMs: 10 * 60 * 1000,
+  });
+
+  const ipRateLimit = checkRateLimit({
+    key: `support:ip:${clientIp}`,
+    limit: 20,
+    windowMs: 10 * 60 * 1000,
+  });
+
+  if (!userRateLimit.allowed || !ipRateLimit.allowed) {
+    const retryAfterSeconds = Math.max(
+      userRateLimit.retryAfterSeconds,
+      ipRateLimit.retryAfterSeconds,
+    );
+    return NextResponse.json(
+      { error: "Too many requests. Please try again shortly." },
+      {
+        status: 429,
+        headers: { "Retry-After": String(retryAfterSeconds) },
+      },
+    );
+  }
+
   const body = (await request.json().catch(() => null)) as SupportPayload | null;
-  const subject = body?.subject?.trim() ?? "";
+  const subject = (body?.subject?.trim() ?? "").replace(/[\r\n]+/g, " ");
   const message = body?.message?.trim() ?? "";
 
   if (message.length < 10) {
@@ -62,14 +91,14 @@ export async function POST(request: Request) {
         "Message:",
         message,
       ].join("\n"),
-      replyTo: user.email,
+      replyTo: user.email ?? undefined,
     });
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    const reason = error instanceof Error ? error.message : "Unknown error";
+    console.error("Failed to send support email", error);
     return NextResponse.json(
-      { error: `Unable to send email: ${reason}` },
+      { error: "Unable to send support email right now. Please try again." },
       { status: 500 },
     );
   }

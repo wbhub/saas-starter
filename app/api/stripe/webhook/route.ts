@@ -4,6 +4,25 @@ import Stripe from "stripe";
 import { env } from "@/lib/env";
 import { stripe } from "@/lib/stripe/server";
 import { syncSubscription, upsertStripeCustomer } from "@/lib/stripe/sync";
+import { createAdminClient } from "@/lib/supabase/admin";
+
+async function claimWebhookEvent(event: Stripe.Event) {
+  const supabase = createAdminClient();
+  const { error } = await supabase.from("stripe_webhook_events").insert({
+    stripe_event_id: event.id,
+    event_type: event.type,
+  });
+
+  if (!error) {
+    return { claimed: true as const };
+  }
+
+  if (error.code === "23505") {
+    return { claimed: false as const };
+  }
+
+  throw new Error(`Failed to claim webhook event: ${error.message}`);
+}
 
 export async function POST(req: Request) {
   const signature = (await headers()).get("stripe-signature");
@@ -24,13 +43,19 @@ export async function POST(req: Request) {
       env.STRIPE_WEBHOOK_SECRET,
     );
   } catch (error) {
+    console.error("Stripe webhook signature verification failed", error);
     return NextResponse.json(
-      { error: `Webhook signature verification failed: ${String(error)}` },
+      { error: "Webhook signature verification failed." },
       { status: 400 },
     );
   }
 
   try {
+    const claim = await claimWebhookEvent(event);
+    if (!claim.claimed) {
+      return NextResponse.json({ received: true });
+    }
+
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
@@ -56,8 +81,9 @@ export async function POST(req: Request) {
         break;
     }
   } catch (error) {
+    console.error("Stripe webhook handling failed", error);
     return NextResponse.json(
-      { error: `Webhook handling failed: ${String(error)}` },
+      { error: "Webhook handling failed." },
       { status: 500 },
     );
   }

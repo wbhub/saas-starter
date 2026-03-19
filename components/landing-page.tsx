@@ -426,7 +426,7 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
         </div>
       </main>
 
-      <SiteFooter showTechLinks />
+      <SiteFooter />
     </div>
   );
 }
