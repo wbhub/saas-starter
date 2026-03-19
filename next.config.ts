@@ -11,24 +11,33 @@ if (supabaseUrl) {
   }
 }
 
+const intercomDomains = [
+  "https://widget.intercom.io",
+  "https://js.intercomcdn.com",
+  "https://api-iam.intercom.io",
+  "https://api-ping.intercom.io",
+  "https://nexus-websocket-a.intercom.io",
+];
+
 const cspDirectives = [
   "default-src 'self'",
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'none'",
   "object-src 'none'",
-  "img-src 'self' data: https:",
+  `img-src 'self' data: https: ${intercomDomains.join(" ")}`,
   "style-src 'self' 'unsafe-inline'",
-  "script-src 'self' 'unsafe-inline' https://js.stripe.com",
+  `script-src 'self' 'unsafe-inline' https://js.stripe.com ${intercomDomains.join(" ")}`,
   [
     "connect-src 'self'",
     supabaseOrigin,
     "https://api.stripe.com",
     "https://js.stripe.com",
+    ...intercomDomains,
   ]
     .filter(Boolean)
     .join(" "),
-  "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
+  `frame-src 'self' https://js.stripe.com https://hooks.stripe.com ${intercomDomains.join(" ")}`,
   "upgrade-insecure-requests",
 ].join("; ");
 

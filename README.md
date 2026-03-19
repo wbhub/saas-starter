@@ -226,6 +226,7 @@ Before your first real customer signs up, confirm:
 - Resend delivery is configured: `RESEND_FROM_EMAIL` is verified and `RESEND_SUPPORT_EMAIL` routes to your inbox.
 - Optional Intercom: `NEXT_PUBLIC_INTERCOM_APP_ID` and `INTERCOM_IDENTITY_SECRET` are set if you want verified Intercom identity in production.
 - `TRUST_PROXY_HEADERS` is only enabled if your deployment injects trusted proxy IP headers.
+  - Auth callback rate limiting uses trusted client IP headers; when `TRUST_PROXY_HEADERS=false`, callback requests are not rate limited to avoid cross-user throttling behind shared proxies.
 
 ---
 
@@ -301,6 +302,7 @@ Security notes:
 
 - The request endpoint always returns a generic success message (to avoid leaking whether an email exists).
 - Password updates require a valid recovery session from the email link.
+- Callback rate limiting is applied only when trusted proxy IP headers are enabled (`TRUST_PROXY_HEADERS=true`).
 
 ---
 

@@ -79,6 +79,7 @@ describe("POST /api/stripe/webhook", () => {
       '{"id":"evt_bad"}',
       "t=1,v1=invalid",
       "whsec_test",
+      300,
     );
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({

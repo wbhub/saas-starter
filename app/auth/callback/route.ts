@@ -28,9 +28,8 @@ function getCallbackRateLimitKey(request: Request) {
     return `auth-callback:ip:${clientIp}`;
   }
 
-  // Fallback keeps anonymous traffic scoped better than a single shared "unknown" bucket.
-  const userAgent = request.headers.get("user-agent")?.slice(0, 120) ?? "unknown";
-  return `auth-callback:ua:${userAgent}`;
+  // Avoid cross-user throttling when requests are indistinguishable behind proxies.
+  return null;
 }
 
 function toAbsoluteUrl(pathnameWithQuery: string) {
@@ -42,19 +41,22 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
   const safeNext = getSafeNextPath(searchParams.get("next"));
 
-  const rateLimit = await checkRateLimit({
-    key: getCallbackRateLimitKey(request),
-    limit: 30,
-    windowMs: 60 * 1000,
-  });
-  if (!rateLimit.allowed) {
-    return NextResponse.json(
-      { error: "Too many callback attempts. Please wait and try again." },
-      {
-        status: 429,
-        headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
-      },
-    );
+  const rateLimitKey = getCallbackRateLimitKey(request);
+  if (rateLimitKey) {
+    const rateLimit = await checkRateLimit({
+      key: rateLimitKey,
+      limit: 30,
+      windowMs: 60 * 1000,
+    });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Too many callback attempts. Please wait and try again." },
+        {
+          status: 429,
+          headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
+        },
+      );
+    }
   }
 
   if (!code) {
