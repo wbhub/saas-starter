@@ -25,6 +25,8 @@ create table if not exists public.subscriptions (
   stripe_subscription_id text not null unique,
   stripe_customer_id text not null,
   stripe_price_id text not null,
+  stripe_subscription_created_at timestamptz,
+  stripe_event_created_at timestamptz,
   status text not null check (
     status in (
       'incomplete',
@@ -64,6 +66,8 @@ create index if not exists idx_stripe_customers_user_id on public.stripe_custome
 create index if not exists idx_subscriptions_user_id on public.subscriptions(user_id);
 create index if not exists idx_subscriptions_status on public.subscriptions(status);
 create index if not exists idx_subscriptions_period_end on public.subscriptions(current_period_end desc);
+create index if not exists idx_subscriptions_created_at on public.subscriptions(stripe_subscription_created_at desc);
+create index if not exists idx_subscriptions_event_created_at on public.subscriptions(stripe_event_created_at desc);
 create unique index if not exists ux_subscriptions_one_live_per_user
 on public.subscriptions(user_id)
 where status in ('incomplete', 'trialing', 'active', 'past_due', 'unpaid', 'paused');
@@ -195,6 +199,12 @@ alter table public.rate_limit_windows enable row level security;
 
 alter table public.subscriptions
 drop constraint if exists subscriptions_status_check;
+
+alter table public.subscriptions
+add column if not exists stripe_event_created_at timestamptz;
+
+alter table public.subscriptions
+add column if not exists stripe_subscription_created_at timestamptz;
 
 alter table public.subscriptions
 add constraint subscriptions_status_check

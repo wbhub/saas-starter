@@ -5,6 +5,16 @@ import { stripe } from "@/lib/stripe/server";
 import { syncSubscription } from "@/lib/stripe/sync";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 
+function getChangePlanIdempotencyKey(request: Request, userId: string, planKey: string) {
+  const rawKey = request.headers.get("x-idempotency-key")?.trim();
+  if (!rawKey) {
+    return undefined;
+  }
+
+  const safeKey = rawKey.slice(0, 80);
+  return `change-plan:${userId}:${planKey}:${safeKey}`;
+}
+
 async function isOwnedStripeSubscription(userId: string, subscriptionId: string) {
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
   const customerId =
@@ -49,6 +59,7 @@ export async function POST(req: Request) {
   if (!plan) {
     return NextResponse.json({ error: "Invalid target plan" }, { status: 400 });
   }
+  const idempotencyKey = getChangePlanIdempotencyKey(req, user.id, plan.key);
 
   const { data: subscriptionRow, error: subscriptionRowError } = await supabase
     .from("subscriptions")
@@ -114,14 +125,25 @@ export async function POST(req: Request) {
       );
     }
 
-    const updated = await stripe.subscriptions.update(stripeSubscription.id, {
-      items: [{ id: firstItem.id, price: plan.priceId }],
-      proration_behavior: "create_prorations",
-    });
+    const updated = await stripe.subscriptions.update(
+      stripeSubscription.id,
+      {
+        items: [{ id: firstItem.id, price: plan.priceId }],
+        proration_behavior: "create_prorations",
+      },
+      idempotencyKey ? { idempotencyKey } : undefined,
+    );
 
-    await syncSubscription(updated);
-
-    return NextResponse.json({ ok: true });
+    try {
+      await syncSubscription(updated, {
+        eventCreatedUnix: Math.floor(Date.now() / 1000),
+      });
+      return NextResponse.json({ ok: true });
+    } catch (syncError) {
+      // Stripe is already updated. Let webhooks reconcile DB state.
+      console.error("Plan changed in Stripe but local sync failed; awaiting webhook recovery", syncError);
+      return NextResponse.json({ ok: true, syncPending: true });
+    }
   } catch (error) {
     console.error("Failed to change Stripe subscription plan", error);
     return NextResponse.json(

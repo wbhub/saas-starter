@@ -13,6 +13,7 @@ import {
 
 import { SiteFooter } from "./site-footer";
 import { ThemeToggle } from "./theme-toggle";
+import { AuthAwareLink } from "./auth-aware-link";
 import { PLAN_CATALOG } from "@/lib/stripe/plans";
 
 const faqs = [
@@ -62,7 +63,7 @@ const steps = [
   },
 ];
 
-export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
+export function LandingPage() {
   return (
     <div className="min-h-screen bg-[color:var(--background)] text-[color:var(--foreground)]">
       <header className="border-b app-border-subtle">
@@ -79,18 +80,20 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
           </div>
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <Link
-              href={isLoggedIn ? "/dashboard" : "/login"}
+            <AuthAwareLink
+              loggedInHref="/dashboard"
+              loggedOutHref="/login"
+              loggedInLabel="Dashboard"
+              loggedOutLabel="Login"
               className="rounded-lg border app-border-subtle px-4 py-2 text-sm hover:bg-[color:var(--surface-subtle)]"
-            >
-              {isLoggedIn ? "Dashboard" : "Login"}
-            </Link>
-            <Link
-              href={isLoggedIn ? "/dashboard" : "/signup"}
+            />
+            <AuthAwareLink
+              loggedInHref="/dashboard"
+              loggedOutHref="/signup"
+              loggedInLabel="Open App"
+              loggedOutLabel="Start Free"
               className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400"
-            >
-              {isLoggedIn ? "Open App" : "Start Free"}
-            </Link>
+            />
           </div>
         </nav>
       </header>
@@ -115,13 +118,15 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                   on features customers actually pay for.
                 </p>
                 <div className="mt-8 flex flex-wrap gap-3">
-                  <Link
-                    href={isLoggedIn ? "/dashboard" : "/signup"}
+                  <AuthAwareLink
+                    loggedInHref="/dashboard"
+                    loggedOutHref="/signup"
+                    loggedInLabel="Go to dashboard"
+                    loggedOutLabel="Start free now"
                     className="inline-flex items-center gap-2 rounded-lg bg-indigo-500 px-5 py-3 font-medium text-white hover:bg-indigo-400"
                   >
-                    {isLoggedIn ? "Go to dashboard" : "Start free now"}
                     <ArrowRight className="h-4 w-4" />
-                  </Link>
+                  </AuthAwareLink>
                   <Link
                     href="#pricing"
                     className="rounded-lg border app-border-subtle px-5 py-3 font-medium hover:bg-[color:var(--surface-subtle)]"
@@ -348,12 +353,13 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                     {tier.priceLabel}
                   </p>
                   <p className="app-muted mt-3 text-sm">{tier.description}</p>
-                  <Link
-                    href={isLoggedIn ? "/dashboard" : "/signup"}
+                  <AuthAwareLink
+                    loggedInHref="/dashboard"
+                    loggedOutHref="/signup"
+                    loggedInLabel="Manage Plan"
+                    loggedOutLabel={`Choose ${tier.name}`}
                     className="mt-6 inline-block rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400"
-                  >
-                    {isLoggedIn ? "Manage Plan" : `Choose ${tier.name}`}
-                  </Link>
+                  />
                 </article>
               ))}
             </div>
@@ -372,13 +378,15 @@ export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
                   </p>
                 </div>
                 <div className="flex flex-wrap justify-start gap-3 md:justify-end">
-                  <Link
-                    href={isLoggedIn ? "/dashboard" : "/signup"}
+                  <AuthAwareLink
+                    loggedInHref="/dashboard"
+                    loggedOutHref="/signup"
+                    loggedInLabel="Open dashboard"
+                    loggedOutLabel="Create your account"
                     className="inline-flex items-center gap-2 rounded-lg bg-indigo-500 px-5 py-3 font-medium text-white hover:bg-indigo-400"
                   >
-                    {isLoggedIn ? "Open dashboard" : "Create your account"}
                     <ArrowRight className="h-4 w-4" />
-                  </Link>
+                  </AuthAwareLink>
                   <Link
                     href="#pricing"
                     className="rounded-lg border app-border-subtle px-5 py-3 font-medium hover:bg-[color:var(--surface-subtle)]"

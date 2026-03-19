@@ -14,6 +14,7 @@ const LIVE_SUBSCRIPTION_STATUSES = [
   "unpaid",
   "paused",
 ];
+const CHECKOUT_IN_FLIGHT_WINDOW_MS = 10 * 1000;
 
 async function isOwnedStripeCustomer(userId: string, customerId: string) {
   const customer = await stripe.customers.retrieve(customerId);
@@ -47,6 +48,14 @@ function getCheckoutIdempotencyKey(request: Request, userId: string, planKey: st
   return `checkout:${userId}:${planKey}:${safeKey}`;
 }
 
+function getScopedIdempotencyKey(baseKey: string | undefined, scope: string) {
+  if (!baseKey) {
+    return undefined;
+  }
+
+  return `${baseKey}:${scope}`;
+}
+
 export async function POST(req: Request) {
   const supabase = await createClient();
   const {
@@ -77,6 +86,22 @@ export async function POST(req: Request) {
   const plan = getPlanByKey(planKey);
   if (!plan) {
     return NextResponse.json({ error: "Invalid plan selected" }, { status: 400 });
+  }
+  const idempotencyKey = getCheckoutIdempotencyKey(req, user.id, plan.key);
+
+  const inFlightCheckout = await checkRateLimit({
+    key: `stripe-checkout:inflight:${user.id}:${plan.key}`,
+    limit: 1,
+    windowMs: CHECKOUT_IN_FLIGHT_WINDOW_MS,
+  });
+  if (!inFlightCheckout.allowed) {
+    return NextResponse.json(
+      { error: "Checkout is already in progress. Please wait and try again." },
+      {
+        status: 409,
+        headers: { "Retry-After": String(inFlightCheckout.retryAfterSeconds) },
+      },
+    );
   }
 
   const { data: existingSubscription, error: existingSubscriptionError } =
@@ -128,12 +153,17 @@ export async function POST(req: Request) {
     }
 
     if (!customerId) {
-      const customer = await stripe.customers.create({
-        email: user.email,
-        metadata: {
-          supabase_user_id: user.id,
+      const customer = await stripe.customers.create(
+        {
+          email: user.email,
+          metadata: {
+            supabase_user_id: user.id,
+          },
         },
-      });
+        getScopedIdempotencyKey(idempotencyKey, "customer")
+          ? { idempotencyKey: getScopedIdempotencyKey(idempotencyKey, "customer") }
+          : undefined,
+      );
       customerId = customer.id;
       await upsertStripeCustomer(user.id, customerId);
     }
@@ -145,19 +175,23 @@ export async function POST(req: Request) {
       );
     }
 
-    const idempotencyKey = getCheckoutIdempotencyKey(req, user.id, plan.key);
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      customer: customerId,
-      client_reference_id: user.id,
-      payment_method_types: ["card"],
-      line_items: [{ price: plan.priceId, quantity: 1 }],
-      success_url: `${env.NEXT_PUBLIC_APP_URL}/dashboard?checkout=success`,
-      cancel_url: `${env.NEXT_PUBLIC_APP_URL}/dashboard?checkout=canceled`,
-      metadata: {
-        supabase_user_id: user.id,
+    const session = await stripe.checkout.sessions.create(
+      {
+        mode: "subscription",
+        customer: customerId,
+        client_reference_id: user.id,
+        payment_method_types: ["card"],
+        line_items: [{ price: plan.priceId, quantity: 1 }],
+        success_url: `${env.NEXT_PUBLIC_APP_URL}/dashboard?checkout=success`,
+        cancel_url: `${env.NEXT_PUBLIC_APP_URL}/dashboard?checkout=canceled`,
+        metadata: {
+          supabase_user_id: user.id,
+        },
       },
-    }, idempotencyKey ? { idempotencyKey } : undefined);
+      getScopedIdempotencyKey(idempotencyKey, "session")
+        ? { idempotencyKey: getScopedIdempotencyKey(idempotencyKey, "session") }
+        : undefined,
+    );
 
     return NextResponse.json({ url: session.url });
   } catch (error) {
