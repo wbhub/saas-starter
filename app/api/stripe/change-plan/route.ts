@@ -5,6 +5,24 @@ import { stripe } from "@/lib/stripe/server";
 import { syncSubscription } from "@/lib/stripe/sync";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 
+function parsePlanKey(body: unknown) {
+  if (!body || typeof body !== "object") {
+    return null;
+  }
+
+  const maybePlanKey = (body as Record<string, unknown>).planKey;
+  if (typeof maybePlanKey !== "string") {
+    return null;
+  }
+
+  const planKey = maybePlanKey.trim();
+  if (!planKey || planKey.length > 100) {
+    return null;
+  }
+
+  return planKey;
+}
+
 function getChangePlanIdempotencyKey(request: Request, userId: string, planKey: string) {
   const rawKey = request.headers.get("x-idempotency-key")?.trim();
   if (!rawKey) {
@@ -54,8 +72,13 @@ export async function POST(req: Request) {
     );
   }
 
-  const body = (await req.json().catch(() => null)) as { planKey?: string } | null;
-  const plan = getPlanByKey(body?.planKey ?? "");
+  const body = await req.json().catch(() => null);
+  const planKey = parsePlanKey(body);
+  if (!planKey) {
+    return NextResponse.json({ error: "Invalid request payload" }, { status: 400 });
+  }
+
+  const plan = getPlanByKey(planKey);
   if (!plan) {
     return NextResponse.json({ error: "Invalid target plan" }, { status: 400 });
   }

@@ -3,18 +3,26 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 
 type Mode = "login" | "signup";
 
+type AuthApiResponse = {
+  ok?: boolean;
+  error?: string;
+  message?: string;
+  sessionCreated?: boolean;
+};
+
 export function AuthForm({ mode }: { mode: Mode }) {
   const router = useRouter();
-  const supabase = createClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [messageType, setMessageType] = useState<"error" | "success">("success");
   const isLogin = mode === "login";
+  const messageId = `${mode}-auth-message`;
+  const passwordHintId = `${mode}-password-hint`;
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -23,32 +31,46 @@ export function AuthForm({ mode }: { mode: Mode }) {
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
+        const response = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
         });
-        if (error) throw error;
+        const payload = (await response.json().catch(() => null)) as
+          | AuthApiResponse
+          | null;
+        if (!response.ok) {
+          throw new Error(payload?.error ?? "Unable to log in.");
+        }
+
         router.push("/dashboard");
         router.refresh();
       } else {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
-          },
+        const response = await fetch("/api/auth/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
         });
-        if (error) throw error;
-        if (data.session) {
+        const payload = (await response.json().catch(() => null)) as
+          | AuthApiResponse
+          | null;
+        if (!response.ok) {
+          throw new Error(payload?.error ?? "Unable to create account.");
+        }
+
+        if (payload?.sessionCreated) {
           router.push("/dashboard");
           router.refresh();
           return;
         }
+        setMessageType("success");
         setMessage(
-          "Account created. Check your inbox to verify email if confirmation is enabled.",
+          payload?.message ??
+            "Account created. Check your inbox to verify email if confirmation is enabled.",
         );
       }
     } catch (error) {
+      setMessageType("error");
       setMessage(error instanceof Error ? error.message : "Unexpected error");
     } finally {
       setLoading(false);
@@ -66,7 +88,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
           : "Start with secure auth and billing-ready infrastructure."}
       </p>
 
-      <form className="mt-6 space-y-4" onSubmit={onSubmit}>
+      <form className="mt-6 space-y-4" onSubmit={onSubmit} aria-busy={loading}>
         <label className="block">
           <span className="mb-1 block text-sm font-medium text-[color:var(--foreground)]">
             Email
@@ -76,6 +98,8 @@ export function AuthForm({ mode }: { mode: Mode }) {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            aria-describedby={message ? messageId : undefined}
+            aria-invalid={messageType === "error" && Boolean(message)}
             className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-[color:var(--foreground)] outline-none ring-[color:var(--ring)] placeholder:text-[color:var(--muted-foreground)] focus:ring-2"
           />
         </label>
@@ -89,9 +113,14 @@ export function AuthForm({ mode }: { mode: Mode }) {
             minLength={8}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            aria-describedby={`${passwordHintId}${message ? ` ${messageId}` : ""}`}
+            aria-invalid={messageType === "error" && Boolean(message)}
             className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-[color:var(--foreground)] outline-none ring-[color:var(--ring)] placeholder:text-[color:var(--muted-foreground)] focus:ring-2"
           />
         </label>
+        <p id={passwordHintId} className="text-xs text-[color:var(--muted-foreground)]">
+          Password must be at least 8 characters.
+        </p>
         <button
           type="submit"
           disabled={loading}
@@ -102,7 +131,12 @@ export function AuthForm({ mode }: { mode: Mode }) {
       </form>
 
       {message ? (
-        <p className="mt-4 rounded-lg app-surface-subtle px-3 py-2 text-sm text-[color:var(--foreground)]">
+        <p
+          id={messageId}
+          role={messageType === "error" ? "alert" : "status"}
+          aria-live={messageType === "error" ? "assertive" : "polite"}
+          className="mt-4 rounded-lg app-surface-subtle px-3 py-2 text-sm text-[color:var(--foreground)]"
+        >
           {message}
         </p>
       ) : null}

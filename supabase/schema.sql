@@ -65,6 +65,8 @@ create index if not exists idx_profiles_created_at on public.profiles(created_at
 create index if not exists idx_stripe_customers_user_id on public.stripe_customers(user_id);
 create index if not exists idx_subscriptions_user_id on public.subscriptions(user_id);
 create index if not exists idx_subscriptions_status on public.subscriptions(status);
+create index if not exists idx_subscriptions_stripe_customer_id on public.subscriptions(stripe_customer_id);
+create index if not exists idx_subscriptions_user_id_status on public.subscriptions(user_id, status);
 create index if not exists idx_subscriptions_period_end on public.subscriptions(current_period_end desc);
 create index if not exists idx_subscriptions_created_at on public.subscriptions(stripe_subscription_created_at desc);
 create index if not exists idx_subscriptions_event_created_at on public.subscriptions(stripe_event_created_at desc);
@@ -169,6 +171,144 @@ revoke execute on function public.check_rate_limit(text, integer, integer) from 
 revoke execute on function public.check_rate_limit(text, integer, integer) from anon;
 revoke execute on function public.check_rate_limit(text, integer, integer) from authenticated;
 grant execute on function public.check_rate_limit(text, integer, integer) to service_role;
+
+create or replace function public.sync_stripe_subscription_atomic(
+  p_user_id uuid,
+  p_stripe_customer_id text,
+  p_stripe_subscription_id text,
+  p_stripe_price_id text,
+  p_status text,
+  p_stripe_subscription_created_at timestamptz,
+  p_current_period_start timestamptz,
+  p_current_period_end timestamptz,
+  p_cancel_at_period_end boolean,
+  p_stripe_event_created_at timestamptz
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_live_statuses text[] := array['incomplete', 'trialing', 'active', 'past_due', 'unpaid', 'paused'];
+  v_existing_event_created_at timestamptz;
+  v_has_newer_live_subscription boolean := false;
+  v_upserted_count integer := 0;
+begin
+  if p_status not in (
+    'incomplete',
+    'incomplete_expired',
+    'trialing',
+    'active',
+    'past_due',
+    'canceled',
+    'unpaid',
+    'paused'
+  ) then
+    raise exception 'Unsupported subscription status: %', p_status;
+  end if;
+
+  insert into public.stripe_customers as sc (
+    user_id,
+    stripe_customer_id
+  )
+  values (
+    p_user_id,
+    p_stripe_customer_id
+  )
+  on conflict (user_id) do update
+  set stripe_customer_id = excluded.stripe_customer_id;
+
+  select s.stripe_event_created_at
+  into v_existing_event_created_at
+  from public.subscriptions s
+  where s.stripe_subscription_id = p_stripe_subscription_id
+  for update;
+
+  if v_existing_event_created_at is not null and v_existing_event_created_at > p_stripe_event_created_at then
+    return false;
+  end if;
+
+  if p_status = any(v_live_statuses) then
+    select exists (
+      select 1
+      from public.subscriptions s
+      where s.user_id = p_user_id
+        and s.stripe_subscription_id <> p_stripe_subscription_id
+        and s.status = any(v_live_statuses)
+        and (
+          (
+            s.stripe_subscription_created_at is not null
+            and s.stripe_subscription_created_at > p_stripe_subscription_created_at
+          )
+          or (
+            s.stripe_subscription_created_at = p_stripe_subscription_created_at
+            and s.stripe_subscription_id > p_stripe_subscription_id
+          )
+        )
+    )
+    into v_has_newer_live_subscription;
+
+    if v_has_newer_live_subscription then
+      return false;
+    end if;
+
+    update public.subscriptions
+    set
+      status = 'canceled',
+      cancel_at_period_end = true
+    where user_id = p_user_id
+      and stripe_subscription_id <> p_stripe_subscription_id
+      and status = any(v_live_statuses);
+  end if;
+
+  insert into public.subscriptions as s (
+    user_id,
+    stripe_subscription_id,
+    stripe_customer_id,
+    stripe_price_id,
+    status,
+    stripe_subscription_created_at,
+    current_period_start,
+    current_period_end,
+    cancel_at_period_end,
+    stripe_event_created_at
+  )
+  values (
+    p_user_id,
+    p_stripe_subscription_id,
+    p_stripe_customer_id,
+    p_stripe_price_id,
+    p_status,
+    p_stripe_subscription_created_at,
+    p_current_period_start,
+    p_current_period_end,
+    p_cancel_at_period_end,
+    p_stripe_event_created_at
+  )
+  on conflict (stripe_subscription_id) do update
+  set
+    user_id = excluded.user_id,
+    stripe_customer_id = excluded.stripe_customer_id,
+    stripe_price_id = excluded.stripe_price_id,
+    status = excluded.status,
+    stripe_subscription_created_at = excluded.stripe_subscription_created_at,
+    current_period_start = excluded.current_period_start,
+    current_period_end = excluded.current_period_end,
+    cancel_at_period_end = excluded.cancel_at_period_end,
+    stripe_event_created_at = excluded.stripe_event_created_at
+  where s.stripe_event_created_at is null
+    or s.stripe_event_created_at <= excluded.stripe_event_created_at;
+
+  get diagnostics v_upserted_count = row_count;
+  return v_upserted_count > 0;
+end;
+$$;
+
+revoke execute on function public.sync_stripe_subscription_atomic(uuid, text, text, text, text, timestamptz, timestamptz, timestamptz, boolean, timestamptz) from public;
+revoke execute on function public.sync_stripe_subscription_atomic(uuid, text, text, text, text, timestamptz, timestamptz, timestamptz, boolean, timestamptz) from anon;
+revoke execute on function public.sync_stripe_subscription_atomic(uuid, text, text, text, text, timestamptz, timestamptz, timestamptz, boolean, timestamptz) from authenticated;
+grant execute on function public.sync_stripe_subscription_atomic(uuid, text, text, text, text, timestamptz, timestamptz, timestamptz, boolean, timestamptz) to service_role;
 
 create or replace function public.handle_new_user()
 returns trigger
