@@ -1,10 +1,17 @@
 import { NextResponse } from "next/server";
+import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/security/rate-limit";
+import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { recoverPersonalTeamForUser } from "@/lib/team-recovery";
 import { logger } from "@/lib/logger";
 
-export async function POST() {
+export async function POST(request: Request) {
+  const csrfError = verifyCsrfProtection(request);
+  if (csrfError) {
+    return csrfError;
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -16,8 +23,7 @@ export async function POST() {
 
   const rateLimit = await checkRateLimit({
     key: `team-recovery:user:${user.id}`,
-    limit: 10,
-    windowMs: 10 * 60 * 1000,
+    ...RATE_LIMITS.teamRecoveryByUser,
   });
   if (!rateLimit.allowed) {
     return NextResponse.json(

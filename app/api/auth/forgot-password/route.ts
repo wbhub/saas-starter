@@ -1,16 +1,18 @@
 import { NextResponse, after } from "next/server";
+import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { env } from "@/lib/env";
 import { getResendClient, getResendFromEmail } from "@/lib/resend/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getClientRateLimitIdentifier } from "@/lib/http/client-ip";
 import { requireJsonContentType } from "@/lib/http/content-type";
+import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
 import { checkRateLimit } from "@/lib/security/rate-limit";
+import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { isValidEmail } from "@/lib/validation";
 import { logger } from "@/lib/logger";
-
-type ForgotPasswordPayload = {
-  email?: string;
-};
+const forgotPasswordPayloadSchema = z.object({
+  email: z.string().trim().toLowerCase(),
+});
 
 const GENERIC_SUCCESS_MESSAGE =
   "If an account exists for that email, a reset link has been sent.";
@@ -87,20 +89,25 @@ async function sendPasswordResetEmailInBackground(email: string) {
 }
 
 export async function POST(request: Request) {
+  const csrfError = verifyCsrfProtection(request);
+  if (csrfError) {
+    return csrfError;
+  }
+
   const contentTypeError = requireJsonContentType(request);
   if (contentTypeError) {
     return contentTypeError;
   }
 
-  const body = (await request.json().catch(() => null)) as
-    | ForgotPasswordPayload
-    | null;
-  const email = body?.email?.trim().toLowerCase() ?? "";
+  const bodyParse = await parseJsonWithSchema(request, forgotPasswordPayloadSchema);
+  if (!bodyParse.success) {
+    return NextResponse.json({ message: GENERIC_SUCCESS_MESSAGE });
+  }
+  const { email } = bodyParse.data;
   const clientId = getClientRateLimitIdentifier(request);
   const ipRateLimit = await checkRateLimit({
     key: `forgot-password:${clientId.keyType}:${clientId.value}`,
-    limit: 10,
-    windowMs: 10 * 60 * 1000,
+    ...RATE_LIMITS.forgotPasswordByClient,
   });
   if (!ipRateLimit.allowed) {
     return NextResponse.json({ message: GENERIC_SUCCESS_MESSAGE });
@@ -112,8 +119,7 @@ export async function POST(request: Request) {
 
   const emailRateLimit = await checkRateLimit({
     key: `forgot-password:email:${email}`,
-    limit: 3,
-    windowMs: 10 * 60 * 1000,
+    ...RATE_LIMITS.forgotPasswordByEmail,
   });
   if (!emailRateLimit.allowed) {
     return NextResponse.json({ message: GENERIC_SUCCESS_MESSAGE });

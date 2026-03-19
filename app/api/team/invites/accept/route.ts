@@ -1,16 +1,19 @@
 import { NextResponse } from "next/server";
+import { logAuditEvent } from "@/lib/audit";
+import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireJsonContentType } from "@/lib/http/content-type";
 import { getClientRateLimitIdentifier } from "@/lib/http/client-ip";
+import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
 import { checkRateLimit } from "@/lib/security/rate-limit";
+import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { hashInviteToken } from "@/lib/team-invites";
 import { syncTeamSeatQuantity } from "@/lib/stripe/seats";
 import { logger } from "@/lib/logger";
-
-type AcceptInvitePayload = {
-  token?: string;
-};
+const acceptInvitePayloadSchema = z.object({
+  token: z.string().trim().min(10).max(256),
+});
 
 type AcceptInviteRpcResult = {
   ok: boolean;
@@ -20,6 +23,11 @@ type AcceptInviteRpcResult = {
 };
 
 export async function POST(request: Request) {
+  const csrfError = verifyCsrfProtection(request);
+  if (csrfError) {
+    return csrfError;
+  }
+
   const contentTypeError = requireJsonContentType(request);
   if (contentTypeError) {
     return contentTypeError;
@@ -34,11 +42,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = (await request.json().catch(() => null)) as AcceptInvitePayload | null;
-  const token = body?.token?.trim() ?? "";
-  if (token.length < 10 || token.length > 256) {
+  const bodyParse = await parseJsonWithSchema(request, acceptInvitePayloadSchema);
+  if (!bodyParse.success) {
     return NextResponse.json({ error: "Invalid invite token." }, { status: 400 });
   }
+  const { token } = bodyParse.data;
 
   const userEmail = user.email?.trim().toLowerCase();
   if (!userEmail) {
@@ -54,13 +62,11 @@ export async function POST(request: Request) {
   const [userRateLimit, clientRateLimit] = await Promise.all([
     checkRateLimit({
       key: `team-invite:accept:user:${user.id}`,
-      limit: 20,
-      windowMs: 10 * 60 * 1000,
+      ...RATE_LIMITS.teamInviteAcceptByUser,
     }),
     checkRateLimit({
       key: `team-invite:accept:${clientId.keyType}:${clientId.value}`,
-      limit: 40,
-      windowMs: 10 * 60 * 1000,
+      ...RATE_LIMITS.teamInviteAcceptByClient,
     }),
   ]);
   if (!userRateLimit.allowed || !clientRateLimit.allowed) {
@@ -86,6 +92,12 @@ export async function POST(request: Request) {
 
   if (rpcError) {
     logger.error("Failed to accept invite atomically", rpcError);
+    logAuditEvent({
+      action: "team.invite.accept",
+      outcome: "failure",
+      actorUserId: user.id,
+      metadata: { reason: "rpc_error" },
+    });
     return NextResponse.json({ error: "Unable to accept invite." }, { status: 500 });
   }
 
@@ -93,6 +105,12 @@ export async function POST(request: Request) {
   if (!rpcRow || !rpcRow.ok) {
     const code = rpcRow?.error_code;
     if (code === "not_found") {
+      logAuditEvent({
+        action: "team.invite.accept",
+        outcome: "denied",
+        actorUserId: user.id,
+        metadata: { reason: code },
+      });
       return NextResponse.json({ error: "Invite not found." }, { status: 404 });
     }
     if (code === "already_accepted") {
@@ -119,6 +137,13 @@ export async function POST(request: Request) {
       logger.error("Accepted invite but failed to sync Stripe seat quantity", error);
     }
   }
+
+  logAuditEvent({
+    action: "team.invite.accept",
+    outcome: "success",
+    actorUserId: user.id,
+    teamId: rpcRow.team_id,
+  });
 
   return NextResponse.json({
     ok: true,

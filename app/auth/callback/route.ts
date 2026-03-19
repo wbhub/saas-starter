@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { DAY_MS, MINUTE_MS } from "@/lib/constants/durations";
+import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { env } from "@/lib/env";
 import { getClientIp } from "@/lib/http/client-ip";
 import { createClient } from "@/lib/supabase/server";
@@ -26,10 +28,10 @@ function getSafeNextPath(next: string | null) {
 }
 
 const CALLBACK_RATE_LIMIT_COOKIE = "auth_callback_client";
-const CALLBACK_RATE_LIMIT_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
+const CALLBACK_RATE_LIMIT_COOKIE_MAX_AGE_SECONDS = (30 * DAY_MS) / 1000;
 const PASSWORD_RECOVERY_COOKIE = "auth_password_recovery";
 const PASSWORD_RECOVERY_USER_COOKIE = "auth_password_recovery_user";
-const PASSWORD_RECOVERY_COOKIE_MAX_AGE_SECONDS = 10 * 60;
+const PASSWORD_RECOVERY_COOKIE_MAX_AGE_SECONDS = (10 * MINUTE_MS) / 1000;
 
 function getCallbackClientId(request: NextRequest) {
   const existing = request.cookies.get(CALLBACK_RATE_LIMIT_COOKIE)?.value;
@@ -110,8 +112,7 @@ export async function GET(request: NextRequest) {
 
   const rateLimit = await checkRateLimit({
     key: getCallbackRateLimitKey(request, callbackClientId.value),
-    limit: 10,
-    windowMs: 60 * 1000,
+    ...RATE_LIMITS.authCallbackByClient,
   });
   if (!rateLimit.allowed) {
     const response = NextResponse.json(

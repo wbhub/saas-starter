@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
+import { getCsrfHeaders } from "@/lib/http/csrf";
 import { createClient } from "@/lib/supabase/client";
+import { validatePasswordComplexity } from "@/lib/validation";
 
 const RECOVERY_MARKER_KEY = "saas-starter-password-recovery";
 const RECOVERY_MARKER_MAX_AGE_MS = 15 * 60 * 1000;
@@ -107,9 +109,10 @@ export function ResetPasswordForm({ hasRecoveryProof, recoveryUserId }: ResetPas
     event.preventDefault();
     setMessage(null);
 
-    if (password.length < 8) {
+    const passwordValidation = validatePasswordComplexity(password);
+    if (!passwordValidation.valid) {
       setMessageType("error");
-      setMessage("Password must be at least 8 characters.");
+      setMessage(passwordValidation.error);
       return;
     }
 
@@ -132,7 +135,7 @@ export function ResetPasswordForm({ hasRecoveryProof, recoveryUserId }: ResetPas
         method: "POST",
         credentials: "same-origin",
         cache: "no-store",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...getCsrfHeaders() },
         body: JSON.stringify({ password }),
       });
       if (!response.ok) {
@@ -223,7 +226,7 @@ export function ResetPasswordForm({ hasRecoveryProof, recoveryUserId }: ResetPas
           />
         </label>
         <p id={passwordHintId} className="text-xs text-[color:var(--muted-foreground)]">
-          Password must be at least 8 characters.
+          Use 8-128 chars with uppercase, lowercase, number, and symbol.
         </p>
         <button
           type="submit"

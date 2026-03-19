@@ -35,7 +35,7 @@ describe("POST /reset-password/submit", () => {
 
     const { POST } = await import("./route");
     const response = await POST(
-      makeRequest("http://localhost/reset-password/submit", { password: "password123" }),
+      makeRequest("http://localhost/reset-password/submit", { password: "A1!bcdefgh" }),
     );
 
     expect(response.status).toBe(429);
@@ -56,7 +56,7 @@ describe("POST /reset-password/submit", () => {
 
     const { POST } = await import("./route");
     const response = await POST(
-      makeRequest("http://localhost/reset-password/submit", { password: "password123" }),
+      makeRequest("http://localhost/reset-password/submit", { password: "A1!bcdefgh" }),
     );
 
     expect(response.status).toBe(403);
@@ -105,7 +105,7 @@ describe("POST /reset-password/submit", () => {
     const response = await POST(
       makeRequest(
         "http://localhost/reset-password/submit",
-        { password: "password123" },
+        { password: "A1!bcdefgh" },
         "auth_password_recovery=1; auth_password_recovery_user=user_a",
       ),
     );
@@ -132,14 +132,14 @@ describe("POST /reset-password/submit", () => {
     const response = await POST(
       makeRequest(
         "http://localhost/reset-password/submit",
-        { password: "password123" },
+        { password: "A1!bcdefgh" },
         "auth_password_recovery=1; auth_password_recovery_user=user_a",
       ),
     );
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ ok: true });
-    expect(updateUser).toHaveBeenCalledWith({ password: "password123" });
+    expect(updateUser).toHaveBeenCalledWith({ password: "A1!bcdefgh" });
     expect(response.headers.get("set-cookie")).toContain("auth_password_recovery=;");
   });
 });

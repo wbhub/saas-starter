@@ -1,14 +1,21 @@
 import { NextResponse } from "next/server";
+import { logAuditEvent } from "@/lib/audit";
+import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { createClient } from "@/lib/supabase/server";
 import { getPlanByKey } from "@/lib/stripe/config";
 import { stripe } from "@/lib/stripe/server";
 import { syncSubscription } from "@/lib/stripe/sync";
 import { requireJsonContentType } from "@/lib/http/content-type";
+import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
 import { checkRateLimit } from "@/lib/security/rate-limit";
+import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { LIVE_SUBSCRIPTION_STATUSES } from "@/lib/stripe/plans";
 import { parsePlanKey } from "@/lib/validation";
 import { logger } from "@/lib/logger";
 import { getTeamContextForUser } from "@/lib/team-context";
+const changePlanPayloadSchema = z.object({
+  planKey: z.string().trim(),
+});
 
 function getChangePlanIdempotencyKey(request: Request, teamId: string, planKey: string) {
   const rawKey = request.headers.get("x-idempotency-key")?.trim();
@@ -21,6 +28,11 @@ function getChangePlanIdempotencyKey(request: Request, teamId: string, planKey: 
 }
 
 export async function POST(req: Request) {
+  const csrfError = verifyCsrfProtection(req);
+  if (csrfError) {
+    return csrfError;
+  }
+
   const contentTypeError = requireJsonContentType(req);
   if (contentTypeError) {
     return contentTypeError;
@@ -45,8 +57,7 @@ export async function POST(req: Request) {
 
   const rateLimit = await checkRateLimit({
     key: `stripe-change-plan:team:${teamContext.teamId}`,
-    limit: 10,
-    windowMs: 60 * 1000,
+    ...RATE_LIMITS.stripeChangePlanByTeam,
   });
   if (!rateLimit.allowed) {
     return NextResponse.json(
@@ -58,8 +69,8 @@ export async function POST(req: Request) {
     );
   }
 
-  const body = await req.json().catch(() => null);
-  const planKey = parsePlanKey(body);
+  const bodyParse = await parseJsonWithSchema(req, changePlanPayloadSchema);
+  const planKey = bodyParse.success ? parsePlanKey(bodyParse.data) : null;
   if (!planKey) {
     return NextResponse.json({ error: "Invalid request payload" }, { status: 400 });
   }
@@ -144,13 +155,38 @@ export async function POST(req: Request) {
       await syncSubscription(updated, {
         eventCreatedUnix: Math.floor(Date.now() / 1000),
       });
+      logAuditEvent({
+        action: "billing.plan.change",
+        outcome: "success",
+        actorUserId: user.id,
+        teamId: teamContext.teamId,
+        metadata: { targetPlanKey: plan.key, stripeSubscriptionId: stripeSubscription.id },
+      });
       return NextResponse.json({ ok: true });
     } catch (syncError) {
       logger.error("Plan changed in Stripe but local sync failed; awaiting webhook recovery", syncError);
+      logAuditEvent({
+        action: "billing.plan.change",
+        outcome: "success",
+        actorUserId: user.id,
+        teamId: teamContext.teamId,
+        metadata: {
+          targetPlanKey: plan.key,
+          stripeSubscriptionId: stripeSubscription.id,
+          syncPending: true,
+        },
+      });
       return NextResponse.json({ ok: true, syncPending: true });
     }
   } catch (error) {
     logger.error("Failed to change Stripe subscription plan", error);
+    logAuditEvent({
+      action: "billing.plan.change",
+      outcome: "failure",
+      actorUserId: user.id,
+      teamId: teamContext.teamId,
+      metadata: { targetPlanKey: plan.key },
+    });
     return NextResponse.json(
       { error: "Unable to change your plan right now. Please try again." },
       { status: 500 },

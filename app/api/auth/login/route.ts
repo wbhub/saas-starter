@@ -1,37 +1,44 @@
 import { NextResponse } from "next/server";
+import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { createClient } from "@/lib/supabase/server";
 import { getClientRateLimitIdentifier } from "@/lib/http/client-ip";
 import { requireJsonContentType } from "@/lib/http/content-type";
+import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
 import { checkRateLimit } from "@/lib/security/rate-limit";
+import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { isValidEmail } from "@/lib/validation";
-
-type LoginPayload = {
-  email?: string;
-  password?: string;
-};
+const loginPayloadSchema = z.object({
+  email: z.string().trim().toLowerCase(),
+  password: z.string(),
+});
 
 export async function POST(request: Request) {
+  const csrfError = verifyCsrfProtection(request);
+  if (csrfError) {
+    return csrfError;
+  }
+
   const contentTypeError = requireJsonContentType(request);
   if (contentTypeError) {
     return contentTypeError;
   }
 
-  const body = (await request.json().catch(() => null)) as LoginPayload | null;
-  const email = body?.email?.trim().toLowerCase() ?? "";
-  const password = body?.password ?? "";
+  const bodyParse = await parseJsonWithSchema(request, loginPayloadSchema);
+  if (!bodyParse.success) {
+    return NextResponse.json({ error: "Invalid email or password." }, { status: 400 });
+  }
+  const { email, password } = bodyParse.data;
   const clientId = getClientRateLimitIdentifier(request);
 
   const ipRateLimitPromise = checkRateLimit({
     key: `auth-login:${clientId.keyType}:${clientId.value}`,
-    limit: 20,
-    windowMs: 10 * 60 * 1000,
+    ...RATE_LIMITS.authLoginByClient,
   });
 
   const emailRateLimitPromise = isValidEmail(email)
     ? checkRateLimit({
         key: `auth-login:email:${email}`,
-        limit: 10,
-        windowMs: 10 * 60 * 1000,
+        ...RATE_LIMITS.authLoginByEmail,
       })
     : Promise.resolve({ allowed: true, retryAfterSeconds: 0 });
 

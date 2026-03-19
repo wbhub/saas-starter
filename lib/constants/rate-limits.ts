@@ -1,0 +1,22 @@
+import { HOUR_MS, MINUTE_MS } from "@/lib/constants/durations";
+
+export const RATE_LIMITS = {
+  authSignupByClient: { limit: 10, windowMs: 10 * MINUTE_MS },
+  authSignupByEmail: { limit: 3, windowMs: HOUR_MS },
+  authLoginByClient: { limit: 20, windowMs: 10 * MINUTE_MS },
+  authLoginByEmail: { limit: 10, windowMs: 10 * MINUTE_MS },
+  forgotPasswordByClient: { limit: 10, windowMs: 10 * MINUTE_MS },
+  forgotPasswordByEmail: { limit: 3, windowMs: 10 * MINUTE_MS },
+  resetPasswordSubmitByClient: { limit: 15, windowMs: 10 * MINUTE_MS },
+  teamInviteCreateByTeam: { limit: 20, windowMs: HOUR_MS },
+  teamInviteAcceptByUser: { limit: 20, windowMs: 10 * MINUTE_MS },
+  teamInviteAcceptByClient: { limit: 40, windowMs: 10 * MINUTE_MS },
+  teamMemberRemoveByActor: { limit: 30, windowMs: 10 * MINUTE_MS },
+  stripeCheckoutByTeam: { limit: 10, windowMs: MINUTE_MS },
+  stripeChangePlanByTeam: { limit: 10, windowMs: MINUTE_MS },
+  stripePortalByTeam: { limit: 20, windowMs: MINUTE_MS },
+  supportByUser: { limit: 5, windowMs: 10 * MINUTE_MS },
+  supportByClient: { limit: 20, windowMs: 10 * MINUTE_MS },
+  teamRecoveryByUser: { limit: 10, windowMs: 10 * MINUTE_MS },
+  authCallbackByClient: { limit: 10, windowMs: MINUTE_MS },
+} as const;

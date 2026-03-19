@@ -1,38 +1,45 @@
 import { NextResponse } from "next/server";
 import { env } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
+import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { getClientRateLimitIdentifier } from "@/lib/http/client-ip";
 import { requireJsonContentType } from "@/lib/http/content-type";
+import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
 import { checkRateLimit } from "@/lib/security/rate-limit";
-import { isValidEmail } from "@/lib/validation";
-
-type SignupPayload = {
-  email?: string;
-  password?: string;
-};
+import { verifyCsrfProtection } from "@/lib/security/csrf";
+import { isValidEmail, validatePasswordComplexity } from "@/lib/validation";
+const signupPayloadSchema = z.object({
+  email: z.string().trim().toLowerCase(),
+  password: z.string(),
+});
 
 export async function POST(request: Request) {
+  const csrfError = verifyCsrfProtection(request);
+  if (csrfError) {
+    return csrfError;
+  }
+
   const contentTypeError = requireJsonContentType(request);
   if (contentTypeError) {
     return contentTypeError;
   }
 
-  const body = (await request.json().catch(() => null)) as SignupPayload | null;
-  const email = body?.email?.trim().toLowerCase() ?? "";
-  const password = body?.password ?? "";
+  const bodyParse = await parseJsonWithSchema(request, signupPayloadSchema);
+  if (!bodyParse.success) {
+    return NextResponse.json({ error: "Please provide a valid email and password." }, { status: 400 });
+  }
+  const { email, password } = bodyParse.data;
   const clientId = getClientRateLimitIdentifier(request);
 
   const ipRateLimitPromise = checkRateLimit({
     key: `auth-signup:${clientId.keyType}:${clientId.value}`,
-    limit: 10,
-    windowMs: 10 * 60 * 1000,
+    ...RATE_LIMITS.authSignupByClient,
   });
 
   const emailRateLimitPromise = isValidEmail(email)
     ? checkRateLimit({
         key: `auth-signup:email:${email}`,
-        limit: 3,
-        windowMs: 60 * 60 * 1000,
+        ...RATE_LIMITS.authSignupByEmail,
       })
     : Promise.resolve({ allowed: true, retryAfterSeconds: 0 });
 
@@ -55,9 +62,10 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!isValidEmail(email) || password.length < 8 || password.length > 128) {
+  const passwordValidation = validatePasswordComplexity(password);
+  if (!isValidEmail(email) || !passwordValidation.valid) {
     return NextResponse.json(
-      { error: "Please provide a valid email and password." },
+      { error: passwordValidation.valid ? "Please provide a valid email and password." : passwordValidation.error },
       { status: 400 },
     );
   }

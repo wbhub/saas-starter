@@ -54,7 +54,7 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  const [profileResult, subscriptionResult] = await Promise.all([
+  const [profileQuery, teamContextQuery] = await Promise.allSettled([
     supabase
       .from("profiles")
       .select("id,full_name,created_at")
@@ -63,12 +63,25 @@ export default async function DashboardPage() {
     getTeamContextForUser(supabase, user.id),
   ]);
 
-  if (profileResult.error) {
-    logger.error("Failed to load dashboard profile", profileResult.error);
-    throw new Error("Failed to load dashboard data");
+  let profile: ProfileRow | null = null;
+  if (profileQuery.status === "fulfilled") {
+    if (profileQuery.value.error) {
+      logger.error("Failed to load dashboard profile", profileQuery.value.error);
+    } else {
+      profile = profileQuery.value.data;
+    }
+  } else {
+    logger.error("Failed to load dashboard profile", profileQuery.reason);
   }
 
-  if (!subscriptionResult) {
+  let teamContext: Awaited<ReturnType<typeof getTeamContextForUser>> = null;
+  if (teamContextQuery.status === "fulfilled") {
+    teamContext = teamContextQuery.value;
+  } else {
+    logger.error("Failed to load team context", teamContextQuery.reason);
+  }
+
+  if (!teamContext) {
     return (
       <main className="min-h-screen bg-[color:var(--background)] px-6 py-10 text-[color:var(--foreground)]">
         <NoTeamCard />
@@ -76,22 +89,25 @@ export default async function DashboardPage() {
     );
   }
 
-  const subscriptionFetchResult = await supabase
-    .from("subscriptions")
-    .select("status,stripe_price_id,seat_quantity,current_period_end,cancel_at_period_end")
-    .eq("team_id", subscriptionResult.teamId)
-    .in("status", LIVE_SUBSCRIPTION_STATUSES)
-    .order("current_period_end", { ascending: false })
-    .limit(1)
-    .maybeSingle<SubscriptionRow>();
-
-  if (subscriptionFetchResult.error) {
-    logger.error("Failed to load dashboard subscription", subscriptionFetchResult.error);
-    throw new Error("Failed to load dashboard data");
+  let subscription: SubscriptionRow | null = null;
+  try {
+    const subscriptionFetchResult = await supabase
+      .from("subscriptions")
+      .select("status,stripe_price_id,seat_quantity,current_period_end,cancel_at_period_end")
+      .eq("team_id", teamContext.teamId)
+      .in("status", LIVE_SUBSCRIPTION_STATUSES)
+      .order("current_period_end", { ascending: false })
+      .limit(1)
+      .maybeSingle<SubscriptionRow>();
+    if (subscriptionFetchResult.error) {
+      logger.error("Failed to load dashboard subscription", subscriptionFetchResult.error);
+    } else {
+      subscription = subscriptionFetchResult.data;
+    }
+  } catch (error) {
+    logger.error("Failed to load dashboard subscription", error);
   }
 
-  const profile = profileResult.data;
-  const subscription = subscriptionFetchResult.data;
   const displayName = profile?.full_name?.trim() || user.email || "there";
 
   const currentPlan = getPlanByPriceId(subscription?.stripe_price_id);
@@ -99,56 +115,71 @@ export default async function DashboardPage() {
   const hasSubscription =
     status !== undefined && LIVE_SUBSCRIPTION_STATUSES.includes(status);
 
-  const [membershipResult, pendingInvitesResult] = await Promise.all([
+  const [membershipResult, pendingInvitesResult] = await Promise.allSettled([
     supabase
       .from("team_memberships")
       .select("user_id,role,created_at")
-      .eq("team_id", subscriptionResult.teamId)
+      .eq("team_id", teamContext.teamId)
       .order("created_at", { ascending: true })
       .returns<TeamMembershipRow[]>(),
     supabase
       .from("team_invites")
       .select("id,email,role,expires_at")
-      .eq("team_id", subscriptionResult.teamId)
+      .eq("team_id", teamContext.teamId)
       .is("accepted_at", null)
       .gt("expires_at", new Date().toISOString())
       .order("created_at", { ascending: false })
       .returns<PendingInviteRow[]>(),
   ]);
 
-  if (membershipResult.error) {
-    logger.error("Failed to load team members", membershipResult.error);
-    throw new Error("Failed to load dashboard data");
+  const memberships =
+    membershipResult.status === "fulfilled" && !membershipResult.value.error
+      ? membershipResult.value.data ?? []
+      : [];
+  if (membershipResult.status === "fulfilled" && membershipResult.value.error) {
+    logger.error("Failed to load team members", membershipResult.value.error);
+  }
+  if (membershipResult.status === "rejected") {
+    logger.error("Failed to load team members", membershipResult.reason);
   }
 
-  if (pendingInvitesResult.error) {
-    logger.error("Failed to load pending team invites", pendingInvitesResult.error);
-    throw new Error("Failed to load dashboard data");
+  const pendingInvitesData =
+    pendingInvitesResult.status === "fulfilled" && !pendingInvitesResult.value.error
+      ? pendingInvitesResult.value.data ?? []
+      : [];
+  if (pendingInvitesResult.status === "fulfilled" && pendingInvitesResult.value.error) {
+    logger.error("Failed to load pending team invites", pendingInvitesResult.value.error);
+  }
+  if (pendingInvitesResult.status === "rejected") {
+    logger.error("Failed to load pending team invites", pendingInvitesResult.reason);
   }
 
-  const memberUserIds = (membershipResult.data ?? []).map((row) => row.user_id);
-  const profileNamesResult = memberUserIds.length
-    ? await supabase
+  const memberUserIds = memberships.map((row) => row.user_id);
+  let profileNames: ProfileNameRow[] = [];
+  if (memberUserIds.length) {
+    try {
+      const profileNamesResult = await supabase
         .from("profiles")
         .select("id,full_name")
         .in("id", memberUserIds)
-        .returns<ProfileNameRow[]>()
-    : { data: [], error: null };
-
-  if (profileNamesResult.error) {
-    logger.error("Failed to load team member profiles", profileNamesResult.error);
-    throw new Error("Failed to load dashboard data");
+        .returns<ProfileNameRow[]>();
+      if (profileNamesResult.error) {
+        logger.error("Failed to load team member profiles", profileNamesResult.error);
+      } else {
+        profileNames = profileNamesResult.data ?? [];
+      }
+    } catch (error) {
+      logger.error("Failed to load team member profiles", error);
+    }
   }
 
-  const profileNameMap = new Map(
-    (profileNamesResult.data ?? []).map((row) => [row.id, row.full_name]),
-  );
-  const teamMembers = (membershipResult.data ?? []).map((row) => ({
+  const profileNameMap = new Map(profileNames.map((row) => [row.id, row.full_name]));
+  const teamMembers = memberships.map((row) => ({
     userId: row.user_id,
     fullName: profileNameMap.get(row.user_id) ?? null,
     role: row.role,
   }));
-  const pendingInvites = (pendingInvitesResult.data ?? []).map((row) => ({
+  const pendingInvites = pendingInvitesData.map((row) => ({
     id: row.id,
     email: row.email,
     role: row.role,
@@ -211,13 +242,13 @@ export default async function DashboardPage() {
               <div className="flex items-center justify-between">
                 <dt className="text-slate-500 dark:text-slate-400">Team</dt>
                 <dd className="max-w-[220px] truncate text-slate-800 dark:text-slate-100">
-                  {subscriptionResult.teamName ?? "My Team"}
+                  {teamContext.teamName ?? "My Team"}
                 </dd>
               </div>
               <div className="flex items-center justify-between">
                 <dt className="text-slate-500 dark:text-slate-400">Role</dt>
                 <dd className="text-slate-800 dark:text-slate-100 capitalize">
-                  {subscriptionResult.role}
+                  {teamContext.role}
                 </dd>
               </div>
               <div className="flex items-center justify-between">
@@ -294,12 +325,12 @@ export default async function DashboardPage() {
 
         <section className="mt-4">
           <TeamInviteCard
-            canInvite={subscriptionResult.role === "owner" || subscriptionResult.role === "admin"}
-            teamName={subscriptionResult.teamName ?? "My Team"}
+            canInvite={teamContext.role === "owner" || teamContext.role === "admin"}
+            teamName={teamContext.teamName ?? "My Team"}
             members={teamMembers}
             pendingInvites={pendingInvites}
             currentUserId={user.id}
-            currentUserRole={subscriptionResult.role}
+            currentUserRole={teamContext.role}
           />
         </section>
       </div>

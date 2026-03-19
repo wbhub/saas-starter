@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { getCsrfHeaders } from "@/lib/http/csrf";
+import { validatePasswordComplexity } from "@/lib/validation";
 
 type Mode = "login" | "signup";
 
@@ -39,7 +41,7 @@ export function AuthForm({
       if (isLogin) {
         const response = await fetch("/api/auth/login", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...getCsrfHeaders() },
           body: JSON.stringify({ email, password }),
         });
         const payload = (await response.json().catch(() => null)) as
@@ -52,9 +54,14 @@ export function AuthForm({
         router.push(redirectTo);
         router.refresh();
       } else {
+        const passwordValidation = validatePasswordComplexity(password);
+        if (!passwordValidation.valid) {
+          throw new Error(passwordValidation.error);
+        }
+
         const response = await fetch("/api/auth/signup", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...getCsrfHeaders() },
           body: JSON.stringify({ email, password }),
         });
         const payload = (await response.json().catch(() => null)) as
@@ -125,7 +132,7 @@ export function AuthForm({
           />
         </label>
         <p id={passwordHintId} className="text-xs text-[color:var(--muted-foreground)]">
-          Password must be at least 8 characters.
+          Use 8-128 chars with uppercase, lowercase, number, and symbol.
         </p>
         <button
           type="submit"

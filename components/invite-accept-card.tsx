@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { getCsrfHeaders } from "@/lib/http/csrf";
 
 type AcceptInviteResponse = {
   ok?: boolean;
@@ -27,7 +28,7 @@ export function InviteAcceptCard({
     try {
       const response = await fetch("/api/team/invites/accept", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...getCsrfHeaders() },
         body: JSON.stringify({ token }),
       });
       const payload = (await response.json().catch(() => null)) as

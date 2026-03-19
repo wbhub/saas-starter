@@ -143,7 +143,7 @@ describe("Dashboard page billing selection", () => {
     expect(redirect).toHaveBeenCalledWith("/login");
   });
 
-  it("throws when profile query fails", async () => {
+  it("continues rendering when profile query fails", async () => {
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: async () => ({
         auth: {
@@ -189,16 +189,12 @@ describe("Dashboard page billing selection", () => {
       logout: vi.fn(),
     }));
     vi.doMock("@/lib/team-context", () => ({
-      getTeamContextForUser: vi.fn().mockResolvedValue({
-        teamId: "team_123",
-        teamName: "Acme Team",
-        role: "owner",
-      }),
+      getTeamContextForUser: vi.fn().mockResolvedValue(null),
     }));
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
 
     const DashboardPage = (await import("./page")).default;
-    await expect(DashboardPage()).rejects.toThrow("Failed to load dashboard data");
+    await expect(DashboardPage()).resolves.toBeTruthy();
 
     expect(consoleError).toHaveBeenCalledWith(
       "Failed to load dashboard profile",

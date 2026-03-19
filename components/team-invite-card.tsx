@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getCsrfHeaders } from "@/lib/http/csrf";
 
 type TeamMember = {
   userId: string;
@@ -58,7 +59,7 @@ export function TeamInviteCard({
     try {
       const response = await fetch("/api/team/invites", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...getCsrfHeaders() },
         body: JSON.stringify({ email, role }),
       });
       const payload = (await response.json().catch(() => null)) as InviteApiResponse | null;
@@ -100,6 +101,7 @@ export function TeamInviteCard({
     try {
       const response = await fetch(`/api/team/members/${targetUserId}`, {
         method: "DELETE",
+        headers: getCsrfHeaders(),
       });
       const payload = (await response.json().catch(() => null)) as
         | { error?: string; ok?: boolean }

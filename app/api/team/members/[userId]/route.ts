@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
+import { logAuditEvent } from "@/lib/audit";
+import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getTeamContextForUser } from "@/lib/team-context";
 import { checkRateLimit } from "@/lib/security/rate-limit";
+import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { syncTeamSeatQuantity } from "@/lib/stripe/seats";
 import { logger } from "@/lib/logger";
 
@@ -18,7 +21,12 @@ type TeamMembersRouteContext = {
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-export async function DELETE(_request: Request, context: TeamMembersRouteContext) {
+export async function DELETE(request: Request, context: TeamMembersRouteContext) {
+  const csrfError = verifyCsrfProtection(request);
+  if (csrfError) {
+    return csrfError;
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -45,8 +53,7 @@ export async function DELETE(_request: Request, context: TeamMembersRouteContext
 
   const rateLimit = await checkRateLimit({
     key: `team-member-remove:${teamContext.teamId}:${user.id}`,
-    limit: 30,
-    windowMs: 10 * 60 * 1000,
+    ...RATE_LIMITS.teamMemberRemoveByActor,
   });
   if (!rateLimit.allowed) {
     return NextResponse.json(
@@ -64,6 +71,14 @@ export async function DELETE(_request: Request, context: TeamMembersRouteContext
   }
 
   if (targetUserId === user.id) {
+    logAuditEvent({
+      action: "team.member.remove",
+      outcome: "denied",
+      actorUserId: user.id,
+      teamId: teamContext.teamId,
+      resourceId: targetUserId,
+      metadata: { reason: "self_removal_not_supported" },
+    });
     return NextResponse.json(
       { error: "Self-removal is not supported from this action." },
       { status: 400 },
@@ -122,6 +137,14 @@ export async function DELETE(_request: Request, context: TeamMembersRouteContext
 
   if (deleteError) {
     logger.error("Failed to delete team membership", deleteError);
+    logAuditEvent({
+      action: "team.member.remove",
+      outcome: "failure",
+      actorUserId: user.id,
+      teamId: teamContext.teamId,
+      resourceId: targetUserId,
+      metadata: { reason: "delete_error" },
+    });
     return NextResponse.json({ error: "Unable to remove member." }, { status: 500 });
   }
 
@@ -134,6 +157,15 @@ export async function DELETE(_request: Request, context: TeamMembersRouteContext
     seatSynced = false;
     logger.error("Removed member but failed to sync Stripe seats", error);
   }
+
+  logAuditEvent({
+    action: "team.member.remove",
+    outcome: "success",
+    actorUserId: user.id,
+    teamId: teamContext.teamId,
+    resourceId: targetUserId,
+    metadata: { seatSynced },
+  });
 
   return NextResponse.json({ ok: true, seatSynced });
 }
