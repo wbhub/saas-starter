@@ -80,6 +80,10 @@ export async function syncSubscription(
 ) {
   const status = subscription.status;
   if (!TRACKED_STATUSES.includes(status as (typeof TRACKED_STATUSES)[number])) {
+    console.warn("Ignoring untracked Stripe subscription status during sync", {
+      subscriptionId: subscription.id,
+      status,
+    });
     return;
   }
 
@@ -89,13 +93,26 @@ export async function syncSubscription(
       : subscription.customer.id;
 
   const userId = await getUserIdFromStripeCustomer(stripeCustomerId);
-  if (!userId) return;
+  if (!userId) {
+    console.warn("No user mapping found for Stripe customer during sync", {
+      stripeCustomerId,
+      subscriptionId: subscription.id,
+    });
+    return;
+  }
 
   const eventCreatedAt = getEventCreatedIso(options?.eventCreatedUnix);
   const subscriptionCreatedAt = getSubscriptionCreatedIso(subscription.created);
 
   const item = subscription.items.data[0];
-  if (!item) return;
+  if (!item) {
+    console.warn("Stripe subscription has no items during sync", {
+      subscriptionId: subscription.id,
+      stripeCustomerId,
+      userId,
+    });
+    return;
+  }
 
   const { error } = await adminClient.rpc("sync_stripe_subscription_atomic", {
     p_user_id: userId,

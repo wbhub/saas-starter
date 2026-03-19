@@ -383,6 +383,10 @@ for insert
 to authenticated
 with check (auth.uid() = id);
 
+-- Intentionally no DELETE policy on user-owned tables.
+-- With RLS enabled, deletes are denied by default unless explicitly allowed.
+-- Cleanup is handled via ON DELETE CASCADE from auth.users.
+
 drop policy if exists "Users can read own stripe customer" on public.stripe_customers;
 create policy "Users can read own stripe customer"
 on public.stripe_customers
