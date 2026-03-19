@@ -59,15 +59,13 @@ export async function syncTeamSeatQuantity(
   teamId: string,
   options?: { idempotencyKey?: string },
 ) {
-  const [seatCount, liveSubscriptionId] = await Promise.all([
-    getSeatCount(teamId),
-    getLiveSubscriptionId(teamId),
-  ]);
+  const liveSubscriptionId = await getLiveSubscriptionId(teamId);
 
   if (!liveSubscriptionId) {
     return { updated: false as const, reason: "no_live_subscription" as const };
   }
 
+  const seatCount = await getSeatCount(teamId);
   const stripeSubscription = await stripe.subscriptions.retrieve(liveSubscriptionId);
   const firstItem = stripeSubscription.items.data[0];
   if (!firstItem) {
@@ -85,7 +83,7 @@ export async function syncTeamSeatQuantity(
     return { updated: false as const, reason: "already_in_sync" as const };
   }
 
-  const updated = await stripe.subscriptions.update(
+  let updated = await stripe.subscriptions.update(
     stripeSubscription.id,
     {
       items: [
@@ -99,6 +97,25 @@ export async function syncTeamSeatQuantity(
     options?.idempotencyKey ? { idempotencyKey: options.idempotencyKey } : undefined,
   );
 
+  const confirmedSeatCount = await getSeatCount(teamId);
+  if (confirmedSeatCount !== seatCount) {
+    updated = await stripe.subscriptions.update(
+      stripeSubscription.id,
+      {
+        items: [
+          {
+            id: firstItem.id,
+            quantity: confirmedSeatCount,
+          },
+        ],
+        proration_behavior: getSeatProrationBehavior(),
+      },
+      options?.idempotencyKey
+        ? { idempotencyKey: `${options.idempotencyKey}:recount` }
+        : undefined,
+    );
+  }
+
   await syncSubscription(updated, {
     eventCreatedUnix: Math.floor(Date.now() / 1000),
   });
@@ -106,6 +123,6 @@ export async function syncTeamSeatQuantity(
   return {
     updated: true as const,
     previousQuantity: currentQuantity,
-    seatCount,
+    seatCount: confirmedSeatCount,
   };
 }

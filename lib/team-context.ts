@@ -75,20 +75,7 @@ export async function getTeamContextForUser(
 
   const membership = membershipResult.data;
   if (!membership && activeTeamId) {
-    const fallbackResult = await getFirstMembership(supabase, userId);
-    if (fallbackResult.error) {
-      throw new Error(`Failed to load fallback team membership: ${fallbackResult.error.message}`);
-    }
-
-    if (!fallbackResult.data) {
-      return null;
-    }
-
-    return {
-      teamId: fallbackResult.data.team_id,
-      teamName: fallbackResult.data.teams?.name ?? null,
-      role: fallbackResult.data.role,
-    };
+    return null;
   }
 
   if (!membership) {

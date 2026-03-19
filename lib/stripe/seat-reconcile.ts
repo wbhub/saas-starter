@@ -19,7 +19,29 @@ type ReconcileOptions = {
   includeStripeDiscovery?: boolean;
   stripePageLimit?: number;
   retryBatchSize?: number;
+  syncConcurrency?: number;
 };
+
+const DEFAULT_SYNC_CONCURRENCY = 10;
+const DEFAULT_STRIPE_DISCOVERY_CONCURRENCY = 10;
+
+async function runInBatches<T>(
+  items: T[],
+  concurrency: number,
+  worker: (item: T, index: number) => Promise<void>,
+) {
+  if (items.length === 0) {
+    return;
+  }
+
+  const safeConcurrency = Math.max(1, concurrency);
+  for (let start = 0; start < items.length; start += safeConcurrency) {
+    const batch = items.slice(start, start + safeConcurrency);
+    await Promise.all(
+      batch.map((item, index) => worker(item, start + index)),
+    );
+  }
+}
 
 async function collectTeamIdsFromDatabase(batchSize: number) {
   const teamIds = new Set<string>();
@@ -70,6 +92,7 @@ async function collectTeamIdsFromStripe(
     });
     pagesScanned += 1;
 
+    const customerIds: string[] = [];
     for (const subscription of page.data) {
       if (!LIVE_SUBSCRIPTION_STATUSES.includes(subscription.status)) {
         continue;
@@ -83,20 +106,27 @@ async function collectTeamIdsFromStripe(
         continue;
       }
       seenCustomers.add(customerId);
-
-      try {
-        const teamId = await resolveTeamIdFromStripeCustomer(customerId);
-        if (teamId && !existingTeamIds.has(teamId)) {
-          existingTeamIds.add(teamId);
-          discovered += 1;
-        }
-      } catch (error) {
-        logger.error("Failed to resolve team while reconciling from Stripe discovery", {
-          customerId,
-          error,
-        });
-      }
+      customerIds.push(customerId);
     }
+
+    await runInBatches(
+      customerIds,
+      DEFAULT_STRIPE_DISCOVERY_CONCURRENCY,
+      async (customerId) => {
+        try {
+          const teamId = await resolveTeamIdFromStripeCustomer(customerId);
+          if (teamId && !existingTeamIds.has(teamId)) {
+            existingTeamIds.add(teamId);
+            discovered += 1;
+          }
+        } catch (error) {
+          logger.error("Failed to resolve team while reconciling from Stripe discovery", {
+            customerId,
+            error,
+          });
+        }
+      },
+    );
 
     if (!page.has_more) {
       break;
@@ -117,6 +147,11 @@ export async function reconcileTeamSeatQuantities(options: ReconcileOptions = {}
   const includeStripeDiscovery = options.includeStripeDiscovery ?? true;
   const stripePageLimit = Math.max(1, options.stripePageLimit ?? 20);
   const retryBatchSize = Math.max(1, options.retryBatchSize ?? 500);
+  const syncConcurrency = Math.max(
+    1,
+    options.syncConcurrency ?? DEFAULT_SYNC_CONCURRENCY,
+  );
+  const runKey = `seat-reconcile:${Date.now()}`;
 
   const teamIdSet = await collectTeamIdsFromDatabase(batchSize);
   let queuedRetries = 0;
@@ -143,10 +178,10 @@ export async function reconcileTeamSeatQuantities(options: ReconcileOptions = {}
   let synced = 0;
   let failed = 0;
 
-  for (const teamId of teamIds) {
+  await runInBatches(teamIds, syncConcurrency, async (teamId, index) => {
     try {
       await syncTeamSeatQuantity(teamId, {
-        idempotencyKey: `seat-reconcile:${teamId}`,
+        idempotencyKey: `${runKey}:${teamId}:${index}`,
       });
       try {
         await clearSeatSyncRetry(teamId);
@@ -176,7 +211,7 @@ export async function reconcileTeamSeatQuantities(options: ReconcileOptions = {}
         });
       }
     }
-  }
+  });
 
   return {
     scannedTeams: teamIds.length,
