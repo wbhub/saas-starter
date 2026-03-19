@@ -3,6 +3,21 @@ import { createClient } from "@/lib/supabase/server";
 import { getPlanByKey } from "@/lib/stripe/config";
 import { stripe } from "@/lib/stripe/server";
 import { syncSubscription } from "@/lib/stripe/sync";
+import { checkRateLimit } from "@/lib/security/rate-limit";
+
+async function isOwnedStripeSubscription(userId: string, subscriptionId: string) {
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  const customerId =
+    typeof subscription.customer === "string"
+      ? subscription.customer
+      : subscription.customer.id;
+  const customer = await stripe.customers.retrieve(customerId);
+  if ("deleted" in customer) {
+    return false;
+  }
+
+  return customer.metadata?.supabase_user_id === userId;
+}
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -14,20 +29,49 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await req.json();
-  const plan = getPlanByKey(body.planKey as string);
+  const rateLimit = await checkRateLimit({
+    key: `stripe-change-plan:user:${user.id}`,
+    limit: 10,
+    windowMs: 60 * 1000,
+  });
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Please wait and try again." },
+      {
+        status: 429,
+        headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
+      },
+    );
+  }
+
+  const body = (await req.json().catch(() => null)) as { planKey?: string } | null;
+  const plan = getPlanByKey(body?.planKey ?? "");
   if (!plan) {
     return NextResponse.json({ error: "Invalid target plan" }, { status: 400 });
   }
 
-  const { data: subscriptionRow } = await supabase
+  const { data: subscriptionRow, error: subscriptionRowError } = await supabase
     .from("subscriptions")
     .select("stripe_subscription_id,status")
     .eq("user_id", user.id)
-    .in("status", ["active", "trialing", "past_due", "unpaid"])
+    .in("status", [
+      "incomplete",
+      "trialing",
+      "active",
+      "past_due",
+      "unpaid",
+      "paused",
+    ])
     .order("current_period_end", { ascending: false })
     .limit(1)
     .maybeSingle();
+
+  if (subscriptionRowError) {
+    return NextResponse.json(
+      { error: "Could not load current subscription state." },
+      { status: 500 },
+    );
+  }
 
   if (!subscriptionRow?.stripe_subscription_id) {
     return NextResponse.json(
@@ -36,24 +80,53 @@ export async function POST(req: Request) {
     );
   }
 
-  const stripeSubscription = await stripe.subscriptions.retrieve(
-    subscriptionRow.stripe_subscription_id,
-  );
-  const firstItem = stripeSubscription.items.data[0];
+  try {
+    const isOwned = await isOwnedStripeSubscription(
+      user.id,
+      subscriptionRow.stripe_subscription_id,
+    );
+    if (!isOwned) {
+      return NextResponse.json(
+        {
+          error:
+            "Billing identity mismatch detected. Start a new checkout to re-link your account.",
+        },
+        { status: 409 },
+      );
+    }
 
-  if (!firstItem) {
+    const stripeSubscription = await stripe.subscriptions.retrieve(
+      subscriptionRow.stripe_subscription_id,
+    );
+    const firstItem = stripeSubscription.items.data[0];
+
+    if (!firstItem) {
+      return NextResponse.json(
+        { error: "Subscription item not found." },
+        { status: 400 },
+      );
+    }
+
+    if (firstItem.price.id === plan.priceId) {
+      return NextResponse.json(
+        { error: "Your subscription is already on this plan." },
+        { status: 409 },
+      );
+    }
+
+    const updated = await stripe.subscriptions.update(stripeSubscription.id, {
+      items: [{ id: firstItem.id, price: plan.priceId }],
+      proration_behavior: "create_prorations",
+    });
+
+    await syncSubscription(updated);
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error("Failed to change Stripe subscription plan", error);
     return NextResponse.json(
-      { error: "Subscription item not found." },
-      { status: 400 },
+      { error: "Unable to change your plan right now. Please try again." },
+      { status: 500 },
     );
   }
-
-  const updated = await stripe.subscriptions.update(stripeSubscription.id, {
-    items: [{ id: firstItem.id, price: plan.priceId }],
-    proration_behavior: "create_prorations",
-  });
-
-  await syncSubscription(updated);
-
-  return NextResponse.json({ ok: true });
 }

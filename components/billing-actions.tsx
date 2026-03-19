@@ -2,17 +2,27 @@
 
 import { useState } from "react";
 import { PLAN_KEYS, PLAN_LABELS } from "@/lib/stripe/plans";
-import { getStripe } from "@/lib/stripe/client";
 
 type Props = {
   currentPlanKey: string | null;
   hasSubscription: boolean;
 };
 
-async function postJson(path: string, body: Record<string, string>) {
+type PostJsonOptions = {
+  headers?: HeadersInit;
+};
+
+async function postJson(
+  path: string,
+  body: Record<string, string>,
+  options?: PostJsonOptions,
+) {
   const response = await fetch(path, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...options?.headers,
+    },
     body: JSON.stringify(body),
   });
 
@@ -29,6 +39,47 @@ async function postJson(path: string, body: Record<string, string>) {
   };
 }
 
+function createCheckoutIdempotencyToken(planKey: string) {
+  const storageKey = `checkout-idempotency:${planKey}`;
+  const now = Date.now();
+  const ttlMs = 15_000;
+
+  try {
+    const existingRaw = window.sessionStorage.getItem(storageKey);
+    if (existingRaw) {
+      const existing = JSON.parse(existingRaw) as {
+        token?: string;
+        expiresAt?: number;
+      };
+      if (
+        typeof existing.token === "string" &&
+        typeof existing.expiresAt === "number" &&
+        existing.expiresAt > now
+      ) {
+        return existing.token;
+      }
+    }
+  } catch {
+    // Ignore storage parse/access errors and fall back to fresh token.
+  }
+
+  const randomPart =
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Math.random().toString(36).slice(2)}-${now.toString(36)}`;
+  const token = `${planKey}-${randomPart}`;
+  try {
+    window.sessionStorage.setItem(
+      storageKey,
+      JSON.stringify({ token, expiresAt: now + ttlMs }),
+    );
+  } catch {
+    // Ignore storage errors.
+  }
+
+  return token;
+}
+
 export function BillingActions({ currentPlanKey, hasSubscription }: Props) {
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -37,10 +88,16 @@ export function BillingActions({ currentPlanKey, hasSubscription }: Props) {
     setLoadingAction(`checkout-${planKey}`);
     setMessage(null);
     try {
-      const payload = await postJson("/api/stripe/checkout", { planKey });
+      const payload = await postJson(
+        "/api/stripe/checkout",
+        { planKey },
+        {
+          headers: {
+            "x-idempotency-key": createCheckoutIdempotencyToken(planKey),
+          },
+        },
+      );
       if (!payload.url) throw new Error("Missing checkout URL");
-      const stripe = await getStripe();
-      if (!stripe) throw new Error("Stripe could not be initialized");
       window.location.assign(payload.url);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Checkout failed");

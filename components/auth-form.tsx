@@ -31,7 +31,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
         router.push("/dashboard");
         router.refresh();
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -39,6 +39,11 @@ export function AuthForm({ mode }: { mode: Mode }) {
           },
         });
         if (error) throw error;
+        if (data.session) {
+          router.push("/dashboard");
+          router.refresh();
+          return;
+        }
         setMessage(
           "Account created. Check your inbox to verify email if confirmation is enabled.",
         );

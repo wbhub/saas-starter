@@ -2,12 +2,15 @@ import Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { stripe } from "@/lib/stripe/server";
 
-const ACTIVE_STATUSES = [
-  "active",
+const TRACKED_STATUSES = [
+  "incomplete",
+  "incomplete_expired",
   "trialing",
+  "active",
   "past_due",
   "canceled",
   "unpaid",
+  "paused",
 ] as const;
 
 function toIsoOrNull(value?: number | null) {
@@ -20,11 +23,15 @@ async function getUserIdFromStripeCustomer(
 ) {
   const supabase = createAdminClient();
 
-  const { data: mapping } = await supabase
+  const { data: mapping, error } = await supabase
     .from("stripe_customers")
     .select("user_id")
     .eq("stripe_customer_id", stripeCustomerId)
     .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to load stripe customer mapping: ${error.message}`);
+  }
 
   if (mapping?.user_id) {
     return mapping.user_id;
@@ -46,18 +53,22 @@ export async function upsertStripeCustomer(
 ) {
   const supabase = createAdminClient();
 
-  await supabase.from("stripe_customers").upsert(
+  const { error } = await supabase.from("stripe_customers").upsert(
     {
       user_id: userId,
       stripe_customer_id: stripeCustomerId,
     },
     { onConflict: "user_id" },
   );
+
+  if (error) {
+    throw new Error(`Failed to upsert stripe customer: ${error.message}`);
+  }
 }
 
 export async function syncSubscription(subscription: Stripe.Subscription) {
   const status = subscription.status;
-  if (!ACTIVE_STATUSES.includes(status as (typeof ACTIVE_STATUSES)[number])) {
+  if (!TRACKED_STATUSES.includes(status as (typeof TRACKED_STATUSES)[number])) {
     return;
   }
 
@@ -75,7 +86,7 @@ export async function syncSubscription(subscription: Stripe.Subscription) {
   if (!item) return;
 
   const supabase = createAdminClient();
-  await supabase.from("subscriptions").upsert(
+  const { error } = await supabase.from("subscriptions").upsert(
     {
       user_id: userId,
       stripe_subscription_id: subscription.id,
@@ -88,4 +99,8 @@ export async function syncSubscription(subscription: Stripe.Subscription) {
     },
     { onConflict: "stripe_subscription_id" },
   );
+
+  if (error) {
+    throw new Error(`Failed to sync subscription: ${error.message}`);
+  }
 }
