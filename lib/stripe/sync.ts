@@ -33,6 +33,16 @@ function toIsoOrNull(value?: number | null) {
   return new Date(value * 1000).toISOString();
 }
 
+function getEventCreatedIso(eventCreatedUnix?: number) {
+  const unixSeconds = eventCreatedUnix ?? Math.floor(Date.now() / 1000);
+  return new Date(unixSeconds * 1000).toISOString();
+}
+
+function getSubscriptionCreatedIso(subscriptionCreatedUnix?: number) {
+  const unixSeconds = subscriptionCreatedUnix ?? Math.floor(Date.now() / 1000);
+  return new Date(unixSeconds * 1000).toISOString();
+}
+
 async function getUserIdFromStripeCustomer(
   stripeCustomerId: string,
 ) {
@@ -81,7 +91,10 @@ export async function upsertStripeCustomer(
   }
 }
 
-export async function syncSubscription(subscription: Stripe.Subscription) {
+export async function syncSubscription(
+  subscription: Stripe.Subscription,
+  options?: { eventCreatedUnix?: number },
+) {
   const status = subscription.status;
   if (!TRACKED_STATUSES.includes(status as (typeof TRACKED_STATUSES)[number])) {
     return;
@@ -97,18 +110,71 @@ export async function syncSubscription(subscription: Stripe.Subscription) {
 
   await upsertStripeCustomer(userId, stripeCustomerId);
 
+  const supabase = createAdminClient();
+  const eventCreatedAt = getEventCreatedIso(options?.eventCreatedUnix);
+  const subscriptionCreatedAt = getSubscriptionCreatedIso(subscription.created);
+  const { data: existingSubscription, error: existingSubscriptionError } = await supabase
+    .from("subscriptions")
+    .select("stripe_event_created_at")
+    .eq("stripe_subscription_id", subscription.id)
+    .maybeSingle();
+
+  if (existingSubscriptionError) {
+    throw new Error(`Failed to load existing subscription row: ${existingSubscriptionError.message}`);
+  }
+
+  if (
+    existingSubscription?.stripe_event_created_at &&
+    existingSubscription.stripe_event_created_at > eventCreatedAt
+  ) {
+    return;
+  }
+
   const item = subscription.items.data[0];
   if (!item) return;
 
-  const supabase = createAdminClient();
   if (isLiveSubscriptionStatus(status)) {
+    const { data: otherLiveSubscriptions, error: otherLiveSubscriptionsError } =
+      await supabase
+        .from("subscriptions")
+        .select("stripe_subscription_id,stripe_subscription_created_at")
+        .eq("user_id", userId)
+        .neq("stripe_subscription_id", subscription.id)
+        .in("status", [...LIVE_SUBSCRIPTION_STATUSES]);
+
+    if (otherLiveSubscriptionsError) {
+      throw new Error(
+        `Failed to load competing live subscriptions: ${otherLiveSubscriptionsError.message}`,
+      );
+    }
+
+    const hasNewerLiveSubscription = (otherLiveSubscriptions ?? []).some((other) => {
+      const otherCreatedAt = other.stripe_subscription_created_at;
+      if (!otherCreatedAt) {
+        return false;
+      }
+
+      if (otherCreatedAt > subscriptionCreatedAt) {
+        return true;
+      }
+
+      if (otherCreatedAt === subscriptionCreatedAt) {
+        return other.stripe_subscription_id > subscription.id;
+      }
+
+      return false;
+    });
+
+    if (hasNewerLiveSubscription) {
+      return;
+    }
+
     // Keep one live subscription row per user to match DB invariant.
     const { error: closeOtherLiveSubscriptionsError } = await supabase
       .from("subscriptions")
       .update({
         status: "canceled",
         cancel_at_period_end: true,
-        current_period_end: new Date().toISOString(),
       })
       .eq("user_id", userId)
       .neq("stripe_subscription_id", subscription.id)
@@ -128,9 +194,11 @@ export async function syncSubscription(subscription: Stripe.Subscription) {
       stripe_customer_id: stripeCustomerId,
       stripe_price_id: item.price.id,
       status: status,
+      stripe_subscription_created_at: subscriptionCreatedAt,
       current_period_start: toIsoOrNull(item.current_period_start),
       current_period_end: toIsoOrNull(item.current_period_end),
       cancel_at_period_end: subscription.cancel_at_period_end,
+      stripe_event_created_at: eventCreatedAt,
     },
     { onConflict: "stripe_subscription_id" },
   );

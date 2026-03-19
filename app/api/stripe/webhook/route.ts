@@ -6,6 +6,8 @@ import { stripe } from "@/lib/stripe/server";
 import { syncSubscription, upsertStripeCustomer } from "@/lib/stripe/sync";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+const WEBHOOK_EVENT_RETENTION_DAYS = 30;
+
 async function claimWebhookEvent(event: Stripe.Event) {
   const supabase = createAdminClient();
   const { error } = await supabase.from("stripe_webhook_events").insert({
@@ -24,6 +26,28 @@ async function claimWebhookEvent(event: Stripe.Event) {
   throw new Error(`Failed to claim webhook event: ${error.message}`);
 }
 
+async function pruneOldWebhookEvents() {
+  // Keep dedupe rows bounded. This runs opportunistically during webhook traffic.
+  const shouldPrune = Math.random() < 0.05;
+  if (!shouldPrune) {
+    return;
+  }
+
+  const retentionCutoff = new Date(
+    Date.now() - WEBHOOK_EVENT_RETENTION_DAYS * 24 * 60 * 60 * 1000,
+  ).toISOString();
+
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("stripe_webhook_events")
+    .delete()
+    .lt("processed_at", retentionCutoff);
+
+  if (error) {
+    console.error("Failed to prune old webhook events", error);
+  }
+}
+
 async function releaseWebhookEventClaim(eventId: string) {
   const supabase = createAdminClient();
   const { error } = await supabase
@@ -33,6 +57,30 @@ async function releaseWebhookEventClaim(eventId: string) {
 
   if (error) {
     console.error("Failed to release webhook event claim", error);
+  }
+}
+
+async function ensureStripeCustomerOwnership(
+  userId: string,
+  customerId: string,
+) {
+  const customer = await stripe.customers.retrieve(customerId);
+  if ("deleted" in customer) {
+    throw new Error("Stripe customer was deleted before ownership sync.");
+  }
+
+  const currentOwner = customer.metadata?.supabase_user_id;
+  if (currentOwner && currentOwner !== userId) {
+    throw new Error("Stripe customer ownership metadata mismatch.");
+  }
+
+  if (!currentOwner) {
+    await stripe.customers.update(customerId, {
+      metadata: {
+        ...customer.metadata,
+        supabase_user_id: userId,
+      },
+    });
   }
 }
 
@@ -69,6 +117,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ received: true });
     }
     claimed = true;
+    await pruneOldWebhookEvents();
 
     switch (event.type) {
       case "checkout.session.completed": {
@@ -80,6 +129,7 @@ export async function POST(req: Request) {
         const userId = session.client_reference_id;
 
         if (customerId && userId) {
+          await ensureStripeCustomerOwnership(userId, customerId);
           await upsertStripeCustomer(userId, customerId);
         }
         break;
@@ -88,7 +138,9 @@ export async function POST(req: Request) {
       case "customer.subscription.updated":
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
-        await syncSubscription(subscription);
+        await syncSubscription(subscription, {
+          eventCreatedUnix: event.created,
+        });
         break;
       }
       default:

@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { Suspense } from "react";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import { IntercomProvider } from "@/components/intercom-provider";
-import { env } from "@/lib/env";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -26,9 +23,6 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.variable} font-sans antialiased`}>
         <ThemeProvider>
-          <Suspense fallback={null}>
-            <IntercomProvider appId={env.NEXT_PUBLIC_INTERCOM_APP_ID} />
-          </Suspense>
           {children}
         </ThemeProvider>
       </body>

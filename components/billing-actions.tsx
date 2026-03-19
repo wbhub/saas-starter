@@ -12,6 +12,8 @@ type PostJsonOptions = {
   headers?: HeadersInit;
 };
 
+const IDEMPOTENCY_TTL_MS = 10_000;
+
 async function postJson(
   path: string,
   body: Record<string, string>,
@@ -39,10 +41,10 @@ async function postJson(
   };
 }
 
-function createCheckoutIdempotencyToken(planKey: string) {
-  const storageKey = `checkout-idempotency:${planKey}`;
+function createIdempotencyToken(action: "checkout" | "change-plan", planKey: string) {
+  const storageKey = `${action}-idempotency:${planKey}`;
   const now = Date.now();
-  const ttlMs = 15_000;
+  const ttlMs = IDEMPOTENCY_TTL_MS;
 
   try {
     const existingRaw = window.sessionStorage.getItem(storageKey);
@@ -67,7 +69,7 @@ function createCheckoutIdempotencyToken(planKey: string) {
     typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
       ? crypto.randomUUID()
       : `${Math.random().toString(36).slice(2)}-${now.toString(36)}`;
-  const token = `${planKey}-${randomPart}`;
+  const token = `${action}-${planKey}-${randomPart}`;
   try {
     window.sessionStorage.setItem(
       storageKey,
@@ -93,7 +95,7 @@ export function BillingActions({ currentPlanKey, hasSubscription }: Props) {
         { planKey },
         {
           headers: {
-            "x-idempotency-key": createCheckoutIdempotencyToken(planKey),
+            "x-idempotency-key": createIdempotencyToken("checkout", planKey),
           },
         },
       );
@@ -110,7 +112,15 @@ export function BillingActions({ currentPlanKey, hasSubscription }: Props) {
     setLoadingAction(`change-${planKey}`);
     setMessage(null);
     try {
-      await postJson("/api/stripe/change-plan", { planKey });
+      await postJson(
+        "/api/stripe/change-plan",
+        { planKey },
+        {
+          headers: {
+            "x-idempotency-key": createIdempotencyToken("change-plan", planKey),
+          },
+        },
+      );
       setMessage("Plan updated. Refreshing billing details...");
       window.location.reload();
     } catch (error) {

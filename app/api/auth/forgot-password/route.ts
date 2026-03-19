@@ -15,19 +15,38 @@ function isValidEmail(email: string) {
 
 const GENERIC_SUCCESS_MESSAGE =
   "If an account exists for that email, a reset link has been sent.";
+const GENERIC_FAILURE_MESSAGE =
+  "Unable to process password reset requests right now. Please try again shortly.";
+const UNKNOWN_IP_RATE_LIMIT_KEY = "unknown";
+
+function isProviderOutageError(error: unknown) {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const withStatus = error as { status?: number; message?: string; code?: string };
+  if (typeof withStatus.status === "number" && withStatus.status >= 500) {
+    return true;
+  }
+
+  const combined = `${withStatus.code ?? ""} ${withStatus.message ?? ""}`.toLowerCase();
+  return (
+    combined.includes("timeout") ||
+    combined.includes("timed out") ||
+    combined.includes("econnrefused") ||
+    combined.includes("network") ||
+    combined.includes("service unavailable")
+  );
+}
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as
     | ForgotPasswordPayload
     | null;
   const email = body?.email?.trim().toLowerCase() ?? "";
-  const clientIp = getClientIp(request);
-  const ipRateLimitKey = clientIp
-    ? `forgot-password:ip:${clientIp}`
-    : "forgot-password:ip:unavailable";
-
+  const clientIp = getClientIp(request) ?? UNKNOWN_IP_RATE_LIMIT_KEY;
   const ipRateLimit = await checkRateLimit({
-    key: ipRateLimitKey,
+    key: `forgot-password:ip:${clientIp}`,
     limit: 10,
     windowMs: 10 * 60 * 1000,
   });
@@ -58,7 +77,20 @@ export async function POST(request: Request) {
       },
     });
 
-    if (!error && data.properties?.action_link) {
+    if (error) {
+      console.error("Failed to generate password reset link", error);
+      if (isProviderOutageError(error)) {
+        return NextResponse.json({ message: GENERIC_FAILURE_MESSAGE }, { status: 503 });
+      }
+      return NextResponse.json({ message: GENERIC_SUCCESS_MESSAGE });
+    }
+
+    if (!data.properties?.action_link) {
+      console.error("Password reset link missing from Supabase response");
+      return NextResponse.json({ message: GENERIC_SUCCESS_MESSAGE });
+    }
+
+    try {
       const resend = getResendClient();
       const fromEmail = getResendFromEmail();
 
@@ -75,11 +107,18 @@ export async function POST(request: Request) {
           "If you did not request this, you can ignore this email.",
         ].join("\n"),
       });
+    } catch (error) {
+      console.error("Failed to send password reset email", error);
+      return NextResponse.json({ message: GENERIC_SUCCESS_MESSAGE });
     }
 
     return NextResponse.json({ message: GENERIC_SUCCESS_MESSAGE });
-  } catch {
+  } catch (error) {
     // Keep response generic to avoid leaking account existence.
+    console.error("Forgot-password route failed", error);
+    if (isProviderOutageError(error)) {
+      return NextResponse.json({ message: GENERIC_FAILURE_MESSAGE }, { status: 503 });
+    }
     return NextResponse.json({ message: GENERIC_SUCCESS_MESSAGE });
   }
 }

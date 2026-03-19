@@ -11,6 +11,8 @@ type RateLimitResult = {
   retryAfterSeconds: number;
 };
 
+const PRODUCTION_FALLBACK_RETRY_AFTER_SECONDS = 60;
+
 type InMemoryRateLimitRecord = {
   count: number;
   resetAt: number;
@@ -120,7 +122,16 @@ export async function checkRateLimit({
       };
     }
   } catch (error) {
-    console.error("Distributed rate limit check failed, using fallback", error);
+    if (process.env.NODE_ENV === "production") {
+      // Fail closed in production to avoid silently weakening rate limits.
+      console.error("Distributed rate limit check failed; denying request in production", error);
+      return {
+        allowed: false,
+        retryAfterSeconds: PRODUCTION_FALLBACK_RETRY_AFTER_SECONDS,
+      };
+    }
+
+    console.error("Distributed rate limit check failed, using development fallback", error);
   }
 
   return fallbackCheckRateLimit({ key, limit, windowMs });

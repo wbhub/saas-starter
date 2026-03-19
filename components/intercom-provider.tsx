@@ -155,6 +155,9 @@ export function IntercomProvider({ appId, user }: IntercomProviderProps) {
     if (resolvedUser === undefined) {
       return null;
     }
+    if (!resolvedUser) {
+      return null;
+    }
     return buildSettings(appId, resolvedUser);
   }, [appId, resolvedUser]);
 
@@ -182,6 +185,15 @@ export function IntercomProvider({ appId, user }: IntercomProviderProps) {
     loadIntercomScript(settings.app_id);
     window.Intercom("boot", settings);
   }, [settings]);
+
+  useEffect(() => {
+    return () => {
+      if (typeof window.Intercom === "function") {
+        window.Intercom("shutdown");
+      }
+      delete window.intercomSettings;
+    };
+  }, []);
 
   useEffect(() => {
     if (!appId || typeof window.Intercom !== "function") {
