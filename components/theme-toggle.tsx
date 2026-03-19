@@ -31,6 +31,7 @@ export function ThemeToggle() {
       type="button"
       onClick={() => setTheme(nextTheme)}
       aria-label={`Switch theme (current: ${displayedTheme})`}
+      aria-pressed={displayedTheme !== "system"}
       className="inline-flex h-9 w-9 items-center justify-center rounded-full border app-border-subtle app-surface text-[color:var(--foreground)] shadow-sm hover:bg-[color:var(--surface-subtle)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring)]"
     >
       <Icon className="h-4 w-4" />

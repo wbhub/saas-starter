@@ -16,6 +16,24 @@ const LIVE_SUBSCRIPTION_STATUSES = [
 ];
 const CHECKOUT_IN_FLIGHT_WINDOW_MS = 10 * 1000;
 
+function parsePlanKey(body: unknown) {
+  if (!body || typeof body !== "object") {
+    return null;
+  }
+
+  const maybePlanKey = (body as Record<string, unknown>).planKey;
+  if (typeof maybePlanKey !== "string") {
+    return null;
+  }
+
+  const planKey = maybePlanKey.trim();
+  if (!planKey || planKey.length > 100) {
+    return null;
+  }
+
+  return planKey;
+}
+
 async function isOwnedStripeCustomer(userId: string, customerId: string) {
   const customer = await stripe.customers.retrieve(customerId);
   if ("deleted" in customer) {
@@ -81,8 +99,12 @@ export async function POST(req: Request) {
     );
   }
 
-  const body = (await req.json().catch(() => null)) as { planKey?: string } | null;
-  const planKey = body?.planKey ?? "";
+  const body = await req.json().catch(() => null);
+  const planKey = parsePlanKey(body);
+  if (!planKey) {
+    return NextResponse.json({ error: "Invalid request payload" }, { status: 400 });
+  }
+
   const plan = getPlanByKey(planKey);
   if (!plan) {
     return NextResponse.json({ error: "Invalid plan selected" }, { status: 400 });

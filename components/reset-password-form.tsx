@@ -14,6 +14,9 @@ export function ResetPasswordForm() {
   const [checkingSession, setCheckingSession] = useState(true);
   const [hasRecoverySession, setHasRecoverySession] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [messageType, setMessageType] = useState<"error" | "success">("success");
+  const messageId = "reset-password-message";
+  const passwordHintId = "reset-password-hint";
 
   useEffect(() => {
     async function checkSession() {
@@ -32,11 +35,13 @@ export function ResetPasswordForm() {
     setMessage(null);
 
     if (password.length < 8) {
+      setMessageType("error");
       setMessage("Password must be at least 8 characters.");
       return;
     }
 
     if (password !== confirmPassword) {
+      setMessageType("error");
       setMessage("Passwords do not match.");
       return;
     }
@@ -46,11 +51,13 @@ export function ResetPasswordForm() {
     try {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
+      setMessageType("success");
       setMessage("Password updated. Redirecting to login...");
       setTimeout(() => {
         router.push("/login");
       }, 1000);
     } catch (error) {
+      setMessageType("error");
       setMessage(error instanceof Error ? error.message : "Unexpected error");
     } finally {
       setLoading(false);
@@ -60,7 +67,11 @@ export function ResetPasswordForm() {
   if (checkingSession) {
     return (
       <div className="w-full max-w-md rounded-2xl border app-border-subtle app-surface p-8 text-[color:var(--foreground)] shadow-sm">
-        <p className="text-sm text-[color:var(--muted-foreground)]">
+        <p
+          role="status"
+          aria-live="polite"
+          className="text-sm text-[color:var(--muted-foreground)]"
+        >
           Verifying your reset link...
         </p>
       </div>
@@ -91,7 +102,7 @@ export function ResetPasswordForm() {
         Choose a strong password with at least 8 characters.
       </p>
 
-      <form className="mt-6 space-y-4" onSubmit={onSubmit}>
+      <form className="mt-6 space-y-4" onSubmit={onSubmit} aria-busy={loading}>
         <label className="block">
           <span className="mb-1 block text-sm font-medium text-[color:var(--foreground)]">
             New password
@@ -102,6 +113,8 @@ export function ResetPasswordForm() {
             minLength={8}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
+            aria-describedby={`${passwordHintId}${message ? ` ${messageId}` : ""}`}
+            aria-invalid={messageType === "error" && Boolean(message)}
             className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-[color:var(--foreground)] outline-none ring-[color:var(--ring)] placeholder:text-[color:var(--muted-foreground)] focus:ring-2"
           />
         </label>
@@ -115,9 +128,14 @@ export function ResetPasswordForm() {
             minLength={8}
             value={confirmPassword}
             onChange={(event) => setConfirmPassword(event.target.value)}
+            aria-describedby={`${passwordHintId}${message ? ` ${messageId}` : ""}`}
+            aria-invalid={messageType === "error" && Boolean(message)}
             className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-[color:var(--foreground)] outline-none ring-[color:var(--ring)] placeholder:text-[color:var(--muted-foreground)] focus:ring-2"
           />
         </label>
+        <p id={passwordHintId} className="text-xs text-[color:var(--muted-foreground)]">
+          Password must be at least 8 characters.
+        </p>
         <button
           type="submit"
           disabled={loading}
@@ -128,7 +146,12 @@ export function ResetPasswordForm() {
       </form>
 
       {message ? (
-        <p className="mt-4 rounded-lg app-surface-subtle px-3 py-2 text-sm text-[color:var(--foreground)]">
+        <p
+          id={messageId}
+          role={messageType === "error" ? "alert" : "status"}
+          aria-live={messageType === "error" ? "assertive" : "polite"}
+          className="mt-4 rounded-lg app-surface-subtle px-3 py-2 text-sm text-[color:var(--foreground)]"
+        >
           {message}
         </p>
       ) : null}
