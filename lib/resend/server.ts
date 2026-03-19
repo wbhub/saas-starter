@@ -1,13 +1,10 @@
 import { Resend } from "resend";
+import { env } from "@/lib/env";
 
 let resend: Resend | null = null;
 
 export function getResendClient() {
-  const apiKey = process.env.RESEND_API_KEY;
-
-  if (!apiKey) {
-    throw new Error("Missing required environment variable: RESEND_API_KEY");
-  }
+  const apiKey = env.RESEND_API_KEY;
 
   if (!resend) {
     resend = new Resend(apiKey);
@@ -17,23 +14,9 @@ export function getResendClient() {
 }
 
 export function getResendFromEmail() {
-  const fromEmail = process.env.RESEND_FROM_EMAIL;
-
-  if (!fromEmail) {
-    throw new Error("Missing required environment variable: RESEND_FROM_EMAIL");
-  }
-
-  return fromEmail;
+  return env.RESEND_FROM_EMAIL;
 }
 
 export function getResendSupportEmail() {
-  const supportEmail = process.env.RESEND_SUPPORT_EMAIL;
-
-  if (!supportEmail) {
-    throw new Error(
-      "Missing required environment variable: RESEND_SUPPORT_EMAIL",
-    );
-  }
-
-  return supportEmail;
+  return env.RESEND_SUPPORT_EMAIL;
 }
