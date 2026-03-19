@@ -1,21 +1,12 @@
 import Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { stripe } from "@/lib/stripe/server";
+import { ALL_SUBSCRIPTION_STATUSES } from "@/lib/stripe/plans";
+import { logger } from "@/lib/logger";
 
 function getAdminClient() {
   return createAdminClient();
 }
-
-const TRACKED_STATUSES = [
-  "incomplete",
-  "incomplete_expired",
-  "trialing",
-  "active",
-  "past_due",
-  "canceled",
-  "unpaid",
-  "paused",
-] as const;
 
 function toIsoOrNull(value?: number | null) {
   if (value == null) return null;
@@ -81,8 +72,8 @@ export async function syncSubscription(
   options?: { eventCreatedUnix?: number },
 ) {
   const status = subscription.status;
-  if (!TRACKED_STATUSES.includes(status as (typeof TRACKED_STATUSES)[number])) {
-    console.warn("Ignoring untracked Stripe subscription status during sync", {
+  if (!ALL_SUBSCRIPTION_STATUSES.includes(status as (typeof ALL_SUBSCRIPTION_STATUSES)[number])) {
+    logger.warn("Ignoring untracked Stripe subscription status during sync", {
       subscriptionId: subscription.id,
       status,
     });
@@ -96,7 +87,7 @@ export async function syncSubscription(
 
   const userId = await getUserIdFromStripeCustomer(stripeCustomerId);
   if (!userId) {
-    console.warn("No user mapping found for Stripe customer during sync", {
+    logger.warn("No user mapping found for Stripe customer during sync", {
       stripeCustomerId,
       subscriptionId: subscription.id,
     });
@@ -108,7 +99,7 @@ export async function syncSubscription(
 
   const item = subscription.items.data[0];
   if (!item) {
-    console.warn("Stripe subscription has no items during sync", {
+    logger.warn("Stripe subscription has no items during sync", {
       subscriptionId: subscription.id,
       stripeCustomerId,
       userId,
@@ -139,7 +130,7 @@ export async function syncSubscription(
   }
 
   if (!applied) {
-    console.warn("Stripe subscription sync ignored stale event", {
+    logger.warn("Stripe subscription sync ignored stale event", {
       subscriptionId: subscription.id,
       stripeCustomerId,
       userId,

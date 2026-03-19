@@ -6,6 +6,7 @@ import { stripe } from "@/lib/stripe/server";
 import { syncSubscription, upsertStripeCustomer } from "@/lib/stripe/sync";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireJsonContentType } from "@/lib/http/content-type";
+import { logger } from "@/lib/logger";
 
 const WEBHOOK_EVENT_RETENTION_DAYS = 30;
 const WEBHOOK_SIGNATURE_TOLERANCE_SECONDS = 300;
@@ -60,7 +61,6 @@ async function claimWebhookEvent(event: Stripe.Event) {
 }
 
 async function pruneOldWebhookEvents() {
-  // Keep dedupe rows bounded. This runs opportunistically during webhook traffic.
   const shouldPrune = Math.random() < 0.05;
   if (!shouldPrune) {
     return;
@@ -81,7 +81,7 @@ async function pruneOldWebhookEvents() {
     .lt("completed_at", retentionCutoff);
 
   if (completedPruneError) {
-    console.error("Failed to prune completed webhook events", completedPruneError);
+    logger.error("Failed to prune completed webhook events", completedPruneError);
   }
 
   const { error: staleClaimPruneError } = await supabase
@@ -91,7 +91,7 @@ async function pruneOldWebhookEvents() {
     .lt("processed_at", staleClaimCutoff);
 
   if (staleClaimPruneError) {
-    console.error("Failed to prune stale webhook claims", staleClaimPruneError);
+    logger.error("Failed to prune stale webhook claims", staleClaimPruneError);
   }
 }
 
@@ -106,7 +106,7 @@ async function releaseWebhookEventClaim(eventId: string) {
     .is("completed_at", null);
 
   if (error) {
-    console.error("Failed to release webhook event claim", error);
+    logger.error("Failed to release webhook event claim", error);
   }
 }
 
@@ -175,7 +175,7 @@ export async function POST(req: Request) {
       WEBHOOK_SIGNATURE_TOLERANCE_SECONDS,
     );
   } catch (error) {
-    console.error("Stripe webhook signature verification failed", error);
+    logger.error("Stripe webhook signature verification failed", error);
     return NextResponse.json(
       { error: "Webhook signature verification failed." },
       { status: 400 },
@@ -204,6 +204,20 @@ export async function POST(req: Request) {
           await ensureStripeCustomerOwnership(userId, customerId);
           await upsertStripeCustomer(userId, customerId);
         }
+
+        // Sync the subscription immediately for resilience — don't rely
+        // solely on the separate customer.subscription.created event.
+        const subscriptionId =
+          typeof session.subscription === "string"
+            ? session.subscription
+            : session.subscription?.id;
+        if (subscriptionId) {
+          const subscription =
+            await stripe.subscriptions.retrieve(subscriptionId);
+          await syncSubscription(subscription, {
+            eventCreatedUnix: event.created,
+          });
+        }
         break;
       }
       case "customer.subscription.created":
@@ -224,7 +238,7 @@ export async function POST(req: Request) {
     if (claimed) {
       await releaseWebhookEventClaim(event.id);
     }
-    console.error("Stripe webhook handling failed", error);
+    logger.error("Stripe webhook handling failed", error);
     return NextResponse.json(
       { error: "Webhook handling failed." },
       { status: 500 },

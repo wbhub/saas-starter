@@ -5,24 +5,9 @@ import { stripe } from "@/lib/stripe/server";
 import { syncSubscription } from "@/lib/stripe/sync";
 import { requireJsonContentType } from "@/lib/http/content-type";
 import { checkRateLimit } from "@/lib/security/rate-limit";
-
-function parsePlanKey(body: unknown) {
-  if (!body || typeof body !== "object") {
-    return null;
-  }
-
-  const maybePlanKey = (body as Record<string, unknown>).planKey;
-  if (typeof maybePlanKey !== "string") {
-    return null;
-  }
-
-  const planKey = maybePlanKey.trim();
-  if (!planKey || planKey.length > 100) {
-    return null;
-  }
-
-  return planKey;
-}
+import { LIVE_SUBSCRIPTION_STATUSES } from "@/lib/stripe/plans";
+import { parsePlanKey } from "@/lib/validation";
+import { logger } from "@/lib/logger";
 
 function getChangePlanIdempotencyKey(request: Request, userId: string, planKey: string) {
   const rawKey = request.headers.get("x-idempotency-key")?.trim();
@@ -32,20 +17,6 @@ function getChangePlanIdempotencyKey(request: Request, userId: string, planKey: 
 
   const safeKey = rawKey.slice(0, 80);
   return `change-plan:${userId}:${planKey}:${safeKey}`;
-}
-
-async function isOwnedStripeSubscription(userId: string, subscriptionId: string) {
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-  const customerId =
-    typeof subscription.customer === "string"
-      ? subscription.customer
-      : subscription.customer.id;
-  const customer = await stripe.customers.retrieve(customerId);
-  if ("deleted" in customer) {
-    return false;
-  }
-
-  return customer.metadata?.supabase_user_id === userId;
 }
 
 export async function POST(req: Request) {
@@ -94,14 +65,7 @@ export async function POST(req: Request) {
     .from("subscriptions")
     .select("stripe_subscription_id,status")
     .eq("user_id", user.id)
-    .in("status", [
-      "incomplete",
-      "trialing",
-      "active",
-      "past_due",
-      "unpaid",
-      "paused",
-    ])
+    .in("status", LIVE_SUBSCRIPTION_STATUSES)
     .order("current_period_end", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -121,11 +85,18 @@ export async function POST(req: Request) {
   }
 
   try {
-    const isOwned = await isOwnedStripeSubscription(
-      user.id,
+    // Single retrieve — used for both ownership verification and plan comparison.
+    const stripeSubscription = await stripe.subscriptions.retrieve(
       subscriptionRow.stripe_subscription_id,
     );
-    if (!isOwned) {
+
+    const customerId =
+      typeof stripeSubscription.customer === "string"
+        ? stripeSubscription.customer
+        : stripeSubscription.customer.id;
+    const customer = await stripe.customers.retrieve(customerId);
+
+    if ("deleted" in customer || customer.metadata?.supabase_user_id !== user.id) {
       return NextResponse.json(
         {
           error:
@@ -135,9 +106,6 @@ export async function POST(req: Request) {
       );
     }
 
-    const stripeSubscription = await stripe.subscriptions.retrieve(
-      subscriptionRow.stripe_subscription_id,
-    );
     const firstItem = stripeSubscription.items.data[0];
 
     if (!firstItem) {
@@ -169,12 +137,11 @@ export async function POST(req: Request) {
       });
       return NextResponse.json({ ok: true });
     } catch (syncError) {
-      // Stripe is already updated. Let webhooks reconcile DB state.
-      console.error("Plan changed in Stripe but local sync failed; awaiting webhook recovery", syncError);
+      logger.error("Plan changed in Stripe but local sync failed; awaiting webhook recovery", syncError);
       return NextResponse.json({ ok: true, syncPending: true });
     }
   } catch (error) {
-    console.error("Failed to change Stripe subscription plan", error);
+    logger.error("Failed to change Stripe subscription plan", error);
     return NextResponse.json(
       { error: "Unable to change your plan right now. Please try again." },
       { status: 500 },

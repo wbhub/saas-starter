@@ -6,34 +6,11 @@ import { env } from "@/lib/env";
 import { upsertStripeCustomer } from "@/lib/stripe/sync";
 import { requireJsonContentType } from "@/lib/http/content-type";
 import { checkRateLimit } from "@/lib/security/rate-limit";
+import { LIVE_SUBSCRIPTION_STATUSES } from "@/lib/stripe/plans";
+import { parsePlanKey } from "@/lib/validation";
+import { logger } from "@/lib/logger";
 
-const LIVE_SUBSCRIPTION_STATUSES = [
-  "incomplete",
-  "trialing",
-  "active",
-  "past_due",
-  "unpaid",
-  "paused",
-];
 const CHECKOUT_IN_FLIGHT_WINDOW_MS = 10 * 1000;
-
-function parsePlanKey(body: unknown) {
-  if (!body || typeof body !== "object") {
-    return null;
-  }
-
-  const maybePlanKey = (body as Record<string, unknown>).planKey;
-  if (typeof maybePlanKey !== "string") {
-    return null;
-  }
-
-  const planKey = maybePlanKey.trim();
-  if (!planKey || planKey.length > 100) {
-    return null;
-  }
-
-  return planKey;
-}
 
 async function isOwnedStripeCustomer(userId: string, customerId: string) {
   const customer = await stripe.customers.retrieve(customerId);
@@ -62,7 +39,6 @@ function getCheckoutIdempotencyKey(request: Request, userId: string, planKey: st
     return undefined;
   }
 
-  // Keep keys bounded and user/plan scoped.
   const safeKey = rawKey.slice(0, 80);
   return `checkout:${userId}:${planKey}:${safeKey}`;
 }
@@ -175,7 +151,6 @@ export async function POST(req: Request) {
     if (customerId) {
       const isOwned = await isOwnedStripeCustomer(user.id, customerId);
       if (!isOwned) {
-        // Do not trust stale or tampered mappings.
         customerId = undefined;
       }
     }
@@ -223,7 +198,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ url: session.url });
   } catch (error) {
-    console.error("Failed to create Stripe checkout session", error);
+    logger.error("Failed to create Stripe checkout session", error);
     return NextResponse.json(
       { error: "Unable to start checkout right now. Please try again." },
       { status: 500 },

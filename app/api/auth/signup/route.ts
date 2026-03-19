@@ -4,15 +4,12 @@ import { createClient } from "@/lib/supabase/server";
 import { getClientIp } from "@/lib/http/client-ip";
 import { requireJsonContentType } from "@/lib/http/content-type";
 import { checkRateLimit } from "@/lib/security/rate-limit";
+import { isValidEmail } from "@/lib/validation";
 
 type SignupPayload = {
   email?: string;
   password?: string;
 };
-
-function isValidEmail(email: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
 
 export async function POST(request: Request) {
   const contentTypeError = requireJsonContentType(request);

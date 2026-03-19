@@ -4,6 +4,7 @@ import { stripe } from "@/lib/stripe/server";
 import { env } from "@/lib/env";
 import { requireJsonContentType } from "@/lib/http/content-type";
 import { checkRateLimit } from "@/lib/security/rate-limit";
+import { logger } from "@/lib/logger";
 
 async function isOwnedStripeCustomer(userId: string, customerId: string) {
   const customer = await stripe.customers.retrieve(customerId);
@@ -83,7 +84,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ url: session.url });
   } catch (error) {
-    console.error("Failed to create Stripe billing portal session", error);
+    logger.error("Failed to create Stripe billing portal session", error);
     return NextResponse.json(
       { error: "Unable to open billing portal right now. Please try again." },
       { status: 500 },

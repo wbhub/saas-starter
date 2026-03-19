@@ -26,26 +26,60 @@ function generateCspNonce() {
 
 function buildCspHeader(nonce: string) {
   const supabaseOrigin = getSupabaseOrigin();
-  return [
+  const intercomEnabled = Boolean(process.env.NEXT_PUBLIC_INTERCOM_APP_ID);
+
+  const directives: (string | undefined)[] = [
     "default-src 'self'",
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",
     "object-src 'none'",
     "img-src 'self' data: https:",
-    `style-src 'self' 'nonce-${nonce}'`,
-    `script-src 'self' 'nonce-${nonce}' https://js.stripe.com`,
+
+    // Intercom injects inline styles without nonce support, so 'unsafe-inline'
+    // is required when the widget is enabled. Keeping the nonce alongside it
+    // ensures our own <style nonce="…"> elements remain explicitly allowed in
+    // browsers that honour both directives.
+    intercomEnabled
+      ? `style-src 'self' 'nonce-${nonce}' 'unsafe-inline'`
+      : `style-src 'self' 'nonce-${nonce}'`,
+
+    [
+      `script-src 'self' 'nonce-${nonce}' https://js.stripe.com`,
+      intercomEnabled && "https://widget.intercom.io https://js.intercomcdn.com",
+    ]
+      .filter(Boolean)
+      .join(" "),
+
     [
       "connect-src 'self'",
       supabaseOrigin,
       "https://api.stripe.com",
       "https://js.stripe.com",
+      intercomEnabled &&
+        "https://api-iam.intercom.io https://api-iam.eu.intercom.io https://api-ping.intercom.io wss://nexus-websocket-a.intercom.io wss://nexus-websocket-b.intercom.io",
     ]
       .filter(Boolean)
       .join(" "),
-    "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
+
+    [
+      "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
+      intercomEnabled && "https://intercom-sheets.com",
+    ]
+      .filter(Boolean)
+      .join(" "),
+
+    intercomEnabled
+      ? "font-src 'self' https://js.intercomcdn.com"
+      : undefined,
+    intercomEnabled
+      ? "media-src 'self' https://js.intercomcdn.com"
+      : undefined,
+
     "upgrade-insecure-requests",
-  ].join("; ");
+  ];
+
+  return directives.filter(Boolean).join("; ");
 }
 
 export async function proxy(request: NextRequest) {
