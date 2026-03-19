@@ -1,67 +1,49 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+function createSubscription(overrides?: Partial<Record<string, unknown>>) {
+  return {
+    id: "sub_123",
+    created: 1_700_000_000,
+    status: "active",
+    customer: "cus_123",
+    cancel_at_period_end: false,
+    items: {
+      data: [
+        {
+          price: { id: "price_starter" },
+          current_period_start: 1_700_000_000,
+          current_period_end: 1_700_086_400,
+        },
+      ],
+    },
+    ...overrides,
+  } as never;
+}
+
 describe("syncSubscription", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
   });
 
-  it("reconciles existing live subscriptions before upsert", async () => {
-    const stripeCustomersMaybeSingle = vi
+  it("sends normalized payload to atomic sync RPC", async () => {
+    const maybeSingle = vi
       .fn()
       .mockResolvedValue({ data: { user_id: "user_123" }, error: null });
-    const stripeCustomersUpsert = vi.fn().mockResolvedValue({ error: null });
-    const stripeCustomersQuery = {
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      maybeSingle: stripeCustomersMaybeSingle,
-      upsert: stripeCustomersUpsert,
-    };
-
-    const closeLiveIn = vi.fn().mockResolvedValue({ error: null });
-    const subscriptionsUpdateChain = {
-      eq: vi.fn().mockReturnThis(),
-      neq: vi.fn().mockReturnThis(),
-      in: closeLiveIn,
-    };
-    const subscriptionsUpdate = vi.fn().mockReturnValue(subscriptionsUpdateChain);
-    const subscriptionsUpsert = vi.fn().mockResolvedValue({ error: null });
-    const existingRowMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
-    const competingIn = vi.fn().mockResolvedValue({ data: [], error: null });
-    const subscriptionsSelect = vi.fn((columns: string) => {
-      if (columns === "stripe_event_created_at") {
-        return {
-          eq: vi.fn().mockReturnThis(),
-          maybeSingle: existingRowMaybeSingle,
-        };
-      }
-      if (columns === "stripe_subscription_id,stripe_subscription_created_at") {
-        return {
-          eq: vi.fn().mockReturnThis(),
-          neq: vi.fn().mockReturnThis(),
-          in: competingIn,
-        };
-      }
-      throw new Error(`Unexpected select: ${columns}`);
-    });
-    const subscriptionsQuery = {
-      select: subscriptionsSelect,
-      update: subscriptionsUpdate,
-      upsert: subscriptionsUpsert,
-    };
-
     const from = vi.fn((table: string) => {
-      if (table === "stripe_customers") {
-        return stripeCustomersQuery;
+      if (table !== "stripe_customers") {
+        throw new Error(`Unexpected table: ${table}`);
       }
-      if (table === "subscriptions") {
-        return subscriptionsQuery;
-      }
-      throw new Error(`Unexpected table: ${table}`);
+      return {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle,
+      };
     });
+    const rpc = vi.fn().mockResolvedValue({ error: null });
 
     vi.doMock("@/lib/supabase/admin", () => ({
-      createAdminClient: () => ({ from }),
+      createAdminClient: () => ({ from, rpc }),
     }));
     vi.doMock("@/lib/stripe/server", () => ({
       stripe: {
@@ -72,73 +54,65 @@ describe("syncSubscription", () => {
     }));
 
     const { syncSubscription } = await import("./sync");
+    await syncSubscription(createSubscription(), {
+      eventCreatedUnix: 1_710_806_400,
+    });
 
-    await syncSubscription({
-      id: "sub_new",
-      created: 1_700_000_100,
-      status: "active",
-      customer: "cus_123",
-      cancel_at_period_end: false,
-      items: {
-        data: [
-          {
-            price: { id: "price_starter" },
-            current_period_start: 1_700_000_000,
-            current_period_end: 1_700_086_400,
-          },
-        ],
+    expect(rpc).toHaveBeenCalledWith("sync_stripe_subscription_atomic", {
+      p_user_id: "user_123",
+      p_stripe_customer_id: "cus_123",
+      p_stripe_subscription_id: "sub_123",
+      p_stripe_price_id: "price_starter",
+      p_status: "active",
+      p_stripe_subscription_created_at: "2023-11-14T22:13:20.000Z",
+      p_current_period_start: "2023-11-14T22:13:20.000Z",
+      p_current_period_end: "2023-11-15T22:13:20.000Z",
+      p_cancel_at_period_end: false,
+      p_stripe_event_created_at: "2024-03-19T00:00:00.000Z",
+    });
+  });
+
+  it("falls back to Stripe customer metadata when mapping is missing", async () => {
+    const maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+    const from = vi.fn(() => ({
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle,
+    }));
+    const rpc = vi.fn().mockResolvedValue({ error: null });
+    const customerRetrieve = vi
+      .fn()
+      .mockResolvedValue({ id: "cus_123", metadata: { supabase_user_id: "user_456" } });
+
+    vi.doMock("@/lib/supabase/admin", () => ({
+      createAdminClient: () => ({ from, rpc }),
+    }));
+    vi.doMock("@/lib/stripe/server", () => ({
+      stripe: {
+        customers: {
+          retrieve: customerRetrieve,
+        },
       },
-    } as never);
+    }));
 
-    expect(subscriptionsUpdate).toHaveBeenCalled();
-    expect(closeLiveIn).toHaveBeenCalledOnce();
-    expect(subscriptionsUpsert).toHaveBeenCalledWith(
+    const { syncSubscription } = await import("./sync");
+    await syncSubscription(createSubscription());
+
+    expect(customerRetrieve).toHaveBeenCalledWith("cus_123");
+    expect(rpc).toHaveBeenCalledWith(
+      "sync_stripe_subscription_atomic",
       expect.objectContaining({
-        stripe_subscription_id: "sub_new",
-        stripe_subscription_created_at: "2023-11-14T22:15:00.000Z",
+        p_user_id: "user_456",
       }),
-      { onConflict: "stripe_subscription_id" },
     );
   });
 
-  it("skips reconciliation update for canceled subscriptions", async () => {
-    const stripeCustomersQuery = {
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      maybeSingle: vi.fn().mockResolvedValue({ data: { user_id: "user_123" }, error: null }),
-      upsert: vi.fn().mockResolvedValue({ error: null }),
-    };
-
-    const subscriptionsUpdate = vi.fn();
-    const subscriptionsUpsert = vi.fn().mockResolvedValue({ error: null });
-    const existingRowMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
-    const subscriptionsSelect = vi.fn((columns: string) => {
-      if (columns === "stripe_event_created_at") {
-        return {
-          eq: vi.fn().mockReturnThis(),
-          maybeSingle: existingRowMaybeSingle,
-        };
-      }
-      throw new Error(`Unexpected select: ${columns}`);
-    });
-    const subscriptionsQuery = {
-      select: subscriptionsSelect,
-      update: subscriptionsUpdate,
-      upsert: subscriptionsUpsert,
-    };
-
-    const from = vi.fn((table: string) => {
-      if (table === "stripe_customers") {
-        return stripeCustomersQuery;
-      }
-      if (table === "subscriptions") {
-        return subscriptionsQuery;
-      }
-      throw new Error(`Unexpected table: ${table}`);
-    });
+  it("ignores stale events that have an unknown status", async () => {
+    const from = vi.fn();
+    const rpc = vi.fn();
 
     vi.doMock("@/lib/supabase/admin", () => ({
-      createAdminClient: () => ({ from }),
+      createAdminClient: () => ({ from, rpc }),
     }));
     vi.doMock("@/lib/stripe/server", () => ({
       stripe: {
@@ -149,69 +123,55 @@ describe("syncSubscription", () => {
     }));
 
     const { syncSubscription } = await import("./sync");
+    await syncSubscription(createSubscription({ status: "bogus_status" }));
 
-    await syncSubscription({
-      id: "sub_old",
-      created: 1_700_000_000,
-      status: "canceled",
-      customer: "cus_123",
-      cancel_at_period_end: true,
-      items: {
-        data: [
-          {
-            price: { id: "price_starter" },
-            current_period_start: 1_700_000_000,
-            current_period_end: 1_700_086_400,
-          },
-        ],
-      },
-    } as never);
-
-    expect(subscriptionsUpdate).not.toHaveBeenCalled();
-    expect(subscriptionsUpsert).toHaveBeenCalledOnce();
+    expect(from).not.toHaveBeenCalled();
+    expect(rpc).not.toHaveBeenCalled();
   });
 
-  it("ignores out-of-order stale webhook snapshots", async () => {
-    const stripeCustomersQuery = {
+  it("skips sync when subscription has no line items", async () => {
+    const maybeSingle = vi
+      .fn()
+      .mockResolvedValue({ data: { user_id: "user_123" }, error: null });
+    const from = vi.fn(() => ({
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
-      maybeSingle: vi.fn().mockResolvedValue({ data: { user_id: "user_123" }, error: null }),
-      upsert: vi.fn().mockResolvedValue({ error: null }),
-    };
+      maybeSingle,
+    }));
+    const rpc = vi.fn().mockResolvedValue({ error: null });
 
-    const subscriptionsUpdate = vi.fn();
-    const subscriptionsUpsert = vi.fn().mockResolvedValue({ error: null });
-    const existingRowMaybeSingle = vi.fn().mockResolvedValue({
-      data: { stripe_event_created_at: "2026-03-19T10:00:00.000Z" },
-      error: null,
-    });
-    const subscriptionsSelect = vi.fn((columns: string) => {
-      if (columns === "stripe_event_created_at") {
-        return {
-          eq: vi.fn().mockReturnThis(),
-          maybeSingle: existingRowMaybeSingle,
-        };
-      }
-      throw new Error(`Unexpected select: ${columns}`);
-    });
-    const subscriptionsQuery = {
-      select: subscriptionsSelect,
-      update: subscriptionsUpdate,
-      upsert: subscriptionsUpsert,
-    };
+    vi.doMock("@/lib/supabase/admin", () => ({
+      createAdminClient: () => ({ from, rpc }),
+    }));
+    vi.doMock("@/lib/stripe/server", () => ({
+      stripe: {
+        customers: {
+          retrieve: vi.fn(),
+        },
+      },
+    }));
 
-    const from = vi.fn((table: string) => {
-      if (table === "stripe_customers") {
-        return stripeCustomersQuery;
-      }
-      if (table === "subscriptions") {
-        return subscriptionsQuery;
-      }
-      throw new Error(`Unexpected table: ${table}`);
+    const { syncSubscription } = await import("./sync");
+    await syncSubscription(createSubscription({ items: { data: [] } }));
+
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("throws when RPC sync fails", async () => {
+    const maybeSingle = vi
+      .fn()
+      .mockResolvedValue({ data: { user_id: "user_123" }, error: null });
+    const from = vi.fn(() => ({
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle,
+    }));
+    const rpc = vi.fn().mockResolvedValue({
+      error: { message: "rpc failed" },
     });
 
     vi.doMock("@/lib/supabase/admin", () => ({
-      createAdminClient: () => ({ from }),
+      createAdminClient: () => ({ from, rpc }),
     }));
     vi.doMock("@/lib/stripe/server", () => ({
       stripe: {
@@ -223,207 +183,8 @@ describe("syncSubscription", () => {
 
     const { syncSubscription } = await import("./sync");
 
-    await syncSubscription(
-      {
-        id: "sub_stale",
-        created: 1_700_000_000,
-        status: "active",
-        customer: "cus_123",
-        cancel_at_period_end: false,
-        items: {
-          data: [
-            {
-              price: { id: "price_starter" },
-              current_period_start: 1_700_000_000,
-              current_period_end: 1_700_086_400,
-            },
-          ],
-        },
-      } as never,
-      {
-        eventCreatedUnix: 1_700_000_000,
-      },
+    await expect(syncSubscription(createSubscription())).rejects.toThrow(
+      "Failed to sync subscription transactionally: rpc failed",
     );
-
-    expect(subscriptionsUpdate).not.toHaveBeenCalled();
-    expect(subscriptionsUpsert).not.toHaveBeenCalled();
-  });
-
-  it("processes equal-timestamp webhook snapshots for same subscription", async () => {
-    const stripeCustomersQuery = {
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      maybeSingle: vi.fn().mockResolvedValue({ data: { user_id: "user_123" }, error: null }),
-      upsert: vi.fn().mockResolvedValue({ error: null }),
-    };
-
-    const closeLiveIn = vi.fn().mockResolvedValue({ error: null });
-    const subscriptionsUpdateChain = {
-      eq: vi.fn().mockReturnThis(),
-      neq: vi.fn().mockReturnThis(),
-      in: closeLiveIn,
-    };
-    const subscriptionsUpdate = vi.fn().mockReturnValue(subscriptionsUpdateChain);
-    const subscriptionsUpsert = vi.fn().mockResolvedValue({ error: null });
-    const existingRowMaybeSingle = vi.fn().mockResolvedValue({
-      data: { stripe_event_created_at: "2023-11-14T22:13:20.000Z" },
-      error: null,
-    });
-    const subscriptionsSelect = vi.fn((columns: string) => {
-      if (columns === "stripe_event_created_at") {
-        return {
-          eq: vi.fn().mockReturnThis(),
-          maybeSingle: existingRowMaybeSingle,
-        };
-      }
-      if (columns === "stripe_subscription_id,stripe_subscription_created_at") {
-        return {
-          eq: vi.fn().mockReturnThis(),
-          neq: vi.fn().mockReturnThis(),
-          in: vi.fn().mockResolvedValue({ data: [], error: null }),
-        };
-      }
-      throw new Error(`Unexpected select: ${columns}`);
-    });
-    const subscriptionsQuery = {
-      select: subscriptionsSelect,
-      update: subscriptionsUpdate,
-      upsert: subscriptionsUpsert,
-    };
-
-    const from = vi.fn((table: string) => {
-      if (table === "stripe_customers") {
-        return stripeCustomersQuery;
-      }
-      if (table === "subscriptions") {
-        return subscriptionsQuery;
-      }
-      throw new Error(`Unexpected table: ${table}`);
-    });
-
-    vi.doMock("@/lib/supabase/admin", () => ({
-      createAdminClient: () => ({ from }),
-    }));
-    vi.doMock("@/lib/stripe/server", () => ({
-      stripe: {
-        customers: {
-          retrieve: vi.fn(),
-        },
-      },
-    }));
-
-    const { syncSubscription } = await import("./sync");
-
-    await syncSubscription(
-      {
-        id: "sub_equal",
-        created: 1_700_000_000,
-        status: "active",
-        customer: "cus_123",
-        cancel_at_period_end: false,
-        items: {
-          data: [
-            {
-              price: { id: "price_starter" },
-              current_period_start: 1_700_000_000,
-              current_period_end: 1_700_086_400,
-            },
-          ],
-        },
-      } as never,
-      {
-        eventCreatedUnix: 1_700_000_000,
-      },
-    );
-
-    expect(subscriptionsUpdate).toHaveBeenCalledOnce();
-    expect(closeLiveIn).toHaveBeenCalledOnce();
-    expect(subscriptionsUpsert).toHaveBeenCalledOnce();
-  });
-
-  it("does not promote an older duplicate live subscription", async () => {
-    const stripeCustomersQuery = {
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      maybeSingle: vi.fn().mockResolvedValue({ data: { user_id: "user_123" }, error: null }),
-      upsert: vi.fn().mockResolvedValue({ error: null }),
-    };
-
-    const subscriptionsUpdate = vi.fn();
-    const subscriptionsUpsert = vi.fn().mockResolvedValue({ error: null });
-    const existingRowMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
-    const competingIn = vi.fn().mockResolvedValue({
-      data: [
-        {
-          stripe_subscription_id: "sub_real",
-          stripe_subscription_created_at: "2026-03-19T10:00:00.000Z",
-        },
-      ],
-      error: null,
-    });
-    const subscriptionsSelect = vi.fn((columns: string) => {
-      if (columns === "stripe_event_created_at") {
-        return {
-          eq: vi.fn().mockReturnThis(),
-          maybeSingle: existingRowMaybeSingle,
-        };
-      }
-      if (columns === "stripe_subscription_id,stripe_subscription_created_at") {
-        return {
-          eq: vi.fn().mockReturnThis(),
-          neq: vi.fn().mockReturnThis(),
-          in: competingIn,
-        };
-      }
-      throw new Error(`Unexpected select: ${columns}`);
-    });
-    const subscriptionsQuery = {
-      select: subscriptionsSelect,
-      update: subscriptionsUpdate,
-      upsert: subscriptionsUpsert,
-    };
-
-    const from = vi.fn((table: string) => {
-      if (table === "stripe_customers") {
-        return stripeCustomersQuery;
-      }
-      if (table === "subscriptions") {
-        return subscriptionsQuery;
-      }
-      throw new Error(`Unexpected table: ${table}`);
-    });
-
-    vi.doMock("@/lib/supabase/admin", () => ({
-      createAdminClient: () => ({ from }),
-    }));
-    vi.doMock("@/lib/stripe/server", () => ({
-      stripe: {
-        customers: {
-          retrieve: vi.fn(),
-        },
-      },
-    }));
-
-    const { syncSubscription } = await import("./sync");
-
-    await syncSubscription({
-      id: "sub_duplicate",
-      created: 1_700_000_000,
-      status: "active",
-      customer: "cus_123",
-      cancel_at_period_end: false,
-      items: {
-        data: [
-          {
-            price: { id: "price_starter" },
-            current_period_start: 1_700_000_000,
-            current_period_end: 1_700_086_400,
-          },
-        ],
-      },
-    } as never);
-
-    expect(subscriptionsUpdate).not.toHaveBeenCalled();
-    expect(subscriptionsUpsert).not.toHaveBeenCalled();
   });
 });
