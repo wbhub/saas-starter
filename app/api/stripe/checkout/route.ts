@@ -1,17 +1,22 @@
 import { NextResponse } from "next/server";
+import { CHECKOUT_IN_FLIGHT_WINDOW_MS } from "@/lib/constants/billing";
+import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { createClient } from "@/lib/supabase/server";
 import { getPlanByKey } from "@/lib/stripe/config";
 import { stripe } from "@/lib/stripe/server";
 import { env } from "@/lib/env";
 import { upsertStripeCustomer } from "@/lib/stripe/sync";
 import { requireJsonContentType } from "@/lib/http/content-type";
+import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
 import { checkRateLimit } from "@/lib/security/rate-limit";
+import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { LIVE_SUBSCRIPTION_STATUSES } from "@/lib/stripe/plans";
 import { parsePlanKey } from "@/lib/validation";
 import { logger } from "@/lib/logger";
 import { getTeamContextForUser } from "@/lib/team-context";
-
-const CHECKOUT_IN_FLIGHT_WINDOW_MS = 10 * 1000;
+const checkoutPayloadSchema = z.object({
+  planKey: z.string().trim(),
+});
 
 async function isOwnedStripeCustomer(teamId: string, customerId: string) {
   const customer = await stripe.customers.retrieve(customerId);
@@ -69,6 +74,11 @@ async function getTeamSeatCount(
 }
 
 export async function POST(req: Request) {
+  const csrfError = verifyCsrfProtection(req);
+  if (csrfError) {
+    return csrfError;
+  }
+
   const contentTypeError = requireJsonContentType(req);
   if (contentTypeError) {
     return contentTypeError;
@@ -93,8 +103,7 @@ export async function POST(req: Request) {
 
   const rateLimit = await checkRateLimit({
     key: `stripe-checkout:team:${teamContext.teamId}`,
-    limit: 10,
-    windowMs: 60 * 1000,
+    ...RATE_LIMITS.stripeCheckoutByTeam,
   });
   if (!rateLimit.allowed) {
     return NextResponse.json(
@@ -106,8 +115,8 @@ export async function POST(req: Request) {
     );
   }
 
-  const body = await req.json().catch(() => null);
-  const planKey = parsePlanKey(body);
+  const bodyParse = await parseJsonWithSchema(req, checkoutPayloadSchema);
+  const planKey = bodyParse.success ? parsePlanKey(bodyParse.data) : null;
   if (!planKey) {
     return NextResponse.json({ error: "Invalid request payload" }, { status: 400 });
   }

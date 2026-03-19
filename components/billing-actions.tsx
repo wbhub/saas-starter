@@ -1,6 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import {
+  CLIENT_IDEMPOTENCY_TTL_MS,
+  SYNC_PENDING_RELOAD_DELAY_MS,
+} from "@/lib/constants/billing";
+import { getCsrfHeaders } from "@/lib/http/csrf";
 import { PLAN_KEYS, PLAN_LABELS } from "@/lib/stripe/plans";
 
 type Props = {
@@ -12,9 +17,6 @@ type PostJsonOptions = {
   headers?: HeadersInit;
 };
 
-const IDEMPOTENCY_TTL_MS = 10_000;
-const SYNC_PENDING_RELOAD_DELAY_MS = 4_000;
-
 async function postJson(
   path: string,
   body: Record<string, string>,
@@ -24,6 +26,7 @@ async function postJson(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...getCsrfHeaders(),
       ...options?.headers,
     },
     body: JSON.stringify(body),
@@ -46,7 +49,7 @@ async function postJson(
 function createIdempotencyToken(action: "checkout" | "change-plan", planKey: string) {
   const storageKey = `${action}-idempotency:${planKey}`;
   const now = Date.now();
-  const ttlMs = IDEMPOTENCY_TTL_MS;
+  const ttlMs = CLIENT_IDEMPOTENCY_TTL_MS;
 
   try {
     const existingRaw = window.sessionStorage.getItem(storageKey);
@@ -102,7 +105,10 @@ export function BillingActions({ currentPlanKey, hasSubscription }: Props) {
         },
       );
       if (!payload.url) throw new Error("Missing checkout URL");
-      window.location.assign(payload.url);
+      const opened = window.open(payload.url, "_blank", "noopener,noreferrer");
+      if (!opened) {
+        window.location.assign(payload.url);
+      }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Checkout failed");
     } finally {
@@ -151,7 +157,10 @@ export function BillingActions({ currentPlanKey, hasSubscription }: Props) {
     try {
       const payload = await postJson("/api/stripe/portal", {});
       if (!payload.url) throw new Error("Missing portal URL");
-      window.location.assign(payload.url);
+      const opened = window.open(payload.url, "_blank", "noopener,noreferrer");
+      if (!opened) {
+        window.location.assign(payload.url);
+      }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Portal unavailable");
     } finally {

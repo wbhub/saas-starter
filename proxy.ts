@@ -1,4 +1,5 @@
 import { type NextRequest } from "next/server";
+import { CSRF_COOKIE_NAME, createCsrfToken } from "@/lib/security/csrf";
 import { updateSession } from "@/lib/supabase/middleware";
 
 function getSupabaseOrigin() {
@@ -106,6 +107,17 @@ export async function proxy(request: NextRequest) {
 
   const response = await updateSession(request, { requestHeaders });
   response.headers.set("Content-Security-Policy", buildCspHeader(nonce));
+  const hasCsrfCookie = request.cookies.get(CSRF_COOKIE_NAME)?.value;
+  if (!hasCsrfCookie) {
+    response.cookies.set({
+      name: CSRF_COOKIE_NAME,
+      value: createCsrfToken(),
+      sameSite: "strict",
+      secure: request.nextUrl.protocol === "https:",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 14,
+    });
+  }
 
   return response;
 }

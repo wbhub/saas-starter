@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { SECOND_MS } from "@/lib/constants/durations";
 
 type RateLimitOptions = {
   key: string;
@@ -20,7 +21,7 @@ type InMemoryRateLimitRecord = {
 
 type InMemoryRateLimitStore = Map<string, InMemoryRateLimitRecord>;
 
-const FALLBACK_SWEEP_INTERVAL_MS = 30 * 1000;
+const FALLBACK_SWEEP_INTERVAL_MS = 30 * SECOND_MS;
 const FALLBACK_MAX_ENTRIES = 10_000;
 
 declare global {

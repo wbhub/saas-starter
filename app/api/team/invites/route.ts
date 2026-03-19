@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
+import { logAuditEvent } from "@/lib/audit";
+import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { createClient } from "@/lib/supabase/server";
 import { getTeamContextForUser } from "@/lib/team-context";
 import { requireJsonContentType } from "@/lib/http/content-type";
+import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
 import { checkRateLimit } from "@/lib/security/rate-limit";
+import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { isValidEmail } from "@/lib/validation";
 import {
   createRawInviteToken,
@@ -15,12 +19,17 @@ import { env } from "@/lib/env";
 import { getResendClient, getResendFromEmail } from "@/lib/resend/server";
 import { logger } from "@/lib/logger";
 
-type InvitePayload = {
-  email?: string;
-  role?: string;
-};
+const invitePayloadSchema = z.object({
+  email: z.string().trim(),
+  role: z.string().trim().toLowerCase(),
+});
 
 export async function POST(request: Request) {
+  const csrfError = verifyCsrfProtection(request);
+  if (csrfError) {
+    return csrfError;
+  }
+
   const contentTypeError = requireJsonContentType(request);
   if (contentTypeError) {
     return contentTypeError;
@@ -52,8 +61,7 @@ export async function POST(request: Request) {
 
   const rateLimit = await checkRateLimit({
     key: `team-invite:create:${teamContext.teamId}`,
-    limit: 20,
-    windowMs: 60 * 60 * 1000,
+    ...RATE_LIMITS.teamInviteCreateByTeam,
   });
   if (!rateLimit.allowed) {
     return NextResponse.json(
@@ -65,9 +73,19 @@ export async function POST(request: Request) {
     );
   }
 
-  const body = (await request.json().catch(() => null)) as InvitePayload | null;
-  const email = normalizeEmail(body?.email ?? "");
-  const role = (body?.role ?? "").trim().toLowerCase();
+  const bodyParse = await parseJsonWithSchema(request, invitePayloadSchema);
+  if (!bodyParse.success) {
+    logAuditEvent({
+      action: "team.invite.create",
+      outcome: "failure",
+      actorUserId: user.id,
+      teamId: teamContext.teamId,
+      metadata: { reason: "invalid_payload" },
+    });
+    return NextResponse.json({ error: "Invalid request payload." }, { status: 400 });
+  }
+  const email = normalizeEmail(bodyParse.data.email);
+  const role = bodyParse.data.role;
 
   if (!isValidEmail(email)) {
     return NextResponse.json({ error: "Please provide a valid email." }, { status: 400 });
@@ -108,12 +126,26 @@ export async function POST(request: Request) {
 
   if (insertError) {
     if (insertError.code === "23505") {
+      logAuditEvent({
+        action: "team.invite.create",
+        outcome: "failure",
+        actorUserId: user.id,
+        teamId: teamContext.teamId,
+        metadata: { reason: "duplicate_pending_invite", email },
+      });
       return NextResponse.json(
         { error: "A pending invite already exists for this email." },
         { status: 409 },
       );
     }
     logger.error("Failed to create team invite", insertError);
+    logAuditEvent({
+      action: "team.invite.create",
+      outcome: "failure",
+      actorUserId: user.id,
+      teamId: teamContext.teamId,
+      metadata: { reason: "insert_error", email },
+    });
     return NextResponse.json(
       { error: "Unable to create invite right now." },
       { status: 500 },
@@ -143,6 +175,14 @@ export async function POST(request: Request) {
   } catch (error) {
     logger.error("Failed to send team invite email", error);
   }
+
+  logAuditEvent({
+    action: "team.invite.create",
+    outcome: "success",
+    actorUserId: user.id,
+    teamId: teamContext.teamId,
+    metadata: { email, role, emailSent },
+  });
 
   return NextResponse.json({
     ok: true,

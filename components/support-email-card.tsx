@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { getCsrfHeaders } from "@/lib/http/csrf";
 
 type ApiError = {
   error?: string;
@@ -20,7 +21,7 @@ export function SupportEmailCard() {
     try {
       const response = await fetch("/api/resend/support", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...getCsrfHeaders() },
         body: JSON.stringify({ subject, message }),
       });
 

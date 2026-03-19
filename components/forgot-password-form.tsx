@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { getCsrfHeaders } from "@/lib/http/csrf";
 
 type ApiResponse = {
   message?: string;
@@ -22,7 +23,7 @@ export function ForgotPasswordForm() {
     try {
       const response = await fetch("/api/auth/forgot-password", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...getCsrfHeaders() },
         body: JSON.stringify({ email }),
       });
       const payload = (await response.json().catch(() => null)) as

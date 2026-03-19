@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { getCsrfHeaders } from "@/lib/http/csrf";
 
 type RecoverResponse = {
   ok?: boolean;
@@ -20,6 +21,7 @@ export function NoTeamCard() {
     try {
       const response = await fetch("/api/team/recover-personal", {
         method: "POST",
+        headers: getCsrfHeaders(),
       });
       const payload = (await response.json().catch(() => null)) as RecoverResponse | null;
       if (!response.ok) {

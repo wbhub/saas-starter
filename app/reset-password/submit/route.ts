@@ -1,19 +1,28 @@
 import { NextRequest } from "next/server";
+import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { jsonError, jsonSuccess } from "@/lib/http/api-json";
 import { getClientRateLimitIdentifier } from "@/lib/http/client-ip";
 import { requireJsonContentType } from "@/lib/http/content-type";
+import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
 import { logger } from "@/lib/logger";
 import { checkRateLimit } from "@/lib/security/rate-limit";
+import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { createClient } from "@/lib/supabase/server";
+import { validatePasswordComplexity } from "@/lib/validation";
 
 const PASSWORD_RECOVERY_COOKIE = "auth_password_recovery";
 const PASSWORD_RECOVERY_USER_COOKIE = "auth_password_recovery_user";
 
-type ResetPasswordPayload = {
-  password?: string;
-};
+const resetPasswordPayloadSchema = z.object({
+  password: z.string(),
+});
 
 export async function POST(request: NextRequest) {
+  const csrfError = verifyCsrfProtection(request);
+  if (csrfError) {
+    return csrfError;
+  }
+
   const contentTypeError = requireJsonContentType(request);
   if (contentTypeError) {
     return contentTypeError;
@@ -22,8 +31,7 @@ export async function POST(request: NextRequest) {
   const clientId = getClientRateLimitIdentifier(request);
   const rateLimit = await checkRateLimit({
     key: `reset-password-submit:${clientId.keyType}:${clientId.value}`,
-    limit: 15,
-    windowMs: 10 * 60 * 1000,
+    ...RATE_LIMITS.resetPasswordSubmitByClient,
   });
   if (!rateLimit.allowed) {
     return jsonError("Too many password reset attempts. Please try again later.", 429, {
@@ -31,10 +39,14 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  const body = (await request.json().catch(() => null)) as ResetPasswordPayload | null;
-  const password = body?.password ?? "";
-  if (password.length < 8 || password.length > 128) {
+  const bodyParse = await parseJsonWithSchema(request, resetPasswordPayloadSchema);
+  if (!bodyParse.success) {
     return jsonError("Password must be between 8 and 128 characters.", 400);
+  }
+  const { password } = bodyParse.data;
+  const passwordValidation = validatePasswordComplexity(password);
+  if (!passwordValidation.valid) {
+    return jsonError(passwordValidation.error, 400);
   }
 
   const hasRecoveryProof = request.cookies.get(PASSWORD_RECOVERY_COOKIE)?.value === "1";

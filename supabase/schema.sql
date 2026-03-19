@@ -97,6 +97,17 @@ create table if not exists public.rate_limit_windows (
   updated_at timestamptz not null default timezone('utc', now())
 );
 
+create table if not exists public.audit_events (
+  id uuid primary key default gen_random_uuid(),
+  action text not null,
+  outcome text not null check (outcome in ('success', 'failure', 'denied')),
+  actor_user_id uuid references auth.users(id) on delete set null,
+  team_id uuid references public.teams(id) on delete set null,
+  resource_id text,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default timezone('utc', now())
+);
+
 create index if not exists idx_profiles_created_at on public.profiles(created_at desc);
 create index if not exists idx_profiles_active_team_id on public.profiles(active_team_id);
 create index if not exists idx_teams_created_at on public.teams(created_at desc);
@@ -126,6 +137,10 @@ where status in ('incomplete', 'trialing', 'active', 'past_due', 'unpaid', 'paus
 create index if not exists idx_stripe_webhook_events_processed_at on public.stripe_webhook_events(processed_at desc);
 create index if not exists idx_stripe_webhook_events_completed_at on public.stripe_webhook_events(completed_at desc);
 create index if not exists idx_rate_limit_windows_reset_at on public.rate_limit_windows(reset_at desc);
+create index if not exists idx_audit_events_created_at on public.audit_events(created_at desc);
+create index if not exists idx_audit_events_action_created_at on public.audit_events(action, created_at desc);
+create index if not exists idx_audit_events_team_id_created_at on public.audit_events(team_id, created_at desc);
+create index if not exists idx_audit_events_actor_user_id_created_at on public.audit_events(actor_user_id, created_at desc);
 
 create or replace function public.set_updated_at()
 returns trigger
@@ -613,6 +628,7 @@ alter table public.subscriptions enable row level security;
 alter table public.team_invites enable row level security;
 alter table public.stripe_webhook_events enable row level security;
 alter table public.rate_limit_windows enable row level security;
+alter table public.audit_events enable row level security;
 
 alter table public.subscriptions
 add column if not exists seat_quantity integer;
@@ -769,6 +785,19 @@ on public.team_invites
 for delete
 to authenticated
 using (public.is_team_member(team_id, array['owner', 'admin']));
+
+drop policy if exists "Users can read audit events" on public.audit_events;
+create policy "Users can read audit events"
+on public.audit_events
+for select
+to authenticated
+using (
+  actor_user_id = auth.uid()
+  or (
+    team_id is not null
+    and public.is_team_member(team_id, array['owner', 'admin'])
+  )
+);
 
 -- Intentionally no INSERT/UPDATE/DELETE policies on billing + internal tables
 -- (except team_invites where owners/admins can create/delete invites).

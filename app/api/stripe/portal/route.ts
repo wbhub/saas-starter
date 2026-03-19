@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
+import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { createClient } from "@/lib/supabase/server";
 import { stripe } from "@/lib/stripe/server";
 import { env } from "@/lib/env";
 import { requireJsonContentType } from "@/lib/http/content-type";
 import { checkRateLimit } from "@/lib/security/rate-limit";
+import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { logger } from "@/lib/logger";
 import { getTeamContextForUser } from "@/lib/team-context";
 
@@ -17,6 +19,11 @@ async function isOwnedStripeCustomer(teamId: string, customerId: string) {
 }
 
 export async function POST(request: Request) {
+  const csrfError = verifyCsrfProtection(request);
+  if (csrfError) {
+    return csrfError;
+  }
+
   const contentTypeError = requireJsonContentType(request);
   if (contentTypeError) {
     return contentTypeError;
@@ -41,8 +48,7 @@ export async function POST(request: Request) {
 
   const rateLimit = await checkRateLimit({
     key: `stripe-portal:team:${teamContext.teamId}`,
-    limit: 20,
-    windowMs: 60 * 1000,
+    ...RATE_LIMITS.stripePortalByTeam,
   });
   if (!rateLimit.allowed) {
     return NextResponse.json(

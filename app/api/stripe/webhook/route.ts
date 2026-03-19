@@ -13,6 +13,7 @@ import { requireJsonContentType } from "@/lib/http/content-type";
 import { logger } from "@/lib/logger";
 import {
   WEBHOOK_CLAIM_TTL_SECONDS,
+  WEBHOOK_PRUNE_SAMPLE_RATE,
   WEBHOOK_SIGNATURE_TOLERANCE_SECONDS,
 } from "@/lib/stripe/webhook-constants";
 import { pruneStripeWebhookEventRows } from "@/lib/stripe/webhook-event-prune";
@@ -178,7 +179,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ received: true });
     }
     claimed = true;
-    await pruneStripeWebhookEventRows({ sampleRate: 0.05 });
+    await pruneStripeWebhookEventRows({ sampleRate: WEBHOOK_PRUNE_SAMPLE_RATE });
 
     switch (event.type) {
       case "checkout.session.completed": {
