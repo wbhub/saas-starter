@@ -16,48 +16,48 @@ import { getPublicPricingCatalog } from "@/lib/stripe/public-pricing";
 
 const faqs = [
   {
-    question: "What do I get out of the box?",
+    question: "What is included out of the box?",
     answer:
-      "You get a fully wired SaaS skeleton: Supabase auth, protected routes, a user dashboard, Stripe subscriptions and billing portal, Resend transactional email support, Intercom chat, and basic profile + billing data models.",
+      "A production-oriented SaaS foundation with Supabase auth, team invites and roles, seat-based Stripe billing, dashboard routes, support email via Resend, and security middleware already wired in.",
   },
   {
-    question: "How much work is left for me?",
+    question: "Do I need to build auth and billing myself?",
     answer:
-      "Most infrastructure is done. You focus on product-specific features, domain models, and UI copy while keeping the existing auth, billing, and routing patterns.",
+      "No. Login, signup, password reset, protected routes, checkout, plan changes, billing portal, and webhook handling are already implemented so you can focus on product features.",
   },
   {
-    question: "Can I change pricing and plans easily?",
+    question: "How are teams and permissions handled?",
     answer:
-      "Yes. You can adjust plan names, prices, and Stripe product IDs in one place, and the checkout + billing portal flows will continue to work.",
+      "Teams support invite flows and role-based access (`owner`, `admin`, `member`), with ownership transfer and guarded membership operations handled through API routes and database policies.",
   },
   {
-    question: "Is this starter production-ready?",
+    question: "Is AI chat included?",
     answer:
-      "It’s designed as a strong foundation: secure auth with RLS, Stripe webhooks, and an App Router architecture that you can run in production after you’ve added your product logic and testing.",
+      "Yes. `/api/ai/chat` is included with streaming responses, CSRF checks, rate limiting, and configurable access rules by paid status or plan when `OPENAI_API_KEY` is set.",
   },
 ];
 
 const stats = [
-  { label: "Time to first payment flow", value: "< 15 minutes" },
-  { label: "Core SaaS workflows prewired", value: "Auth + Billing + DB" },
+  { label: "App routes included", value: "Public + Auth + Dashboard" },
+  { label: "Core workflows prewired", value: "Auth + Teams + Billing" },
   {
-    label: "Infra designed for scale",
-    value: "Next.js + Supabase + Stripe + Resend + Intercom",
+    label: "Security baseline included",
+    value: "CSRF + CSP + rate limiting",
   },
 ];
 
 const steps = [
   {
     title: "1. Clone & install",
-    text: "Clone the repo, install dependencies, and add your environment variables.",
+    text: "Install dependencies, copy `.env.example` to `.env.local`, and set your required values.",
   },
   {
-    title: "2. Connect Your Stack",
-    text: "Drop in your Supabase, Stripe, Resend, and Intercom keys and run the setup commands.",
+    title: "2. Configure providers",
+    text: "Apply `supabase/schema.sql`, add Stripe price IDs + webhook secret, and configure Resend.",
   },
   {
     title: "3. Customize & launch",
-    text: "Adjust plans, copy, and branding, then deploy to Vercel when you’re ready.",
+    text: "Update branding, pricing, and product logic, then deploy to Vercel with optional cron jobs.",
   },
 ];
 
@@ -105,16 +105,15 @@ export function HeroSection() {
         <div>
           <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-indigo-400/40 bg-indigo-500/5 px-3 py-1 text-sm app-accent">
             <Clock3 className="h-4 w-4" />
-            Build in days, not months
+            Production-grade SaaS foundation
           </p>
           <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">
-            Turn your SaaS idea into a production-ready app.
+            Launch a production-ready SaaS in days, not months.
           </h1>
           <p className="app-muted mt-5 max-w-xl text-base">
-            Stop rebuilding auth, billing, and customer communication infrastructure
-            from scratch. This starter gives you a polished foundation with integrated
-            Resend and Intercom so you can focus on features customers actually pay
-            for.
+            Skip months of platform work. Auth, team access, seat-based billing, support
+            email, and AI-ready APIs are already wired so you can focus on the product
+            customers pay for.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <AuthAwareLink
@@ -130,33 +129,33 @@ export function HeroSection() {
               href="#pricing"
               className="rounded-lg border app-border-subtle px-5 py-3 font-medium hover:bg-[color:var(--surface-subtle)]"
             >
-              Explore plans
+              View pricing
             </Link>
           </div>
           <div className="mt-8 flex flex-wrap items-center gap-4 text-sm app-muted">
             <span className="inline-flex items-center gap-2">
               <BadgeCheck className="h-4 w-4 text-emerald-500 dark:text-emerald-300" />
-              Secure auth flows
+              Supabase auth flows
             </span>
             <span className="inline-flex items-center gap-2">
               <BadgeCheck className="h-4 w-4 text-emerald-500 dark:text-emerald-300" />
-              Stripe subscriptions
+              Team invites and roles
             </span>
             <span className="inline-flex items-center gap-2">
               <BadgeCheck className="h-4 w-4 text-emerald-500 dark:text-emerald-300" />
-              Scalable database policies
+              Seat-based Stripe billing
             </span>
             <span className="inline-flex items-center gap-2">
               <BadgeCheck className="h-4 w-4 text-emerald-500 dark:text-emerald-300" />
-              Billing portal
+              AI chat endpoint
             </span>
             <span className="inline-flex items-center gap-2">
               <BadgeCheck className="h-4 w-4 text-emerald-500 dark:text-emerald-300" />
-              Resend email integration
+              Resend support email
             </span>
             <span className="inline-flex items-center gap-2">
               <BadgeCheck className="h-4 w-4 text-emerald-500 dark:text-emerald-300" />
-              Intercom chat widget
+              CSRF + CSP + rate limits
             </span>
           </div>
         </div>
@@ -166,17 +165,17 @@ export function HeroSection() {
             <div className="mb-4">
               <h2 className="text-lg font-semibold">What you ship immediately</h2>
               <p className="app-muted mt-1 text-sm">
-                Ready-to-use app flows users expect from day one.
+                App and API flows mapped to a real SaaS launch.
               </p>
             </div>
             <div className="grid gap-4">
               {[
-                "Account creation, login, and protected routes",
-                "Stripe Checkout + billing portal + webhook lifecycle",
-                "Resend-powered transactional email plumbing for support and product notifications",
-                "Intercom widget with user identity bootstrapping for in-app support",
-                "Role-safe, user-scoped data access with Supabase RLS",
-                "App Router structure designed for long-term maintainability",
+                "Signup, login, forgot-password, reset-password, and protected dashboard routes",
+                "Team onboarding with invites, acceptance, role management, and ownership transfer",
+                "Seat-based Stripe checkout, billing portal, plan changes, and webhook syncing",
+                "Support request API with Resend delivery and authenticated sender context",
+                "Optional AI chat route with streaming responses, budgeting, and plan-aware access",
+                "Security defaults including CSRF checks, CSP headers, request IDs, and rate limiting",
               ].map((item) => (
                 <div key={item} className="flex items-start gap-3">
                   <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center">
@@ -204,8 +203,8 @@ export function GettingStartedSection() {
         <div>
           <h2 className="text-2xl font-semibold md:text-3xl">How to get up-and-running</h2>
           <p className="app-muted mt-2 max-w-2xl">
-            Go from idea to a running subscription product with three concrete steps,
-            without getting stuck wiring up infrastructure.
+            Follow the setup in the README to go from fresh clone to a working SaaS app
+            with real auth and billing flows.
           </p>
         </div>
       </div>
@@ -234,11 +233,11 @@ export function WhyStarterSection() {
           Why this starter
         </p>
         <h2 className="mt-3 text-2xl font-semibold md:text-3xl">
-          Ship a complete SaaS foundation from day one.
+          Built for real SaaS operations, not just demos.
         </h2>
         <p className="app-muted mt-3">
-          Auth, billing, and user data flows are already integrated so you can focus on
-          product decisions instead of stitching together infrastructure.
+          The codebase includes production-minded patterns for teams, subscriptions,
+          support, AI access controls, and operational cron endpoints.
         </p>
       </div>
       <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
@@ -265,26 +264,26 @@ export function BestPracticesSection() {
         <div>
           <h2 className="text-3xl font-semibold">Built-in best practices</h2>
           <p className="app-muted mt-2 max-w-2xl">
-            The architecture, auth patterns, and billing flows are chosen to match how
-            modern SaaS products actually operate in production.
+            Core paths are implemented with safety and maintainability in mind, so you
+            can extend confidently.
           </p>
         </div>
       </div>
       <div className="grid gap-6 md:grid-cols-3">
         <FeatureCard
           icon={<ShieldCheck className="h-5 w-5 text-indigo-500 dark:text-indigo-300" />}
-          title="Secure by default"
-          text="RLS-backed access policies and SSR auth flow keep private data private."
+          title="Security defaults"
+          text="CSRF protection, CSP, strict API headers, and request-aware middleware are included."
         />
         <FeatureCard
           icon={<CreditCard className="h-5 w-5 text-indigo-500 dark:text-indigo-300" />}
-          title="Revenue ready"
-          text="Recurring subscriptions, plan changes, and billing management are wired end-to-end."
+          title="Team-based billing"
+          text="Stripe subscriptions are team-scoped with seat reconciliation, portal access, and plan changes."
         />
         <FeatureCard
           icon={<BarChart3 className="h-5 w-5 text-indigo-500 dark:text-indigo-300" />}
-          title="Customer communication built in"
-          text="Resend sends transactional emails, while Intercom provides in-app support chat."
+          title="Operational endpoints"
+          text="Cron routes reconcile seats and clean webhook data, with token-based authorization."
         />
       </div>
     </section>
@@ -298,8 +297,8 @@ export function StackSection() {
         <div>
           <h2 className="text-2xl font-semibold md:text-3xl">Inside the stack</h2>
           <p className="app-muted mt-2 max-w-2xl">
-            A predictable layout that makes it obvious where to plug in new features,
-            without hunting across frameworks or folders.
+            Next.js App Router with clear boundaries across UI routes, API handlers, and
+            shared platform libraries.
           </p>
         </div>
       </div>
@@ -309,8 +308,8 @@ export function StackSection() {
             Auth & user flows
           </p>
           <p className="app-muted mt-2">
-            Supabase auth client + server helpers, protected routes, and session handling
-            wired for the App Router.
+            Supabase SSR auth helpers, invite acceptance flow, team context, and account
+            settings are already connected.
           </p>
         </article>
         <article className="rounded-2xl border app-border-subtle app-surface-subtle p-5 text-sm">
@@ -318,17 +317,17 @@ export function StackSection() {
             Billing & Stripe
           </p>
           <p className="app-muted mt-2">
-            Stripe Checkout and Billing Portal routes, webhook handlers, and plan metadata
-            hooked into the dashboard state.
+            Checkout, portal, and change-plan APIs are backed by webhook dedupe and
+            subscription sync logic.
           </p>
         </article>
         <article className="rounded-2xl border app-border-subtle app-surface-subtle p-5 text-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] app-muted">
-            Support & messaging
+            AI, support, and observability
           </p>
           <p className="app-muted mt-2">
-            Resend delivers transactional support and product emails. Intercom uses
-            signed-in user context for in-app conversations.
+            AI chat, Resend support email, and optional Intercom + Sentry integrations
+            are ready to configure.
           </p>
         </article>
       </div>
@@ -342,10 +341,10 @@ export async function PricingSection() {
   return (
     <section id="pricing" className="space-y-8">
       <div>
-        <h2 className="text-3xl font-semibold">Simple pricing for each stage</h2>
+        <h2 className="text-3xl font-semibold">Seat-based pricing from Stripe</h2>
         <p className="app-muted mt-3">
-          Update your pricing tiers, prices, and plan rules to match your business as it
-          grows.
+          Configure Starter, Growth, and Pro price IDs once, and the landing page and
+          billing flows stay in sync.
         </p>
       </div>
       <div className="grid gap-4 md:grid-cols-3">
@@ -393,8 +392,8 @@ export function CtaFaqSection() {
           <div>
             <h2 className="text-3xl font-semibold">Ready to ship your SaaS faster?</h2>
             <p className="app-muted mt-3 max-w-2xl">
-              Use this starter as your launchpad and spend your time on the features that
-              make your product unique.
+              Start with proven auth, team, billing, and API infrastructure, then build
+              the product experience that makes your business unique.
             </p>
           </div>
           <div className="flex flex-wrap justify-start gap-3 md:justify-end">
