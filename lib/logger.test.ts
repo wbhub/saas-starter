@@ -1,8 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const ORIGINAL_NODE_ENV = process.env.NODE_ENV;
-const ORIGINAL_SENTRY_DSN = process.env.NEXT_PUBLIC_SENTRY_DSN;
-
 async function loadLogger() {
   vi.resetModules();
   const mod = await import("./logger");
@@ -14,23 +11,13 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  if (ORIGINAL_NODE_ENV === undefined) {
-    delete process.env.NODE_ENV;
-  } else {
-    process.env.NODE_ENV = ORIGINAL_NODE_ENV;
-  }
-
-  if (ORIGINAL_SENTRY_DSN === undefined) {
-    delete process.env.NEXT_PUBLIC_SENTRY_DSN;
-  } else {
-    process.env.NEXT_PUBLIC_SENTRY_DSN = ORIGINAL_SENTRY_DSN;
-  }
+  vi.unstubAllEnvs();
 });
 
 describe("logger redaction", () => {
   it("redacts secrets from production structured error logs", async () => {
-    process.env.NODE_ENV = "production";
-    delete process.env.NEXT_PUBLIC_SENTRY_DSN;
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("NEXT_PUBLIC_SENTRY_DSN", undefined);
 
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const logger = await loadLogger();
@@ -65,8 +52,8 @@ describe("logger redaction", () => {
   });
 
   it("treats second plain object as context in production", async () => {
-    process.env.NODE_ENV = "production";
-    delete process.env.NEXT_PUBLIC_SENTRY_DSN;
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("NEXT_PUBLIC_SENTRY_DSN", undefined);
 
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const logger = await loadLogger();
@@ -82,8 +69,8 @@ describe("logger redaction", () => {
   });
 
   it("redacts secrets in non-production console output", async () => {
-    process.env.NODE_ENV = "development";
-    delete process.env.NEXT_PUBLIC_SENTRY_DSN;
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("NEXT_PUBLIC_SENTRY_DSN", undefined);
 
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const logger = await loadLogger();
