@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { LIVE_SUBSCRIPTION_STATUSES } from "@/lib/stripe/plans";
 
 describe("POST /api/ai/chat access and gating", () => {
   beforeEach(() => {
@@ -299,18 +300,6 @@ describe("POST /api/ai/chat access and gating", () => {
       getAiModelForPlan: vi.fn().mockReturnValue("gpt-4.1-mini"),
       getAiMonthlyTokenBudgetForPlan: vi.fn().mockReturnValue(2_000_000),
     }));
-    const maybeSingle = vi.fn().mockResolvedValue({
-      data: null,
-      error: null,
-    });
-    const subscriptionsQuery = {
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      in: vi.fn().mockReturnThis(),
-      order: vi.fn().mockReturnThis(),
-      limit: vi.fn().mockReturnThis(),
-      maybeSingle,
-    };
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: async () => ({
         auth: {
@@ -318,12 +307,6 @@ describe("POST /api/ai/chat access and gating", () => {
             data: { user: { id: "user_123" } },
           }),
         },
-        from: vi.fn((table: string) => {
-          if (table === "subscriptions") {
-            return subscriptionsQuery;
-          }
-          throw new Error(`Unexpected table: ${table}`);
-        }),
       }),
     }));
     vi.doMock("@/lib/team-context", () => ({
@@ -363,21 +346,13 @@ describe("POST /api/ai/chat access and gating", () => {
   });
 
   it("fails safely in by_plan mode when model is missing", async () => {
-    vi.doMock("@/lib/ai/config", () => ({
-      getAiAccessMode: vi.fn().mockReturnValue("by_plan"),
-      getAiAllowedSubscriptionStatuses: vi
-        .fn()
-        .mockReturnValue(["trialing", "active", "past_due"]),
-      getAiDefaultModel: vi.fn().mockReturnValue("gpt-4.1-mini"),
-      getAiDefaultMonthlyTokenBudget: vi.fn().mockReturnValue(0),
-      getAiRuleForPlan: vi.fn().mockReturnValue({
-        enabled: true,
-        model: null,
-        monthlyBudget: 10_000,
-      }),
-      getAiModelForPlan: vi.fn().mockReturnValue("gpt-4.1-mini"),
-      getAiMonthlyTokenBudgetForPlan: vi.fn().mockReturnValue(2_000_000),
-    }));
+    const aiConfig = await import("@/lib/ai/config");
+    vi.mocked(aiConfig.getAiAccessMode).mockReturnValue("by_plan");
+    vi.mocked(aiConfig.getAiRuleForPlan).mockReturnValue({
+      enabled: true,
+      model: null,
+      monthlyBudget: 10_000,
+    });
     const maybeSingle = vi.fn().mockResolvedValue({
       data: { stripe_price_id: "price_growth", status: "active" },
       error: null,
@@ -439,5 +414,78 @@ describe("POST /api/ai/chat access and gating", () => {
       (openai as unknown as { chat: { completions: { create: ReturnType<typeof vi.fn> } } }).chat
         .completions.create,
     ).not.toHaveBeenCalled();
+  });
+
+  it("filters by_plan subscription lookup to live statuses", async () => {
+    vi.doMock("@/lib/ai/config", () => ({
+      getAiAccessMode: vi.fn().mockReturnValue("by_plan"),
+      getAiAllowedSubscriptionStatuses: vi
+        .fn()
+        .mockReturnValue(["trialing", "active", "past_due"]),
+      getAiDefaultModel: vi.fn().mockReturnValue("gpt-4.1-mini"),
+      getAiDefaultMonthlyTokenBudget: vi.fn().mockReturnValue(0),
+      getAiRuleForPlan: vi.fn().mockReturnValue({
+        enabled: true,
+        model: "gpt-4.1-mini",
+        monthlyBudget: 10_000,
+      }),
+      getAiModelForPlan: vi.fn().mockReturnValue("gpt-4.1-mini"),
+      getAiMonthlyTokenBudgetForPlan: vi.fn().mockReturnValue(2_000_000),
+    }));
+    const maybeSingle = vi.fn().mockResolvedValue({
+      data: { stripe_price_id: "price_growth", status: "active" },
+      error: null,
+    });
+    const inFn = vi.fn().mockReturnThis();
+    const subscriptionsQuery = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      in: inFn,
+      order: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+      maybeSingle,
+    };
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          getUser: async () => ({
+            data: { user: { id: "user_123" } },
+          }),
+        },
+        from: vi.fn((table: string) => {
+          if (table === "subscriptions") {
+            return subscriptionsQuery;
+          }
+          throw new Error(`Unexpected table: ${table}`);
+        }),
+      }),
+    }));
+    vi.doMock("@/lib/team-context", () => ({
+      getTeamContextForUser: vi.fn().mockResolvedValue({
+        teamId: "team_123",
+        teamName: "Acme Team",
+        role: "owner",
+      }),
+    }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({
+        allowed: true,
+        retryAfterSeconds: 0,
+      }),
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [{ role: "user", content: "hello" }],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(503);
+    expect(inFn).toHaveBeenCalledWith("status", LIVE_SUBSCRIPTION_STATUSES);
   });
 });
