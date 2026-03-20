@@ -139,6 +139,17 @@ create table if not exists public.ai_usage_budget_claims (
   created_at timestamptz not null default timezone('utc', now())
 );
 
+create table if not exists public.ai_budget_claim_finalize_retries (
+  claim_id uuid primary key references public.ai_usage_budget_claims(id) on delete cascade,
+  actual_tokens integer not null check (actual_tokens >= 0),
+  attempt_count integer not null default 0 check (attempt_count >= 0),
+  last_error text,
+  next_attempt_at timestamptz not null default timezone('utc', now()),
+  last_attempt_at timestamptz,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
 create table if not exists public.seat_sync_retries (
   team_id uuid primary key references public.teams(id) on delete cascade,
   reason text not null,
@@ -189,6 +200,7 @@ create index if not exists idx_ai_usage_model_created_at on public.ai_usage(mode
 create index if not exists idx_ai_usage_monthly_totals_month_start on public.ai_usage_monthly_totals(month_start desc);
 create index if not exists idx_ai_usage_budget_claims_team_month on public.ai_usage_budget_claims(team_id, month_start, created_at desc);
 create index if not exists idx_ai_usage_budget_claims_finalized on public.ai_usage_budget_claims(finalized_at);
+create index if not exists idx_ai_budget_claim_finalize_retries_next_attempt_at on public.ai_budget_claim_finalize_retries(next_attempt_at asc);
 create index if not exists idx_seat_sync_retries_next_attempt_at on public.seat_sync_retries(next_attempt_at asc);
 
 create or replace function public.set_updated_at()
@@ -307,6 +319,11 @@ for each row execute function public.set_updated_at();
 drop trigger if exists ai_usage_monthly_totals_set_updated_at on public.ai_usage_monthly_totals;
 create trigger ai_usage_monthly_totals_set_updated_at
 before update on public.ai_usage_monthly_totals
+for each row execute function public.set_updated_at();
+
+drop trigger if exists ai_budget_claim_finalize_retries_set_updated_at on public.ai_budget_claim_finalize_retries;
+create trigger ai_budget_claim_finalize_retries_set_updated_at
+before update on public.ai_budget_claim_finalize_retries
 for each row execute function public.set_updated_at();
 
 drop trigger if exists seat_sync_retries_set_updated_at on public.seat_sync_retries;
@@ -504,6 +521,75 @@ revoke execute on function public.finalize_ai_token_budget_claim(uuid, integer) 
 revoke execute on function public.finalize_ai_token_budget_claim(uuid, integer) from anon;
 revoke execute on function public.finalize_ai_token_budget_claim(uuid, integer) from authenticated;
 grant execute on function public.finalize_ai_token_budget_claim(uuid, integer) to service_role;
+
+create or replace function public.enqueue_ai_budget_finalize_retry(
+  p_claim_id uuid,
+  p_actual_tokens integer,
+  p_error text default null
+)
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_now timestamptz := timezone('utc', now());
+  v_attempt_count integer;
+  v_error text := left(
+    coalesce(
+      nullif(trim(coalesce(p_error, '')), ''),
+      'Unknown AI budget finalize failure'
+    ),
+    1000
+  );
+begin
+  if p_actual_tokens < 0 then
+    raise exception 'p_actual_tokens must be non-negative';
+  end if;
+
+  insert into public.ai_budget_claim_finalize_retries as retries (
+    claim_id,
+    actual_tokens,
+    attempt_count,
+    last_error,
+    next_attempt_at,
+    last_attempt_at,
+    created_at,
+    updated_at
+  )
+  values (
+    p_claim_id,
+    p_actual_tokens,
+    1,
+    v_error,
+    v_now + interval '1 minute',
+    v_now,
+    v_now,
+    v_now
+  )
+  on conflict (claim_id) do update
+  set
+    actual_tokens = greatest(0, excluded.actual_tokens),
+    attempt_count = retries.attempt_count + 1,
+    last_error = excluded.last_error,
+    last_attempt_at = v_now,
+    next_attempt_at = v_now + (
+      least(
+        3600000,
+        60000 * (2 ^ greatest(0, (retries.attempt_count + 1) - 1))
+      ) * interval '1 millisecond'
+    ),
+    updated_at = v_now
+  returning attempt_count into v_attempt_count;
+
+  return v_attempt_count;
+end;
+$$;
+
+revoke execute on function public.enqueue_ai_budget_finalize_retry(uuid, integer, text) from public;
+revoke execute on function public.enqueue_ai_budget_finalize_retry(uuid, integer, text) from anon;
+revoke execute on function public.enqueue_ai_budget_finalize_retry(uuid, integer, text) from authenticated;
+grant execute on function public.enqueue_ai_budget_finalize_retry(uuid, integer, text) to service_role;
 
 create or replace function public.is_team_member(
   p_team_id uuid,
@@ -926,6 +1012,7 @@ alter table public.audit_events enable row level security;
 alter table public.ai_usage enable row level security;
 alter table public.ai_usage_monthly_totals enable row level security;
 alter table public.ai_usage_budget_claims enable row level security;
+alter table public.ai_budget_claim_finalize_retries enable row level security;
 alter table public.seat_sync_retries enable row level security;
 
 alter table public.subscriptions

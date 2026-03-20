@@ -23,6 +23,14 @@ describe("GET /api/cron/reconcile-seat-quantities", () => {
         stripePagesScanned: 0,
       }),
     }));
+    vi.doMock("@/lib/ai/budget-finalize-retries", () => ({
+      processDueAiBudgetFinalizeRetries: vi.fn().mockResolvedValue({
+        processed: 0,
+        finalized: 0,
+        skipped: 0,
+        failed: 0,
+      }),
+    }));
   });
 
   afterEach(() => {
@@ -90,6 +98,14 @@ describe("GET /api/cron/reconcile-seat-quantities", () => {
         stripePagesScanned: 1,
       }),
     }));
+    vi.doMock("@/lib/ai/budget-finalize-retries", () => ({
+      processDueAiBudgetFinalizeRetries: vi.fn().mockResolvedValue({
+        processed: 2,
+        finalized: 1,
+        skipped: 1,
+        failed: 0,
+      }),
+    }));
     const { reconcileTeamSeatQuantities } = await import("@/lib/stripe/seat-reconcile");
     const reconcile = vi.mocked(reconcileTeamSeatQuantities).mockResolvedValue({
       scannedTeams: 3,
@@ -98,6 +114,15 @@ describe("GET /api/cron/reconcile-seat-quantities", () => {
       queuedRetries: 1,
       discoveredFromStripe: 1,
       stripePagesScanned: 1,
+    });
+    const { processDueAiBudgetFinalizeRetries } = await import(
+      "@/lib/ai/budget-finalize-retries"
+    );
+    vi.mocked(processDueAiBudgetFinalizeRetries).mockResolvedValue({
+      processed: 2,
+      finalized: 1,
+      skipped: 1,
+      failed: 0,
     });
 
     const { GET } = await import("./route");
@@ -117,6 +142,102 @@ describe("GET /api/cron/reconcile-seat-quantities", () => {
       queuedRetries: 1,
       discoveredFromStripe: 1,
       stripePagesScanned: 1,
+      seatReconcileFailed: false,
+      aiBudgetFinalizeRetries: {
+        processed: 2,
+        finalized: 1,
+        skipped: 1,
+        failed: 0,
+      },
+      aiBudgetFinalizeRetriesFailed: false,
+    });
+  });
+
+  it("still runs AI finalize retries when seat reconciliation fails", async () => {
+    process.env.CRON_SECRET = "expected";
+    vi.doMock("@/lib/ai/budget-finalize-retries", () => ({
+      processDueAiBudgetFinalizeRetries: vi.fn().mockResolvedValue({
+        processed: 1,
+        finalized: 1,
+        skipped: 0,
+        failed: 0,
+      }),
+    }));
+    const { reconcileTeamSeatQuantities } = await import("@/lib/stripe/seat-reconcile");
+    vi.mocked(reconcileTeamSeatQuantities).mockRejectedValueOnce(new Error("stripe timeout"));
+    const { processDueAiBudgetFinalizeRetries } = await import(
+      "@/lib/ai/budget-finalize-retries"
+    );
+    const processRetries = vi
+      .mocked(processDueAiBudgetFinalizeRetries)
+      .mockResolvedValue({
+        processed: 1,
+        finalized: 1,
+        skipped: 0,
+        failed: 0,
+      });
+
+    const { GET } = await import("./route");
+    const response = await GET(
+      new Request("http://localhost/api/cron/reconcile-seat-quantities", {
+        headers: { authorization: "Bearer expected" },
+      }),
+    );
+
+    expect(response.status).toBe(500);
+    expect(processRetries).toHaveBeenCalledOnce();
+    await expect(response.json()).resolves.toEqual({
+      ok: false,
+      error: "Cron run completed with one or more internal job failures.",
+      scannedTeams: 0,
+      synced: 0,
+      failed: 0,
+      queuedRetries: 0,
+      discoveredFromStripe: 0,
+      stripePagesScanned: 0,
+      seatReconcileFailed: true,
+      aiBudgetFinalizeRetries: {
+        processed: 1,
+        finalized: 1,
+        skipped: 0,
+        failed: 0,
+      },
+      aiBudgetFinalizeRetriesFailed: false,
+    });
+  });
+
+  it("returns 500 when AI budget finalize retry processing fails", async () => {
+    process.env.CRON_SECRET = "expected";
+    vi.doMock("@/lib/ai/budget-finalize-retries", () => ({
+      processDueAiBudgetFinalizeRetries: vi
+        .fn()
+        .mockRejectedValue(new Error("retry queue unavailable")),
+    }));
+    const { GET } = await import("./route");
+    const response = await GET(
+      new Request("http://localhost/api/cron/reconcile-seat-quantities", {
+        headers: { authorization: "Bearer expected" },
+      }),
+    );
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({
+      ok: false,
+      error: "Cron run completed with one or more internal job failures.",
+      scannedTeams: 0,
+      synced: 0,
+      failed: 0,
+      queuedRetries: 0,
+      discoveredFromStripe: 0,
+      stripePagesScanned: 0,
+      seatReconcileFailed: false,
+      aiBudgetFinalizeRetries: {
+        processed: 0,
+        finalized: 0,
+        skipped: 0,
+        failed: 0,
+      },
+      aiBudgetFinalizeRetriesFailed: true,
     });
   });
 });
