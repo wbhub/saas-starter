@@ -144,6 +144,21 @@ export async function DELETE(request: Request, context: TeamMembersRouteContext)
 
   if (deleteError) {
     logger.error("Failed to delete team membership", deleteError);
+    const errorMessage = typeof deleteError.message === "string" ? deleteError.message.toLowerCase() : "";
+    if (errorMessage.includes("last team owner")) {
+      logAuditEvent({
+        action: "team.member.remove",
+        outcome: "denied",
+        actorUserId: user.id,
+        teamId: teamContext.teamId,
+        resourceId: targetUserId,
+        metadata: { reason: "last_owner_db_guard" },
+      });
+      return NextResponse.json(
+        { error: "Cannot remove the last team owner." },
+        { status: 409 },
+      );
+    }
     logAuditEvent({
       action: "team.member.remove",
       outcome: "failure",

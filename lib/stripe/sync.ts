@@ -126,7 +126,7 @@ export async function syncSubscription(
     p_stripe_customer_id: stripeCustomerId,
     p_stripe_subscription_id: subscription.id,
     p_stripe_price_id: item.price.id,
-    p_seat_quantity: Math.max(1, item.quantity ?? 1),
+    p_seat_quantity: Math.max(0, item.quantity ?? 1),
     p_status: status,
     p_stripe_subscription_created_at: subscriptionCreatedAt,
     p_current_period_start: toIsoOrNull(item.current_period_start),
