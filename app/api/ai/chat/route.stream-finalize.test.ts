@@ -11,20 +11,14 @@ function makeAsyncStream(chunks: Array<Record<string, unknown>>) {
 }
 
 describe("POST /api/ai/chat stream finalization retry enqueue", () => {
-  const originalNodeEnv = process.env.NODE_ENV;
-
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
-    process.env.NODE_ENV = "development";
+    vi.stubEnv("NODE_ENV", "development");
   });
 
   afterEach(() => {
-    if (originalNodeEnv === undefined) {
-      delete process.env.NODE_ENV;
-    } else {
-      process.env.NODE_ENV = originalNodeEnv;
-    }
+    vi.unstubAllEnvs();
   });
 
   it("enqueues retry when stream-finally budget finalization fails", async () => {

@@ -1,20 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("POST /api/ai/chat finalize retry enqueue", () => {
-  const originalNodeEnv = process.env.NODE_ENV;
-
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
-    process.env.NODE_ENV = "development";
+    vi.stubEnv("NODE_ENV", "development");
   });
 
   afterEach(() => {
-    if (originalNodeEnv === undefined) {
-      delete process.env.NODE_ENV;
-    } else {
-      process.env.NODE_ENV = originalNodeEnv;
-    }
+    vi.unstubAllEnvs();
   });
 
   function mockCoreDependencies({
