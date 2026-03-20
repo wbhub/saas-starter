@@ -21,6 +21,48 @@ type AuthApiResponse = {
   sessionCreated?: boolean;
 };
 
+function SocialProviderIcon({ provider }: { provider: AuthProvider }) {
+  if (provider === "google") {
+    return (
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 24 24"
+        className="h-4 w-4 shrink-0"
+      >
+        <path
+          fill="#4285F4"
+          d="M21.805 12.23c0-.68-.061-1.333-.173-1.961H12v3.71h5.502a4.704 4.704 0 0 1-2.04 3.086v2.56h3.296c1.93-1.777 3.047-4.397 3.047-7.395Z"
+        />
+        <path
+          fill="#34A853"
+          d="M12 22c2.76 0 5.074-.914 6.766-2.476l-3.296-2.56c-.914.613-2.08.974-3.47.974-2.67 0-4.93-1.803-5.738-4.227H2.853v2.641A10.217 10.217 0 0 0 12 22Z"
+        />
+        <path
+          fill="#FBBC05"
+          d="M6.262 13.711A6.143 6.143 0 0 1 5.942 12c0-.594.107-1.17.32-1.711V7.648H2.853A10.217 10.217 0 0 0 1.75 12c0 1.645.394 3.202 1.103 4.352l3.409-2.641Z"
+        />
+        <path
+          fill="#EA4335"
+          d="M12 6.062c1.5 0 2.847.516 3.908 1.527l2.934-2.934C17.069 3.01 14.754 2 12 2A10.217 10.217 0 0 0 2.853 7.648l3.409 2.64c.807-2.424 3.068-4.226 5.738-4.226Z"
+        />
+      </svg>
+    );
+  }
+
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className="h-4 w-4 shrink-0"
+    >
+      <path fill="#F25022" d="M2 2h9.5v9.5H2z" />
+      <path fill="#7FBA00" d="M12.5 2H22v9.5h-9.5z" />
+      <path fill="#00A4EF" d="M2 12.5h9.5V22H2z" />
+      <path fill="#FFB900" d="M12.5 12.5H22V22h-9.5z" />
+    </svg>
+  );
+}
+
 export function AuthForm({
   mode,
   redirectTo = "/dashboard",
@@ -162,6 +204,7 @@ export function AuthForm({
                 disabled={loading || Boolean(socialLoadingProvider)}
                 className="flex w-full items-center justify-center gap-2 rounded-lg border app-border-subtle px-4 py-2 text-sm font-medium hover:bg-[color:var(--surface-subtle)] disabled:opacity-60"
               >
+                <SocialProviderIcon provider={provider} />
                 <span>{isProviderLoading ? "Please wait..." : `Continue with ${label}`}</span>
                 {isLastUsed ? (
                   <span className="rounded-full border app-border-subtle px-2 py-0.5 text-[10px] uppercase tracking-wide text-[color:var(--muted-foreground)]">
