@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
 import { parse as parseCookieHeader } from "cookie";
-import { env } from "@/lib/env";
+import { getAppUrl } from "@/lib/env";
 
 export const CSRF_COOKIE_NAME = "csrf_token";
 export const CSRF_HEADER_NAME = "x-csrf-token";
@@ -27,7 +27,7 @@ function toOrigin(value: string) {
 function getAllowedOrigins(request: Request) {
   const origins = new Set<string>();
   origins.add(toOrigin(request.url));
-  origins.add(toOrigin(env.NEXT_PUBLIC_APP_URL));
+  origins.add(toOrigin(getAppUrl()));
   origins.delete("");
   return origins;
 }

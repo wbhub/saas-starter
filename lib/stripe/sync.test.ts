@@ -36,9 +36,9 @@ describe("syncSubscription", () => {
       createAdminClient: () => adminMock,
     }));
     vi.doMock("@/lib/stripe/server", () => ({
-      stripe: {
+      getStripeServerClient: () => ({
         customers: { retrieve: vi.fn() },
-      },
+      }),
     }));
 
     const { syncSubscription } = await import("./sync");
@@ -82,9 +82,9 @@ describe("syncSubscription", () => {
       createAdminClient: () => adminMock,
     }));
     vi.doMock("@/lib/stripe/server", () => ({
-      stripe: {
+      getStripeServerClient: () => ({
         customers: { retrieve: vi.fn() },
-      },
+      }),
     }));
 
     const { syncSubscription } = await import("./sync");
@@ -122,9 +122,9 @@ describe("syncSubscription", () => {
       createAdminClient: () => adminMock,
     }));
     vi.doMock("@/lib/stripe/server", () => ({
-      stripe: {
+      getStripeServerClient: () => ({
         customers: { retrieve: vi.fn() },
-      },
+      }),
     }));
 
     const { syncSubscription } = await import("./sync");
@@ -166,9 +166,9 @@ describe("syncSubscription", () => {
       createAdminClient: () => adminMock,
     }));
     vi.doMock("@/lib/stripe/server", () => ({
-      stripe: {
+      getStripeServerClient: () => ({
         customers: { retrieve: vi.fn() },
-      },
+      }),
     }));
 
     const { syncSubscription } = await import("./sync");
@@ -212,14 +212,14 @@ describe("syncSubscription", () => {
       createAdminClient: () => adminMock,
     }));
     vi.doMock("@/lib/stripe/server", () => ({
-      stripe: {
+      getStripeServerClient: () => ({
         customers: {
           retrieve: vi.fn().mockResolvedValue({
             id: "cus_orphan",
             metadata: {},
           }),
         },
-      },
+      }),
     }));
 
     const { syncSubscription } = await import("./sync");
@@ -252,9 +252,9 @@ describe("syncSubscription", () => {
       createAdminClient: () => adminMock,
     }));
     vi.doMock("@/lib/stripe/server", () => ({
-      stripe: {
+      getStripeServerClient: () => ({
         customers: { retrieve: vi.fn() },
-      },
+      }),
     }));
     const consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
 
@@ -295,14 +295,14 @@ describe("syncSubscription", () => {
       createAdminClient: () => adminMock,
     }));
     vi.doMock("@/lib/stripe/server", () => ({
-      stripe: {
+      getStripeServerClient: () => ({
         customers: {
           retrieve: vi.fn().mockResolvedValue({
             id: "cus_user_only",
             metadata: { supabase_user_id: "user_abc" },
           }),
         },
-      },
+      }),
     }));
 
     const { syncSubscription } = await import("./sync");
@@ -334,9 +334,9 @@ describe("syncSubscription", () => {
       createAdminClient: () => adminMock,
     }));
     vi.doMock("@/lib/stripe/server", () => ({
-      stripe: {
+      getStripeServerClient: () => ({
         customers: { retrieve: vi.fn() },
-      },
+      }),
     }));
 
     const { syncSubscription } = await import("./sync");

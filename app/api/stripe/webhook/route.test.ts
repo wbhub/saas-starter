@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 function createWebhookEventsTableMocks() {
   const insert = vi.fn().mockResolvedValue({ error: null });
@@ -59,6 +59,11 @@ describe("POST /api/stripe/webhook", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
+  });
+
+  afterEach(() => {
+    delete process.env.STRIPE_WEBHOOK_SECRET;
   });
 
   it("returns 400 when Stripe signature is missing", async () => {
@@ -69,9 +74,9 @@ describe("POST /api/stripe/webhook", () => {
       env: { STRIPE_WEBHOOK_SECRET: "whsec_test" },
     }));
     vi.doMock("@/lib/stripe/server", () => ({
-      stripe: {
+      getStripeServerClient: () => ({
         webhooks: { constructEvent: vi.fn() },
-      },
+      }),
     }));
     vi.doMock("@/lib/stripe/sync", () => ({
       resolveDefaultTeamIdForUser: vi.fn(),
@@ -108,9 +113,9 @@ describe("POST /api/stripe/webhook", () => {
       env: { STRIPE_WEBHOOK_SECRET: "whsec_test" },
     }));
     vi.doMock("@/lib/stripe/server", () => ({
-      stripe: {
+      getStripeServerClient: () => ({
         webhooks: { constructEvent: vi.fn() },
-      },
+      }),
     }));
     vi.doMock("@/lib/stripe/sync", () => ({
       resolveDefaultTeamIdForUser: vi.fn(),
@@ -149,9 +154,9 @@ describe("POST /api/stripe/webhook", () => {
       env: { STRIPE_WEBHOOK_SECRET: "whsec_test" },
     }));
     vi.doMock("@/lib/stripe/server", () => ({
-      stripe: {
+      getStripeServerClient: () => ({
         webhooks: { constructEvent },
-      },
+      }),
     }));
     vi.doMock("@/lib/stripe/sync", () => ({
       resolveDefaultTeamIdForUser: vi.fn(),
@@ -197,7 +202,7 @@ describe("POST /api/stripe/webhook", () => {
       env: { STRIPE_WEBHOOK_SECRET: "whsec_test" },
     }));
     vi.doMock("@/lib/stripe/server", () => ({
-      stripe: {
+      getStripeServerClient: () => ({
         webhooks: {
           constructEvent: vi.fn(() => ({
             id: "evt_123",
@@ -205,7 +210,7 @@ describe("POST /api/stripe/webhook", () => {
             data: { object: {} },
           })),
         },
-      },
+      }),
     }));
     vi.doMock("@/lib/stripe/sync", () => ({
       resolveDefaultTeamIdForUser: vi.fn(),
@@ -279,7 +284,7 @@ describe("POST /api/stripe/webhook", () => {
       env: { STRIPE_WEBHOOK_SECRET: "whsec_test" },
     }));
     vi.doMock("@/lib/stripe/server", () => ({
-      stripe: {
+      getStripeServerClient: () => ({
         webhooks: {
           constructEvent: vi.fn(() => ({
             id: "evt_checkout",
@@ -297,7 +302,7 @@ describe("POST /api/stripe/webhook", () => {
           retrieve: customerRetrieve,
           update: customerUpdate,
         },
-      },
+      }),
     }));
     vi.doMock("@/lib/stripe/sync", () => ({
       resolveDefaultTeamIdForUser: vi.fn(),
@@ -365,7 +370,7 @@ describe("POST /api/stripe/webhook", () => {
       env: { STRIPE_WEBHOOK_SECRET: "whsec_test" },
     }));
     vi.doMock("@/lib/stripe/server", () => ({
-      stripe: {
+      getStripeServerClient: () => ({
         webhooks: {
           constructEvent: vi.fn(() => ({
             id: "evt_checkout_legacy",
@@ -383,7 +388,7 @@ describe("POST /api/stripe/webhook", () => {
           retrieve: customerRetrieve,
           update: customerUpdate,
         },
-      },
+      }),
     }));
     vi.doMock("@/lib/stripe/sync", () => ({
       syncSubscription: vi.fn(),

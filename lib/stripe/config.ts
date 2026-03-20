@@ -1,5 +1,4 @@
 import "server-only";
-import { env } from "@/lib/env";
 import { PLAN_CATALOG, type PlanKey } from "@/lib/stripe/plans";
 
 export type Plan = {
@@ -8,18 +7,22 @@ export type Plan = {
   priceLabel: string;
   amountMonthly: number;
   description: string;
-  priceId: string;
+  priceId: string | null;
 };
+
+function readStripePriceId(key: "STRIPE_STARTER_PRICE_ID" | "STRIPE_GROWTH_PRICE_ID" | "STRIPE_PRO_PRICE_ID") {
+  return process.env[key]?.trim() || null;
+}
 
 export const plans: Plan[] = [
   ...PLAN_CATALOG.map((plan) => ({
     ...plan,
     priceId:
       plan.key === "starter"
-        ? env.STRIPE_STARTER_PRICE_ID
+        ? readStripePriceId("STRIPE_STARTER_PRICE_ID")
         : plan.key === "growth"
-          ? env.STRIPE_GROWTH_PRICE_ID
-          : env.STRIPE_PRO_PRICE_ID,
+          ? readStripePriceId("STRIPE_GROWTH_PRICE_ID")
+          : readStripePriceId("STRIPE_PRO_PRICE_ID"),
   })),
 ];
 
@@ -29,5 +32,5 @@ export function getPlanByKey(key: string) {
 
 export function getPlanByPriceId(priceId?: string | null) {
   if (!priceId) return null;
-  return plans.find((plan) => plan.priceId === priceId) ?? null;
+  return plans.find((plan) => plan.priceId != null && plan.priceId === priceId) ?? null;
 }

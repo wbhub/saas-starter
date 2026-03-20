@@ -22,9 +22,31 @@ type OptionalEnvKey =
   | "TRUSTED_PROXY_HEADER_NAMES"
   | "STRIPE_SEAT_PRORATION_BEHAVIOR";
 
+const warnedMissingEnv = new Set<string>();
+const SOFT_REQUIRED_KEYS: ReadonlySet<ServerEnvKey> = new Set([
+  "NEXT_PUBLIC_APP_URL",
+  "NEXT_PUBLIC_SUPABASE_URL",
+  "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+]);
+const ENV_FALLBACKS: Partial<Record<ServerEnvKey, string>> = {
+  NEXT_PUBLIC_APP_URL: "http://localhost:3000",
+  NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321",
+};
+
 function ensureEnv(key: ServerEnvKey) {
-  const value = process.env[key];
+  const value = process.env[key]?.trim();
   if (!value) {
+    if (SOFT_REQUIRED_KEYS.has(key)) {
+      if (!warnedMissingEnv.has(key)) {
+        warnedMissingEnv.add(key);
+        console.warn(`Missing optional runtime variable (using fallback): ${key}`);
+      }
+      return ENV_FALLBACKS[key] ?? "";
+    }
+    if (!warnedMissingEnv.has(key)) {
+      warnedMissingEnv.add(key);
+      console.error(`Missing required environment variable: ${key}`);
+    }
     throw new Error(`Missing required environment variable: ${key}`);
   }
   return value;
@@ -33,6 +55,21 @@ function ensureEnv(key: ServerEnvKey) {
 function optionalEnv(key: OptionalEnvKey) {
   const value = process.env[key];
   return value?.trim() || undefined;
+}
+
+const DEFAULT_APP_URL = "http://localhost:3000";
+
+export function getAppUrl() {
+  const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (!configured) {
+    return DEFAULT_APP_URL;
+  }
+
+  try {
+    return new URL(configured).toString().replace(/\/$/, "");
+  } catch {
+    return DEFAULT_APP_URL;
+  }
 }
 
 export const env = {

@@ -51,7 +51,7 @@ describe("POST /api/stripe/change-plan", () => {
       canManageTeamBilling: vi.fn().mockReturnValue(true),
     }));
     vi.doMock("@/lib/stripe/server", () => ({
-      stripe: {
+      getStripeServerClient: () => ({
         subscriptions: {
           retrieve: vi.fn().mockResolvedValue({
             id: "sub_123",
@@ -66,7 +66,7 @@ describe("POST /api/stripe/change-plan", () => {
             metadata: { supabase_team_id: "other_team" },
           }),
         },
-      },
+      }),
     }));
 
     const { POST } = await import("./route");
@@ -154,7 +154,7 @@ describe("POST /api/stripe/change-plan", () => {
       canManageTeamBilling: vi.fn().mockReturnValue(true),
     }));
     vi.doMock("@/lib/stripe/server", () => ({
-      stripe: {
+      getStripeServerClient: () => ({
         subscriptions: {
           retrieve: vi
             .fn()
@@ -176,7 +176,7 @@ describe("POST /api/stripe/change-plan", () => {
             metadata: { supabase_team_id: "team_123" },
           }),
         },
-      },
+      }),
     }));
 
     const { POST } = await import("./route");
@@ -267,7 +267,7 @@ describe("POST /api/stripe/change-plan", () => {
       canManageTeamBilling: vi.fn().mockReturnValue(true),
     }));
     vi.doMock("@/lib/stripe/server", () => ({
-      stripe: {
+      getStripeServerClient: () => ({
         subscriptions: {
           retrieve: vi
             .fn()
@@ -289,7 +289,7 @@ describe("POST /api/stripe/change-plan", () => {
             metadata: { supabase_team_id: "team_123" },
           }),
         },
-      },
+      }),
     }));
 
     const { POST } = await import("./route");

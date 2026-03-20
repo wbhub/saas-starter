@@ -2,7 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { logger } from "@/lib/logger";
 import { plans } from "@/lib/stripe/config";
-import { stripe } from "@/lib/stripe/server";
+import { getStripeServerClient } from "@/lib/stripe/server";
 
 type PublicPricingPlan = {
   key: (typeof plans)[number]["key"];
@@ -37,8 +37,25 @@ function formatPriceLabel(price: {
 }
 
 export const getPublicPricingCatalog = cache(async (): Promise<PublicPricingPlan[]> => {
+  const stripe = getStripeServerClient();
+  if (!stripe) {
+    logger.warn("Stripe is not configured; using static pricing labels.");
+    return plans.map((plan) => ({
+      key: plan.key,
+      name: plan.name,
+      description: plan.description,
+      priceLabel: plan.priceLabel,
+    }));
+  }
+
   const stripePrices = await Promise.all(
     plans.map(async (plan) => {
+      if (!plan.priceId) {
+        logger.warn("Missing Stripe price id for plan; using static label.", {
+          planKey: plan.key,
+        });
+        return [plan.key, null] as const;
+      }
       try {
         const stripePrice = await stripe.prices.retrieve(plan.priceId);
         return [plan.key, stripePrice] as const;

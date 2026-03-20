@@ -15,7 +15,7 @@ import {
   isInviteRole,
   normalizeEmail,
 } from "@/lib/team-invites";
-import { env } from "@/lib/env";
+import { getAppUrl } from "@/lib/env";
 import { getResendClient, getResendFromEmail } from "@/lib/resend/server";
 import { logger } from "@/lib/logger";
 
@@ -191,7 +191,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const inviteUrl = `${env.NEXT_PUBLIC_APP_URL}/invite/${token}`;
+  const inviteUrl = `${getAppUrl()}/invite/${token}`;
   let emailSent = false;
 
   try {

@@ -3,8 +3,8 @@ import { CHECKOUT_IN_FLIGHT_WINDOW_MS } from "@/lib/constants/billing";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { createClient } from "@/lib/supabase/server";
 import { getPlanByKey } from "@/lib/stripe/config";
-import { stripe } from "@/lib/stripe/server";
-import { env } from "@/lib/env";
+import { getStripeServerClient } from "@/lib/stripe/server";
+import { getAppUrl } from "@/lib/env";
 import { requireJsonContentType } from "@/lib/http/content-type";
 import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
 import { checkRateLimit } from "@/lib/security/rate-limit";
@@ -18,6 +18,10 @@ const checkoutPayloadSchema = z.object({
 });
 
 async function isOwnedStripeCustomer(teamId: string, customerId: string) {
+  const stripe = getStripeServerClient();
+  if (!stripe) {
+    throw new Error("Stripe is not configured.");
+  }
   const customer = await stripe.customers.retrieve(customerId);
   if ("deleted" in customer) {
     return false;
@@ -27,6 +31,10 @@ async function isOwnedStripeCustomer(teamId: string, customerId: string) {
 }
 
 async function hasLiveStripeSubscription(customerId: string) {
+  const stripe = getStripeServerClient();
+  if (!stripe) {
+    throw new Error("Stripe is not configured.");
+  }
   const subscriptions = await stripe.subscriptions.list({
     customer: customerId,
     status: "all",
@@ -110,6 +118,14 @@ async function getTeamSeatCount(
 }
 
 export async function POST(req: Request) {
+  const stripe = getStripeServerClient();
+  if (!stripe) {
+    return NextResponse.json(
+      { error: "Billing is not configured for this deployment." },
+      { status: 503 },
+    );
+  }
+
   const csrfError = verifyCsrfProtection(req);
   if (csrfError) {
     return csrfError;
@@ -170,6 +186,12 @@ export async function POST(req: Request) {
   if (!plan) {
     return NextResponse.json({ error: "Invalid plan selected" }, { status: 400 });
   }
+  if (!plan.priceId) {
+    return NextResponse.json(
+      { error: "Billing plans are not fully configured for this deployment." },
+      { status: 503 },
+    );
+  }
   const idempotencyKey = getCheckoutIdempotencyKey(req, teamContext.teamId, plan.key);
 
   const inFlightCheckout = await checkRateLimit({
@@ -227,6 +249,7 @@ export async function POST(req: Request) {
   let customerId = customerRow?.stripe_customer_id;
 
   try {
+    const appUrl = getAppUrl();
     const seatCount = await getTeamSeatCount(supabase, teamContext.teamId);
 
     if (customerId) {
@@ -284,8 +307,8 @@ export async function POST(req: Request) {
         client_reference_id: teamContext.teamId,
         payment_method_types: ["card"],
         line_items: [{ price: plan.priceId, quantity: seatCount }],
-        success_url: `${env.NEXT_PUBLIC_APP_URL}/dashboard?checkout=success`,
-        cancel_url: `${env.NEXT_PUBLIC_APP_URL}/dashboard?checkout=canceled`,
+        success_url: `${appUrl}/dashboard?checkout=success`,
+        cancel_url: `${appUrl}/dashboard?checkout=canceled`,
         metadata: {
           supabase_team_id: teamContext.teamId,
           supabase_user_id: user.id,

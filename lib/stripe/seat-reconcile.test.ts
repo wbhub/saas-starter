@@ -44,11 +44,11 @@ describe("reconcileTeamSeatQuantities", () => {
       syncTeamSeatQuantity,
     }));
     vi.doMock("@/lib/stripe/server", () => ({
-      stripe: {
+      getStripeServerClient: () => ({
         subscriptions: {
           list,
         },
-      },
+      }),
     }));
     vi.doMock("@/lib/stripe/sync", () => ({
       resolveTeamIdFromStripeCustomer,
@@ -108,11 +108,11 @@ describe("reconcileTeamSeatQuantities", () => {
       syncTeamSeatQuantity,
     }));
     vi.doMock("@/lib/stripe/server", () => ({
-      stripe: {
+      getStripeServerClient: () => ({
         subscriptions: {
           list: vi.fn(),
         },
-      },
+      }),
     }));
     vi.doMock("@/lib/stripe/sync", () => ({
       resolveTeamIdFromStripeCustomer: vi.fn(),
@@ -166,11 +166,11 @@ describe("reconcileTeamSeatQuantities", () => {
       syncTeamSeatQuantity,
     }));
     vi.doMock("@/lib/stripe/server", () => ({
-      stripe: {
+      getStripeServerClient: () => ({
         subscriptions: {
           list: vi.fn(),
         },
-      },
+      }),
     }));
     vi.doMock("@/lib/stripe/sync", () => ({
       resolveTeamIdFromStripeCustomer: vi.fn(),

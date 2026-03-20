@@ -1,6 +1,6 @@
 import { NextResponse, after } from "next/server";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
-import { env } from "@/lib/env";
+import { getAppUrl } from "@/lib/env";
 import { getResendClient, getResendFromEmail } from "@/lib/resend/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getClientRateLimitIdentifier } from "@/lib/http/client-ip";
@@ -44,7 +44,7 @@ async function sendPasswordResetEmailInBackground(email: string) {
       type: "recovery",
       email,
       options: {
-        redirectTo: `${env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/reset-password`,
+        redirectTo: `${getAppUrl()}/auth/callback?next=/reset-password`,
       },
     });
 

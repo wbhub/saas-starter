@@ -54,6 +54,7 @@ describe("POST /api/team/invites/[inviteId]/resend", () => {
     }));
     vi.doMock("@/lib/env", () => ({
       env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
+      getAppUrl: () => "http://localhost:3000",
     }));
     vi.doMock("@/lib/team-invites", () => ({
       createRawInviteToken: vi.fn(() => "token-123"),

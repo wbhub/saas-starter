@@ -34,6 +34,7 @@ describe("POST /api/auth/signup", () => {
     }));
     vi.doMock("@/lib/env", () => ({
       env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
+      getAppUrl: () => "http://localhost:3000",
     }));
 
     return { signUp };

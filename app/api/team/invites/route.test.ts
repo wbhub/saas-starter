@@ -83,6 +83,7 @@ describe("POST /api/team/invites", () => {
     }));
     vi.doMock("@/lib/env", () => ({
       env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
+      getAppUrl: () => "http://localhost:3000",
     }));
     vi.doMock("@/lib/resend/server", () => ({
       getResendClient: () => ({ emails: { send } }),
@@ -161,6 +162,7 @@ describe("POST /api/team/invites", () => {
     }));
     vi.doMock("@/lib/env", () => ({
       env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
+      getAppUrl: () => "http://localhost:3000",
     }));
     vi.doMock("@/lib/resend/server", () => ({
       getResendClient: () => ({ emails: { send: vi.fn() } }),
@@ -232,6 +234,7 @@ describe("POST /api/team/invites", () => {
     }));
     vi.doMock("@/lib/env", () => ({
       env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
+      getAppUrl: () => "http://localhost:3000",
     }));
     vi.doMock("@/lib/resend/server", () => ({
       getResendClient: () => ({ emails: { send } }),
