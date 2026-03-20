@@ -1,8 +1,10 @@
 import { expect, test } from "@playwright/test";
 import { authStatePaths, hasSeededOwner, seededInvite } from "./fixtures/seeded";
 
+const ownerStorageState = hasSeededOwner() ? authStatePaths.owner : undefined;
+
 test.describe("@smoke invite acceptance flow", () => {
-  test.use({ storageState: authStatePaths.owner });
+  test.use({ storageState: ownerStorageState });
 
   test("accepts invite with fixture response and lands on dashboard", async ({ page }) => {
     test.skip(!hasSeededOwner(), "Missing seeded owner credentials.");

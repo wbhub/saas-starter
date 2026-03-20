@@ -1,8 +1,10 @@
 import { expect, test } from "@playwright/test";
 import { authStatePaths, hasSeededOwner } from "./fixtures/seeded";
 
+const ownerStorageState = hasSeededOwner() ? authStatePaths.owner : undefined;
+
 test.describe("@smoke sidebar navigation state", () => {
-  test.use({ storageState: authStatePaths.owner });
+  test.use({ storageState: ownerStorageState });
 
   test("tracks active section while navigating dashboard pages", async ({ page }) => {
     test.skip(!hasSeededOwner(), "Missing seeded owner credentials.");

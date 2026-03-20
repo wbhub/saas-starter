@@ -32,7 +32,8 @@ describe("POST /api/team/recover-personal", () => {
     }));
 
     const { POST } = await import("./route");
-    const response = await POST();
+    const request = new Request("http://localhost/api/team/recover-personal", { method: "POST" });
+    const response = await POST(request);
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ ok: true, teamId: "team_123" });

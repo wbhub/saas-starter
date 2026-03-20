@@ -1,8 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("checkRateLimit production fallback behavior", () => {
-  const originalNodeEnv = process.env.NODE_ENV;
-
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
@@ -10,12 +8,12 @@ describe("checkRateLimit production fallback behavior", () => {
     globalThis.__saasStarterRateLimitStore = undefined;
     globalThis.__saasStarterRateLimitLastSweepAt = undefined;
     globalThis.__saasStarterRateLimitCircuitBreaker = undefined;
-    process.env.NODE_ENV = "production";
+    vi.stubEnv("NODE_ENV", "production");
   });
 
   afterEach(() => {
     vi.useRealTimers();
-    process.env.NODE_ENV = originalNodeEnv;
+    vi.unstubAllEnvs();
   });
 
   it("allows requests briefly when distributed limiter first fails", async () => {

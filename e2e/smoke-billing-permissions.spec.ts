@@ -1,8 +1,10 @@
 import { expect, test } from "@playwright/test";
 import { authStatePaths, hasSeededMember } from "./fixtures/seeded";
 
+const memberStorageState = hasSeededMember() ? authStatePaths.member : undefined;
+
 test.describe("@smoke billing permissions", () => {
-  test.use({ storageState: authStatePaths.member });
+  test.use({ storageState: memberStorageState });
 
   test("member role cannot access billing actions", async ({ page }) => {
     test.skip(!hasSeededMember(), "Missing seeded member credentials.");
