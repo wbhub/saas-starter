@@ -4,7 +4,6 @@ import Stripe from "stripe";
 import { env } from "@/lib/env";
 import { stripe } from "@/lib/stripe/server";
 import {
-  resolveDefaultTeamIdForUser,
   syncSubscription,
   upsertStripeCustomer,
 } from "@/lib/stripe/sync";
@@ -166,7 +165,7 @@ async function resolveTeamIdFromSessionReference(referenceId: string) {
     return teamLookup.data.id;
   }
 
-  return resolveDefaultTeamIdForUser(referenceId);
+  return null;
 }
 
 export async function POST(req: Request) {
@@ -242,8 +241,8 @@ export async function POST(req: Request) {
         const sessionReferenceId = session.client_reference_id;
 
         if (!teamId && sessionReferenceId) {
-          // Compatibility path for older sessions where client_reference_id
-          // may contain either a team id (new) or user id (legacy).
+          // Only allow direct team id references. Falling back to user id can
+          // attach billing to the wrong team when users belong to multiple teams.
           teamId = await resolveTeamIdFromSessionReference(sessionReferenceId);
         }
 

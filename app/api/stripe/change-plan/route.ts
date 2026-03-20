@@ -96,6 +96,9 @@ export async function POST(req: Request) {
   }
 
   const bodyParse = await parseJsonWithSchema(req, changePlanPayloadSchema);
+  if (!bodyParse.success && bodyParse.tooLarge) {
+    return NextResponse.json({ error: "Request payload is too large." }, { status: 413 });
+  }
   const planKey = bodyParse.success ? parsePlanKey(bodyParse.data) : null;
   if (!planKey) {
     return NextResponse.json({ error: "Invalid request payload" }, { status: 400 });

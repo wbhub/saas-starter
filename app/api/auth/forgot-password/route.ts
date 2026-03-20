@@ -101,6 +101,9 @@ export async function POST(request: Request) {
 
   const bodyParse = await parseJsonWithSchema(request, forgotPasswordPayloadSchema);
   if (!bodyParse.success) {
+    if (bodyParse.tooLarge) {
+      return NextResponse.json({ error: "Request payload is too large." }, { status: 413 });
+    }
     return NextResponse.json({ message: GENERIC_SUCCESS_MESSAGE });
   }
   const { email } = bodyParse.data;

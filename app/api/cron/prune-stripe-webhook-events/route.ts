@@ -3,6 +3,7 @@ import { jsonError, jsonSuccess } from "@/lib/http/api-json";
 import { pruneStripeWebhookEventRows } from "@/lib/stripe/webhook-event-prune";
 import { timingSafeEqual } from "crypto";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
+import { getClientRateLimitIdentifier } from "@/lib/http/client-ip";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 
 function bearerToken(request: Request) {
@@ -14,14 +15,10 @@ function bearerToken(request: Request) {
 }
 
 function safeCompare(a: string, b: string) {
-  if (a.length !== b.length) {
+  if (Buffer.byteLength(a, "utf8") !== Buffer.byteLength(b, "utf8")) {
     return false;
   }
-  return timingSafeEqual(Buffer.from(a), Buffer.from(b));
-}
-
-function getClientIp(request: Request) {
-  return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  return timingSafeEqual(Buffer.from(a, "utf8"), Buffer.from(b, "utf8"));
 }
 
 /**
@@ -41,8 +38,9 @@ export async function GET(request: Request) {
     return jsonError("Unauthorized.", 401);
   }
 
+  const clientId = getClientRateLimitIdentifier(request);
   const rateLimit = await checkRateLimit({
-    key: `cron:prune-stripe-webhook-events:${getClientIp(request)}`,
+    key: `cron:prune-stripe-webhook-events:${clientId.keyType}:${clientId.value}`,
     ...RATE_LIMITS.cronByClientIp,
   });
   if (!rateLimit.allowed) {

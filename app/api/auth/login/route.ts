@@ -25,6 +25,9 @@ export async function POST(request: Request) {
 
   const bodyParse = await parseJsonWithSchema(request, loginPayloadSchema);
   if (!bodyParse.success) {
+    if (bodyParse.tooLarge) {
+      return NextResponse.json({ error: "Request payload is too large." }, { status: 413 });
+    }
     return NextResponse.json({ error: "Invalid email or password." }, { status: 400 });
   }
   const { email, password } = bodyParse.data;

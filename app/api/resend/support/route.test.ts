@@ -120,5 +120,47 @@ describe("POST /api/resend/support", () => {
       error: "Subject must be 120 characters or less.",
     });
   });
+
+  it("returns 413 when payload exceeds JSON size limit", async () => {
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          getUser: async () => ({
+            data: {
+              user: { id: "user_123", email: "user@example.com" },
+            },
+          }),
+        },
+      }),
+    }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: async () => ({ allowed: true, retryAfterSeconds: 0 }),
+    }));
+    vi.doMock("@/lib/http/client-ip", () => ({
+      getClientRateLimitIdentifier: () => ({ keyType: "ip", value: "198.51.100.1" }),
+    }));
+    vi.doMock("@/lib/resend/server", () => ({
+      getResendClient: vi.fn(),
+      getResendFromEmail: vi.fn(),
+      getResendSupportEmail: vi.fn(),
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/resend/support", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Content-Length": String(300 * 1024),
+        },
+        body: "{}",
+      }),
+    );
+
+    expect(response.status).toBe(413);
+    await expect(response.json()).resolves.toEqual({
+      error: "Request payload is too large.",
+    });
+  });
 });
 

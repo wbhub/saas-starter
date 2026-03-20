@@ -74,6 +74,9 @@ export async function POST(request: Request) {
 
   const bodyParse = await parseJsonWithSchema(request, supportPayloadSchema);
   if (!bodyParse.success) {
+    if (bodyParse.tooLarge) {
+      return NextResponse.json({ error: "Request payload is too large." }, { status: 413 });
+    }
     const issuePath = bodyParse.error.issues[0]?.path?.[0];
     const issueCode = bodyParse.error.issues[0]?.code;
     if (issuePath === "subject" && issueCode === "too_big") {

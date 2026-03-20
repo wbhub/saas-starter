@@ -45,6 +45,9 @@ export async function POST(request: Request) {
 
   const bodyParse = await parseJsonWithSchema(request, acceptInvitePayloadSchema);
   if (!bodyParse.success) {
+    if (bodyParse.tooLarge) {
+      return NextResponse.json({ error: "Request payload is too large." }, { status: 413 });
+    }
     return NextResponse.json({ error: "Invalid invite token." }, { status: 400 });
   }
   const { token } = bodyParse.data;
