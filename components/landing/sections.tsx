@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { AuthAwareLink } from "@/components/auth-aware-link";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { PLAN_CATALOG } from "@/lib/stripe/plans";
+import { getPublicPricingCatalog } from "@/lib/stripe/public-pricing";
 
 const faqs = [
   {
@@ -336,7 +336,9 @@ export function StackSection() {
   );
 }
 
-export function PricingSection() {
+export async function PricingSection() {
+  const pricingCatalog = await getPublicPricingCatalog();
+
   return (
     <section id="pricing" className="space-y-8">
       <div>
@@ -347,7 +349,7 @@ export function PricingSection() {
         </p>
       </div>
       <div className="grid gap-4 md:grid-cols-3">
-        {PLAN_CATALOG.map((tier, idx) => (
+        {pricingCatalog.map((tier, idx) => (
           <article
             key={tier.name}
             className={`rounded-2xl border app-surface p-6 ${
