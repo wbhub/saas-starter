@@ -144,8 +144,7 @@ export async function DELETE(request: Request, context: TeamMembersRouteContext)
 
   if (deleteError) {
     logger.error("Failed to delete team membership", deleteError);
-    const errorMessage = typeof deleteError.message === "string" ? deleteError.message.toLowerCase() : "";
-    if (errorMessage.includes("last team owner")) {
+    if (deleteError.code === "P0010") {
       logAuditEvent({
         action: "team.member.remove",
         outcome: "denied",
