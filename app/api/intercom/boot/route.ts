@@ -29,10 +29,15 @@ export async function GET() {
     return NextResponse.json<IntercomBootResponse>({ user: null });
   }
 
+  const profileNameResult = await supabase
+    .from("profiles")
+    .select("full_name")
+    .eq("id", user.id)
+    .maybeSingle<{ full_name: string | null }>();
+
   const name =
-    typeof user.user_metadata?.full_name === "string"
-      ? user.user_metadata.full_name
-      : null;
+    profileNameResult.data?.full_name ??
+    (typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name : null);
 
   return NextResponse.json<IntercomBootResponse>({
     user: {

@@ -1,5 +1,6 @@
 import { DashboardShell } from "@/components/dashboard-shell";
 import { NoTeamCard } from "@/components/no-team-card";
+import { TeamContextErrorCard } from "@/components/team-context-error-card";
 import { TeamInviteCard } from "@/components/team-invite-card";
 import {
   getDashboardBaseData,
@@ -7,7 +8,16 @@ import {
 } from "@/lib/dashboard/server";
 
 export default async function DashboardTeamPage() {
-  const { supabase, user, teamContext, displayName } = await getDashboardBaseData();
+  const { supabase, user, teamContext, teamContextLoadFailed, displayName } =
+    await getDashboardBaseData();
+
+  if (teamContextLoadFailed) {
+    return (
+      <main className="min-h-screen bg-[color:var(--background)] px-6 py-10 text-[color:var(--foreground)]">
+        <TeamContextErrorCard />
+      </main>
+    );
+  }
 
   if (!teamContext) {
     return (

@@ -13,15 +13,31 @@ export default async function DashboardLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
+  const shouldLoadIntercomUser = Boolean(
+    user && env.INTERCOM_IDENTITY_SECRET && env.NEXT_PUBLIC_INTERCOM_APP_ID,
+  );
+
+  const profileName =
+    shouldLoadIntercomUser && user
+      ? (
+          await supabase
+            .from("profiles")
+            .select("full_name")
+            .eq("id", user.id)
+            .maybeSingle<{ full_name: string | null }>()
+        ).data?.full_name ?? null
+      : null;
+
   const intercomUser =
-    user && env.INTERCOM_IDENTITY_SECRET
+    shouldLoadIntercomUser && user
       ? {
           id: user.id,
           email: user.email ?? null,
           name:
-            typeof user.user_metadata?.full_name === "string"
+            profileName ??
+            (typeof user.user_metadata?.full_name === "string"
               ? user.user_metadata.full_name
-              : null,
+              : null),
           createdAt: user.created_at,
           userHash: signIntercomUserId(user.id, env.INTERCOM_IDENTITY_SECRET),
         }
@@ -29,7 +45,7 @@ export default async function DashboardLayout({
 
   return (
     <>
-      {env.NEXT_PUBLIC_INTERCOM_APP_ID && intercomUser ? (
+      {intercomUser ? (
         <Suspense fallback={null}>
           <IntercomProvider appId={env.NEXT_PUBLIC_INTERCOM_APP_ID} user={intercomUser} />
         </Suspense>

@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { logout } from "@/app/dashboard/actions";
 
@@ -23,6 +26,15 @@ export function DashboardSidebar({
   teamName,
   role,
 }: DashboardSidebarProps) {
+  const pathname = usePathname();
+
+  function isNavItemActive(href: string) {
+    if (href === "/dashboard") {
+      return pathname === href;
+    }
+    return pathname === href || pathname.startsWith(`${href}/`);
+  }
+
   return (
     <aside className="rounded-xl border app-border-subtle app-surface p-4 shadow-sm lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)] lg:min-h-[560px] lg:p-5">
       <div className="flex items-center justify-between">
@@ -46,15 +58,24 @@ export function DashboardSidebar({
       </div>
 
       <nav className="mt-5 space-y-1">
-        {navItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className="block rounded-md px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
-          >
-            {item.label}
-          </Link>
-        ))}
+        {navItems.map((item) => {
+          const isActive = isNavItemActive(item.href);
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-current={isActive ? "page" : undefined}
+              className={`block rounded-md px-3 py-2 text-sm ${
+                isActive
+                  ? "bg-slate-900/10 font-medium text-slate-900 dark:bg-slate-100/10 dark:text-slate-50"
+                  : "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+              }`}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
       </nav>
 
       <div className="mt-5 flex gap-2 lg:mt-auto">
