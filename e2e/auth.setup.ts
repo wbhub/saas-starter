@@ -46,7 +46,8 @@ setup("seeded member auth state", async ({ page }) => {
 });
 
 setup("validate seeded auth environment in CI", async () => {
-  if (!process.env.CI) {
+  const isCI = process.env.CI === "true";
+  if (!isCI) {
     return;
   }
 
