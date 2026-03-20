@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { getPlanByPriceId } from "@/lib/stripe/config";
+import { resolveEffectivePlanKey } from "@/lib/billing/effective-plan";
 import { NoTeamCard } from "@/components/no-team-card";
 import { TeamContextErrorCard } from "@/components/team-context-error-card";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { formatUtcDate } from "@/lib/date";
+import { PLAN_LABELS } from "@/lib/stripe/plans";
 import {
   getDashboardBaseData,
   getLiveSubscription,
@@ -42,7 +43,9 @@ export default async function DashboardPage() {
     teamContext.teamId,
   );
 
-  const currentPlan = getPlanByPriceId(subscription?.stripe_price_id);
+  const effectivePlanKey = resolveEffectivePlanKey(subscription);
+  const currentPaidPlanKey =
+    effectivePlanKey && effectivePlanKey !== "free" ? effectivePlanKey : null;
 
   return (
     <DashboardShell
@@ -96,16 +99,12 @@ export default async function DashboardPage() {
           <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
             Subscription snapshot
           </h2>
-          {!subscription ? (
-            <div className="mt-4 rounded-lg app-surface-subtle p-4 text-sm text-slate-600 dark:text-slate-200">
-              No active subscription. Visit billing to start a plan.
-            </div>
-          ) : (
+          {subscription ? (
             <dl className="mt-4 space-y-2 text-sm">
               <div className="flex items-center justify-between">
                 <dt className="text-slate-500 dark:text-slate-400">Current plan</dt>
                 <dd className="font-medium text-slate-900 dark:text-slate-100">
-                  {currentPlan?.name ?? "Unknown"}
+                  {currentPaidPlanKey ? PLAN_LABELS[currentPaidPlanKey] : "Unknown"}
                 </dd>
               </div>
               <div className="flex items-center justify-between">
@@ -119,6 +118,15 @@ export default async function DashboardPage() {
                 <dd className="text-slate-800 dark:text-slate-100">{subscription.seat_quantity}</dd>
               </div>
             </dl>
+          ) : effectivePlanKey === "free" ? (
+            <div className="mt-4 rounded-lg app-surface-subtle p-4 text-sm text-slate-600 dark:text-slate-200">
+              <p className="font-medium text-slate-900 dark:text-slate-100">Current plan: Free</p>
+              <p className="mt-1">Visit billing to upgrade anytime.</p>
+            </div>
+          ) : (
+            <div className="mt-4 rounded-lg app-surface-subtle p-4 text-sm text-slate-600 dark:text-slate-200">
+              No active subscription. Visit billing to start a plan.
+            </div>
           )}
         </article>
       </section>
