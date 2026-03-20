@@ -123,6 +123,7 @@ Core tables:
 - `ai_usage`
 - `ai_usage_monthly_totals`
 - `ai_usage_budget_claims`
+- `ai_budget_claim_finalize_retries`
 - `seat_sync_retries`
 
 Important RPCs used by app code:
@@ -133,6 +134,7 @@ Important RPCs used by app code:
 - `recover_personal_team_if_missing(...)`
 - `claim_ai_token_budget(...)`
 - `finalize_ai_token_budget_claim(...)`
+- `enqueue_ai_budget_finalize_retry(...)`
 
 ## Team + Auth Model
 
@@ -173,6 +175,7 @@ Behavior:
 - Seat quantity is reconciled to team membership count.
 - Webhook handling uses dedupe/claim-token logic.
 - Seat sync retries persist in `seat_sync_retries`.
+- Subscription metadata sync healing reuses seat reconciliation workers.
 
 ## OpenAI Chat Endpoint
 
@@ -223,6 +226,8 @@ Both require `Authorization: Bearer <CRON_SECRET>`.
 
 - `GET /api/cron/reconcile-seat-quantities`
   - Reconciles Stripe subscription quantity with team seats
+  - Drains queued AI budget-claim finalization retries
+  - Returns `500` (with a detailed body) if any internal cron job fails
 - `GET /api/cron/prune-stripe-webhook-events`
   - Prunes old webhook event rows
 

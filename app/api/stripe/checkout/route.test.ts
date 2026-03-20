@@ -137,6 +137,9 @@ describe("POST /api/stripe/checkout", () => {
       .mockResolvedValueOnce({ data: null, error: null })
       .mockResolvedValueOnce({ data: { stripe_customer_id: "cus_new" }, error: null });
     const customersUpsert = vi.fn().mockResolvedValue({ error: null });
+    const adminCustomersMaybeSingle = vi
+      .fn()
+      .mockResolvedValue({ data: { stripe_customer_id: "cus_new" }, error: null });
 
     const subscriptionsQuery = {
       select: vi.fn().mockReturnThis(),
@@ -155,6 +158,12 @@ describe("POST /api/stripe/checkout", () => {
     const teamMembershipsQuery = {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockResolvedValue({ count: 3, error: null }),
+    };
+    const adminCustomersQuery = {
+      upsert: customersUpsert,
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: adminCustomersMaybeSingle,
     };
 
     const customersCreate = vi.fn().mockResolvedValue({ id: "cus_new" });
@@ -186,6 +195,16 @@ describe("POST /api/stripe/checkout", () => {
     }));
     vi.doMock("@/lib/security/rate-limit", () => ({
       checkRateLimit: async () => ({ allowed: true, retryAfterSeconds: 0 }),
+    }));
+    vi.doMock("@/lib/supabase/admin", () => ({
+      createAdminClient: () => ({
+        from: vi.fn((table: string) => {
+          if (table === "stripe_customers") {
+            return adminCustomersQuery;
+          }
+          throw new Error(`Unexpected admin table: ${table}`);
+        }),
+      }),
     }));
     vi.doMock("@/lib/stripe/config", () => ({
       getPlanByKey: () => ({ key: "starter", priceId: "price_starter" }),
@@ -240,7 +259,6 @@ describe("POST /api/stripe/checkout", () => {
       },
       {
         onConflict: "team_id",
-        ignoreDuplicates: true,
       },
     );
     expect(hasLiveSubscriptions).toHaveBeenCalledWith({

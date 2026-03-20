@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { enqueueAiBudgetFinalizeRetry } from "@/lib/ai/budget-finalize-retries";
 import { logAuditEvent } from "@/lib/audit";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { resolveActualTokenUsage } from "@/lib/ai/usage";
@@ -453,6 +454,24 @@ export async function POST(request: Request) {
                 claimId: budgetClaim.claimId,
                 actualTokens: resolvedUsage.actualTokens,
               });
+              try {
+                await enqueueAiBudgetFinalizeRetry({
+                  claimId: budgetClaim.claimId,
+                  actualTokens: resolvedUsage.actualTokens,
+                  error,
+                });
+              } catch (enqueueError) {
+                logger.error(
+                  "Failed to enqueue AI budget finalize retry after stream finalization error",
+                  enqueueError,
+                  {
+                    teamId: teamContext.teamId,
+                    userId: user.id,
+                    model,
+                    claimId: budgetClaim.claimId,
+                  },
+                );
+              }
             }
           }
 
@@ -524,6 +543,24 @@ export async function POST(request: Request) {
           model,
           claimId: budgetClaim.claimId,
         });
+        try {
+          await enqueueAiBudgetFinalizeRetry({
+            claimId: budgetClaim.claimId,
+            actualTokens: 0,
+            error: finalizeError,
+          });
+        } catch (enqueueError) {
+          logger.error(
+            "Failed to enqueue AI budget finalize retry after create failure",
+            enqueueError,
+            {
+              teamId: teamContext.teamId,
+              userId: user.id,
+              model,
+              claimId: budgetClaim.claimId,
+            },
+          );
+        }
       }
     }
 

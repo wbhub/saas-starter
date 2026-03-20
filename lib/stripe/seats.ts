@@ -85,6 +85,11 @@ export async function syncTeamSeatQuantity(
 
   const currentQuantity = Math.max(1, firstItem.quantity ?? 1);
   if (currentQuantity === seatCount) {
+    // Even when seat quantity already matches, refresh local subscription metadata
+    // (e.g. plan price/status) so retry workers can heal stale billing rows.
+    await syncSubscription(stripeSubscription, {
+      eventCreatedUnix: Math.floor(Date.now() / 1000),
+    });
     return { updated: false as const, reason: "already_in_sync" as const };
   }
 

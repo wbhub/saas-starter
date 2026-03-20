@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { CHECKOUT_IN_FLIGHT_WINDOW_MS } from "@/lib/constants/billing";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getPlanByKey } from "@/lib/stripe/config";
 import { getStripeServerClient } from "@/lib/stripe/server";
 import { getAppUrl } from "@/lib/env";
@@ -65,18 +66,17 @@ function getScopedIdempotencyKey(baseKey: string | undefined, scope: string) {
 }
 
 async function claimTeamStripeCustomer(
-  supabase: Awaited<ReturnType<typeof createClient>>,
   teamId: string,
   createdCustomerId: string,
 ) {
-  const { error: claimError } = await supabase.from("stripe_customers").upsert(
+  const admin = createAdminClient();
+  const { error: claimError } = await admin.from("stripe_customers").upsert(
     {
       team_id: teamId,
       stripe_customer_id: createdCustomerId,
     },
     {
       onConflict: "team_id",
-      ignoreDuplicates: true,
     },
   );
 
@@ -84,7 +84,7 @@ async function claimTeamStripeCustomer(
     throw new Error(`Failed to claim Stripe customer mapping: ${claimError.message}`);
   }
 
-  const { data: mapping, error: mappingError } = await supabase
+  const { data: mapping, error: mappingError } = await admin
     .from("stripe_customers")
     .select("stripe_customer_id")
     .eq("team_id", teamId)
@@ -273,11 +273,7 @@ export async function POST(req: Request) {
           ? { idempotencyKey: customerIdempotencyKey }
           : undefined,
       );
-      customerId = await claimTeamStripeCustomer(
-        supabase,
-        teamContext.teamId,
-        customer.id,
-      );
+      customerId = await claimTeamStripeCustomer(teamContext.teamId, customer.id);
       if (customerId !== customer.id) {
         // Another request won the team mapping race. Best-effort cleanup
         // prevents orphan customer buildup from duplicate creates.
