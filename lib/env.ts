@@ -31,6 +31,7 @@ const SOFT_REQUIRED_KEYS: ReadonlySet<ServerEnvKey> = new Set([
 const ENV_FALLBACKS: Partial<Record<ServerEnvKey, string>> = {
   NEXT_PUBLIC_APP_URL: "http://localhost:3000",
   NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321",
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: "sb_publishable_placeholder",
 };
 
 function ensureEnv(key: ServerEnvKey) {
