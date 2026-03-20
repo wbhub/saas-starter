@@ -9,7 +9,14 @@ import { createClient } from "@/lib/supabase/server";
 type ProfileRow = {
   id: string;
   full_name: string | null;
+  avatar_url: string | null;
   created_at: string;
+};
+
+type NotificationPreferencesRow = {
+  marketing_emails: boolean;
+  product_updates: boolean;
+  security_alerts: boolean;
 };
 
 type TeamMembershipRow = {
@@ -77,20 +84,26 @@ export async function getDashboardBaseData() {
     redirect("/login");
   }
 
-  const [profileQuery, teamContextQuery, teamMembershipsQuery] = await Promise.allSettled([
+  const [profileQuery, teamContextQuery, teamMembershipsQuery, notificationPreferencesQuery] =
+    await Promise.allSettled([
     supabase
       .from("profiles")
-      .select("id,full_name,created_at")
+        .select("id,full_name,avatar_url,created_at")
       .eq("id", user.id)
       .maybeSingle<ProfileRow>(),
-    getTeamContextForUser(supabase, user.id),
-    supabase
-      .from("team_memberships")
-      .select("team_id,role,teams(name)")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: true })
-      .returns<DashboardTeamMembershipRow[]>(),
-  ]);
+      getTeamContextForUser(supabase, user.id),
+      supabase
+        .from("team_memberships")
+        .select("team_id,role,teams(name)")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: true })
+        .returns<DashboardTeamMembershipRow[]>(),
+      supabase
+        .from("notification_preferences")
+        .select("marketing_emails,product_updates,security_alerts")
+        .eq("user_id", user.id)
+        .maybeSingle<NotificationPreferencesRow>(),
+    ]);
 
   let profile: ProfileRow | null = null;
   if (profileQuery.status === "fulfilled") {
@@ -132,6 +145,28 @@ export async function getDashboardBaseData() {
   }
 
   const displayName = profile?.full_name?.trim() || user.email || "there";
+  let notificationPreferences: NotificationPreferencesRow = {
+    marketing_emails: false,
+    product_updates: true,
+    security_alerts: true,
+  };
+  if (notificationPreferencesQuery.status === "fulfilled") {
+    if (notificationPreferencesQuery.value.error) {
+      logger.error(
+        "Failed to load dashboard notification preferences",
+        notificationPreferencesQuery.value.error,
+        { userId: user.id },
+      );
+    } else if (notificationPreferencesQuery.value.data) {
+      notificationPreferences = notificationPreferencesQuery.value.data;
+    }
+  } else {
+    logger.error(
+      "Failed to load dashboard notification preferences",
+      notificationPreferencesQuery.reason,
+      { userId: user.id },
+    );
+  }
 
   return {
     supabase,
@@ -140,6 +175,7 @@ export async function getDashboardBaseData() {
     teamContext,
     teamContextLoadFailed,
     teamMemberships,
+    notificationPreferences,
     displayName,
   };
 }

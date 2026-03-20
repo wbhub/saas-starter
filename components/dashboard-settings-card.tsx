@@ -1,14 +1,17 @@
 "use client";
 
-import { useActionState } from "react";
+import { ChangeEvent, useActionState, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
   updateDashboardSettings,
   type UpdateDashboardSettingsState,
 } from "@/app/dashboard/actions";
+import { createClient } from "@/lib/supabase/client";
 
 type DashboardSettingsCardProps = {
+  userId: string;
   fullName: string | null;
+  avatarUrl: string | null;
   email: string | null;
 };
 
@@ -31,8 +34,72 @@ function SaveButton() {
   );
 }
 
-export function DashboardSettingsCard({ fullName, email }: DashboardSettingsCardProps) {
+export function DashboardSettingsCard({
+  userId,
+  fullName,
+  avatarUrl: initialAvatarUrl,
+  email,
+}: DashboardSettingsCardProps) {
   const [state, formAction] = useActionState(updateDashboardSettings, initialState);
+  const [avatarUrl, setAvatarUrl] = useState(initialAvatarUrl ?? "");
+  const [uploadMessage, setUploadMessage] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const selectedFileRef = useRef<File | null>(null);
+
+  const handleFileSelection = (event: ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0] ?? null;
+    selectedFileRef.current = selectedFile;
+    setUploadError(null);
+    if (selectedFile) {
+      setUploadMessage(`Ready to upload ${selectedFile.name}`);
+    } else {
+      setUploadMessage(null);
+    }
+  };
+
+  const uploadAvatar = async () => {
+    const file = selectedFileRef.current;
+    if (!file) {
+      setUploadError("Select an image before uploading.");
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      setUploadError("Only image files are supported.");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      setUploadError("Image must be 2MB or smaller.");
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadError(null);
+    setUploadMessage(null);
+
+    const filePath = `${userId}/avatar`;
+    const supabase = createClient();
+
+    const uploadResult = await supabase.storage.from("profile-photos").upload(filePath, file, {
+      cacheControl: "3600",
+      upsert: true,
+    });
+
+    if (uploadResult.error) {
+      setUploadError("Could not upload image. Please try again.");
+      setIsUploading(false);
+      return;
+    }
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("profile-photos").getPublicUrl(filePath);
+    setAvatarUrl(publicUrl);
+    setUploadMessage("Photo uploaded. Click Save settings to persist.");
+    setIsUploading(false);
+  };
 
   return (
     <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
@@ -42,6 +109,49 @@ export function DashboardSettingsCard({ fullName, email }: DashboardSettingsCard
       </p>
 
       <form action={formAction} className="mt-4 space-y-3">
+        <input type="hidden" name="avatarUrl" value={avatarUrl} />
+
+        <div className="rounded-lg border app-border-subtle p-3">
+          <p className="text-sm font-medium text-slate-800 dark:text-slate-100">Profile photo</p>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-slate-100 text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+              {avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={avatarUrl} alt="Profile avatar" className="h-full w-full object-cover" />
+              ) : (
+                "No photo"
+              )}
+            </div>
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              onChange={handleFileSelection}
+              className="block text-sm text-slate-700 file:mr-3 file:rounded-md file:border file:border-slate-300 file:bg-slate-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-slate-700 hover:file:bg-slate-100 dark:text-slate-200 dark:file:border-slate-700 dark:file:bg-slate-900 dark:file:text-slate-200 dark:hover:file:bg-slate-800"
+            />
+            <button
+              type="button"
+              onClick={uploadAvatar}
+              disabled={isUploading}
+              className="rounded-lg border app-border-subtle px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-60 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              {isUploading ? "Uploading..." : "Upload photo"}
+            </button>
+            {avatarUrl ? (
+              <button
+                type="button"
+                onClick={() => setAvatarUrl("")}
+                className="rounded-lg border app-border-subtle px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+              >
+                Remove photo
+              </button>
+            ) : null}
+          </div>
+          {uploadMessage ? (
+            <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">{uploadMessage}</p>
+          ) : null}
+          {uploadError ? <p className="mt-2 text-xs text-rose-600">{uploadError}</p> : null}
+        </div>
+
         <label className="block">
           <span className="mb-1 block text-sm font-medium text-slate-800 dark:text-slate-100">
             Display name
