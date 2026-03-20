@@ -88,7 +88,6 @@ Required:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
-- `OPENAI_API_KEY`
 - `STRIPE_SECRET_KEY`
 - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
 - `STRIPE_WEBHOOK_SECRET`
@@ -101,6 +100,7 @@ Required:
 
 Optional:
 
+- `OPENAI_API_KEY` (required only to enable `/api/ai/chat`)
 - `CRON_SECRET`
 - `NEXT_PUBLIC_INTERCOM_APP_ID`
 - `INTERCOM_IDENTITY_SECRET`
@@ -262,7 +262,7 @@ If `CRON_SECRET` is missing, these endpoints return `503`.
 ## Deploy (Vercel)
 
 1. Push repo and import into Vercel
-2. Set all required environment variables
+2. Set all required environment variables (and `OPENAI_API_KEY` only if enabling AI chat)
 3. In Supabase Auth, set production Site URL + callback URL
 4. Create Stripe webhook to `/api/stripe/webhook` and set `STRIPE_WEBHOOK_SECRET`
 5. Optionally configure scheduled requests for both cron endpoints with `CRON_SECRET`

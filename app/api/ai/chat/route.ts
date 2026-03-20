@@ -5,7 +5,7 @@ import { resolveActualTokenUsage } from "@/lib/ai/usage";
 import { requireJsonContentType } from "@/lib/http/content-type";
 import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
 import { logger } from "@/lib/logger";
-import { openai } from "@/lib/openai/client";
+import { isOpenAiConfigured, openai } from "@/lib/openai/client";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { getPlanByPriceId } from "@/lib/stripe/config";
@@ -323,6 +323,20 @@ export async function POST(request: Request) {
         error: "AI features are available on Growth and Pro plans.",
       },
       { status: 403 },
+    );
+  }
+
+  if (!isOpenAiConfigured || !openai) {
+    logAuditEvent({
+      action: "ai.chat.request",
+      outcome: "denied",
+      actorUserId: user.id,
+      teamId: teamContext.teamId,
+      metadata: { reason: "ai_not_configured", planKey: plan.key, model },
+    });
+    return NextResponse.json(
+      { error: "AI features are not configured for this deployment." },
+      { status: 503 },
     );
   }
 

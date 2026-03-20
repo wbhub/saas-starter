@@ -3,7 +3,6 @@ type ServerEnvKey =
   | "NEXT_PUBLIC_SUPABASE_URL"
   | "NEXT_PUBLIC_SUPABASE_ANON_KEY"
   | "SUPABASE_SERVICE_ROLE_KEY"
-  | "OPENAI_API_KEY"
   | "STRIPE_SECRET_KEY"
   | "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY"
   | "STRIPE_WEBHOOK_SECRET"
@@ -15,6 +14,7 @@ type ServerEnvKey =
   | "RESEND_SUPPORT_EMAIL";
 
 type OptionalEnvKey =
+  | "OPENAI_API_KEY"
   | "CRON_SECRET"
   | "INTERCOM_IDENTITY_SECRET"
   | "NEXT_PUBLIC_INTERCOM_APP_ID"
@@ -49,7 +49,7 @@ export const env = {
     return ensureEnv("SUPABASE_SERVICE_ROLE_KEY");
   },
   get OPENAI_API_KEY() {
-    return ensureEnv("OPENAI_API_KEY");
+    return optionalEnv("OPENAI_API_KEY");
   },
   get STRIPE_SECRET_KEY() {
     return ensureEnv("STRIPE_SECRET_KEY");
