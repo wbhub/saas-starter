@@ -7,7 +7,7 @@ import { requireJsonContentType } from "@/lib/http/content-type";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { logger } from "@/lib/logger";
-import { getTeamContextForUser } from "@/lib/team-context";
+import { canManageTeamBilling, getTeamContextForUser } from "@/lib/team-context";
 
 async function isOwnedStripeCustomer(teamId: string, customerId: string) {
   const customer = await stripe.customers.retrieve(customerId);
@@ -42,6 +42,12 @@ export async function POST(request: Request) {
   if (!teamContext) {
     return NextResponse.json(
       { error: "No team membership found for this account." },
+      { status: 403 },
+    );
+  }
+  if (!canManageTeamBilling(teamContext.role)) {
+    return NextResponse.json(
+      { error: "Only team owners and admins can manage billing." },
       { status: 403 },
     );
   }

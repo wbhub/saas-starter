@@ -12,7 +12,7 @@ import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { LIVE_SUBSCRIPTION_STATUSES } from "@/lib/stripe/plans";
 import { parsePlanKey } from "@/lib/validation";
 import { logger } from "@/lib/logger";
-import { getTeamContextForUser } from "@/lib/team-context";
+import { canManageTeamBilling, getTeamContextForUser } from "@/lib/team-context";
 const checkoutPayloadSchema = z.object({
   planKey: z.string().trim(),
 });
@@ -133,6 +133,12 @@ export async function POST(req: Request) {
   if (!teamContext) {
     return NextResponse.json(
       { error: "No team membership found for this account." },
+      { status: 403 },
+    );
+  }
+  if (!canManageTeamBilling(teamContext.role)) {
+    return NextResponse.json(
+      { error: "Only team owners and admins can manage billing." },
       { status: 403 },
     );
   }

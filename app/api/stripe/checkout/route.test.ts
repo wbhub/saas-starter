@@ -56,6 +56,7 @@ describe("POST /api/stripe/checkout", () => {
         teamName: "Acme Team",
         role: "owner",
       }),
+      canManageTeamBilling: vi.fn().mockReturnValue(true),
     }));
 
     const { POST } = await import("./route");
@@ -70,6 +71,58 @@ describe("POST /api/stripe/checkout", () => {
     expect(response.status).toBe(409);
     await expect(response.json()).resolves.toEqual({
       error: "You already have an active subscription.",
+    });
+  });
+
+  it("returns 403 when requester is not owner/admin", async () => {
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          getUser: async () => ({
+            data: {
+              user: { id: "user_123", email: "user@example.com" },
+            },
+          }),
+        },
+      }),
+    }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: async () => ({ allowed: true, retryAfterSeconds: 0 }),
+    }));
+    vi.doMock("@/lib/stripe/config", () => ({
+      getPlanByKey: () => ({ key: "starter", priceId: "price_starter" }),
+    }));
+    vi.doMock("@/lib/stripe/server", () => ({
+      stripe: {
+        customers: { retrieve: vi.fn(), create: vi.fn() },
+        subscriptions: { list: vi.fn() },
+        checkout: { sessions: { create: vi.fn() } },
+      },
+    }));
+    vi.doMock("@/lib/env", () => ({
+      env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
+    }));
+    vi.doMock("@/lib/team-context", () => ({
+      getTeamContextForUser: vi.fn().mockResolvedValue({
+        teamId: "team_123",
+        teamName: "Acme Team",
+        role: "member",
+      }),
+      canManageTeamBilling: vi.fn().mockReturnValue(false),
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planKey: "starter" }),
+      }),
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      error: "Only team owners and admins can manage billing.",
     });
   });
 
@@ -151,6 +204,7 @@ describe("POST /api/stripe/checkout", () => {
         teamName: "Acme Team",
         role: "owner",
       }),
+      canManageTeamBilling: vi.fn().mockReturnValue(true),
     }));
 
     const { POST } = await import("./route");
@@ -278,6 +332,7 @@ describe("POST /api/stripe/checkout", () => {
         teamName: "Acme Team",
         role: "owner",
       }),
+      canManageTeamBilling: vi.fn().mockReturnValue(true),
     }));
 
     const { POST } = await import("./route");

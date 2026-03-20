@@ -152,14 +152,13 @@ export async function checkRateLimit({
       typeof row.allowed === "boolean" &&
       typeof row.retry_after_seconds === "number"
     ) {
+      if (isProduction) {
+        resetCircuitBreaker();
+      }
       return {
         allowed: row.allowed,
         retryAfterSeconds: Math.max(0, Math.floor(row.retry_after_seconds)),
       };
-    }
-
-    if (isProduction) {
-      resetCircuitBreaker();
     }
   } catch (error) {
     if (isProduction) {

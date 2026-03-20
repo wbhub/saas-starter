@@ -24,6 +24,7 @@ describe("POST /api/stripe/portal", () => {
     }));
     vi.doMock("@/lib/team-context", () => ({
       getTeamContextForUser: vi.fn(),
+      canManageTeamBilling: vi.fn(),
     }));
 
     const { POST } = await import("./route");
@@ -61,6 +62,7 @@ describe("POST /api/stripe/portal", () => {
     }));
     vi.doMock("@/lib/team-context", () => ({
       getTeamContextForUser: vi.fn(),
+      canManageTeamBilling: vi.fn(),
     }));
 
     const { POST } = await import("./route");
@@ -118,6 +120,7 @@ describe("POST /api/stripe/portal", () => {
         teamName: "Acme Team",
         role: "owner",
       }),
+      canManageTeamBilling: vi.fn().mockReturnValue(true),
     }));
 
     const { POST } = await import("./route");

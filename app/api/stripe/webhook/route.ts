@@ -237,7 +237,7 @@ export async function POST(req: Request) {
             ? session.customer
             : session.customer?.id;
         const metadata = session.metadata ?? {};
-        let teamId = metadata.supabase_team_id ?? null;
+        let teamId: string | null = metadata.supabase_team_id ?? null;
         const sessionReferenceId = session.client_reference_id;
 
         if (!teamId && sessionReferenceId) {

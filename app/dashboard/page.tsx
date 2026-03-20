@@ -8,7 +8,7 @@ import { logout } from "@/app/dashboard/actions";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LIVE_SUBSCRIPTION_STATUSES, type SubscriptionStatus } from "@/lib/stripe/plans";
 import { logger } from "@/lib/logger";
-import { getTeamContextForUser } from "@/lib/team-context";
+import { canManageTeamBilling, getTeamContextForUser } from "@/lib/team-context";
 import { TeamInviteCard } from "@/components/team-invite-card";
 import { NoTeamCard } from "@/components/no-team-card";
 
@@ -119,6 +119,7 @@ export default async function DashboardPage() {
   const status = subscription?.status;
   const hasSubscription =
     status !== undefined && LIVE_SUBSCRIPTION_STATUSES.includes(status);
+  const canManageBilling = canManageTeamBilling(teamContext.role);
 
   const [membershipResult, pendingInvitesResult] = await Promise.allSettled([
     supabase
@@ -307,6 +308,7 @@ export default async function DashboardPage() {
           <BillingActions
             currentPlanKey={currentPlan?.key ?? null}
             hasSubscription={hasSubscription}
+            canManageBilling={canManageBilling}
           />
         </section>
 
