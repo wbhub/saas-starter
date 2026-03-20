@@ -437,8 +437,7 @@ export async function deleteAccount(
 
   if (error) {
     logger.error("Failed to delete account", error, { userId: user.id });
-    const errorMessage = typeof error.message === "string" ? error.message.toLowerCase() : "";
-    if (errorMessage.includes("last team owner")) {
+    if (error.code === "P0010") {
       return {
         status: "error",
         message:

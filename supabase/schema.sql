@@ -265,7 +265,7 @@ begin
 
   if v_remaining_owner_count <= 0 then
     raise exception 'Cannot delete the last team owner.'
-      using errcode = '23514';
+      using errcode = 'P0010';
   end if;
 
   return old;
