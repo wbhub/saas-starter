@@ -4,11 +4,16 @@ import {
   maybeProcessAiBudgetFinalizeRetries,
 } from "@/lib/ai/budget-finalize-retries";
 import {
+  getAiAccessMode,
   getAiAllowedSubscriptionStatuses,
+  getAiDefaultModel,
+  getAiDefaultMonthlyTokenBudget,
   getAiModelForPlan,
   getAiMonthlyTokenBudgetForPlan,
+  getAiRuleForPlan,
 } from "@/lib/ai/config";
 import { logAuditEvent } from "@/lib/audit";
+import { resolveEffectivePlanKey, type EffectivePlanKey } from "@/lib/billing/effective-plan";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { resolveActualTokenUsage } from "@/lib/ai/usage";
 import { requireJsonContentType } from "@/lib/http/content-type";
@@ -17,7 +22,7 @@ import { logger } from "@/lib/logger";
 import { isOpenAiConfigured, openai } from "@/lib/openai/client";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { verifyCsrfProtection } from "@/lib/security/csrf";
-import { getPlanByPriceId } from "@/lib/stripe/config";
+import { type SubscriptionStatus } from "@/lib/stripe/plans";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getTeamContextForUser } from "@/lib/team-context";
@@ -50,6 +55,13 @@ type BudgetClaim = {
 
 type OpenAiErrorInfo = {
   auditReason: string;
+};
+
+type AiAccessResolution = {
+  allowed: boolean;
+  model: string | null;
+  monthlyTokenBudget: number;
+  denialReason?: string;
 };
 
 function estimatePromptTokens(messages: Array<{ content: string }>) {
@@ -120,6 +132,56 @@ async function finalizeTeamAiBudgetClaim({
   if (error) {
     throw error;
   }
+}
+
+function resolveAiAccess({
+  effectivePlanKey,
+}: {
+  effectivePlanKey: EffectivePlanKey | null;
+}): AiAccessResolution {
+  const mode = getAiAccessMode();
+  if (mode === "all") {
+    const model = getAiDefaultModel();
+    if (!model) {
+      return { allowed: false, model: null, monthlyTokenBudget: 0, denialReason: "default_model_missing" };
+    }
+    return {
+      allowed: true,
+      model,
+      monthlyTokenBudget: getAiDefaultMonthlyTokenBudget(),
+    };
+  }
+
+  if (mode === "by_plan") {
+    if (!effectivePlanKey) {
+      return { allowed: false, model: null, monthlyTokenBudget: 0, denialReason: "plan_not_allowed" };
+    }
+    const rule = getAiRuleForPlan(effectivePlanKey);
+    if (!rule.enabled) {
+      return { allowed: false, model: null, monthlyTokenBudget: 0, denialReason: "plan_disabled" };
+    }
+    if (!rule.model) {
+      return { allowed: false, model: null, monthlyTokenBudget: 0, denialReason: "plan_model_missing" };
+    }
+    return {
+      allowed: true,
+      model: rule.model,
+      monthlyTokenBudget: rule.monthlyBudget,
+    };
+  }
+
+  if (!effectivePlanKey || effectivePlanKey === "free") {
+    return { allowed: false, model: null, monthlyTokenBudget: 0, denialReason: "plan_not_allowed" };
+  }
+  const model = getAiModelForPlan(effectivePlanKey);
+  if (!model) {
+    return { allowed: false, model: null, monthlyTokenBudget: 0, denialReason: "plan_not_allowed" };
+  }
+  return {
+    allowed: true,
+    model,
+    monthlyTokenBudget: getAiMonthlyTokenBudgetForPlan(effectivePlanKey),
+  };
 }
 
 function mapOpenAiError(error: unknown): OpenAiErrorInfo {
@@ -255,29 +317,37 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request payload." }, { status: 400 });
   }
 
-  const allowedStatuses = getAiAllowedSubscriptionStatuses();
-  if (!allowedStatuses.length) {
-    logAuditEvent({
-      action: "ai.chat.request",
-      outcome: "denied",
-      actorUserId: user.id,
-      teamId: teamContext.teamId,
-      metadata: { reason: "ai_statuses_not_configured" },
-    });
-    return NextResponse.json(
-      { error: AI_UNAVAILABLE_MESSAGE },
-      { status: AI_UNAVAILABLE_STATUS },
-    );
+  const aiAccessMode = getAiAccessMode();
+  if (aiAccessMode === "paid") {
+    const allowedStatuses = getAiAllowedSubscriptionStatuses();
+    if (!allowedStatuses.length) {
+      logAuditEvent({
+        action: "ai.chat.request",
+        outcome: "denied",
+        actorUserId: user.id,
+        teamId: teamContext.teamId,
+        metadata: { reason: "ai_statuses_not_configured", accessMode: aiAccessMode },
+      });
+      return NextResponse.json(
+        { error: AI_UNAVAILABLE_MESSAGE },
+        { status: AI_UNAVAILABLE_STATUS },
+      );
+    }
   }
 
-  const { data: subscriptionRow, error: subscriptionError } = await supabase
+  let subscriptionQuery = supabase
     .from("subscriptions")
     .select("stripe_price_id,status")
-    .eq("team_id", teamContext.teamId)
-    .in("status", allowedStatuses)
+    .eq("team_id", teamContext.teamId);
+
+  if (aiAccessMode === "paid") {
+    subscriptionQuery = subscriptionQuery.in("status", getAiAllowedSubscriptionStatuses());
+  }
+
+  const { data: subscriptionRow, error: subscriptionError } = await subscriptionQuery
     .order("current_period_end", { ascending: false })
     .limit(1)
-    .maybeSingle<{ stripe_price_id: string; status: string }>();
+    .maybeSingle<{ stripe_price_id: string | null; status: SubscriptionStatus | null }>();
 
   if (subscriptionError) {
     logger.error("Failed to load subscription for AI chat request", subscriptionError, {
@@ -290,31 +360,19 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!subscriptionRow?.stripe_price_id) {
-    logAuditEvent({
-      action: "ai.chat.request",
-      outcome: "denied",
-      actorUserId: user.id,
-      teamId: teamContext.teamId,
-      metadata: { reason: "no_live_subscription" },
-    });
-    return NextResponse.json(
-      { error: AI_UNAVAILABLE_MESSAGE },
-      { status: AI_UNAVAILABLE_STATUS },
-    );
-  }
-
-  const plan = getPlanByPriceId(subscriptionRow.stripe_price_id);
-  const model = plan ? getAiModelForPlan(plan.key) : null;
-  if (!plan || !model) {
+  const effectivePlanKey = resolveEffectivePlanKey(subscriptionRow);
+  const aiAccess = resolveAiAccess({ effectivePlanKey });
+  if (!aiAccess.allowed || !aiAccess.model) {
     logAuditEvent({
       action: "ai.chat.request",
       outcome: "denied",
       actorUserId: user.id,
       teamId: teamContext.teamId,
       metadata: {
-        reason: "plan_not_allowed",
-        stripePriceId: subscriptionRow.stripe_price_id,
+        reason: aiAccess.denialReason ?? "plan_not_allowed",
+        accessMode: aiAccessMode,
+        effectivePlanKey,
+        stripePriceId: subscriptionRow?.stripe_price_id ?? null,
       },
     });
     return NextResponse.json(
@@ -331,49 +389,11 @@ export async function POST(request: Request) {
       outcome: "denied",
       actorUserId: user.id,
       teamId: teamContext.teamId,
-      metadata: { reason: "ai_not_configured", planKey: plan.key, model },
-    });
-    return NextResponse.json(
-      { error: AI_UNAVAILABLE_MESSAGE },
-      { status: AI_UNAVAILABLE_STATUS },
-    );
-  }
-
-  const monthlyTokenBudget = getAiMonthlyTokenBudgetForPlan(plan.key);
-  const estimatedPromptTokens = estimatePromptTokens(bodyParse.data.messages);
-  const projectedRequestTokens = estimatedPromptTokens + AI_COMPLETION_MAX_TOKENS;
-  let budgetClaim: BudgetClaim | null = null;
-  try {
-    budgetClaim = await claimTeamAiBudget({
-      teamId: teamContext.teamId,
-      tokenBudget: monthlyTokenBudget,
-      projectedTokens: projectedRequestTokens,
-    });
-  } catch (error) {
-    logger.error("Failed to atomically claim team AI budget", error, {
-      teamId: teamContext.teamId,
-      userId: user.id,
-      planKey: plan.key,
-      monthlyTokenBudget,
-      projectedRequestTokens,
-    });
-    return NextResponse.json(
-      { error: AI_UNAVAILABLE_MESSAGE },
-      { status: AI_UNAVAILABLE_STATUS },
-    );
-  }
-
-  if (!budgetClaim) {
-    logAuditEvent({
-      action: "ai.chat.request",
-      outcome: "denied",
-      actorUserId: user.id,
-      teamId: teamContext.teamId,
       metadata: {
-        reason: "team_token_budget_exceeded",
-        planKey: plan.key,
-        monthlyTokenBudget,
-        projectedRequestTokens,
+        reason: "ai_not_configured",
+        planKey: effectivePlanKey,
+        accessMode: aiAccessMode,
+        model: aiAccess.model,
       },
     });
     return NextResponse.json(
@@ -382,9 +402,59 @@ export async function POST(request: Request) {
     );
   }
 
+  const model = aiAccess.model;
+  const monthlyTokenBudget = aiAccess.monthlyTokenBudget;
+  const estimatedPromptTokens = estimatePromptTokens(bodyParse.data.messages);
+  const projectedRequestTokens = estimatedPromptTokens + AI_COMPLETION_MAX_TOKENS;
+  let budgetClaim: BudgetClaim | null = null;
+  if (monthlyTokenBudget > 0) {
+    try {
+      budgetClaim = await claimTeamAiBudget({
+        teamId: teamContext.teamId,
+        tokenBudget: monthlyTokenBudget,
+        projectedTokens: projectedRequestTokens,
+      });
+    } catch (error) {
+      logger.error("Failed to atomically claim team AI budget", error, {
+        teamId: teamContext.teamId,
+        userId: user.id,
+        planKey: effectivePlanKey,
+        accessMode: aiAccessMode,
+        monthlyTokenBudget,
+        projectedRequestTokens,
+      });
+      return NextResponse.json(
+        { error: AI_UNAVAILABLE_MESSAGE },
+        { status: AI_UNAVAILABLE_STATUS },
+      );
+    }
+
+    if (!budgetClaim) {
+      logAuditEvent({
+        action: "ai.chat.request",
+        outcome: "denied",
+        actorUserId: user.id,
+        teamId: teamContext.teamId,
+        metadata: {
+          reason: "team_token_budget_exceeded",
+          planKey: effectivePlanKey,
+          accessMode: aiAccessMode,
+          monthlyTokenBudget,
+          projectedRequestTokens,
+        },
+      });
+      return NextResponse.json(
+        { error: AI_UNAVAILABLE_MESSAGE },
+        { status: AI_UNAVAILABLE_STATUS },
+      );
+    }
+  }
+
   // Best-effort queue healing so finalize retries do not depend solely on cron.
   // Run only on the active AI execution path to avoid unnecessary background work.
-  void maybeProcessAiBudgetFinalizeRetries();
+  if (budgetClaim) {
+    void maybeProcessAiBudgetFinalizeRetries();
+  }
 
   try {
     const upstreamAbortController = new AbortController();
@@ -514,7 +584,12 @@ export async function POST(request: Request) {
               outcome: "failure",
               actorUserId: user.id,
               teamId: teamContext.teamId,
-              metadata: { planKey: plan.key, model, reason: "stream_failed" },
+              metadata: {
+                planKey: effectivePlanKey,
+                accessMode: aiAccessMode,
+                model,
+                reason: "stream_failed",
+              },
             });
             return;
           }
@@ -525,7 +600,8 @@ export async function POST(request: Request) {
             actorUserId: user.id,
             teamId: teamContext.teamId,
             metadata: {
-              planKey: plan.key,
+              planKey: effectivePlanKey,
+              accessMode: aiAccessMode,
               model,
               budgetClaimId: budgetClaim?.claimId,
               promptTokens: resolvedUsage.promptTokens,
@@ -596,7 +672,12 @@ export async function POST(request: Request) {
       outcome: "failure",
       actorUserId: user.id,
       teamId: teamContext.teamId,
-      metadata: { planKey: plan.key, model, reason: openAiError.auditReason },
+      metadata: {
+        planKey: effectivePlanKey,
+        accessMode: aiAccessMode,
+        model,
+        reason: openAiError.auditReason,
+      },
     });
     return NextResponse.json(
       { error: AI_UNAVAILABLE_MESSAGE },

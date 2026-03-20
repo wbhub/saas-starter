@@ -5,6 +5,9 @@ describe("POST /api/ai/chat finalize retry enqueue", () => {
     vi.resetModules();
     vi.clearAllMocks();
     vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("STRIPE_STARTER_PRICE_ID", "price_starter");
+    vi.stubEnv("STRIPE_GROWTH_PRICE_ID", "price_growth");
+    vi.stubEnv("STRIPE_PRO_PRICE_ID", "price_pro");
   });
 
   afterEach(() => {
@@ -90,9 +93,17 @@ describe("POST /api/ai/chat finalize retry enqueue", () => {
       getPlanByPriceId: vi.fn().mockReturnValue({ key: "growth" }),
     }));
     vi.doMock("@/lib/ai/config", () => ({
+      getAiAccessMode: vi.fn().mockReturnValue("paid"),
       getAiAllowedSubscriptionStatuses: vi
         .fn()
         .mockReturnValue(["trialing", "active", "past_due"]),
+      getAiDefaultModel: vi.fn().mockReturnValue("gpt-4.1-mini"),
+      getAiDefaultMonthlyTokenBudget: vi.fn().mockReturnValue(2_000_000),
+      getAiRuleForPlan: vi.fn().mockReturnValue({
+        enabled: true,
+        model: "gpt-4.1-mini",
+        monthlyBudget: 2_000_000,
+      }),
       getAiModelForPlan: vi.fn().mockReturnValue("gpt-4.1-mini"),
       getAiMonthlyTokenBudgetForPlan: vi.fn().mockReturnValue(2_000_000),
     }));
