@@ -211,6 +211,45 @@ create trigger team_memberships_set_updated_at
 before update on public.team_memberships
 for each row execute function public.set_updated_at();
 
+create or replace function public.repair_profile_active_team_on_membership_delete()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+declare
+  v_fallback_team_id uuid;
+begin
+  if not exists (
+    select 1
+    from public.profiles p
+    where p.id = old.user_id
+      and p.active_team_id = old.team_id
+  ) then
+    return old;
+  end if;
+
+  select tm.team_id
+  into v_fallback_team_id
+  from public.team_memberships tm
+  where tm.user_id = old.user_id
+    and tm.team_id <> old.team_id
+  order by tm.created_at asc
+  limit 1;
+
+  update public.profiles p
+  set active_team_id = v_fallback_team_id
+  where p.id = old.user_id
+    and p.active_team_id = old.team_id;
+
+  return old;
+end;
+$$;
+
+drop trigger if exists team_memberships_repair_active_team_after_delete on public.team_memberships;
+create trigger team_memberships_repair_active_team_after_delete
+after delete on public.team_memberships
+for each row execute function public.repair_profile_active_team_on_membership_delete();
+
 drop trigger if exists profiles_set_updated_at on public.profiles;
 create trigger profiles_set_updated_at
 before update on public.profiles
@@ -908,33 +947,83 @@ using (
 );
 
 drop policy if exists "Owners/admins can insert team memberships" on public.team_memberships;
-create policy "Owners/admins can insert team memberships"
+drop policy if exists "Owners can insert team memberships" on public.team_memberships;
+drop policy if exists "Admins can insert member-only team memberships" on public.team_memberships;
+create policy "Owners can insert team memberships"
 on public.team_memberships
 for insert
 to authenticated
 with check (
-  public.is_team_member(team_id, array['owner', 'admin'])
+  public.is_team_member(team_id, array['owner'])
+);
+
+create policy "Admins can insert member-only team memberships"
+on public.team_memberships
+for insert
+to authenticated
+with check (
+  public.is_team_member(team_id, array['admin'])
+  and role = 'member'
+  and auth.uid() <> user_id
 );
 
 drop policy if exists "Owners/admins can update team memberships" on public.team_memberships;
-create policy "Owners/admins can update team memberships"
+drop policy if exists "Owners can update team memberships" on public.team_memberships;
+drop policy if exists "Admins can update member-only team memberships" on public.team_memberships;
+create policy "Owners can update team memberships"
 on public.team_memberships
 for update
 to authenticated
 using (
-  public.is_team_member(team_id, array['owner', 'admin'])
+  public.is_team_member(team_id, array['owner'])
 )
 with check (
-  public.is_team_member(team_id, array['owner', 'admin'])
+  public.is_team_member(team_id, array['owner'])
+);
+
+create policy "Admins can update member-only team memberships"
+on public.team_memberships
+for update
+to authenticated
+using (
+  public.is_team_member(team_id, array['admin'])
+  and role = 'member'
+)
+with check (
+  public.is_team_member(team_id, array['admin'])
+  and role = 'member'
 );
 
 drop policy if exists "Owners/admins can delete team memberships" on public.team_memberships;
-create policy "Owners/admins can delete team memberships"
+drop policy if exists "Owners can delete team memberships" on public.team_memberships;
+drop policy if exists "Admins can delete member-only team memberships" on public.team_memberships;
+create policy "Owners can delete team memberships"
 on public.team_memberships
 for delete
 to authenticated
 using (
-  public.is_team_member(team_id, array['owner', 'admin'])
+  public.is_team_member(team_id, array['owner'])
+  and auth.uid() <> user_id
+  and (
+    role <> 'owner'
+    or exists (
+      select 1
+      from public.team_memberships tm
+      where tm.team_id = team_memberships.team_id
+        and tm.role = 'owner'
+        and tm.user_id <> team_memberships.user_id
+    )
+  )
+);
+
+create policy "Admins can delete member-only team memberships"
+on public.team_memberships
+for delete
+to authenticated
+using (
+  public.is_team_member(team_id, array['admin'])
+  and auth.uid() <> user_id
+  and role = 'member'
 );
 
 drop policy if exists "Users can read team stripe customer" on public.stripe_customers;

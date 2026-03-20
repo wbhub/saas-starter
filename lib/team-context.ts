@@ -1,12 +1,16 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-type TeamRole = "owner" | "admin" | "member";
+export type TeamRole = "owner" | "admin" | "member";
 
 export type TeamContext = {
   teamId: string;
   teamName: string | null;
   role: TeamRole;
 };
+
+export function canManageTeamBilling(role: TeamRole): boolean {
+  return role === "owner" || role === "admin";
+}
 
 type ProfileTeamRow = {
   active_team_id: string | null;
@@ -75,7 +79,34 @@ export async function getTeamContextForUser(
 
   const membership = membershipResult.data;
   if (!membership && activeTeamId) {
-    return null;
+    const fallbackMembershipResult = await getFirstMembership(supabase, userId);
+    if (fallbackMembershipResult.error) {
+      throw new Error(
+        `Failed to load fallback team membership: ${fallbackMembershipResult.error.message}`,
+      );
+    }
+
+    const fallbackMembership = fallbackMembershipResult.data;
+    if (!fallbackMembership) {
+      await supabase
+        .from("profiles")
+        .update({ active_team_id: null })
+        .eq("id", userId)
+        .eq("active_team_id", activeTeamId);
+      return null;
+    }
+
+    await supabase
+      .from("profiles")
+      .update({ active_team_id: fallbackMembership.team_id })
+      .eq("id", userId)
+      .eq("active_team_id", activeTeamId);
+
+    return {
+      teamId: fallbackMembership.team_id,
+      teamName: fallbackMembership.teams?.name ?? null,
+      role: fallbackMembership.role,
+    };
   }
 
   if (!membership) {

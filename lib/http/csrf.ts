@@ -22,7 +22,7 @@ function readCookie(name: string) {
   }
 }
 
-export function getCsrfHeaders() {
+export function getCsrfHeaders(): Record<string, string> {
   const token = readCookie(CSRF_COOKIE_NAME);
   if (!token) {
     return {};

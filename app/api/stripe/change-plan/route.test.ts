@@ -48,6 +48,7 @@ describe("POST /api/stripe/change-plan", () => {
         teamName: "Acme Team",
         role: "owner",
       }),
+      canManageTeamBilling: vi.fn().mockReturnValue(true),
     }));
     vi.doMock("@/lib/stripe/server", () => ({
       stripe: {
@@ -150,6 +151,7 @@ describe("POST /api/stripe/change-plan", () => {
         teamName: "Acme Team",
         role: "owner",
       }),
+      canManageTeamBilling: vi.fn().mockReturnValue(true),
     }));
     vi.doMock("@/lib/stripe/server", () => ({
       stripe: {
@@ -262,6 +264,7 @@ describe("POST /api/stripe/change-plan", () => {
         teamName: "Acme Team",
         role: "owner",
       }),
+      canManageTeamBilling: vi.fn().mockReturnValue(true),
     }));
     vi.doMock("@/lib/stripe/server", () => ({
       stripe: {

@@ -11,6 +11,7 @@ import { PLAN_KEYS, PLAN_LABELS } from "@/lib/stripe/plans";
 type Props = {
   currentPlanKey: string | null;
   hasSubscription: boolean;
+  canManageBilling: boolean;
 };
 
 type PostJsonOptions = {
@@ -87,7 +88,7 @@ function createIdempotencyToken(action: "checkout" | "change-plan", planKey: str
   return token;
 }
 
-export function BillingActions({ currentPlanKey, hasSubscription }: Props) {
+export function BillingActions({ currentPlanKey, hasSubscription, canManageBilling }: Props) {
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -176,13 +177,15 @@ export function BillingActions({ currentPlanKey, hasSubscription }: Props) {
         Billing actions
       </h3>
       <p className="text-sm text-slate-600 dark:text-slate-300">
-        {hasSubscription
-          ? "Upgrade, downgrade, or open Stripe Billing Portal."
-          : "Choose a plan to start your subscription."}
+        {!canManageBilling
+          ? "Only team owners and admins can manage billing."
+          : hasSubscription
+            ? "Upgrade, downgrade, or open Stripe Billing Portal."
+            : "Choose a plan to start your subscription."}
       </p>
 
       <div className="flex flex-wrap gap-2">
-        {!hasSubscription
+        {!canManageBilling ? null : !hasSubscription
           ? PLAN_KEYS.map((key) => (
               <button
                 key={key}

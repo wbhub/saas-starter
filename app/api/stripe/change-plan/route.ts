@@ -9,11 +9,11 @@ import { requireJsonContentType } from "@/lib/http/content-type";
 import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { verifyCsrfProtection } from "@/lib/security/csrf";
-import { LIVE_SUBSCRIPTION_STATUSES } from "@/lib/stripe/plans";
+import { LIVE_SUBSCRIPTION_STATUSES, type SubscriptionStatus } from "@/lib/stripe/plans";
 import { enqueueSeatSyncRetry } from "@/lib/stripe/seat-sync-retries";
 import { parsePlanKey } from "@/lib/validation";
 import { logger } from "@/lib/logger";
-import { getTeamContextForUser } from "@/lib/team-context";
+import { canManageTeamBilling, getTeamContextForUser } from "@/lib/team-context";
 const changePlanPayloadSchema = z.object({
   planKey: z.string().trim(),
 });
@@ -40,7 +40,7 @@ async function isLocalSubscriptionSynced(
     .eq("team_id", teamId)
     .eq("stripe_subscription_id", stripeSubscriptionId)
     .limit(1)
-    .maybeSingle<{ stripe_price_id: string; status: string }>();
+    .maybeSingle<{ stripe_price_id: string; status: SubscriptionStatus }>();
 
   if (error) {
     throw new Error(`Failed to verify local subscription sync: ${error.message}`);
@@ -77,6 +77,12 @@ export async function POST(req: Request) {
   if (!teamContext) {
     return NextResponse.json(
       { error: "No team membership found for this account." },
+      { status: 403 },
+    );
+  }
+  if (!canManageTeamBilling(teamContext.role)) {
+    return NextResponse.json(
+      { error: "Only team owners and admins can manage billing." },
       { status: 403 },
     );
   }
