@@ -35,7 +35,7 @@ describe("POST /reset-password/submit", () => {
 
     const { POST } = await import("./route");
     const response = await POST(
-      makeRequest("http://localhost/reset-password/submit", { password: "A1!bcdefgh" }),
+      makeRequest("http://localhost/reset-password/submit", { password: "correct horse battery staple" }),
     );
 
     expect(response.status).toBe(429);
@@ -56,7 +56,7 @@ describe("POST /reset-password/submit", () => {
 
     const { POST } = await import("./route");
     const response = await POST(
-      makeRequest("http://localhost/reset-password/submit", { password: "A1!bcdefgh" }),
+      makeRequest("http://localhost/reset-password/submit", { password: "correct horse battery staple" }),
     );
 
     expect(response.status).toBe(403);
@@ -84,7 +84,7 @@ describe("POST /reset-password/submit", () => {
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
       ok: false,
-      error: "Password must be between 8 and 128 characters.",
+      error: "Password must be between 12 and 128 characters.",
     });
     expect(createClient).not.toHaveBeenCalled();
   });
@@ -105,7 +105,7 @@ describe("POST /reset-password/submit", () => {
     const response = await POST(
       makeRequest(
         "http://localhost/reset-password/submit",
-        { password: "A1!bcdefgh" },
+        { password: "correct horse battery staple" },
         "auth_password_recovery=1; auth_password_recovery_user=user_a",
       ),
     );
@@ -132,14 +132,14 @@ describe("POST /reset-password/submit", () => {
     const response = await POST(
       makeRequest(
         "http://localhost/reset-password/submit",
-        { password: "A1!bcdefgh" },
+        { password: "correct horse battery staple" },
         "auth_password_recovery=1; auth_password_recovery_user=user_a",
       ),
     );
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ ok: true });
-    expect(updateUser).toHaveBeenCalledWith({ password: "A1!bcdefgh" });
+    expect(updateUser).toHaveBeenCalledWith({ password: "correct horse battery staple" });
     expect(response.headers.get("set-cookie")).toContain("auth_password_recovery=;");
   });
 });

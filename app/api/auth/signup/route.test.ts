@@ -53,7 +53,9 @@ describe("POST /api/auth/signup", () => {
     const { signUp } = mockDeps();
     const { POST } = await import("./route");
 
-    const res = await POST(makeRequest({ email: "new@example.com", password: "Str0ngP@ss!" }));
+    const res = await POST(
+      makeRequest({ email: "new@example.com", password: "correct horse battery staple" }),
+    );
 
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({
@@ -62,7 +64,10 @@ describe("POST /api/auth/signup", () => {
       message: "Account created. Check your inbox to verify email if confirmation is enabled.",
     });
     expect(signUp).toHaveBeenCalledWith(
-      expect.objectContaining({ email: "new@example.com", password: "Str0ngP@ss!" }),
+      expect.objectContaining({
+        email: "new@example.com",
+        password: "correct horse battery staple",
+      }),
     );
   });
 
@@ -72,7 +77,9 @@ describe("POST /api/auth/signup", () => {
     });
     const { POST } = await import("./route");
 
-    const res = await POST(makeRequest({ email: "dup@example.com", password: "Str0ngP@ss!" }));
+    const res = await POST(
+      makeRequest({ email: "dup@example.com", password: "correct horse battery staple" }),
+    );
 
     expect(res.status).toBe(400);
     await expect(res.json()).resolves.toEqual({

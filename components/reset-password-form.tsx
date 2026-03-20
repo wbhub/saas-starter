@@ -191,7 +191,7 @@ export function ResetPasswordForm({ hasRecoveryProof, recoveryUserId }: ResetPas
     <div className="w-full max-w-md rounded-2xl border app-border-subtle app-surface p-8 text-[color:var(--foreground)] shadow-sm">
       <h1 className="text-2xl font-semibold">Set a new password</h1>
       <p className="mt-2 text-sm text-[color:var(--muted-foreground)]">
-        Choose a strong password with at least 8 characters.
+        Choose a strong password with at least 12 characters.
       </p>
 
       <form className="mt-6 space-y-4" onSubmit={onSubmit} aria-busy={loading}>
@@ -202,7 +202,7 @@ export function ResetPasswordForm({ hasRecoveryProof, recoveryUserId }: ResetPas
           <input
             type="password"
             required
-            minLength={8}
+            minLength={12}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             aria-describedby={`${passwordHintId}${message ? ` ${messageId}` : ""}`}
@@ -217,7 +217,7 @@ export function ResetPasswordForm({ hasRecoveryProof, recoveryUserId }: ResetPas
           <input
             type="password"
             required
-            minLength={8}
+            minLength={12}
             value={confirmPassword}
             onChange={(event) => setConfirmPassword(event.target.value)}
             aria-describedby={`${passwordHintId}${message ? ` ${messageId}` : ""}`}
@@ -226,7 +226,7 @@ export function ResetPasswordForm({ hasRecoveryProof, recoveryUserId }: ResetPas
           />
         </label>
         <p id={passwordHintId} className="text-xs text-[color:var(--muted-foreground)]">
-          Use 8-128 chars with uppercase, lowercase, number, and symbol.
+          Use 12-128 characters. Passphrases are welcome.
         </p>
         <button
           type="submit"

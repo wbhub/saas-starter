@@ -14,8 +14,8 @@ describe("validation helpers", () => {
     expect(isValidEmail("foo@-example.com")).toBe(false);
   });
 
-  it("enforces password complexity and common password denylist", () => {
-    expect(validatePasswordComplexity("aaaaaaaa").valid).toBe(false);
-    expect(validatePasswordComplexity("Password123!").valid).toBe(true);
+  it("uses a length-focused password policy", () => {
+    expect(validatePasswordComplexity("shortpass").valid).toBe(false);
+    expect(validatePasswordComplexity("correct horse battery staple").valid).toBe(true);
   });
 });

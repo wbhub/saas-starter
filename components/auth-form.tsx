@@ -250,7 +250,7 @@ export function AuthForm({
           <input
             type="password"
             required
-            minLength={8}
+            minLength={isLogin ? 8 : 12}
             autoComplete={isLogin ? "current-password" : "new-password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -261,7 +261,7 @@ export function AuthForm({
         </label>
         {!isLogin ? (
           <p id={passwordHintId} className="text-xs text-[color:var(--muted-foreground)]">
-            Use 8-128 chars with uppercase, lowercase, number, and symbol.
+            Use 12-128 characters. Passphrases are welcome.
           </p>
         ) : null}
         <button
