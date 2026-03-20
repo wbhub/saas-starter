@@ -1,13 +1,24 @@
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { AuthForm } from "@/components/auth-form";
+import {
+  getEnabledSocialAuthProviders,
+  LAST_AUTH_PROVIDER_COOKIE,
+  parseAuthProvider,
+} from "@/lib/auth/social-auth";
 import { SiteFooter } from "@/components/site-footer";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function SignupPage() {
   const supabase = await createClient();
+  const cookieStore = await cookies();
+  const socialProviders = getEnabledSocialAuthProviders();
+  const lastUsedProvider = parseAuthProvider(
+    cookieStore.get(LAST_AUTH_PROVIDER_COOKIE)?.value,
+  );
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -50,7 +61,11 @@ export default async function SignupPage() {
       </header>
 
       <main className="flex flex-1 flex-col items-center justify-center px-4 py-12">
-        <AuthForm mode="signup" />
+        <AuthForm
+          mode="signup"
+          socialProviders={socialProviders}
+          lastUsedProvider={lastUsedProvider}
+        />
         <Link
           href="/"
           className="mt-6 text-sm text-[color:var(--muted-foreground)] hover:text-[color:var(--foreground)]"

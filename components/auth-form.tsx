@@ -3,7 +3,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import {
+  AuthProvider,
+  getSocialProviderOptions,
+  toSupabaseOAuthProvider,
+} from "@/lib/auth/social-auth";
 import { getCsrfHeaders } from "@/lib/http/csrf";
+import { createClient } from "@/lib/supabase/client";
 import { validatePasswordComplexity } from "@/lib/validation";
 
 type Mode = "login" | "signup";
@@ -18,17 +24,29 @@ type AuthApiResponse = {
 export function AuthForm({
   mode,
   redirectTo = "/dashboard",
+  socialProviders = [],
+  lastUsedProvider = null,
 }: {
   mode: Mode;
   redirectTo?: string;
+  socialProviders?: AuthProvider[];
+  lastUsedProvider?: AuthProvider | null;
 }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [socialLoadingProvider, setSocialLoadingProvider] = useState<AuthProvider | null>(
+    null,
+  );
   const [message, setMessage] = useState<string | null>(null);
   const [messageType, setMessageType] = useState<"error" | "success">("success");
   const isLogin = mode === "login";
+  const hasSocialProviders = socialProviders.length > 0;
+  const socialProviderOptions = getSocialProviderOptions(
+    socialProviders,
+    lastUsedProvider,
+  );
   const messageId = `${mode}-auth-message`;
   const passwordHintId = `${mode}-password-hint`;
   const passwordDescribedBy = [
@@ -96,6 +114,30 @@ export function AuthForm({
     }
   }
 
+  async function onOAuthClick(provider: AuthProvider) {
+    setSocialLoadingProvider(provider);
+    setMessage(null);
+
+    try {
+      const supabase = createClient();
+      const callbackUrl = new URL("/auth/callback", window.location.origin);
+      callbackUrl.searchParams.set("next", redirectTo);
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: toSupabaseOAuthProvider(provider),
+        options: { redirectTo: callbackUrl.toString() },
+      });
+
+      if (error) {
+        throw new Error(error.message || "Unable to continue with social login.");
+      }
+    } catch (error) {
+      setMessageType("error");
+      setMessage(error instanceof Error ? error.message : "Unexpected error");
+      setSocialLoadingProvider(null);
+    }
+  }
+
   return (
     <div className="w-full max-w-md rounded-2xl border app-border-subtle app-surface p-8 text-[color:var(--foreground)] shadow-sm">
       <h1 className="text-2xl font-semibold">
@@ -106,6 +148,41 @@ export function AuthForm({
           ? "Sign in to manage your SaaS subscription."
           : "Start with secure auth and billing-ready infrastructure."}
       </p>
+
+      {hasSocialProviders ? (
+        <div className="mt-6 space-y-3" aria-label="Social authentication">
+          {socialProviderOptions.map(({ provider, label, isLastUsed }) => {
+            const isProviderLoading = socialLoadingProvider === provider;
+
+            return (
+              <button
+                key={provider}
+                type="button"
+                onClick={() => onOAuthClick(provider)}
+                disabled={loading || Boolean(socialLoadingProvider)}
+                className="flex w-full items-center justify-center gap-2 rounded-lg border app-border-subtle px-4 py-2 text-sm font-medium hover:bg-[color:var(--surface-subtle)] disabled:opacity-60"
+              >
+                <span>{isProviderLoading ? "Please wait..." : `Continue with ${label}`}</span>
+                {isLastUsed ? (
+                  <span className="rounded-full border app-border-subtle px-2 py-0.5 text-[10px] uppercase tracking-wide text-[color:var(--muted-foreground)]">
+                    Last used
+                  </span>
+                ) : null}
+              </button>
+            );
+          })}
+          <div className="relative py-1">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t app-border-subtle" />
+            </div>
+            <div className="relative flex justify-center">
+              <span className="app-surface px-2 text-xs text-[color:var(--muted-foreground)]">
+                or continue with email
+              </span>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <form className="mt-6 space-y-4" onSubmit={onSubmit} aria-busy={loading}>
         <label className="block">
