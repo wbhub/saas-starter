@@ -1,3 +1,5 @@
+import * as Sentry from "@sentry/nextjs";
+
 type LogLevel = "info" | "warn" | "error";
 
 type LogEntry = {
@@ -8,6 +10,8 @@ type LogEntry = {
 };
 
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
+const SENTRY_DSN = process.env.NEXT_PUBLIC_SENTRY_DSN;
+const SENTRY_ENABLED = Boolean(SENTRY_DSN);
 
 function serializeError(error: unknown): Record<string, unknown> {
   if (error instanceof Error) {
@@ -41,6 +45,42 @@ function emitStructured(level: LogLevel, message: string, context?: Record<strin
         : console.log;
 
   fn(JSON.stringify(entry));
+}
+
+function reportToSentry(
+  message: string,
+  error?: unknown,
+  context?: Record<string, unknown>,
+) {
+  if (!SENTRY_ENABLED) {
+    return;
+  }
+
+  Sentry.withScope((scope) => {
+    if (context) {
+      scope.setContext("logger", context);
+    }
+
+    if (error instanceof Error) {
+      Sentry.captureException(error);
+      return;
+    }
+
+    if (error && typeof error === "object") {
+      Sentry.captureMessage(message, {
+        level: "error",
+        extra: { error },
+      });
+      return;
+    }
+
+    if (error != null) {
+      Sentry.captureMessage(`${message}: ${String(error)}`, "error");
+      return;
+    }
+
+    Sentry.captureMessage(message, "error");
+  });
 }
 
 export const logger = {
@@ -86,6 +126,8 @@ export const logger = {
       resolvedError = undefined;
       resolvedContext = error as Record<string, unknown>;
     }
+
+    reportToSentry(message, resolvedError, resolvedContext);
 
     if (!IS_PRODUCTION) {
       const args: unknown[] = [message];
