@@ -1,82 +1,99 @@
 # SaaS Starter
 
-Production-oriented Next.js SaaS starter with:
+Production-oriented Next.js SaaS starter with Supabase auth, Stripe billing, team access controls, AI chat, support email, and security defaults.
 
-- Supabase auth + Postgres (team-based data model)
-- Stripe subscriptions (Starter/Growth/Pro) with seat billing
-- Team invites + role-based access control
-- OpenAI streaming chat endpoint with plan/rate/budget gating
-- Resend-powered support + password reset emails
-- Optional Intercom identity verification
-- Security defaults (CSRF, CSP nonce, API no-store headers, rate limiting)
+## In Plain English
 
-This README reflects the app as it exists today and assumes a brand-new setup from scratch.
+This project gives you a working SaaS app foundation so you can focus on your product:
 
-## What You Get
+- People can sign up, log in, reset passwords, and manage account settings.
+- Teams can invite members and assign roles (`owner`, `admin`, `member`).
+- Billing is handled through Stripe with seat-based subscriptions (`Starter`, `Growth`, `Pro`).
+- An optional AI chat endpoint can be enabled and gated by plan/rules.
+- A support form sends emails through Resend.
+- Security basics (CSRF, CSP, rate limiting, secure headers) are already wired in.
 
-- Marketing + auth pages: `/`, `/login`, `/signup`, `/forgot-password`, `/reset-password`
-- Protected app area: `/dashboard`
-  - Subpages: `/dashboard/billing`, `/dashboard/team`, `/dashboard/settings`, `/dashboard/usage`
-- Team invite acceptance page: `/invite/[token]`
-- Legal pages: `/privacy-policy`, `/terms-of-use`
-- Core APIs for auth, team management, Stripe billing, AI chat, support email, and cron maintenance
-- Full endpoint inventory is listed in `API Surface (Full Inventory)` below
+## What Is Included
 
-## Stack
+UI routes:
 
-- Next.js 16 (App Router) + TypeScript + React 19
+- Public + auth: `/`, `/login`, `/signup`, `/forgot-password`, `/reset-password`
+- Invite acceptance: `/invite/[token]`
+- Legal: `/privacy-policy`, `/terms-of-use`
+- Protected app: `/dashboard`
+  - `/dashboard/billing`
+  - `/dashboard/team`
+  - `/dashboard/settings`
+  - `/dashboard/usage`
+
+Backend routes:
+
+- Auth: `/auth/callback`, `/api/auth/login`, `/api/auth/signup`, `/api/auth/forgot-password`, `/reset-password/submit`
+- Team: `/api/team/invites`, `/api/team/invites/accept`, `/api/team/invites/[inviteId]`, `/api/team/invites/[inviteId]/resend`, `/api/team/members/[userId]`, `/api/team/settings`, `/api/team/ownership/transfer`, `/api/team/recover-personal`
+- Stripe: `/api/stripe/checkout`, `/api/stripe/portal`, `/api/stripe/change-plan`, `/api/stripe/webhook`
+- AI: `/api/ai/chat`
+- Support: `/api/resend/support`
+- Cron: `/api/cron/reconcile-seat-quantities`, `/api/cron/prune-stripe-webhook-events`
+- Intercom boot: `/api/intercom/boot`
+
+## Tech Stack
+
+- Next.js 16 (App Router), React 19, TypeScript
 - Supabase (`@supabase/ssr`, `@supabase/supabase-js`)
 - Stripe (`stripe`, `@stripe/stripe-js`)
 - OpenAI (`openai`)
 - Resend (`resend`)
 - Tailwind CSS 4
-- Vitest + Playwright + ESLint
+- Vitest, Playwright, ESLint
 
-## Quick Start (Fresh Project)
+## Quick Start
 
-1. Install dependencies:
+1) Install dependencies:
 
 ```bash
 npm install
 ```
 
-2. Create local env file:
+2) Create your local env file:
 
 ```bash
 cp .env.example .env.local
 ```
 
-3. Create a new Supabase project and apply schema:
-   - Open Supabase SQL Editor
-   - Run `supabase/schema.sql` in full
-   - In Supabase Auth settings:
-     - Site URL: `http://localhost:3000`
-     - Redirect URL: `http://localhost:3000/auth/callback`
-   - Optional social login (Google/Microsoft):
-     - Enable provider(s) in Supabase Auth > Providers
-     - Add provider credentials in Supabase
-     - Set `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true` and/or `NEXT_PUBLIC_AUTH_MICROSOFT_ENABLED=true`
+3) Set up Supabase:
 
-4. Create Stripe products/prices (monthly recurring):
-   - Starter
-   - Growth
-   - Pro
-   - Put their `price_...` IDs in `.env.local`
+- Create a project.
+- Run `supabase/schema.sql` in Supabase SQL Editor.
+- Configure Auth URLs:
+  - Site URL: `http://localhost:3000`
+  - Redirect URL: `http://localhost:3000/auth/callback`
+- Optional social auth:
+  - Enable provider(s) in Supabase.
+  - Set `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true` and/or `NEXT_PUBLIC_AUTH_MICROSOFT_ENABLED=true`.
 
-5. Configure Resend:
-   - Create API key
-   - Set a valid sender (`RESEND_FROM_EMAIL`)
-   - Set support inbox (`RESEND_SUPPORT_EMAIL`)
+4) Set up Stripe:
 
-6. Start Stripe webhook forwarding (for local billing flow):
+- Create recurring prices for `Starter`, `Growth`, and `Pro`.
+- Put IDs in:
+  - `STRIPE_STARTER_PRICE_ID`
+  - `STRIPE_GROWTH_PRICE_ID`
+  - `STRIPE_PRO_PRICE_ID`
+
+5) Set up Resend:
+
+- Add `RESEND_API_KEY`
+- Add `RESEND_FROM_EMAIL`
+- Add `RESEND_SUPPORT_EMAIL`
+
+6) Run Stripe webhook forwarding for local testing:
 
 ```bash
 stripe listen --forward-to localhost:3000/api/stripe/webhook
 ```
 
-Copy the emitted `whsec_...` into `STRIPE_WEBHOOK_SECRET`.
+Copy the generated `whsec_...` into `STRIPE_WEBHOOK_SECRET`.
 
-7. Start dev server:
+7) Start the app:
 
 ```bash
 npm run dev
@@ -86,7 +103,7 @@ Open `http://localhost:3000`.
 
 ## Environment Variables
 
-Copy from `.env.example` and set all required values.
+Copy `.env.example` and fill values.
 
 Required:
 
@@ -106,26 +123,102 @@ Required:
 
 Optional:
 
-- `OPENAI_API_KEY` (required only to enable `/api/ai/chat`)
-- `AI_ALLOWED_SUBSCRIPTION_STATUSES` (CSV; if omitted, AI access remains disabled)
-- `AI_PLAN_MODEL_MAP_JSON` (JSON object: plan key -> model or `null`; all `null` disables AI)
-- `AI_PLAN_MONTHLY_TOKEN_BUDGET_MAP_JSON` (JSON object: plan key -> monthly token budget)
-- `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED` (set to `true` to show Google OAuth on `/login` and `/signup`)
-- `NEXT_PUBLIC_AUTH_MICROSOFT_ENABLED` (set to `true` to show Microsoft OAuth on `/login` and `/signup`)
+### AI
+
+- `OPENAI_API_KEY` (required only if AI chat is enabled)
+- `AI_ACCESS_MODE` (`paid`, `all`, `by_plan`; default `paid`)
+- `AI_DEFAULT_MODEL` (used by `AI_ACCESS_MODE=all`)
+- `AI_DEFAULT_MONTHLY_TOKEN_BUDGET` (used by `AI_ACCESS_MODE=all`)
+- `AI_PLAN_RULES_JSON` (used by `AI_ACCESS_MODE=by_plan`; includes `free|starter|growth|pro`)
+- `AI_ALLOWED_SUBSCRIPTION_STATUSES` (used by `AI_ACCESS_MODE=paid`)
+- `AI_PLAN_MODEL_MAP_JSON` (used by `AI_ACCESS_MODE=paid`)
+- `AI_PLAN_MONTHLY_TOKEN_BUDGET_MAP_JSON` (used by `AI_ACCESS_MODE=paid`)
+- `APP_FREE_PLAN_ENABLED` (if `true`, teams without a live paid subscription resolve to `free`)
+
+### Auth
+
+- `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED`
+- `NEXT_PUBLIC_AUTH_MICROSOFT_ENABLED`
+
+### Security and Infrastructure
+
 - `CRON_SECRET`
-- `NEXT_PUBLIC_INTERCOM_APP_ID`
-- `INTERCOM_IDENTITY_SECRET`
-- `NEXT_PUBLIC_SENTRY_DSN`
-- `NEXT_PUBLIC_SENTRY_ENVIRONMENT`
-- `SENTRY_ENVIRONMENT`
-- `STRIPE_SEAT_PRORATION_BEHAVIOR` (`create_prorations` or `none`)
-- `TEAM_MAX_MEMBERS` (default `100`; max active + pending invited members per team)
 - `TRUST_PROXY_HEADERS`
 - `TRUSTED_PROXY_HEADER_NAMES`
 
-## Database Model (Supabase)
+### Stripe and Team Limits
 
-Apply `supabase/schema.sql` once for a fresh environment.
+- `STRIPE_SEAT_PRORATION_BEHAVIOR` (`create_prorations` or `none`)
+- `TEAM_MAX_MEMBERS` (default `100`)
+
+### Intercom
+
+- `NEXT_PUBLIC_INTERCOM_APP_ID`
+- `INTERCOM_IDENTITY_SECRET`
+
+### Sentry
+
+- `NEXT_PUBLIC_SENTRY_DSN`
+- `NEXT_PUBLIC_SENTRY_ENVIRONMENT`
+- `SENTRY_ENVIRONMENT`
+
+## How Core Features Work
+
+Team and auth model:
+
+- New users get a personal team via DB trigger (`handle_new_user`).
+- Active team context lives in `profiles.active_team_id`.
+- Invites are create/resend/revoke + token-based acceptance.
+- Only owners can transfer ownership.
+- Account settings include profile, email change flow, notification preferences, and guarded account deletion.
+
+Billing model:
+
+- Team-scoped subscriptions (not user-scoped).
+- Seat quantity is reconciled against team membership counts.
+- Landing page pricing attempts to pull live Stripe prices for configured price IDs.
+- Webhook events are deduplicated and stored in `stripe_webhook_events`.
+
+AI chat model (`POST /api/ai/chat`):
+
+- Authenticated users only.
+- CSRF + JSON content-type enforced.
+- Input schema:
+  - `messages` length: 1-30
+  - each message `content`: 1-8000 chars
+  - allowed roles: `user`, `assistant`
+- Streaming response (`text/plain; charset=utf-8`) with `max_tokens: 4096`.
+- Rate limits are applied per-user and per-team.
+- Budgeting can reserve/finalize tokens atomically via DB RPC.
+- AI access can be controlled in three modes:
+  - `paid`: plan/status-based
+  - `all`: all authenticated users, one default model
+  - `by_plan`: explicit rules for `free|starter|growth|pro`
+
+Support + password reset emails:
+
+- `POST /api/resend/support` sends authenticated support requests to `RESEND_SUPPORT_EMAIL`.
+- `POST /api/auth/forgot-password` generates recovery links and sends reset emails via Resend.
+
+Cron endpoints:
+
+- Require `Authorization: Bearer <CRON_SECRET>`.
+- `/api/cron/reconcile-seat-quantities`:
+  - reconciles Stripe seat quantities
+  - processes queued AI budget finalize retries
+  - returns `500` if any internal cron job fails
+- `/api/cron/prune-stripe-webhook-events` prunes webhook dedupe rows.
+
+Security defaults:
+
+- CSRF token cookie + header checks on mutating routes.
+- Rate limiting with DB-backed windows + in-memory fallback.
+- `proxy.ts` adds CSP (nonce in production), request ID, CSRF cookie bootstrap, and Supabase session refresh.
+- `next.config.ts` applies HSTS/XFO/nosniff/permissions/referrer headers and `Cache-Control: no-store` for `/api/*`.
+
+## Database (Supabase)
+
+Run `supabase/schema.sql` once in a new environment.
 
 Core tables:
 
@@ -142,7 +235,7 @@ Core tables:
 - `ai_budget_claim_finalize_retries`
 - `seat_sync_retries`
 
-Important RPCs used by app code:
+Important RPC functions used by app code:
 
 - `check_rate_limit(...)`
 - `sync_stripe_subscription_atomic(...)`
@@ -153,216 +246,45 @@ Important RPCs used by app code:
 - `finalize_ai_token_budget_claim(...)`
 - `enqueue_ai_budget_finalize_retry(...)`
 
-## Team + Auth Model (Core Flows)
-
-- New users get a personal team automatically via `handle_new_user` trigger.
-- Roles: `owner`, `admin`, `member`.
-- Active team context is `profiles.active_team_id`.
-- Team invites:
-  - Create: `POST /api/team/invites` (owner/admin)
-  - Accept: `/invite/[token]` UI + `POST /api/team/invites/accept`
-  - Resend: `POST /api/team/invites/[inviteId]/resend` (owner/admin)
-  - Revoke: `DELETE /api/team/invites/[inviteId]` (owner/admin)
-- Team settings:
-  - Update organization name: `PATCH /api/team/settings` (owner/admin)
-- Team ownership:
-  - Transfer ownership: `POST /api/team/ownership/transfer` (owner only)
-- Users can recover a personal team: `POST /api/team/recover-personal`.
-- Auth routes (core):
-  - `POST /api/auth/signup`
-  - `POST /api/auth/login`
-  - `POST /api/auth/forgot-password`
-  - `POST /reset-password/submit`
-  - `GET /auth/callback`
-
-## Billing (Stripe)
-
-Plans:
-
-- Starter/Growth/Pro display pricing is read from Stripe using:
-  - `STRIPE_STARTER_PRICE_ID`
-  - `STRIPE_GROWTH_PRICE_ID`
-  - `STRIPE_PRO_PRICE_ID`
-- This keeps landing-page prices aligned with checkout billing amounts.
-
-Billing endpoints:
-
-- `POST /api/stripe/checkout`
-- `POST /api/stripe/portal`
-- `POST /api/stripe/change-plan`
-- `POST /api/stripe/webhook`
-
-Behavior:
-
-- Billing is team-scoped, not user-scoped.
-- Seat quantity is reconciled to team membership count.
-- Webhook handling uses dedupe/claim-token logic.
-- Seat sync retries persist in `seat_sync_retries`.
-- Subscription metadata sync healing reuses seat reconciliation workers.
-
-## OpenAI Chat Endpoint
-
-Endpoints:
-
-- `POST /api/ai/chat`
-
-Current behavior:
-
-- Authenticated users only, with CSRF + JSON content-type checks.
-- Request schema:
-  - `messages`: 1-30 items
-  - each `content`: 1-8000 chars
-  - `role`: only `"user"` or `"assistant"` (no `"system"` accepted)
-- Plan + status gating are fully configurable via environment:
-  - `AI_ALLOWED_SUBSCRIPTION_STATUSES`
-  - `AI_PLAN_MODEL_MAP_JSON`
-- Model selection is configurable per plan via `AI_PLAN_MODEL_MAP_JSON`
-- Completion cap: `max_tokens: 4096`
-- Rate limits:
-  - Per user: `RATE_LIMITS.aiChatByUser`
-  - Per team: `RATE_LIMITS.aiChatByTeam`
-- Team monthly budgets are configurable per plan via `AI_PLAN_MONTHLY_TOKEN_BUDGET_MAP_JSON`
-- User-facing AI unavailability responses are intentionally generic and do not reveal plan/model/config details
-- Budget enforcement is atomic:
-  - reserve with `claim_ai_token_budget(...)`
-  - reconcile with `finalize_ai_token_budget_claim(...)`
-- Usage and audit:
-  - token usage written to `ai_usage`
-  - audit events written to `audit_events`
-- Response type: streaming plain text (`text/plain; charset=utf-8`)
-
-## Support Email Endpoint
-
-Endpoint: `POST /api/resend/support`
-
-- Auth + CSRF protected
-- Payload:
-  - `subject`: optional, max 120 chars
-  - `message`: required, 10-2000 chars
-- Sends to `RESEND_SUPPORT_EMAIL` from `RESEND_FROM_EMAIL`
-- Rate limited by user and client identity
-
-## Cron Endpoints
-
-Both require `Authorization: Bearer <CRON_SECRET>`.
-
-- `GET /api/cron/reconcile-seat-quantities`
-  - Reconciles Stripe subscription quantity with team seats
-  - Drains queued AI budget-claim finalization retries
-  - Returns `500` (with a detailed body) if any internal cron job fails
-- `GET /api/cron/prune-stripe-webhook-events`
-  - Prunes old webhook event rows
-
-If `CRON_SECRET` is missing, these endpoints return `503`.
-
-## Security Defaults
-
-- CSRF token cookie + header validation on write endpoints
-- Rate limiting via distributed DB window + in-memory fallback circuit breaker
-- `proxy.ts` sets:
-  - CSP header with nonce (production)
-  - CSRF cookie bootstrap
-  - Supabase session refresh
-- `next.config.ts` sets:
-  - HSTS, XFO, Referrer-Policy, Permissions-Policy, nosniff
-  - `Cache-Control: no-store` for `/api/*`
-
-## Optional Sentry Monitoring
-
-This starter includes minimal Sentry wiring for App Router server, client, and edge runtimes, but it is fully opt-in.
-
-What is captured:
-
-- Unhandled App Router request errors (`instrumentation.ts` request hook)
-- Errors surfaced by app-level boundaries (`app/global-error.tsx`, `app/dashboard/error.tsx`)
-- `logger.error(...)` calls (keeps existing console/structured logging behavior)
-
-How to enable:
-
-1. Set `NEXT_PUBLIC_SENTRY_DSN` in your environment.
-2. Optionally set `NEXT_PUBLIC_SENTRY_ENVIRONMENT` (for example: `development`, `staging`, `production`).
-3. Optionally set `SENTRY_ENVIRONMENT` only if you need a different server/edge value than client.
-4. Redeploy/restart the app.
-
-How to disable:
-
-- Remove `NEXT_PUBLIC_SENTRY_DSN` (or leave it empty) and restart/redeploy.
-- With no DSN configured, Sentry initialization is disabled and capture calls become a no-op.
-
-Local dev behavior:
-
-- If `NEXT_PUBLIC_SENTRY_DSN` is not set locally, only normal console logs/errors are emitted.
-- If it is set, local errors can be sent to your Sentry project.
-
 ## Scripts
 
 - `npm run dev` - start dev server
 - `npm run build` - production build
 - `npm run start` - run built app
 - `npm run lint` - run ESLint
-- `npm run typecheck` - run TypeScript type-checking
+- `npm run typecheck` - run TypeScript checks
 - `npm run test` - run Vitest once
 - `npm run test:watch` - run Vitest in watch mode
-- `npm run test:e2e:smoke` - run Playwright smoke tests (`@smoke`)
+- `npm run test:e2e:smoke` - run Playwright smoke suite
 - `npm run test:e2e` - run full Playwright suite
-- `npm run test:e2e:ui` - run Playwright UI mode
+- `npm run test:e2e:ui` - run Playwright in UI mode
 
-## Playwright E2E
+## Testing and CI
 
-Lean smoke coverage is in `e2e/` and focuses on:
-
-- auth redirect for protected routes
-- dashboard render for seeded owner user
-- sidebar active navigation state
-- invite acceptance flow (fixture-backed API response)
-- billing permissions for seeded member role
-
-Seeded test users/tokens are provided with environment variables:
-
-- `E2E_OWNER_EMAIL`
-- `E2E_OWNER_PASSWORD`
-- `E2E_MEMBER_EMAIL`
-- `E2E_MEMBER_PASSWORD`
-- `E2E_INVITE_TOKEN` (optional; defaults to a fixture token)
-
-In CI, Playwright smoke tests run only when required seeded auth variables and
-`PLAYWRIGHT_BASE_URL` are configured; otherwise the workflow skips Playwright
-and still runs Vitest.
-
-CI setup:
-
-- PR workflow runs Vitest + Playwright smoke tests on every pull request
-
-## API Surface (Full Inventory)
-
-- Auth: `/auth/callback`, `/api/auth/login`, `/api/auth/signup`, `/api/auth/forgot-password`, `/reset-password/submit`
-- Team: `/api/team/invites`, `/api/team/invites/accept`, `/api/team/invites/[inviteId]`, `/api/team/invites/[inviteId]/resend`, `/api/team/members/[userId]`, `/api/team/settings`, `/api/team/ownership/transfer`, `/api/team/recover-personal`
-- Stripe: `/api/stripe/checkout`, `/api/stripe/portal`, `/api/stripe/change-plan`, `/api/stripe/webhook`
-- AI: `/api/ai/chat`
-- Support: `/api/resend/support`
-- Cron: `/api/cron/reconcile-seat-quantities`, `/api/cron/prune-stripe-webhook-events`
-- Intercom boot: `/api/intercom/boot`
+- PR workflow runs Vitest always.
+- Playwright smoke runs when required E2E secrets are configured.
+- If those secrets are missing, CI skips Playwright and still runs Vitest.
 
 ## Deploy (Vercel)
 
-1. Push repo and import into Vercel
-2. Set all required environment variables (and `OPENAI_API_KEY` only if enabling AI chat)
-3. In Supabase Auth, set production Site URL + callback URL
-4. Create Stripe webhook to `/api/stripe/webhook` and set `STRIPE_WEBHOOK_SECRET`
-5. Optionally configure scheduled requests for both cron endpoints with `CRON_SECRET`
-6. Deploy
+1. Import the repo into Vercel.
+2. Set required environment variables.
+3. Configure Supabase Auth Site URL and callback URL for production.
+4. Configure Stripe webhook to `/api/stripe/webhook` with `STRIPE_WEBHOOK_SECRET`.
+5. (Optional) Configure scheduled calls to both cron endpoints with `CRON_SECRET`.
+6. Deploy.
 
 ## Launch Checklist
 
-- `supabase/schema.sql` applied in production project
-- All env vars set correctly (including Stripe price IDs)
-- Stripe webhook receives and verifies events
-- Resend sender verified
-- Optional Intercom keys configured if used
-- `TRUST_PROXY_HEADERS` enabled only behind trusted proxy infrastructure
+- `supabase/schema.sql` has been applied.
+- All required env vars are set.
+- Stripe price IDs and webhook secret are correct.
+- Resend sender is verified.
+- Optional integrations (Intercom, Sentry, AI) are configured only if needed.
+- `TRUST_PROXY_HEADERS` is enabled only in trusted proxy infrastructure.
 
-## Notes for Customization
+## Customization Notes
 
-- Update branding/copy in landing and auth pages
-- Update legal content in `app/privacy-policy/page.tsx` and `app/terms-of-use/page.tsx`
-- Adjust pricing in Stripe and keep `STRIPE_*_PRICE_ID` env values updated
+- Update branding and landing copy in `components/landing/`.
+- Update legal text in `app/privacy-policy/page.tsx` and `app/terms-of-use/page.tsx`.
+- Keep Stripe price IDs in sync with your Stripe products.
