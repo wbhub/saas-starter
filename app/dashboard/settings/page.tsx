@@ -3,13 +3,23 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { NoTeamCard } from "@/components/no-team-card";
 import { OrganizationSettingsCard } from "@/components/organization-settings-card";
 import { SecuritySettingsCard } from "@/components/security-settings-card";
+import { TeamContextErrorCard } from "@/components/team-context-error-card";
 import {
   getDashboardBaseData,
   getTeamMembers,
 } from "@/lib/dashboard/server";
 
 export default async function DashboardSettingsPage() {
-  const { supabase, user, profile, teamContext, displayName } = await getDashboardBaseData();
+  const { supabase, user, profile, teamContext, teamContextLoadFailed, displayName } =
+    await getDashboardBaseData();
+
+  if (teamContextLoadFailed) {
+    return (
+      <main className="min-h-screen bg-[color:var(--background)] px-6 py-10 text-[color:var(--foreground)]">
+        <TeamContextErrorCard />
+      </main>
+    );
+  }
 
   if (!teamContext) {
     return (

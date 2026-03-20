@@ -86,15 +86,17 @@ export async function getDashboardBaseData() {
   }
 
   let teamContext: TeamContext | null = null;
+  let teamContextLoadFailed = false;
   if (teamContextQuery.status === "fulfilled") {
     teamContext = teamContextQuery.value;
   } else {
     logger.error("Failed to load team context", teamContextQuery.reason);
+    teamContextLoadFailed = true;
   }
 
   const displayName = profile?.full_name?.trim() || user.email || "there";
 
-  return { supabase, user, profile, teamContext, displayName };
+  return { supabase, user, profile, teamContext, teamContextLoadFailed, displayName };
 }
 
 export async function getLiveSubscription(

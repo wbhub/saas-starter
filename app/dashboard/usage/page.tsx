@@ -1,5 +1,7 @@
 import { DashboardShell } from "@/components/dashboard-shell";
 import { NoTeamCard } from "@/components/no-team-card";
+import { TeamContextErrorCard } from "@/components/team-context-error-card";
+import { formatUtcDate } from "@/lib/date";
 import {
   getDashboardBaseData,
   getUsageMonthlyTotals,
@@ -10,7 +12,16 @@ function formatTokens(value: number) {
 }
 
 export default async function DashboardUsagePage() {
-  const { supabase, user, teamContext, displayName } = await getDashboardBaseData();
+  const { supabase, user, teamContext, teamContextLoadFailed, displayName } =
+    await getDashboardBaseData();
+
+  if (teamContextLoadFailed) {
+    return (
+      <main className="min-h-screen bg-[color:var(--background)] px-6 py-10 text-[color:var(--foreground)]">
+        <TeamContextErrorCard />
+      </main>
+    );
+  }
 
   if (!teamContext) {
     return (
@@ -59,7 +70,7 @@ export default async function DashboardUsagePage() {
                 {usageRows.map((row) => (
                   <tr key={row.month_start} className="border-b app-border-subtle last:border-0">
                     <td className="px-2 py-2 text-slate-800 dark:text-slate-100">
-                      {new Date(row.month_start).toLocaleDateString(undefined, {
+                      {formatUtcDate(row.month_start, {
                         year: "numeric",
                         month: "short",
                       })}

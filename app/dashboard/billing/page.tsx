@@ -2,6 +2,8 @@ import { BillingActions } from "@/components/billing-actions";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { NoTeamCard } from "@/components/no-team-card";
 import { SupportEmailCard } from "@/components/support-email-card";
+import { TeamContextErrorCard } from "@/components/team-context-error-card";
+import { formatUtcDate } from "@/lib/date";
 import { getPlanByPriceId } from "@/lib/stripe/config";
 import { canManageTeamBilling } from "@/lib/team-context";
 import {
@@ -11,7 +13,16 @@ import {
 import { LIVE_SUBSCRIPTION_STATUSES } from "@/lib/stripe/plans";
 
 export default async function DashboardBillingPage() {
-  const { supabase, user, teamContext, displayName } = await getDashboardBaseData();
+  const { supabase, user, teamContext, teamContextLoadFailed, displayName } =
+    await getDashboardBaseData();
+
+  if (teamContextLoadFailed) {
+    return (
+      <main className="min-h-screen bg-[color:var(--background)] px-6 py-10 text-[color:var(--foreground)]">
+        <TeamContextErrorCard />
+      </main>
+    );
+  }
 
   if (!teamContext) {
     return (
@@ -75,7 +86,7 @@ export default async function DashboardBillingPage() {
               <dt className="text-slate-500 dark:text-slate-400">Period end</dt>
               <dd className="text-slate-800 dark:text-slate-100">
                 {subscription.current_period_end
-                  ? new Date(subscription.current_period_end).toLocaleDateString()
+                  ? formatUtcDate(subscription.current_period_end)
                   : "N/A"}
               </dd>
             </div>

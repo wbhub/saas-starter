@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getCsrfHeaders } from "@/lib/http/csrf";
+import { formatUtcDate } from "@/lib/date";
 
 type TeamMember = {
   userId: string;
@@ -85,6 +86,7 @@ export function TeamInviteCard({
           ? "Invite email sent."
           : "Invite created, but email delivery failed. Share the link manually.",
       );
+      router.refresh();
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : "Failed to send invite.");
     } finally {
@@ -320,7 +322,7 @@ export function TeamInviteCard({
                     {invite.email}
                   </p>
                   <p className="truncate text-xs text-slate-600 dark:text-slate-300">
-                    Expires {new Date(invite.expiresAt).toLocaleDateString()}
+                    Expires {formatUtcDate(invite.expiresAt)}
                   </p>
                 </div>
                 <div className="ml-3 flex items-center gap-2">
