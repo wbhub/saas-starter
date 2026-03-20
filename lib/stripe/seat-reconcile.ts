@@ -7,7 +7,7 @@ import {
   listDueSeatSyncRetryTeamIds,
 } from "@/lib/stripe/seat-sync-retries";
 import { logger } from "@/lib/logger";
-import { stripe } from "@/lib/stripe/server";
+import { getStripeServerClient } from "@/lib/stripe/server";
 import { resolveTeamIdFromStripeCustomer } from "@/lib/stripe/sync";
 
 type TeamSubscriptionRow = {
@@ -79,6 +79,12 @@ async function collectTeamIdsFromStripe(
   existingTeamIds: Set<string>,
   stripePageLimit: number,
 ) {
+  const stripe = getStripeServerClient();
+  if (!stripe) {
+    logger.warn("Stripe is not configured; skipping Stripe team discovery during reconciliation.");
+    return { discovered: 0, pagesScanned: 0 };
+  }
+
   let discovered = 0;
   let pagesScanned = 0;
   let startingAfter: string | undefined;

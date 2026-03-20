@@ -11,13 +11,14 @@ describe("POST /api/stripe/portal", () => {
       createClient: vi.fn(),
     }));
     vi.doMock("@/lib/stripe/server", () => ({
-      stripe: {
+      getStripeServerClient: () => ({
         customers: { retrieve: vi.fn() },
         billingPortal: { sessions: { create: vi.fn() } },
-      },
+      }),
     }));
     vi.doMock("@/lib/env", () => ({
       env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
+      getAppUrl: () => "http://localhost:3000",
     }));
     vi.doMock("@/lib/security/rate-limit", () => ({
       checkRateLimit: vi.fn(),
@@ -49,13 +50,14 @@ describe("POST /api/stripe/portal", () => {
       }),
     }));
     vi.doMock("@/lib/stripe/server", () => ({
-      stripe: {
+      getStripeServerClient: () => ({
         customers: { retrieve: vi.fn() },
         billingPortal: { sessions: { create: vi.fn() } },
-      },
+      }),
     }));
     vi.doMock("@/lib/env", () => ({
       env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
+      getAppUrl: () => "http://localhost:3000",
     }));
     vi.doMock("@/lib/security/rate-limit", () => ({
       checkRateLimit: vi.fn(),
@@ -99,17 +101,18 @@ describe("POST /api/stripe/portal", () => {
       }),
     }));
     vi.doMock("@/lib/stripe/server", () => ({
-      stripe: {
+      getStripeServerClient: () => ({
         customers: {
           retrieve: vi
             .fn()
             .mockResolvedValue({ id: "cus_123", metadata: { supabase_team_id: "team_123" } }),
         },
         billingPortal: { sessions: { create: createPortalSession } },
-      },
+      }),
     }));
     vi.doMock("@/lib/env", () => ({
       env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
+      getAppUrl: () => "http://localhost:3000",
     }));
     vi.doMock("@/lib/security/rate-limit", () => ({
       checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),

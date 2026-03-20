@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { logAuditEvent } from "@/lib/audit";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
-import { env } from "@/lib/env";
+import { getAppUrl } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { getResendClient, getResendFromEmail } from "@/lib/resend/server";
 import { checkRateLimit } from "@/lib/security/rate-limit";
@@ -110,7 +110,7 @@ export async function POST(request: Request, context: ResendInviteRouteContext) 
     return NextResponse.json({ error: "Unable to resend invite." }, { status: 500 });
   }
 
-  const inviteUrl = `${env.NEXT_PUBLIC_APP_URL}/invite/${token}`;
+  const inviteUrl = `${getAppUrl()}/invite/${token}`;
   let emailSent = false;
   try {
     const resend = getResendClient();

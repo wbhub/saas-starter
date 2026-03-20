@@ -35,6 +35,7 @@ describe("POST /api/auth/forgot-password", () => {
     }));
     vi.doMock("@/lib/env", () => ({
       env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
+      getAppUrl: () => "http://localhost:3000",
     }));
 
     const { POST } = await import("./route");
@@ -87,6 +88,7 @@ describe("POST /api/auth/forgot-password", () => {
     }));
     vi.doMock("@/lib/env", () => ({
       env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
+      getAppUrl: () => "http://localhost:3000",
     }));
 
     const { POST } = await import("./route");
@@ -148,6 +150,7 @@ describe("POST /api/auth/forgot-password", () => {
     }));
     vi.doMock("@/lib/env", () => ({
       env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
+      getAppUrl: () => "http://localhost:3000",
     }));
 
     const { POST } = await import("./route");
@@ -204,6 +207,7 @@ describe("POST /api/auth/forgot-password", () => {
     }));
     vi.doMock("@/lib/env", () => ({
       env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
+      getAppUrl: () => "http://localhost:3000",
     }));
 
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});

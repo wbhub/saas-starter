@@ -1,8 +1,7 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { env } from "@/lib/env";
-import { stripe } from "@/lib/stripe/server";
+import { getStripeServerClient } from "@/lib/stripe/server";
 import {
   syncSubscription,
   upsertStripeCustomer,
@@ -19,6 +18,14 @@ import { pruneStripeWebhookEventRows } from "@/lib/stripe/webhook-event-prune";
 
 function createClaimToken() {
   return crypto.randomUUID();
+}
+
+function getStripeOrThrow() {
+  const stripe = getStripeServerClient();
+  if (!stripe) {
+    throw new Error("Stripe is not configured.");
+  }
+  return stripe;
 }
 
 async function claimWebhookEvent(event: Stripe.Event) {
@@ -129,6 +136,7 @@ async function ensureStripeCustomerOwnership(
   teamId: string,
   customerId: string,
 ) {
+  const stripe = getStripeOrThrow();
   const customer = await stripe.customers.retrieve(customerId);
   if ("deleted" in customer) {
     throw new Error("Stripe customer was deleted before ownership sync.");
@@ -169,6 +177,14 @@ async function resolveTeamIdFromSessionReference(referenceId: string) {
 }
 
 export async function POST(req: Request) {
+  const stripe = getStripeServerClient();
+  if (!stripe) {
+    return NextResponse.json(
+      { error: "Billing webhooks are not configured for this deployment." },
+      { status: 503 },
+    );
+  }
+
   const contentTypeError = requireJsonContentType(req);
   if (contentTypeError) {
     return contentTypeError;
@@ -183,13 +199,20 @@ export async function POST(req: Request) {
   }
 
   const body = await req.text();
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
+  if (!webhookSecret) {
+    return NextResponse.json(
+      { error: "Billing webhooks are not configured for this deployment." },
+      { status: 503 },
+    );
+  }
 
   let event: Stripe.Event;
   try {
     event = stripe.webhooks.constructEvent(
       body,
       signature,
-      env.STRIPE_WEBHOOK_SECRET,
+      webhookSecret,
       WEBHOOK_SIGNATURE_TOLERANCE_SECONDS,
     );
   } catch (error) {

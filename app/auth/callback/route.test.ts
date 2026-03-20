@@ -14,6 +14,7 @@ describe("GET /auth/callback", () => {
   it("redirects to login when code is missing", async () => {
     vi.doMock("@/lib/env", () => ({
       env: { NEXT_PUBLIC_APP_URL: "https://app.example.com" },
+      getAppUrl: () => "https://app.example.com",
     }));
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: vi.fn(),
@@ -37,6 +38,7 @@ describe("GET /auth/callback", () => {
   it("uses configured app origin for success redirect", async () => {
     vi.doMock("@/lib/env", () => ({
       env: { NEXT_PUBLIC_APP_URL: "https://app.example.com" },
+      getAppUrl: () => "https://app.example.com",
     }));
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: async () => ({
@@ -67,6 +69,7 @@ describe("GET /auth/callback", () => {
   it("falls back to dashboard for unsafe next values", async () => {
     vi.doMock("@/lib/env", () => ({
       env: { NEXT_PUBLIC_APP_URL: "https://app.example.com" },
+      getAppUrl: () => "https://app.example.com",
     }));
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: async () => ({
@@ -101,6 +104,7 @@ describe("GET /auth/callback", () => {
 
     vi.doMock("@/lib/env", () => ({
       env: { NEXT_PUBLIC_APP_URL: "https://app.example.com" },
+      getAppUrl: () => "https://app.example.com",
     }));
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: async () => ({

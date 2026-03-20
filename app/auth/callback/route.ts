@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { DAY_MS, MINUTE_MS } from "@/lib/constants/durations";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
-import { env } from "@/lib/env";
+import { getAppUrl } from "@/lib/env";
 import { getClientIp } from "@/lib/http/client-ip";
 import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/security/rate-limit";
@@ -55,7 +55,12 @@ function getCallbackRateLimitKey(request: NextRequest, callbackClientId: string)
 }
 
 function toAbsoluteUrl(pathnameWithQuery: string) {
-  return new URL(pathnameWithQuery, env.NEXT_PUBLIC_APP_URL).toString();
+  const baseUrl = getAppUrl();
+  try {
+    return new URL(pathnameWithQuery, baseUrl).toString();
+  } catch {
+    return new URL(pathnameWithQuery, "http://localhost:3000").toString();
+  }
 }
 
 function maybeSetCallbackCookie(response: NextResponse, request: NextRequest, isNew: boolean, value: string) {

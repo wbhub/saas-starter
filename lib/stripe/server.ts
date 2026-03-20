@@ -1,11 +1,25 @@
 import Stripe from "stripe";
-import { env } from "@/lib/env";
 
 const STRIPE_API_VERSION: Stripe.LatestApiVersion = "2026-02-25.clover";
 
-export const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
-  apiVersion: STRIPE_API_VERSION,
-  appInfo: {
-    name: "SaaS Starter",
-  },
-});
+let stripeClient: Stripe | null = null;
+
+function getStripeSecretKey() {
+  return process.env.STRIPE_SECRET_KEY?.trim() || null;
+}
+
+export function getStripeServerClient() {
+  const secretKey = getStripeSecretKey();
+  if (!secretKey) {
+    return null;
+  }
+  if (!stripeClient) {
+    stripeClient = new Stripe(secretKey, {
+      apiVersion: STRIPE_API_VERSION,
+      appInfo: {
+        name: "SaaS Starter",
+      },
+    });
+  }
+  return stripeClient;
+}

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { env } from "@/lib/env";
+import { getAppUrl } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { getClientRateLimitIdentifier } from "@/lib/http/client-ip";
@@ -78,7 +78,7 @@ export async function POST(request: Request) {
     email,
     password,
     options: {
-      emailRedirectTo: `${env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/dashboard`,
+      emailRedirectTo: `${getAppUrl()}/auth/callback?next=/dashboard`,
     },
   });
 

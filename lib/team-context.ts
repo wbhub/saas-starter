@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { logger } from "@/lib/logger";
 
 export type TeamRole = "owner" | "admin" | "member";
 
@@ -64,7 +65,8 @@ export async function getTeamContextForUser(
     .maybeSingle<ProfileTeamRow>();
 
   if (profileResult.error) {
-    throw new Error(`Failed to load profile active team: ${profileResult.error.message}`);
+    logger.error("Failed to load profile active team", profileResult.error, { userId });
+    return null;
   }
 
   const activeTeamId = profileResult.data?.active_team_id;
@@ -74,16 +76,22 @@ export async function getTeamContextForUser(
     : await getFirstMembership(supabase, userId);
 
   if (membershipResult.error) {
-    throw new Error(`Failed to load team membership: ${membershipResult.error.message}`);
+    logger.error("Failed to load team membership", membershipResult.error, {
+      userId,
+      activeTeamId,
+    });
+    return null;
   }
 
   const membership = membershipResult.data;
   if (!membership && activeTeamId) {
     const fallbackMembershipResult = await getFirstMembership(supabase, userId);
     if (fallbackMembershipResult.error) {
-      throw new Error(
-        `Failed to load fallback team membership: ${fallbackMembershipResult.error.message}`,
-      );
+      logger.error("Failed to load fallback team membership", fallbackMembershipResult.error, {
+        userId,
+        activeTeamId,
+      });
+      return null;
     }
 
     const fallbackMembership = fallbackMembershipResult.data;

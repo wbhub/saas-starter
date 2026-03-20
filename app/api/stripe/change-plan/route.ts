@@ -3,7 +3,7 @@ import { logAuditEvent } from "@/lib/audit";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { createClient } from "@/lib/supabase/server";
 import { getPlanByKey } from "@/lib/stripe/config";
-import { stripe } from "@/lib/stripe/server";
+import { getStripeServerClient } from "@/lib/stripe/server";
 import { syncSubscription } from "@/lib/stripe/sync";
 import { requireJsonContentType } from "@/lib/http/content-type";
 import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
@@ -54,6 +54,14 @@ async function isLocalSubscriptionSynced(
 }
 
 export async function POST(req: Request) {
+  const stripe = getStripeServerClient();
+  if (!stripe) {
+    return NextResponse.json(
+      { error: "Billing is not configured for this deployment." },
+      { status: 503 },
+    );
+  }
+
   const csrfError = verifyCsrfProtection(req);
   if (csrfError) {
     return csrfError;
@@ -113,6 +121,12 @@ export async function POST(req: Request) {
   const plan = getPlanByKey(planKey);
   if (!plan) {
     return NextResponse.json({ error: "Invalid target plan" }, { status: 400 });
+  }
+  if (!plan.priceId) {
+    return NextResponse.json(
+      { error: "Billing plans are not fully configured for this deployment." },
+      { status: 503 },
+    );
   }
   const idempotencyKey = getChangePlanIdempotencyKey(req, teamContext.teamId, plan.key);
 

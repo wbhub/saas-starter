@@ -1,6 +1,6 @@
 import Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { stripe } from "@/lib/stripe/server";
+import { getStripeServerClient } from "@/lib/stripe/server";
 import { ALL_SUBSCRIPTION_STATUSES } from "@/lib/stripe/plans";
 import { logger } from "@/lib/logger";
 
@@ -38,6 +38,11 @@ export async function resolveTeamIdFromStripeCustomer(
 
   if (mapping?.team_id) {
     return mapping.team_id;
+  }
+
+  const stripe = getStripeServerClient();
+  if (!stripe) {
+    throw new Error("Stripe is not configured.");
   }
 
   const customer = await stripe.customers.retrieve(stripeCustomerId);

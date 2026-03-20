@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { createClient } from "@/lib/supabase/server";
-import { stripe } from "@/lib/stripe/server";
-import { env } from "@/lib/env";
+import { getStripeServerClient } from "@/lib/stripe/server";
+import { getAppUrl } from "@/lib/env";
 import { requireJsonContentType } from "@/lib/http/content-type";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { verifyCsrfProtection } from "@/lib/security/csrf";
@@ -10,6 +10,10 @@ import { logger } from "@/lib/logger";
 import { canManageTeamBilling, getTeamContextForUser } from "@/lib/team-context";
 
 async function isOwnedStripeCustomer(teamId: string, customerId: string) {
+  const stripe = getStripeServerClient();
+  if (!stripe) {
+    throw new Error("Stripe is not configured.");
+  }
   const customer = await stripe.customers.retrieve(customerId);
   if ("deleted" in customer) {
     return false;
@@ -19,6 +23,14 @@ async function isOwnedStripeCustomer(teamId: string, customerId: string) {
 }
 
 export async function POST(request: Request) {
+  const stripe = getStripeServerClient();
+  if (!stripe) {
+    return NextResponse.json(
+      { error: "Billing is not configured for this deployment." },
+      { status: 503 },
+    );
+  }
+
   const csrfError = verifyCsrfProtection(request);
   if (csrfError) {
     return csrfError;
@@ -100,7 +112,7 @@ export async function POST(request: Request) {
 
     const session = await stripe.billingPortal.sessions.create({
       customer: customerRow.stripe_customer_id,
-      return_url: `${env.NEXT_PUBLIC_APP_URL}/dashboard`,
+      return_url: `${getAppUrl()}/dashboard`,
     });
 
     return NextResponse.json({ url: session.url });

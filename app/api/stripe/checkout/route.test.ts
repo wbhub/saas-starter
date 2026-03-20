@@ -38,17 +38,18 @@ describe("POST /api/stripe/checkout", () => {
       getPlanByKey: () => ({ key: "starter", priceId: "price_starter" }),
     }));
     vi.doMock("@/lib/stripe/server", () => ({
-      stripe: {
+      getStripeServerClient: () => ({
         customers: { retrieve: vi.fn(), create: vi.fn() },
         subscriptions: { list: vi.fn() },
         checkout: { sessions: { create: vi.fn() } },
-      },
+      }),
     }));
     vi.doMock("@/lib/stripe/sync", () => ({
       upsertStripeCustomer: vi.fn(),
     }));
     vi.doMock("@/lib/env", () => ({
       env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
+      getAppUrl: () => "http://localhost:3000",
     }));
     vi.doMock("@/lib/team-context", () => ({
       getTeamContextForUser: vi.fn().mockResolvedValue({
@@ -93,14 +94,15 @@ describe("POST /api/stripe/checkout", () => {
       getPlanByKey: () => ({ key: "starter", priceId: "price_starter" }),
     }));
     vi.doMock("@/lib/stripe/server", () => ({
-      stripe: {
+      getStripeServerClient: () => ({
         customers: { retrieve: vi.fn(), create: vi.fn() },
         subscriptions: { list: vi.fn() },
         checkout: { sessions: { create: vi.fn() } },
-      },
+      }),
     }));
     vi.doMock("@/lib/env", () => ({
       env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
+      getAppUrl: () => "http://localhost:3000",
     }));
     vi.doMock("@/lib/team-context", () => ({
       getTeamContextForUser: vi.fn().mockResolvedValue({
@@ -189,14 +191,15 @@ describe("POST /api/stripe/checkout", () => {
       getPlanByKey: () => ({ key: "starter", priceId: "price_starter" }),
     }));
     vi.doMock("@/lib/stripe/server", () => ({
-      stripe: {
+      getStripeServerClient: () => ({
         customers: { retrieve: vi.fn(), create: customersCreate },
         subscriptions: { list: hasLiveSubscriptions },
         checkout: { sessions: { create: sessionsCreate } },
-      },
+      }),
     }));
     vi.doMock("@/lib/env", () => ({
       env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
+      getAppUrl: () => "http://localhost:3000",
     }));
     vi.doMock("@/lib/team-context", () => ({
       getTeamContextForUser: vi.fn().mockResolvedValue({
@@ -314,17 +317,18 @@ describe("POST /api/stripe/checkout", () => {
       getPlanByKey: () => ({ key: "starter", priceId: "price_starter" }),
     }));
     vi.doMock("@/lib/stripe/server", () => ({
-      stripe: {
+      getStripeServerClient: () => ({
         customers: { retrieve: vi.fn(), create: vi.fn() },
         subscriptions: { list: vi.fn() },
         checkout: { sessions: { create: vi.fn() } },
-      },
+      }),
     }));
     vi.doMock("@/lib/stripe/sync", () => ({
       upsertStripeCustomer: vi.fn(),
     }));
     vi.doMock("@/lib/env", () => ({
       env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
+      getAppUrl: () => "http://localhost:3000",
     }));
     vi.doMock("@/lib/team-context", () => ({
       getTeamContextForUser: vi.fn().mockResolvedValue({

@@ -1,4 +1,4 @@
-import { stripe } from "@/lib/stripe/server";
+import { getStripeServerClient } from "@/lib/stripe/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { LIVE_SUBSCRIPTION_STATUSES } from "@/lib/stripe/plans";
 import { syncSubscription } from "@/lib/stripe/sync";
@@ -59,6 +59,11 @@ export async function syncTeamSeatQuantity(
   teamId: string,
   options?: { idempotencyKey?: string },
 ) {
+  const stripe = getStripeServerClient();
+  if (!stripe) {
+    throw new Error("Stripe is not configured.");
+  }
+
   const liveSubscriptionId = await getLiveSubscriptionId(teamId);
 
   if (!liveSubscriptionId) {
