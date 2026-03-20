@@ -16,9 +16,11 @@ This README reflects the app as it exists today and assumes a brand-new setup fr
 
 - Marketing + auth pages: `/`, `/login`, `/signup`, `/forgot-password`, `/reset-password`
 - Protected app area: `/dashboard`
+  - Subpages: `/dashboard/billing`, `/dashboard/team`, `/dashboard/settings`, `/dashboard/usage`
 - Team invite acceptance page: `/invite/[token]`
 - Legal pages: `/privacy-policy`, `/terms-of-use`
-- APIs for auth, team management, Stripe billing, AI chat, support email, cron maintenance
+- Core APIs for auth, team management, Stripe billing, AI chat, support email, and cron maintenance
+- Full endpoint inventory is listed in `API Surface (Full Inventory)` below
 
 ## Stack
 
@@ -124,6 +126,7 @@ Apply `supabase/schema.sql` once for a fresh environment.
 Core tables:
 
 - `teams`, `team_memberships`, `profiles`
+- `notification_preferences`
 - `stripe_customers`, `subscriptions`
 - `team_invites`
 - `stripe_webhook_events`
@@ -140,12 +143,13 @@ Important RPCs used by app code:
 - `check_rate_limit(...)`
 - `sync_stripe_subscription_atomic(...)`
 - `accept_team_invite_atomic(...)`
+- `transfer_team_ownership_atomic(...)`
 - `recover_personal_team_if_missing(...)`
 - `claim_ai_token_budget(...)`
 - `finalize_ai_token_budget_claim(...)`
 - `enqueue_ai_budget_finalize_retry(...)`
 
-## Team + Auth Model
+## Team + Auth Model (Core Flows)
 
 - New users get a personal team automatically via `handle_new_user` trigger.
 - Roles: `owner`, `admin`, `member`.
@@ -153,8 +157,14 @@ Important RPCs used by app code:
 - Team invites:
   - Create: `POST /api/team/invites` (owner/admin)
   - Accept: `/invite/[token]` UI + `POST /api/team/invites/accept`
+  - Resend: `POST /api/team/invites/[inviteId]/resend` (owner/admin)
+  - Revoke: `DELETE /api/team/invites/[inviteId]` (owner/admin)
+- Team settings:
+  - Update organization name: `PATCH /api/team/settings` (owner/admin)
+- Team ownership:
+  - Transfer ownership: `POST /api/team/ownership/transfer` (owner only)
 - Users can recover a personal team: `POST /api/team/recover-personal`.
-- Auth routes:
+- Auth routes (core):
   - `POST /api/auth/signup`
   - `POST /api/auth/login`
   - `POST /api/auth/forgot-password`
@@ -287,6 +297,7 @@ Local dev behavior:
 - `npm run build` - production build
 - `npm run start` - run built app
 - `npm run lint` - run ESLint
+- `npm run typecheck` - run TypeScript type-checking
 - `npm run test` - run Vitest once
 - `npm run test:watch` - run Vitest in watch mode
 - `npm run test:e2e:smoke` - run Playwright smoke tests (`@smoke`)
@@ -319,10 +330,10 @@ CI setup:
 
 - PR workflow runs Vitest + Playwright smoke tests on every pull request
 
-## API Surface (Summary)
+## API Surface (Full Inventory)
 
 - Auth: `/auth/callback`, `/api/auth/login`, `/api/auth/signup`, `/api/auth/forgot-password`, `/reset-password/submit`
-- Team: `/api/team/invites`, `/api/team/invites/accept`, `/api/team/members/[userId]`, `/api/team/recover-personal`
+- Team: `/api/team/invites`, `/api/team/invites/accept`, `/api/team/invites/[inviteId]`, `/api/team/invites/[inviteId]/resend`, `/api/team/members/[userId]`, `/api/team/settings`, `/api/team/ownership/transfer`, `/api/team/recover-personal`
 - Stripe: `/api/stripe/checkout`, `/api/stripe/portal`, `/api/stripe/change-plan`, `/api/stripe/webhook`
 - AI: `/api/ai/chat`
 - Support: `/api/resend/support`
