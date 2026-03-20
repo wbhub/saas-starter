@@ -54,6 +54,18 @@ describe("Dashboard page billing selection", () => {
       order: vi.fn().mockReturnThis(),
       returns: vi.fn().mockResolvedValue({ data: [], error: null }),
     };
+    const notificationPreferencesQuery = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: {
+          marketing_emails: false,
+          product_updates: true,
+          security_alerts: true,
+        },
+        error: null,
+      }),
+    };
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: async () => ({
         auth: {
@@ -79,6 +91,9 @@ describe("Dashboard page billing selection", () => {
           }
           if (table === "team_invites") {
             return teamInvitesQuery;
+          }
+          if (table === "notification_preferences") {
+            return notificationPreferencesQuery;
           }
           throw new Error(`Unexpected table: ${table}`);
         }),
@@ -169,6 +184,30 @@ describe("Dashboard page billing selection", () => {
               maybeSingle: vi
                 .fn()
                 .mockResolvedValue({ data: null, error: { message: "boom" } }),
+            };
+          }
+
+          if (table === "team_memberships") {
+            return {
+              select: vi.fn().mockReturnThis(),
+              eq: vi.fn().mockReturnThis(),
+              order: vi.fn().mockReturnThis(),
+              returns: vi.fn().mockResolvedValue({ data: [], error: null }),
+            };
+          }
+
+          if (table === "notification_preferences") {
+            return {
+              select: vi.fn().mockReturnThis(),
+              eq: vi.fn().mockReturnThis(),
+              maybeSingle: vi.fn().mockResolvedValue({
+                data: {
+                  marketing_emails: false,
+                  product_updates: true,
+                  security_alerts: true,
+                },
+                error: null,
+              }),
             };
           }
 

@@ -30,6 +30,15 @@ create table if not exists public.profiles (
   updated_at timestamptz not null default timezone('utc', now())
 );
 
+create table if not exists public.notification_preferences (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  marketing_emails boolean not null default false,
+  product_updates boolean not null default true,
+  security_alerts boolean not null default true,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
 create table if not exists public.stripe_customers (
   id uuid primary key default gen_random_uuid(),
   team_id uuid not null unique references public.teams(id) on delete cascade,
@@ -163,6 +172,7 @@ create table if not exists public.seat_sync_retries (
 
 create index if not exists idx_profiles_created_at on public.profiles(created_at desc);
 create index if not exists idx_profiles_active_team_id on public.profiles(active_team_id);
+create index if not exists idx_notification_preferences_created_at on public.notification_preferences(created_at desc);
 create index if not exists idx_teams_created_at on public.teams(created_at desc);
 create index if not exists idx_teams_created_by on public.teams(created_by);
 create index if not exists idx_team_memberships_team_id on public.team_memberships(team_id);
@@ -265,6 +275,11 @@ for each row execute function public.repair_profile_active_team_on_membership_de
 drop trigger if exists profiles_set_updated_at on public.profiles;
 create trigger profiles_set_updated_at
 before update on public.profiles
+for each row execute function public.set_updated_at();
+
+drop trigger if exists notification_preferences_set_updated_at on public.notification_preferences;
+create trigger notification_preferences_set_updated_at
+before update on public.notification_preferences
 for each row execute function public.set_updated_at();
 
 create or replace function public.enforce_profile_active_team_membership()
@@ -991,6 +1006,10 @@ begin
   insert into public.profiles (id, full_name, active_team_id)
   values (new.id, v_full_name, v_team_id);
 
+  insert into public.notification_preferences (user_id)
+  values (new.id)
+  on conflict (user_id) do nothing;
+
   return new;
 end;
 $$;
@@ -1000,9 +1019,15 @@ create trigger on_auth_user_created
 after insert on auth.users
 for each row execute procedure public.handle_new_user();
 
+insert into public.notification_preferences (user_id)
+select u.id
+from auth.users u
+on conflict (user_id) do nothing;
+
 alter table public.teams enable row level security;
 alter table public.team_memberships enable row level security;
 alter table public.profiles enable row level security;
+alter table public.notification_preferences enable row level security;
 alter table public.stripe_customers enable row level security;
 alter table public.subscriptions enable row level security;
 alter table public.team_invites enable row level security;
@@ -1071,6 +1096,28 @@ with check (
     or public.is_team_member(active_team_id)
   )
 );
+
+drop policy if exists "Users can read own notification preferences" on public.notification_preferences;
+create policy "Users can read own notification preferences"
+on public.notification_preferences
+for select
+to authenticated
+using (auth.uid() = user_id);
+
+drop policy if exists "Users can insert own notification preferences" on public.notification_preferences;
+create policy "Users can insert own notification preferences"
+on public.notification_preferences
+for insert
+to authenticated
+with check (auth.uid() = user_id);
+
+drop policy if exists "Users can update own notification preferences" on public.notification_preferences;
+create policy "Users can update own notification preferences"
+on public.notification_preferences
+for update
+to authenticated
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
 
 drop policy if exists "Users can read own team" on public.teams;
 create policy "Users can read own team"
@@ -1185,3 +1232,58 @@ using (public.is_team_member(team_id));
 -- (except team_invites where owners/admins can create/delete invites).
 -- With RLS enabled, writes are denied by default unless explicitly allowed.
 -- Billing writes are handled by server-only keys/RPC.
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'profile-photos',
+  'profile-photos',
+  true,
+  2097152,
+  array['image/png', 'image/jpeg', 'image/webp', 'image/gif']
+)
+on conflict (id) do update
+set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "Public can read profile photos" on storage.objects;
+create policy "Public can read profile photos"
+on storage.objects
+for select
+to public
+using (bucket_id = 'profile-photos');
+
+drop policy if exists "Users can upload own profile photos" on storage.objects;
+create policy "Users can upload own profile photos"
+on storage.objects
+for insert
+to authenticated
+with check (
+  bucket_id = 'profile-photos'
+  and auth.uid()::text = (storage.foldername(name))[1]
+);
+
+drop policy if exists "Users can update own profile photos" on storage.objects;
+create policy "Users can update own profile photos"
+on storage.objects
+for update
+to authenticated
+using (
+  bucket_id = 'profile-photos'
+  and auth.uid()::text = (storage.foldername(name))[1]
+)
+with check (
+  bucket_id = 'profile-photos'
+  and auth.uid()::text = (storage.foldername(name))[1]
+);
+
+drop policy if exists "Users can delete own profile photos" on storage.objects;
+create policy "Users can delete own profile photos"
+on storage.objects
+for delete
+to authenticated
+using (
+  bucket_id = 'profile-photos'
+  and auth.uid()::text = (storage.foldername(name))[1]
+);

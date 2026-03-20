@@ -1,6 +1,9 @@
 import { DashboardSettingsCard } from "@/components/dashboard-settings-card";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { DangerZoneCard } from "@/components/danger-zone-card";
+import { EmailSettingsCard } from "@/components/email-settings-card";
 import { NoTeamCard } from "@/components/no-team-card";
+import { NotificationPreferencesCard } from "@/components/notification-preferences-card";
 import { OrganizationSettingsCard } from "@/components/organization-settings-card";
 import { SecuritySettingsCard } from "@/components/security-settings-card";
 import { TeamContextErrorCard } from "@/components/team-context-error-card";
@@ -17,6 +20,7 @@ export default async function DashboardSettingsPage() {
     teamContext,
     teamContextLoadFailed,
     teamMemberships,
+    notificationPreferences,
     displayName,
   } = await getDashboardBaseData();
 
@@ -58,7 +62,24 @@ export default async function DashboardSettingsPage() {
       </header>
 
       <section>
-        <DashboardSettingsCard fullName={profile?.full_name ?? null} email={user.email ?? null} />
+        <DashboardSettingsCard
+          userId={user.id}
+          fullName={profile?.full_name ?? null}
+          avatarUrl={profile?.avatar_url ?? null}
+          email={user.email ?? null}
+        />
+      </section>
+
+      <section>
+        <EmailSettingsCard email={user.email ?? null} />
+      </section>
+
+      <section>
+        <NotificationPreferencesCard
+          marketingEmails={notificationPreferences.marketing_emails}
+          productUpdates={notificationPreferences.product_updates}
+          securityAlerts={notificationPreferences.security_alerts}
+        />
       </section>
 
       <section>
@@ -72,6 +93,10 @@ export default async function DashboardSettingsPage() {
 
       <section>
         <SecuritySettingsCard />
+      </section>
+
+      <section>
+        <DangerZoneCard email={user.email ?? null} />
       </section>
     </DashboardShell>
   );
