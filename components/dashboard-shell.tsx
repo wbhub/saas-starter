@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { TeamRole } from "@/lib/team-context";
+import type { DashboardTeamOption } from "@/lib/dashboard/server";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 
 type DashboardShellProps = {
@@ -7,6 +8,8 @@ type DashboardShellProps = {
   userEmail: string | null;
   teamName: string | null;
   role: TeamRole;
+  activeTeamId: string;
+  teamMemberships: DashboardTeamOption[];
   children: ReactNode;
 };
 
@@ -15,6 +18,8 @@ export function DashboardShell({
   userEmail,
   teamName,
   role,
+  activeTeamId,
+  teamMemberships,
   children,
 }: DashboardShellProps) {
   return (
@@ -26,6 +31,8 @@ export function DashboardShell({
             userEmail={userEmail}
             teamName={teamName}
             role={role}
+            activeTeamId={activeTeamId}
+            teamMemberships={teamMemberships}
           />
           <div className="space-y-4">{children}</div>
         </div>

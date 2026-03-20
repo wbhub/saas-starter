@@ -3,13 +3,16 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { logout } from "@/app/dashboard/actions";
+import type { DashboardTeamOption } from "@/lib/dashboard/server";
+import { logout, switchActiveTeam } from "@/app/dashboard/actions";
 
 type DashboardSidebarProps = {
   displayName: string;
   userEmail: string | null;
   teamName: string | null;
   role: "owner" | "admin" | "member";
+  activeTeamId: string;
+  teamMemberships: DashboardTeamOption[];
 };
 
 const navItems: Array<{ label: string; href: string }> = [
@@ -25,6 +28,8 @@ export function DashboardSidebar({
   userEmail,
   teamName,
   role,
+  activeTeamId,
+  teamMemberships,
 }: DashboardSidebarProps) {
   const pathname = usePathname();
 
@@ -56,6 +61,38 @@ export function DashboardSidebar({
         <p className="truncate text-xs text-slate-600 dark:text-slate-300">{userEmail}</p>
         <p className="mt-1 text-xs capitalize text-slate-600 dark:text-slate-300">{role}</p>
       </div>
+
+      {teamMemberships.length > 1 ? (
+        <form action={switchActiveTeam} className="mt-5 space-y-2">
+          <input type="hidden" name="redirectTo" value={pathname} />
+          <label
+            htmlFor="active-team-select"
+            className="block text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400"
+          >
+            Team
+          </label>
+          <div className="flex gap-2">
+            <select
+              id="active-team-select"
+              name="teamId"
+              defaultValue={activeTeamId}
+              className="min-w-0 flex-1 rounded-md border app-border-subtle app-surface px-2 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:text-slate-100 dark:focus:ring-slate-500"
+            >
+              {teamMemberships.map((membership) => (
+                <option key={membership.teamId} value={membership.teamId}>
+                  {membership.teamName ?? "My Team"}
+                </option>
+              ))}
+            </select>
+            <button
+              type="submit"
+              className="rounded-md border app-border-subtle px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800"
+            >
+              Switch
+            </button>
+          </div>
+        </form>
+      ) : null}
 
       <nav className="mt-5 space-y-1">
         {navItems.map((item) => {

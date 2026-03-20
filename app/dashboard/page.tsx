@@ -11,8 +11,15 @@ import {
 } from "@/lib/dashboard/server";
 
 export default async function DashboardPage() {
-  const { supabase, user, profile, teamContext, teamContextLoadFailed, displayName } =
-    await getDashboardBaseData();
+  const {
+    supabase,
+    user,
+    profile,
+    teamContext,
+    teamContextLoadFailed,
+    teamMemberships,
+    displayName,
+  } = await getDashboardBaseData();
 
   if (teamContextLoadFailed) {
     return (
@@ -43,6 +50,8 @@ export default async function DashboardPage() {
       userEmail={user.email ?? null}
       teamName={teamContext.teamName}
       role={teamContext.role}
+      activeTeamId={teamContext.teamId}
+      teamMemberships={teamMemberships}
     >
       <header className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm sm:p-6">
         <p className="text-sm text-slate-500 dark:text-slate-400">Overview</p>
