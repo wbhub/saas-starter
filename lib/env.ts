@@ -15,6 +15,9 @@ type ServerEnvKey =
 
 type OptionalEnvKey =
   | "OPENAI_API_KEY"
+  | "AI_ALLOWED_SUBSCRIPTION_STATUSES"
+  | "AI_PLAN_MODEL_MAP_JSON"
+  | "AI_PLAN_MONTHLY_TOKEN_BUDGET_MAP_JSON"
   | "CRON_SECRET"
   | "INTERCOM_IDENTITY_SECRET"
   | "NEXT_PUBLIC_INTERCOM_APP_ID"
@@ -88,6 +91,15 @@ export const env = {
   },
   get OPENAI_API_KEY() {
     return optionalEnv("OPENAI_API_KEY");
+  },
+  get AI_ALLOWED_SUBSCRIPTION_STATUSES() {
+    return optionalEnv("AI_ALLOWED_SUBSCRIPTION_STATUSES");
+  },
+  get AI_PLAN_MODEL_MAP_JSON() {
+    return optionalEnv("AI_PLAN_MODEL_MAP_JSON");
+  },
+  get AI_PLAN_MONTHLY_TOKEN_BUDGET_MAP_JSON() {
+    return optionalEnv("AI_PLAN_MONTHLY_TOKEN_BUDGET_MAP_JSON");
   },
   get STRIPE_SECRET_KEY() {
     return ensureEnv("STRIPE_SECRET_KEY");

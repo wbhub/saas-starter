@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import { enqueueAiBudgetFinalizeRetry } from "@/lib/ai/budget-finalize-retries";
+import {
+  getAiAllowedSubscriptionStatuses,
+  getAiModelForPlan,
+  getAiMonthlyTokenBudgetForPlan,
+} from "@/lib/ai/config";
 import { logAuditEvent } from "@/lib/audit";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { resolveActualTokenUsage } from "@/lib/ai/usage";
@@ -10,20 +15,13 @@ import { isOpenAiConfigured, openai } from "@/lib/openai/client";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { getPlanByPriceId } from "@/lib/stripe/config";
-import {
-  AI_ELIGIBLE_SUBSCRIPTION_STATUSES,
-  type PlanKey,
-} from "@/lib/stripe/plans";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getTeamContextForUser } from "@/lib/team-context";
 
 const AI_COMPLETION_MAX_TOKENS = 4_096;
-const AI_TEAM_MONTHLY_TOKEN_BUDGET: Record<PlanKey, number> = {
-  starter: 0,
-  growth: 2_000_000,
-  pro: 10_000_000,
-};
+const AI_UNAVAILABLE_MESSAGE = "AI assistant is currently unavailable.";
+const AI_UNAVAILABLE_STATUS = 503;
 
 const chatPayloadSchema = z.object({
   messages: z
@@ -37,12 +35,6 @@ const chatPayloadSchema = z.object({
     .max(30),
 });
 
-const AI_PLAN_MODEL: Record<PlanKey, string | null> = {
-  starter: null,
-  growth: "gpt-4.1-mini",
-  pro: "gpt-4.1",
-};
-
 type UsageTotals = {
   promptTokens: number;
   completionTokens: number;
@@ -54,8 +46,6 @@ type BudgetClaim = {
 };
 
 type OpenAiErrorInfo = {
-  status: number;
-  clientError: string;
   auditReason: string;
 };
 
@@ -142,39 +132,29 @@ function mapOpenAiError(error: unknown): OpenAiErrorInfo {
 
   if (status === 429 || code === "rate_limit_exceeded") {
     return {
-      status: 429,
-      clientError: "AI provider rate limit reached. Please retry in a moment.",
       auditReason: "openai_rate_limited",
     };
   }
 
   if (status === 400 || status === 422) {
     return {
-      status: 400,
-      clientError: "Invalid AI request payload. Please adjust your message and try again.",
       auditReason: "openai_bad_request",
     };
   }
 
   if (status === 408 || status === 504 || name === "APIConnectionTimeoutError") {
     return {
-      status: 504,
-      clientError: "AI request timed out. Please try again.",
       auditReason: "openai_timeout",
     };
   }
 
   if (status !== undefined && status >= 500) {
     return {
-      status: 502,
-      clientError: "AI provider is temporarily unavailable. Please try again.",
       auditReason: "openai_upstream_error",
     };
   }
 
   return {
-    status: 500,
-    clientError: "Unable to generate AI response right now. Please try again.",
     auditReason: "openai_create_failed",
   };
 }
@@ -272,11 +252,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request payload." }, { status: 400 });
   }
 
+  const allowedStatuses = getAiAllowedSubscriptionStatuses();
+  if (!allowedStatuses.length) {
+    logAuditEvent({
+      action: "ai.chat.request",
+      outcome: "denied",
+      actorUserId: user.id,
+      teamId: teamContext.teamId,
+      metadata: { reason: "ai_statuses_not_configured" },
+    });
+    return NextResponse.json(
+      { error: AI_UNAVAILABLE_MESSAGE },
+      { status: AI_UNAVAILABLE_STATUS },
+    );
+  }
+
   const { data: subscriptionRow, error: subscriptionError } = await supabase
     .from("subscriptions")
     .select("stripe_price_id,status")
     .eq("team_id", teamContext.teamId)
-    .in("status", AI_ELIGIBLE_SUBSCRIPTION_STATUSES)
+    .in("status", allowedStatuses)
     .order("current_period_end", { ascending: false })
     .limit(1)
     .maybeSingle<{ stripe_price_id: string; status: string }>();
@@ -287,8 +282,8 @@ export async function POST(request: Request) {
       userId: user.id,
     });
     return NextResponse.json(
-      { error: "Could not verify subscription for AI access." },
-      { status: 500 },
+      { error: AI_UNAVAILABLE_MESSAGE },
+      { status: AI_UNAVAILABLE_STATUS },
     );
   }
 
@@ -301,13 +296,13 @@ export async function POST(request: Request) {
       metadata: { reason: "no_live_subscription" },
     });
     return NextResponse.json(
-      { error: "An active subscription is required to use AI features." },
-      { status: 403 },
+      { error: AI_UNAVAILABLE_MESSAGE },
+      { status: AI_UNAVAILABLE_STATUS },
     );
   }
 
   const plan = getPlanByPriceId(subscriptionRow.stripe_price_id);
-  const model = plan ? AI_PLAN_MODEL[plan.key] : null;
+  const model = plan ? getAiModelForPlan(plan.key) : null;
   if (!plan || !model) {
     logAuditEvent({
       action: "ai.chat.request",
@@ -321,9 +316,9 @@ export async function POST(request: Request) {
     });
     return NextResponse.json(
       {
-        error: "AI features are available on Growth and Pro plans.",
+        error: AI_UNAVAILABLE_MESSAGE,
       },
-      { status: 403 },
+      { status: AI_UNAVAILABLE_STATUS },
     );
   }
 
@@ -336,12 +331,12 @@ export async function POST(request: Request) {
       metadata: { reason: "ai_not_configured", planKey: plan.key, model },
     });
     return NextResponse.json(
-      { error: "AI features are not configured for this deployment." },
-      { status: 503 },
+      { error: AI_UNAVAILABLE_MESSAGE },
+      { status: AI_UNAVAILABLE_STATUS },
     );
   }
 
-  const monthlyTokenBudget = AI_TEAM_MONTHLY_TOKEN_BUDGET[plan.key];
+  const monthlyTokenBudget = getAiMonthlyTokenBudgetForPlan(plan.key);
   const projectedRequestTokens =
     estimatePromptTokens(bodyParse.data.messages) + AI_COMPLETION_MAX_TOKENS;
   let budgetClaim: BudgetClaim | null = null;
@@ -360,8 +355,8 @@ export async function POST(request: Request) {
       projectedRequestTokens,
     });
     return NextResponse.json(
-      { error: "Could not verify AI usage budget for this team." },
-      { status: 500 },
+      { error: AI_UNAVAILABLE_MESSAGE },
+      { status: AI_UNAVAILABLE_STATUS },
     );
   }
 
@@ -379,8 +374,8 @@ export async function POST(request: Request) {
       },
     });
     return NextResponse.json(
-      { error: "Your team's monthly AI usage budget has been reached." },
-      { status: 403 },
+      { error: AI_UNAVAILABLE_MESSAGE },
+      { status: AI_UNAVAILABLE_STATUS },
     );
   }
 
@@ -581,8 +576,8 @@ export async function POST(request: Request) {
       metadata: { planKey: plan.key, model, reason: openAiError.auditReason },
     });
     return NextResponse.json(
-      { error: openAiError.clientError },
-      { status: openAiError.status },
+      { error: AI_UNAVAILABLE_MESSAGE },
+      { status: AI_UNAVAILABLE_STATUS },
     );
   }
 }
