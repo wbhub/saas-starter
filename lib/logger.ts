@@ -12,6 +12,19 @@ type LogEntry = {
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
 const SENTRY_DSN = process.env.NEXT_PUBLIC_SENTRY_DSN;
 const SENTRY_ENABLED = Boolean(SENTRY_DSN);
+const SENTRY_CONTEXT_MAX_DEPTH = 4;
+const SENTRY_CONTEXT_MAX_KEYS = 50;
+const SENTRY_CONTEXT_MAX_ARRAY_ITEMS = 20;
+const SENSITIVE_CONTEXT_KEY_RE =
+  /(authorization|cookie|token|secret|password|api[-_]?key|session|set-cookie)/i;
+const SENSITIVE_VALUE_PATTERNS: RegExp[] = [
+  /sk_(?:test|live)_[A-Za-z0-9]+/g,
+  /pk_(?:test|live)_[A-Za-z0-9]+/g,
+  /whsec_[A-Za-z0-9]+/g,
+  /re_[A-Za-z0-9]+/g,
+  /sk-proj-[A-Za-z0-9_-]+/g,
+  /(Bearer\s+)[A-Za-z0-9._~+/-]+=*/gi,
+];
 
 function serializeError(error: unknown): Record<string, unknown> {
   if (error instanceof Error) {
@@ -29,12 +42,92 @@ function serializeError(error: unknown): Record<string, unknown> {
   return { err: String(error) };
 }
 
+function toSafeSentryError(error: Error): Error {
+  const safeError = new Error(redactSensitiveString(error.message));
+  safeError.name = error.name;
+  if (error.stack) {
+    safeError.stack = redactSensitiveString(error.stack);
+  }
+  return safeError;
+}
+
+function redactSensitiveString(value: string): string {
+  return SENSITIVE_VALUE_PATTERNS.reduce((acc, pattern) => {
+    if (pattern.source.startsWith("(Bearer\\s+)")) {
+      return acc.replace(pattern, "$1[Redacted]");
+    }
+    return acc.replace(pattern, "[Redacted]");
+  }, value);
+}
+
+function sanitizeForSentry(
+  value: unknown,
+  depth = 0,
+  seen = new WeakSet<object>(),
+): unknown {
+  if (value == null || typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    if (typeof value === "string") {
+      return redactSensitiveString(value);
+    }
+    return value;
+  }
+
+  if (typeof value === "bigint") {
+    return value.toString();
+  }
+
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+
+  if (value instanceof Error) {
+    return {
+      name: value.name,
+      message: redactSensitiveString(value.message),
+      stack: value.stack ? redactSensitiveString(value.stack) : undefined,
+    };
+  }
+
+  if (depth >= SENTRY_CONTEXT_MAX_DEPTH) {
+    return "[Truncated]";
+  }
+
+  if (Array.isArray(value)) {
+    return value.slice(0, SENTRY_CONTEXT_MAX_ARRAY_ITEMS).map((item) => sanitizeForSentry(item, depth + 1, seen));
+  }
+
+  if (typeof value === "object") {
+    if (seen.has(value)) {
+      return "[Circular]";
+    }
+    seen.add(value);
+
+    const output: Record<string, unknown> = {};
+    for (const [index, [key, nestedValue]] of Object.entries(value).entries()) {
+      if (index >= SENTRY_CONTEXT_MAX_KEYS) break;
+      if (SENSITIVE_CONTEXT_KEY_RE.test(key)) {
+        output[key] = "[Redacted]";
+        continue;
+      }
+      output[key] = sanitizeForSentry(nestedValue, depth + 1, seen);
+    }
+    seen.delete(value);
+    return output;
+  }
+
+  return String(value);
+}
+
 function emitStructured(level: LogLevel, message: string, context?: Record<string, unknown>) {
+  const safeMessage = redactSensitiveString(message);
+  const safeContext = context
+    ? (sanitizeForSentry(context) as Record<string, unknown>)
+    : undefined;
   const entry: LogEntry = {
     level,
-    msg: message,
+    msg: safeMessage,
     time: new Date().toISOString(),
-    ...context,
+    ...safeContext,
   };
 
   const fn =
@@ -57,55 +150,72 @@ function reportToSentry(
   }
 
   Sentry.withScope((scope) => {
+    const safeMessage = redactSensitiveString(message);
+
     if (context) {
-      scope.setContext("logger", context);
+      scope.setContext("logger", sanitizeForSentry(context) as Record<string, unknown>);
     }
 
     if (error instanceof Error) {
-      Sentry.captureException(error);
+      Sentry.captureException(toSafeSentryError(error), {
+        extra: {
+          error: sanitizeForSentry(error),
+        },
+      });
       return;
     }
 
     if (error && typeof error === "object") {
-      Sentry.captureMessage(message, {
+      Sentry.captureMessage(safeMessage, {
         level: "error",
-        extra: { error },
+        extra: { error: sanitizeForSentry(error) },
       });
       return;
     }
 
     if (error != null) {
-      Sentry.captureMessage(`${message}: ${String(error)}`, "error");
+      Sentry.captureMessage(
+        redactSensitiveString(`${message}: ${String(error)}`),
+        "error",
+      );
       return;
     }
 
-    Sentry.captureMessage(message, "error");
+    Sentry.captureMessage(safeMessage, "error");
   });
 }
 
 export const logger = {
   info(message: string, context?: Record<string, unknown>) {
+    const safeMessage = redactSensitiveString(message);
+    const safeContext = context
+      ? (sanitizeForSentry(context) as Record<string, unknown>)
+      : undefined;
     if (!IS_PRODUCTION) {
-      if (context) {
-        console.log(message, context);
+      if (safeContext) {
+        console.log(safeMessage, safeContext);
       } else {
-        console.log(message);
+        console.log(safeMessage);
       }
       return;
     }
-    emitStructured("info", message, context);
+    emitStructured("info", safeMessage, safeContext);
   },
 
   warn(message: string, context?: Record<string, unknown>) {
+    const safeMessage = redactSensitiveString(message);
+    const safeContext = context
+      ? (sanitizeForSentry(context) as Record<string, unknown>)
+      : undefined;
     if (!IS_PRODUCTION) {
-      if (context) {
-        console.warn(message, context);
+      if (safeContext) {
+        console.warn(safeMessage, safeContext);
       } else {
-        console.warn(message);
+        console.warn(safeMessage);
       }
       return;
     }
-    emitStructured("warn", message, context);
+    emitStructured("warn", safeMessage, safeContext);
   },
 
   error(message: string, error?: unknown, context?: Record<string, unknown>) {
@@ -129,14 +239,28 @@ export const logger = {
 
     reportToSentry(message, resolvedError, resolvedContext);
 
+    const safeMessage = redactSensitiveString(message);
+    const safeError =
+      resolvedError == null
+        ? undefined
+        : resolvedError instanceof Error
+          ? toSafeSentryError(resolvedError)
+          : sanitizeForSentry(resolvedError);
+    const safeContext = resolvedContext
+      ? (sanitizeForSentry(resolvedContext) as Record<string, unknown>)
+      : undefined;
+
     if (!IS_PRODUCTION) {
-      const args: unknown[] = [message];
-      if (resolvedError != null) args.push(resolvedError);
-      if (resolvedContext && Object.keys(resolvedContext).length > 0) args.push(resolvedContext);
+      const args: unknown[] = [safeMessage];
+      if (safeError != null) args.push(safeError);
+      if (safeContext && Object.keys(safeContext).length > 0) args.push(safeContext);
       console.error(...args);
       return;
     }
-    const errorContext = resolvedError != null ? serializeError(resolvedError) : {};
-    emitStructured("error", message, { ...errorContext, ...resolvedContext });
+    const errorContext =
+      safeError != null
+        ? (sanitizeForSentry(serializeError(safeError)) as Record<string, unknown>)
+        : {};
+    emitStructured("error", message, { ...errorContext, ...safeContext });
   },
 };

@@ -5,6 +5,15 @@ import * as Sentry from "@sentry/nextjs";
 
 const SENTRY_ENABLED = Boolean(process.env.NEXT_PUBLIC_SENTRY_DSN);
 
+function toSafeSentryError(error: Error): Error {
+  const safeError = new Error(error.message);
+  safeError.name = error.name;
+  if (error.stack) {
+    safeError.stack = error.stack;
+  }
+  return safeError;
+}
+
 export default function GlobalError({
   error,
   reset,
@@ -15,7 +24,11 @@ export default function GlobalError({
   useEffect(() => {
     console.error("Global app error:", error);
     if (SENTRY_ENABLED) {
-      Sentry.captureException(error);
+      Sentry.captureException(toSafeSentryError(error), {
+        extra: {
+          digest: error.digest,
+        },
+      });
     }
   }, [error]);
 

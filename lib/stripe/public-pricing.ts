@@ -60,9 +60,12 @@ export const getPublicPricingCatalog = cache(async (): Promise<PublicPricingPlan
         const stripePrice = await stripe.prices.retrieve(plan.priceId);
         return [plan.key, stripePrice] as const;
       } catch (error) {
-        logger.error("Failed to retrieve Stripe price for plan", {
+        logger.warn("Failed to retrieve Stripe price for plan; using static label.", {
           planKey: plan.key,
-          error,
+          error:
+            error instanceof Error
+              ? { name: error.name, message: error.message }
+              : String(error),
         });
         return [plan.key, null] as const;
       }

@@ -65,7 +65,10 @@ export async function getTeamContextForUser(
     .maybeSingle<ProfileTeamRow>();
 
   if (profileResult.error) {
-    logger.error("Failed to load profile active team", profileResult.error, { userId });
+    logger.warn("Failed to load profile active team; returning null team context.", {
+      userId,
+      error: profileResult.error,
+    });
     return null;
   }
 
@@ -76,9 +79,10 @@ export async function getTeamContextForUser(
     : await getFirstMembership(supabase, userId);
 
   if (membershipResult.error) {
-    logger.error("Failed to load team membership", membershipResult.error, {
+    logger.warn("Failed to load team membership; returning null team context.", {
       userId,
       activeTeamId,
+      error: membershipResult.error,
     });
     return null;
   }
@@ -87,9 +91,10 @@ export async function getTeamContextForUser(
   if (!membership && activeTeamId) {
     const fallbackMembershipResult = await getFirstMembership(supabase, userId);
     if (fallbackMembershipResult.error) {
-      logger.error("Failed to load fallback team membership", fallbackMembershipResult.error, {
+      logger.warn("Failed to load fallback team membership; returning null team context.", {
         userId,
         activeTeamId,
+        error: fallbackMembershipResult.error,
       });
       return null;
     }
