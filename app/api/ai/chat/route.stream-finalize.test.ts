@@ -92,6 +92,13 @@ describe("POST /api/ai/chat stream finalization retry enqueue", () => {
     vi.doMock("@/lib/stripe/config", () => ({
       getPlanByPriceId: vi.fn().mockReturnValue({ key: "growth" }),
     }));
+    vi.doMock("@/lib/ai/config", () => ({
+      getAiAllowedSubscriptionStatuses: vi
+        .fn()
+        .mockReturnValue(["trialing", "active", "past_due"]),
+      getAiModelForPlan: vi.fn().mockReturnValue("gpt-4.1-mini"),
+      getAiMonthlyTokenBudgetForPlan: vi.fn().mockReturnValue(2_000_000),
+    }));
     vi.doMock("@/lib/openai/client", () => ({
       isOpenAiConfigured: true,
       openai: {

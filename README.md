@@ -107,6 +107,9 @@ Required:
 Optional:
 
 - `OPENAI_API_KEY` (required only to enable `/api/ai/chat`)
+- `AI_ALLOWED_SUBSCRIPTION_STATUSES` (CSV; if omitted, AI access remains disabled)
+- `AI_PLAN_MODEL_MAP_JSON` (JSON object: plan key -> model or `null`; all `null` disables AI)
+- `AI_PLAN_MONTHLY_TOKEN_BUDGET_MAP_JSON` (JSON object: plan key -> monthly token budget)
 - `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED` (set to `true` to show Google OAuth on `/login` and `/signup`)
 - `NEXT_PUBLIC_AUTH_MICROSOFT_ENABLED` (set to `true` to show Microsoft OAuth on `/login` and `/signup`)
 - `CRON_SECRET`
@@ -198,7 +201,9 @@ Behavior:
 
 ## OpenAI Chat Endpoint
 
-Endpoint: `POST /api/ai/chat`
+Endpoints:
+
+- `POST /api/ai/chat`
 
 Current behavior:
 
@@ -207,19 +212,16 @@ Current behavior:
   - `messages`: 1-30 items
   - each `content`: 1-8000 chars
   - `role`: only `"user"` or `"assistant"` (no `"system"` accepted)
-- Plan gating:
-  - AI allowed for Growth + Pro only
-  - Subscription status must be one of AI-eligible live statuses
-- Models:
-  - Growth -> `gpt-4.1-mini`
-  - Pro -> `gpt-4.1`
+- Plan + status gating are fully configurable via environment:
+  - `AI_ALLOWED_SUBSCRIPTION_STATUSES`
+  - `AI_PLAN_MODEL_MAP_JSON`
+- Model selection is configurable per plan via `AI_PLAN_MODEL_MAP_JSON`
 - Completion cap: `max_tokens: 4096`
 - Rate limits:
   - Per user: `RATE_LIMITS.aiChatByUser`
   - Per team: `RATE_LIMITS.aiChatByTeam`
-- Team monthly budgets:
-  - Growth: 2,000,000 tokens
-  - Pro: 10,000,000 tokens
+- Team monthly budgets are configurable per plan via `AI_PLAN_MONTHLY_TOKEN_BUDGET_MAP_JSON`
+- User-facing AI unavailability responses are intentionally generic and do not reveal plan/model/config details
 - Budget enforcement is atomic:
   - reserve with `claim_ai_token_budget(...)`
   - reconcile with `finalize_ai_token_budget_claim(...)`

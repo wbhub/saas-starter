@@ -89,6 +89,13 @@ describe("POST /api/ai/chat finalize retry enqueue", () => {
     vi.doMock("@/lib/stripe/config", () => ({
       getPlanByPriceId: vi.fn().mockReturnValue({ key: "growth" }),
     }));
+    vi.doMock("@/lib/ai/config", () => ({
+      getAiAllowedSubscriptionStatuses: vi
+        .fn()
+        .mockReturnValue(["trialing", "active", "past_due"]),
+      getAiModelForPlan: vi.fn().mockReturnValue("gpt-4.1-mini"),
+      getAiMonthlyTokenBudgetForPlan: vi.fn().mockReturnValue(2_000_000),
+    }));
     vi.doMock("@/lib/openai/client", () => ({
       isOpenAiConfigured: true,
       openai: {
@@ -131,7 +138,7 @@ describe("POST /api/ai/chat finalize retry enqueue", () => {
       }),
     );
 
-    expect(response.status).toBe(502);
+    expect(response.status).toBe(503);
     expect(enqueueImpl).toHaveBeenCalledWith({
       claimId: "claim_123",
       actualTokens: 0,
@@ -154,9 +161,9 @@ describe("POST /api/ai/chat finalize retry enqueue", () => {
       }),
     );
 
-    expect(response.status).toBe(502);
+    expect(response.status).toBe(503);
     await expect(response.json()).resolves.toEqual({
-      error: "AI provider is temporarily unavailable. Please try again.",
+      error: "AI assistant is currently unavailable.",
     });
     expect(loggerError).toHaveBeenCalledWith(
       "Failed to enqueue AI budget finalize retry after create failure",
