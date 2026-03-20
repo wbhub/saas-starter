@@ -35,7 +35,7 @@ async function getSeatCount(teamId: string) {
     throw new Error(`Failed to count team seats: ${error.message}`);
   }
 
-  return Math.max(1, count ?? 1);
+  return Math.max(0, count ?? 0);
 }
 
 async function getLiveSubscriptionId(teamId: string) {
@@ -83,7 +83,7 @@ export async function syncTeamSeatQuantity(
     );
   }
 
-  const currentQuantity = Math.max(1, firstItem.quantity ?? 1);
+  const currentQuantity = Math.max(0, firstItem.quantity ?? 0);
   if (currentQuantity === seatCount) {
     // Even when seat quantity already matches, refresh local subscription metadata
     // (e.g. plan price/status) so retry workers can heal stale billing rows.

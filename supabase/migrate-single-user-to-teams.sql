@@ -140,7 +140,7 @@ end $$;
 
 update public.subscriptions
 set seat_quantity = 1
-where seat_quantity is null or seat_quantity <= 0;
+where seat_quantity is null;
 
 alter table public.profiles
 alter column active_team_id set not null;
@@ -162,7 +162,7 @@ drop constraint if exists subscriptions_seat_quantity_check;
 
 alter table public.subscriptions
 add constraint subscriptions_seat_quantity_check
-check (seat_quantity > 0);
+check (seat_quantity >= 0);
 
 create index if not exists idx_profiles_active_team_id on public.profiles(active_team_id);
 create index if not exists idx_team_memberships_team_id on public.team_memberships(team_id);
@@ -175,5 +175,47 @@ where accepted_at is null;
 create unique index if not exists idx_stripe_customers_team_id_unique on public.stripe_customers(team_id);
 create index if not exists idx_subscriptions_team_id on public.subscriptions(team_id);
 create index if not exists idx_subscriptions_team_id_status on public.subscriptions(team_id, status);
+
+create or replace function public.prevent_last_team_owner_membership_delete()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+declare
+  v_remaining_owner_count integer := 0;
+begin
+  if old.role <> 'owner' then
+    return old;
+  end if;
+
+  if not exists (
+    select 1
+    from public.teams t
+    where t.id = old.team_id
+    for update
+  ) then
+    return old;
+  end if;
+
+  select count(*)
+  into v_remaining_owner_count
+  from public.team_memberships tm
+  where tm.team_id = old.team_id
+    and tm.role = 'owner'
+    and tm.user_id <> old.user_id;
+
+  if v_remaining_owner_count <= 0 then
+    raise exception 'Cannot delete the last team owner.'
+      using errcode = '23514';
+  end if;
+
+  return old;
+end;
+$$;
+
+drop trigger if exists team_memberships_prevent_last_owner_delete on public.team_memberships;
+create trigger team_memberships_prevent_last_owner_delete
+before delete on public.team_memberships
+for each row execute function public.prevent_last_team_owner_membership_delete();
 
 commit;

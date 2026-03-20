@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { getAppUrl } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { syncTeamSeatQuantity } from "@/lib/stripe/seats";
+import { enqueueSeatSyncRetry } from "@/lib/stripe/seat-sync-retries";
 import { logger } from "@/lib/logger";
 
 export type UpdateDashboardSettingsState = {
@@ -27,6 +29,14 @@ export type DeleteAccountState = {
   message: string | null;
 };
 
+type OwnedTeamMembershipRow = {
+  team_id: string;
+};
+
+type TeamMembershipRow = {
+  team_id: string;
+};
+
 function extractProfilePhotoPath(url: string): string | null {
   try {
     const parsed = new URL(url);
@@ -41,6 +51,94 @@ function extractProfilePhotoPath(url: string): string | null {
   } catch {
     return null;
   }
+}
+
+async function isLastOwnerOfAnyTeam(userId: string): Promise<boolean> {
+  const adminClient = createAdminClient();
+  const { data: ownedMemberships, error: ownedMembershipsError } = await adminClient
+    .from("team_memberships")
+    .select("team_id")
+    .eq("user_id", userId)
+    .eq("role", "owner")
+    .returns<OwnedTeamMembershipRow[]>();
+
+  if (ownedMembershipsError) {
+    throw new Error(
+      `Failed to load owned team memberships before account deletion: ${ownedMembershipsError.message}`,
+    );
+  }
+
+  if (!ownedMemberships || ownedMemberships.length === 0) {
+    return false;
+  }
+
+  const ownerCounts = await Promise.all(
+    ownedMemberships.map(async ({ team_id: teamId }) => {
+      const { count, error } = await adminClient
+        .from("team_memberships")
+        .select("user_id", { count: "exact", head: true })
+        .eq("team_id", teamId)
+        .eq("role", "owner");
+
+      if (error) {
+        throw new Error(`Failed to count owners for team ${teamId}: ${error.message}`);
+      }
+
+      return count ?? 0;
+    }),
+  );
+
+  return ownerCounts.some((count) => count <= 1);
+}
+
+async function getTeamIdsForUserMemberships(userId: string): Promise<string[]> {
+  const adminClient = createAdminClient();
+  const { data: memberships, error } = await adminClient
+    .from("team_memberships")
+    .select("team_id")
+    .eq("user_id", userId)
+    .returns<TeamMembershipRow[]>();
+
+  if (error) {
+    throw new Error(`Failed to load team memberships before account deletion: ${error.message}`);
+  }
+
+  return Array.from(
+    new Set(
+      (memberships ?? [])
+        .map((membership) => membership.team_id)
+        .filter((teamId): teamId is string => typeof teamId === "string" && teamId.length > 0),
+    ),
+  );
+}
+
+async function syncTeamSeatsAfterAccountDeletion(teamIds: string[], deletedUserId: string) {
+  await Promise.all(
+    teamIds.map(async (teamId) => {
+      try {
+        await syncTeamSeatQuantity(teamId, {
+          idempotencyKey: `seat-sync:account-delete:${teamId}:${deletedUserId}`,
+        });
+      } catch (error) {
+        logger.error("Deleted account but failed to sync Stripe seats", error, {
+          teamId,
+          deletedUserId,
+        });
+        try {
+          await enqueueSeatSyncRetry({
+            teamId,
+            source: "account.delete",
+            error,
+          });
+        } catch (retryError) {
+          logger.error("Failed to enqueue seat sync retry after account deletion", retryError, {
+            teamId,
+            deletedUserId,
+          });
+        }
+      }
+    }),
+  );
 }
 
 export async function logout() {
@@ -273,15 +371,61 @@ export async function deleteAccount(
     };
   }
 
+  let deletingLastTeamOwner = false;
+  try {
+    deletingLastTeamOwner = await isLastOwnerOfAnyTeam(user.id);
+  } catch (error) {
+    logger.error("Failed to validate team ownership before account deletion", error, {
+      userId: user.id,
+    });
+    return {
+      status: "error",
+      message: "Could not validate team ownership. Please try again.",
+    };
+  }
+
+  if (deletingLastTeamOwner) {
+    return {
+      status: "error",
+      message:
+        "You are the last owner of at least one team. Transfer ownership before deleting your account.",
+    };
+  }
+
+  let affectedTeamIds: string[] = [];
+  try {
+    affectedTeamIds = await getTeamIdsForUserMemberships(user.id);
+  } catch (error) {
+    logger.error("Failed to load team memberships before account deletion", error, {
+      userId: user.id,
+    });
+    return {
+      status: "error",
+      message: "Could not prepare billing updates. Please try again.",
+    };
+  }
+
   const adminClient = createAdminClient();
   const { error } = await adminClient.auth.admin.deleteUser(user.id);
 
   if (error) {
     logger.error("Failed to delete account", error, { userId: user.id });
+    const errorMessage = typeof error.message === "string" ? error.message.toLowerCase() : "";
+    if (errorMessage.includes("last team owner")) {
+      return {
+        status: "error",
+        message:
+          "You are the last owner of at least one team. Transfer ownership before deleting your account.",
+      };
+    }
     return {
       status: "error",
       message: "Could not delete account. Please try again.",
     };
+  }
+
+  if (affectedTeamIds.length > 0) {
+    await syncTeamSeatsAfterAccountDeletion(affectedTeamIds, user.id);
   }
 
   await supabase.auth.signOut({ scope: "global" });

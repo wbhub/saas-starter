@@ -75,6 +75,47 @@ describe("syncSubscription", () => {
     );
   });
 
+  it("passes zero seat quantity through to atomic rpc", async () => {
+    const adminMock = createAdminMock();
+
+    vi.doMock("@/lib/supabase/admin", () => ({
+      createAdminClient: () => adminMock,
+    }));
+    vi.doMock("@/lib/stripe/server", () => ({
+      getStripeServerClient: () => ({
+        customers: { retrieve: vi.fn() },
+      }),
+    }));
+
+    const { syncSubscription } = await import("./sync");
+
+    await syncSubscription({
+      id: "sub_zero",
+      created: 1_700_000_100,
+      status: "active",
+      customer: "cus_123",
+      cancel_at_period_end: false,
+      items: {
+        data: [
+          {
+            quantity: 0,
+            price: { id: "price_starter" },
+            current_period_start: 1_700_000_000,
+            current_period_end: 1_700_086_400,
+          },
+        ],
+      },
+    } as never);
+
+    expect(adminMock.rpc).toHaveBeenCalledWith(
+      "sync_stripe_subscription_atomic",
+      expect.objectContaining({
+        p_stripe_subscription_id: "sub_zero",
+        p_seat_quantity: 0,
+      }),
+    );
+  });
+
   it("calls atomic rpc for canceled subscriptions", async () => {
     const adminMock = createAdminMock();
 

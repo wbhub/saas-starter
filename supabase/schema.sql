@@ -53,7 +53,7 @@ create table if not exists public.subscriptions (
   stripe_subscription_id text not null unique,
   stripe_customer_id text not null,
   stripe_price_id text not null,
-  seat_quantity integer not null default 1 check (seat_quantity > 0),
+  seat_quantity integer not null default 1 check (seat_quantity >= 0),
   stripe_subscription_created_at timestamptz,
   stripe_event_created_at timestamptz,
   status text not null check (
@@ -232,6 +232,50 @@ drop trigger if exists team_memberships_set_updated_at on public.team_membership
 create trigger team_memberships_set_updated_at
 before update on public.team_memberships
 for each row execute function public.set_updated_at();
+
+create or replace function public.prevent_last_team_owner_membership_delete()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+declare
+  v_remaining_owner_count integer := 0;
+begin
+  if old.role <> 'owner' then
+    return old;
+  end if;
+
+  -- If the team row is already gone (e.g. cascade from team deletion),
+  -- do not block membership cleanup.
+  if not exists (
+    select 1
+    from public.teams t
+    where t.id = old.team_id
+    for update
+  ) then
+    return old;
+  end if;
+
+  select count(*)
+  into v_remaining_owner_count
+  from public.team_memberships tm
+  where tm.team_id = old.team_id
+    and tm.role = 'owner'
+    and tm.user_id <> old.user_id;
+
+  if v_remaining_owner_count <= 0 then
+    raise exception 'Cannot delete the last team owner.'
+      using errcode = '23514';
+  end if;
+
+  return old;
+end;
+$$;
+
+drop trigger if exists team_memberships_prevent_last_owner_delete on public.team_memberships;
+create trigger team_memberships_prevent_last_owner_delete
+before delete on public.team_memberships
+for each row execute function public.prevent_last_team_owner_membership_delete();
 
 create or replace function public.repair_profile_active_team_on_membership_delete()
 returns trigger
@@ -658,8 +702,8 @@ declare
   v_has_newer_live_subscription boolean := false;
   v_upserted_count integer := 0;
 begin
-  if p_seat_quantity <= 0 then
-    raise exception 'Seat quantity must be greater than zero.';
+  if p_seat_quantity < 0 then
+    raise exception 'Seat quantity must be non-negative.';
   end if;
 
   if p_status not in (
@@ -1048,7 +1092,7 @@ add column if not exists claim_token text;
 
 update public.subscriptions
 set seat_quantity = 1
-where seat_quantity is null or seat_quantity <= 0;
+where seat_quantity is null;
 
 alter table public.subscriptions
 alter column seat_quantity set default 1;
@@ -1061,7 +1105,7 @@ drop constraint if exists subscriptions_seat_quantity_check;
 
 alter table public.subscriptions
 add constraint subscriptions_seat_quantity_check
-check (seat_quantity > 0);
+check (seat_quantity >= 0);
 
 drop policy if exists "Users can read own profile" on public.profiles;
 create policy "Users can read own profile"
