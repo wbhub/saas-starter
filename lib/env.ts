@@ -15,6 +15,10 @@ type ServerEnvKey =
 
 type OptionalEnvKey =
   | "OPENAI_API_KEY"
+  | "AI_ACCESS_MODE"
+  | "AI_DEFAULT_MODEL"
+  | "AI_DEFAULT_MONTHLY_TOKEN_BUDGET"
+  | "AI_PLAN_RULES_JSON"
   | "AI_ALLOWED_SUBSCRIPTION_STATUSES"
   | "AI_PLAN_MODEL_MAP_JSON"
   | "AI_PLAN_MONTHLY_TOKEN_BUDGET_MAP_JSON"
@@ -92,6 +96,18 @@ export const env = {
   },
   get OPENAI_API_KEY() {
     return optionalEnv("OPENAI_API_KEY");
+  },
+  get AI_ACCESS_MODE() {
+    return optionalEnv("AI_ACCESS_MODE");
+  },
+  get AI_DEFAULT_MODEL() {
+    return optionalEnv("AI_DEFAULT_MODEL");
+  },
+  get AI_DEFAULT_MONTHLY_TOKEN_BUDGET() {
+    return optionalEnv("AI_DEFAULT_MONTHLY_TOKEN_BUDGET");
+  },
+  get AI_PLAN_RULES_JSON() {
+    return optionalEnv("AI_PLAN_RULES_JSON");
   },
   get AI_ALLOWED_SUBSCRIPTION_STATUSES() {
     return optionalEnv("AI_ALLOWED_SUBSCRIPTION_STATUSES");

@@ -5,6 +5,9 @@ describe("POST /api/ai/chat access and gating", () => {
     vi.resetModules();
     vi.clearAllMocks();
     vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("STRIPE_STARTER_PRICE_ID", "price_starter");
+    vi.stubEnv("STRIPE_GROWTH_PRICE_ID", "price_growth");
+    vi.stubEnv("STRIPE_PRO_PRICE_ID", "price_pro");
 
     vi.doMock("@/lib/security/csrf", () => ({
       verifyCsrfProtection: vi.fn().mockReturnValue(null),
@@ -25,9 +28,17 @@ describe("POST /api/ai/chat access and gating", () => {
       getPlanByPriceId: vi.fn().mockReturnValue({ key: "growth" }),
     }));
     vi.doMock("@/lib/ai/config", () => ({
+      getAiAccessMode: vi.fn().mockReturnValue("paid"),
       getAiAllowedSubscriptionStatuses: vi
         .fn()
         .mockReturnValue(["trialing", "active", "past_due"]),
+      getAiDefaultModel: vi.fn().mockReturnValue("gpt-4.1-mini"),
+      getAiDefaultMonthlyTokenBudget: vi.fn().mockReturnValue(2_000_000),
+      getAiRuleForPlan: vi.fn().mockReturnValue({
+        enabled: true,
+        model: "gpt-4.1-mini",
+        monthlyBudget: 2_000_000,
+      }),
       getAiModelForPlan: vi.fn().mockReturnValue("gpt-4.1-mini"),
       getAiMonthlyTokenBudgetForPlan: vi.fn().mockReturnValue(2_000_000),
     }));
@@ -141,10 +152,26 @@ describe("POST /api/ai/chat access and gating", () => {
 
   it("returns generic unavailable when allowed statuses config is empty", async () => {
     vi.doMock("@/lib/ai/config", () => ({
+      getAiAccessMode: vi.fn().mockReturnValue("paid"),
       getAiAllowedSubscriptionStatuses: vi.fn().mockReturnValue([]),
+      getAiDefaultModel: vi.fn().mockReturnValue("gpt-4.1-mini"),
+      getAiDefaultMonthlyTokenBudget: vi.fn().mockReturnValue(2_000_000),
+      getAiRuleForPlan: vi.fn().mockReturnValue({
+        enabled: true,
+        model: "gpt-4.1-mini",
+        monthlyBudget: 2_000_000,
+      }),
       getAiModelForPlan: vi.fn().mockReturnValue("gpt-4.1-mini"),
       getAiMonthlyTokenBudgetForPlan: vi.fn().mockReturnValue(2_000_000),
     }));
+    const subscriptionsQuery = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      in: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+    };
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: async () => ({
         auth: {
@@ -152,6 +179,12 @@ describe("POST /api/ai/chat access and gating", () => {
             data: { user: { id: "user_123" } },
           }),
         },
+        from: vi.fn((table: string) => {
+          if (table === "subscriptions") {
+            return subscriptionsQuery;
+          }
+          throw new Error(`Unexpected table: ${table}`);
+        }),
       }),
     }));
     vi.doMock("@/lib/team-context", () => ({
@@ -183,5 +216,228 @@ describe("POST /api/ai/chat access and gating", () => {
     await expect(response.json()).resolves.toEqual({
       error: "AI assistant is currently unavailable.",
     });
+    const { openai } = await import("@/lib/openai/client");
+    expect(
+      (openai as unknown as { chat: { completions: { create: ReturnType<typeof vi.fn> } } }).chat
+        .completions.create,
+    ).not.toHaveBeenCalled();
+  });
+
+  it("keeps default paid mode behavior and denies free users", async () => {
+    const maybeSingle = vi.fn().mockResolvedValue({
+      data: null,
+      error: null,
+    });
+    const subscriptionsQuery = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      in: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+      maybeSingle,
+    };
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          getUser: async () => ({
+            data: { user: { id: "user_123" } },
+          }),
+        },
+        from: vi.fn((table: string) => {
+          if (table === "subscriptions") {
+            return subscriptionsQuery;
+          }
+          throw new Error(`Unexpected table: ${table}`);
+        }),
+      }),
+    }));
+    vi.doMock("@/lib/team-context", () => ({
+      getTeamContextForUser: vi.fn().mockResolvedValue({
+        teamId: "team_123",
+        teamName: "Acme Team",
+        role: "owner",
+      }),
+    }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({
+        allowed: true,
+        retryAfterSeconds: 0,
+      }),
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [{ role: "user", content: "hello" }],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      error: "AI assistant is currently unavailable.",
+    });
+    const { openai } = await import("@/lib/openai/client");
+    expect(
+      (openai as unknown as { chat: { completions: { create: ReturnType<typeof vi.fn> } } }).chat
+        .completions.create,
+    ).not.toHaveBeenCalled();
+  });
+
+  it("allows free users in all mode", async () => {
+    vi.doMock("@/lib/ai/config", () => ({
+      getAiAccessMode: vi.fn().mockReturnValue("all"),
+      getAiAllowedSubscriptionStatuses: vi
+        .fn()
+        .mockReturnValue(["trialing", "active", "past_due"]),
+      getAiDefaultModel: vi.fn().mockReturnValue("gpt-4.1-mini"),
+      getAiDefaultMonthlyTokenBudget: vi.fn().mockReturnValue(0),
+      getAiRuleForPlan: vi.fn(),
+      getAiModelForPlan: vi.fn().mockReturnValue("gpt-4.1-mini"),
+      getAiMonthlyTokenBudgetForPlan: vi.fn().mockReturnValue(2_000_000),
+    }));
+    const maybeSingle = vi.fn().mockResolvedValue({
+      data: null,
+      error: null,
+    });
+    const subscriptionsQuery = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      in: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+      maybeSingle,
+    };
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          getUser: async () => ({
+            data: { user: { id: "user_123" } },
+          }),
+        },
+        from: vi.fn((table: string) => {
+          if (table === "subscriptions") {
+            return subscriptionsQuery;
+          }
+          throw new Error(`Unexpected table: ${table}`);
+        }),
+      }),
+    }));
+    vi.doMock("@/lib/team-context", () => ({
+      getTeamContextForUser: vi.fn().mockResolvedValue({
+        teamId: "team_123",
+        teamName: "Acme Team",
+        role: "owner",
+      }),
+    }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({
+        allowed: true,
+        retryAfterSeconds: 0,
+      }),
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [{ role: "user", content: "hello" }],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      error: "AI assistant is currently unavailable.",
+    });
+    const { openai } = await import("@/lib/openai/client");
+    expect(
+      (openai as unknown as { chat: { completions: { create: ReturnType<typeof vi.fn> } } }).chat
+        .completions.create,
+    ).toHaveBeenCalledTimes(1);
+  });
+
+  it("fails safely in by_plan mode when model is missing", async () => {
+    vi.doMock("@/lib/ai/config", () => ({
+      getAiAccessMode: vi.fn().mockReturnValue("by_plan"),
+      getAiAllowedSubscriptionStatuses: vi
+        .fn()
+        .mockReturnValue(["trialing", "active", "past_due"]),
+      getAiDefaultModel: vi.fn().mockReturnValue("gpt-4.1-mini"),
+      getAiDefaultMonthlyTokenBudget: vi.fn().mockReturnValue(0),
+      getAiRuleForPlan: vi.fn().mockReturnValue({
+        enabled: true,
+        model: null,
+        monthlyBudget: 10_000,
+      }),
+      getAiModelForPlan: vi.fn().mockReturnValue("gpt-4.1-mini"),
+      getAiMonthlyTokenBudgetForPlan: vi.fn().mockReturnValue(2_000_000),
+    }));
+    const maybeSingle = vi.fn().mockResolvedValue({
+      data: { stripe_price_id: "price_growth", status: "active" },
+      error: null,
+    });
+    const subscriptionsQuery = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      in: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+      maybeSingle,
+    };
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          getUser: async () => ({
+            data: { user: { id: "user_123" } },
+          }),
+        },
+        from: vi.fn((table: string) => {
+          if (table === "subscriptions") {
+            return subscriptionsQuery;
+          }
+          throw new Error(`Unexpected table: ${table}`);
+        }),
+      }),
+    }));
+    vi.doMock("@/lib/team-context", () => ({
+      getTeamContextForUser: vi.fn().mockResolvedValue({
+        teamId: "team_123",
+        teamName: "Acme Team",
+        role: "owner",
+      }),
+    }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({
+        allowed: true,
+        retryAfterSeconds: 0,
+      }),
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [{ role: "user", content: "hello" }],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      error: "AI assistant is currently unavailable.",
+    });
+    const { openai } = await import("@/lib/openai/client");
+    expect(
+      (openai as unknown as { chat: { completions: { create: ReturnType<typeof vi.fn> } } }).chat
+        .completions.create,
+    ).not.toHaveBeenCalled();
   });
 });
