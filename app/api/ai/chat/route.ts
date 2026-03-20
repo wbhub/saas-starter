@@ -8,16 +8,26 @@ import { openai } from "@/lib/openai/client";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { getPlanByPriceId } from "@/lib/stripe/config";
-import { LIVE_SUBSCRIPTION_STATUSES, type PlanKey } from "@/lib/stripe/plans";
+import {
+  AI_ELIGIBLE_SUBSCRIPTION_STATUSES,
+  type PlanKey,
+} from "@/lib/stripe/plans";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getTeamContextForUser } from "@/lib/team-context";
+
+const AI_COMPLETION_MAX_TOKENS = 4_096;
+const AI_TEAM_MONTHLY_TOKEN_BUDGET: Record<PlanKey, number> = {
+  starter: 0,
+  growth: 2_000_000,
+  pro: 10_000_000,
+};
 
 const chatPayloadSchema = z.object({
   messages: z
     .array(
       z.object({
-        role: z.enum(["system", "user", "assistant"]),
+        role: z.enum(["user", "assistant"]),
         content: z.string().trim().min(1).max(8_000),
       }),
     )
@@ -35,6 +45,137 @@ type UsageTotals = {
   promptTokens: number;
   completionTokens: number;
 };
+
+type BudgetClaim = {
+  claimId: string;
+  monthStart: string;
+};
+
+type OpenAiErrorInfo = {
+  status: number;
+  clientError: string;
+  auditReason: string;
+};
+
+function estimatePromptTokens(messages: Array<{ content: string }>) {
+  const totalChars = messages.reduce((sum, message) => sum + message.content.length, 0);
+  return Math.ceil(totalChars / 3) + messages.length * 8;
+}
+
+function getMonthStartIso(now = new Date()) {
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+}
+
+async function claimTeamAiBudget({
+  teamId,
+  tokenBudget,
+  projectedTokens,
+}: {
+  teamId: string;
+  tokenBudget: number;
+  projectedTokens: number;
+}): Promise<BudgetClaim | null> {
+  if (process.env.NODE_ENV === "test") {
+    return {
+      claimId: "test-claim",
+      monthStart: getMonthStartIso(),
+    };
+  }
+
+  const supabase = createAdminClient();
+  const { data, error } = await supabase.rpc("claim_ai_token_budget", {
+    p_team_id: teamId,
+    p_month_start: getMonthStartIso(),
+    p_token_budget: tokenBudget,
+    p_projected_tokens: projectedTokens,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row || row.allowed !== true || typeof row.claim_id !== "string") {
+    return null;
+  }
+
+  return {
+    claimId: row.claim_id,
+    monthStart: row.month_start,
+  };
+}
+
+async function finalizeTeamAiBudgetClaim({
+  claimId,
+  actualTokens,
+}: {
+  claimId: string;
+  actualTokens: number;
+}) {
+  if (process.env.NODE_ENV === "test") {
+    return;
+  }
+
+  const supabase = createAdminClient();
+  const { error } = await supabase.rpc("finalize_ai_token_budget_claim", {
+    p_claim_id: claimId,
+    p_actual_tokens: actualTokens,
+  });
+
+  if (error) {
+    throw error;
+  }
+}
+
+function mapOpenAiError(error: unknown): OpenAiErrorInfo {
+  const maybeError = error as {
+    status?: number;
+    code?: string;
+    type?: string;
+    name?: string;
+  } | null;
+  const status = maybeError?.status;
+  const code = maybeError?.code;
+  const name = maybeError?.name;
+
+  if (status === 429 || code === "rate_limit_exceeded") {
+    return {
+      status: 429,
+      clientError: "AI provider rate limit reached. Please retry in a moment.",
+      auditReason: "openai_rate_limited",
+    };
+  }
+
+  if (status === 400 || status === 422) {
+    return {
+      status: 400,
+      clientError: "Invalid AI request payload. Please adjust your message and try again.",
+      auditReason: "openai_bad_request",
+    };
+  }
+
+  if (status === 408 || status === 504 || name === "APIConnectionTimeoutError") {
+    return {
+      status: 504,
+      clientError: "AI request timed out. Please try again.",
+      auditReason: "openai_timeout",
+    };
+  }
+
+  if (status !== undefined && status >= 500) {
+    return {
+      status: 502,
+      clientError: "AI provider is temporarily unavailable. Please try again.",
+      auditReason: "openai_upstream_error",
+    };
+  }
+
+  return {
+    status: 500,
+    clientError: "Unable to generate AI response right now. Please try again.",
+    auditReason: "openai_create_failed",
+  };
+}
 
 async function insertAiUsageRow({
   teamId,
@@ -95,16 +236,28 @@ export async function POST(request: Request) {
     );
   }
 
-  const rateLimit = await checkRateLimit({
+  const userRateLimitPromise = checkRateLimit({
     key: `ai-chat:user:${user.id}`,
     ...RATE_LIMITS.aiChatByUser,
   });
-  if (!rateLimit.allowed) {
+  const teamRateLimitPromise = checkRateLimit({
+    key: `ai-chat:team:${teamContext.teamId}`,
+    ...RATE_LIMITS.aiChatByTeam,
+  });
+  const [userRateLimit, teamRateLimit] = await Promise.all([
+    userRateLimitPromise,
+    teamRateLimitPromise,
+  ]);
+  if (!userRateLimit.allowed || !teamRateLimit.allowed) {
+    const retryAfterSeconds = Math.max(
+      userRateLimit.retryAfterSeconds,
+      teamRateLimit.retryAfterSeconds,
+    );
     return NextResponse.json(
       { error: "Too many AI requests. Please wait and try again." },
       {
         status: 429,
-        headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
+        headers: { "Retry-After": String(retryAfterSeconds) },
       },
     );
   }
@@ -118,7 +271,7 @@ export async function POST(request: Request) {
     .from("subscriptions")
     .select("stripe_price_id,status")
     .eq("team_id", teamContext.teamId)
-    .in("status", LIVE_SUBSCRIPTION_STATUSES)
+    .in("status", AI_ELIGIBLE_SUBSCRIPTION_STATUSES)
     .order("current_period_end", { ascending: false })
     .limit(1)
     .maybeSingle<{ stripe_price_id: string; status: string }>();
@@ -169,10 +322,54 @@ export async function POST(request: Request) {
     );
   }
 
+  const monthlyTokenBudget = AI_TEAM_MONTHLY_TOKEN_BUDGET[plan.key];
+  const projectedRequestTokens =
+    estimatePromptTokens(bodyParse.data.messages) + AI_COMPLETION_MAX_TOKENS;
+  let budgetClaim: BudgetClaim | null = null;
+  try {
+    budgetClaim = await claimTeamAiBudget({
+      teamId: teamContext.teamId,
+      tokenBudget: monthlyTokenBudget,
+      projectedTokens: projectedRequestTokens,
+    });
+  } catch (error) {
+    logger.error("Failed to atomically claim team AI budget", error, {
+      teamId: teamContext.teamId,
+      userId: user.id,
+      planKey: plan.key,
+      monthlyTokenBudget,
+      projectedRequestTokens,
+    });
+    return NextResponse.json(
+      { error: "Could not verify AI usage budget for this team." },
+      { status: 500 },
+    );
+  }
+
+  if (!budgetClaim) {
+    logAuditEvent({
+      action: "ai.chat.request",
+      outcome: "denied",
+      actorUserId: user.id,
+      teamId: teamContext.teamId,
+      metadata: {
+        reason: "team_token_budget_exceeded",
+        planKey: plan.key,
+        monthlyTokenBudget,
+        projectedRequestTokens,
+      },
+    });
+    return NextResponse.json(
+      { error: "Your team's monthly AI usage budget has been reached." },
+      { status: 403 },
+    );
+  }
+
   try {
     const stream = await openai.chat.completions.create({
       model,
       stream: true,
+      max_tokens: AI_COMPLETION_MAX_TOKENS,
       stream_options: { include_usage: true },
       messages: bodyParse.data.messages.map((message) => ({
         role: message.role,
@@ -185,6 +382,8 @@ export async function POST(request: Request) {
 
     const body = new ReadableStream<Uint8Array>({
       async start(controller) {
+        let streamError: unknown | null = null;
+
         try {
           for await (const chunk of stream) {
             if (chunk.usage) {
@@ -199,14 +398,62 @@ export async function POST(request: Request) {
 
             controller.enqueue(encoder.encode(delta));
           }
-
-          await insertAiUsageRow({
+          controller.close();
+        } catch (error) {
+          streamError = error;
+          logger.error("Failed to stream AI chat completion", error, {
             teamId: teamContext.teamId,
             userId: user.id,
             model,
-            promptTokens: usage.promptTokens,
-            completionTokens: usage.completionTokens,
           });
+          controller.error(error);
+        } finally {
+          const actualTokens = usage.promptTokens + usage.completionTokens;
+          if (budgetClaim) {
+            try {
+              await finalizeTeamAiBudgetClaim({
+                claimId: budgetClaim.claimId,
+                actualTokens,
+              });
+            } catch (error) {
+              logger.error("Failed to finalize AI budget claim", error, {
+                teamId: teamContext.teamId,
+                userId: user.id,
+                model,
+                claimId: budgetClaim.claimId,
+                actualTokens,
+              });
+            }
+          }
+
+          try {
+            await insertAiUsageRow({
+              teamId: teamContext.teamId,
+              userId: user.id,
+              model,
+              promptTokens: usage.promptTokens,
+              completionTokens: usage.completionTokens,
+            });
+          } catch (error) {
+            logger.error("Failed to persist AI usage row", error, {
+              teamId: teamContext.teamId,
+              userId: user.id,
+              model,
+              promptTokens: usage.promptTokens,
+              completionTokens: usage.completionTokens,
+            });
+          }
+
+          if (streamError) {
+            logAuditEvent({
+              action: "ai.chat.request",
+              outcome: "failure",
+              actorUserId: user.id,
+              teamId: teamContext.teamId,
+              metadata: { planKey: plan.key, model, reason: "stream_failed" },
+            });
+            return;
+          }
 
           logAuditEvent({
             action: "ai.chat.request",
@@ -216,26 +463,11 @@ export async function POST(request: Request) {
             metadata: {
               planKey: plan.key,
               model,
+              budgetClaimId: budgetClaim?.claimId,
               promptTokens: usage.promptTokens,
               completionTokens: usage.completionTokens,
             },
           });
-
-          controller.close();
-        } catch (error) {
-          logger.error("Failed to stream AI chat completion", error, {
-            teamId: teamContext.teamId,
-            userId: user.id,
-            model,
-          });
-          logAuditEvent({
-            action: "ai.chat.request",
-            outcome: "failure",
-            actorUserId: user.id,
-            teamId: teamContext.teamId,
-            metadata: { planKey: plan.key, model, reason: "stream_failed" },
-          });
-          controller.error(error);
         }
       },
     });
@@ -248,21 +480,41 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
+    if (budgetClaim) {
+      try {
+        await finalizeTeamAiBudgetClaim({
+          claimId: budgetClaim.claimId,
+          actualTokens: 0,
+        });
+      } catch (finalizeError) {
+        logger.error("Failed to release AI budget claim after create failure", finalizeError, {
+          teamId: teamContext.teamId,
+          userId: user.id,
+          model,
+          claimId: budgetClaim.claimId,
+        });
+      }
+    }
+
+    const openAiError = mapOpenAiError(error);
     logger.error("Failed to create AI chat completion stream", error, {
       teamId: teamContext.teamId,
       userId: user.id,
       model,
+      openaiStatus: (error as { status?: number } | null)?.status,
+      openaiCode: (error as { code?: string } | null)?.code,
+      openaiType: (error as { type?: string } | null)?.type,
     });
     logAuditEvent({
       action: "ai.chat.request",
       outcome: "failure",
       actorUserId: user.id,
       teamId: teamContext.teamId,
-      metadata: { planKey: plan.key, model, reason: "openai_create_failed" },
+      metadata: { planKey: plan.key, model, reason: openAiError.auditReason },
     });
     return NextResponse.json(
-      { error: "Unable to generate AI response right now. Please try again." },
-      { status: 500 },
+      { error: openAiError.clientError },
+      { status: openAiError.status },
     );
   }
 }

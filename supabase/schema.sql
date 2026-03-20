@@ -119,6 +119,26 @@ create table if not exists public.ai_usage (
   created_at timestamptz not null default timezone('utc', now())
 );
 
+create table if not exists public.ai_usage_monthly_totals (
+  team_id uuid not null references public.teams(id) on delete cascade,
+  month_start date not null,
+  reserved_tokens integer not null default 0 check (reserved_tokens >= 0),
+  used_tokens integer not null default 0 check (used_tokens >= 0),
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now()),
+  primary key (team_id, month_start)
+);
+
+create table if not exists public.ai_usage_budget_claims (
+  id uuid primary key default gen_random_uuid(),
+  team_id uuid not null references public.teams(id) on delete cascade,
+  month_start date not null,
+  projected_tokens integer not null check (projected_tokens > 0),
+  actual_tokens integer check (actual_tokens >= 0),
+  finalized_at timestamptz,
+  created_at timestamptz not null default timezone('utc', now())
+);
+
 create table if not exists public.seat_sync_retries (
   team_id uuid primary key references public.teams(id) on delete cascade,
   reason text not null,
@@ -166,6 +186,9 @@ create index if not exists idx_audit_events_actor_user_id_created_at on public.a
 create index if not exists idx_ai_usage_team_id_created_at on public.ai_usage(team_id, created_at desc);
 create index if not exists idx_ai_usage_user_id_created_at on public.ai_usage(user_id, created_at desc);
 create index if not exists idx_ai_usage_model_created_at on public.ai_usage(model, created_at desc);
+create index if not exists idx_ai_usage_monthly_totals_month_start on public.ai_usage_monthly_totals(month_start desc);
+create index if not exists idx_ai_usage_budget_claims_team_month on public.ai_usage_budget_claims(team_id, month_start, created_at desc);
+create index if not exists idx_ai_usage_budget_claims_finalized on public.ai_usage_budget_claims(finalized_at);
 create index if not exists idx_seat_sync_retries_next_attempt_at on public.seat_sync_retries(next_attempt_at asc);
 
 create or replace function public.set_updated_at()
@@ -242,6 +265,11 @@ create trigger rate_limit_windows_set_updated_at
 before update on public.rate_limit_windows
 for each row execute function public.set_updated_at();
 
+drop trigger if exists ai_usage_monthly_totals_set_updated_at on public.ai_usage_monthly_totals;
+create trigger ai_usage_monthly_totals_set_updated_at
+before update on public.ai_usage_monthly_totals
+for each row execute function public.set_updated_at();
+
 drop trigger if exists seat_sync_retries_set_updated_at on public.seat_sync_retries;
 create trigger seat_sync_retries_set_updated_at
 before update on public.seat_sync_retries
@@ -312,6 +340,131 @@ revoke execute on function public.check_rate_limit(text, integer, integer) from 
 revoke execute on function public.check_rate_limit(text, integer, integer) from anon;
 revoke execute on function public.check_rate_limit(text, integer, integer) from authenticated;
 grant execute on function public.check_rate_limit(text, integer, integer) to service_role;
+
+create or replace function public.claim_ai_token_budget(
+  p_team_id uuid,
+  p_month_start timestamptz,
+  p_token_budget integer,
+  p_projected_tokens integer
+)
+returns table(allowed boolean, claim_id uuid, month_start date)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_now timestamptz := timezone('utc', now());
+  v_month_start date := date_trunc('month', p_month_start at time zone 'utc')::date;
+  v_reserved_tokens integer;
+  v_used_tokens integer;
+  v_claim_id uuid;
+begin
+  if p_token_budget <= 0 or p_projected_tokens <= 0 then
+    return query select false, null::uuid, v_month_start;
+    return;
+  end if;
+
+  insert into public.ai_usage_monthly_totals as totals (
+    team_id,
+    month_start,
+    reserved_tokens,
+    used_tokens,
+    created_at,
+    updated_at
+  )
+  values (p_team_id, v_month_start, 0, 0, v_now, v_now)
+  on conflict (team_id, month_start) do nothing;
+
+  select totals.reserved_tokens, totals.used_tokens
+  into v_reserved_tokens, v_used_tokens
+  from public.ai_usage_monthly_totals totals
+  where totals.team_id = p_team_id
+    and totals.month_start = v_month_start
+  for update;
+
+  if coalesce(v_reserved_tokens, 0) + coalesce(v_used_tokens, 0) + p_projected_tokens > p_token_budget then
+    return query select false, null::uuid, v_month_start;
+    return;
+  end if;
+
+  update public.ai_usage_monthly_totals totals
+  set
+    reserved_tokens = totals.reserved_tokens + p_projected_tokens,
+    updated_at = v_now
+  where totals.team_id = p_team_id
+    and totals.month_start = v_month_start;
+
+  insert into public.ai_usage_budget_claims (
+    team_id,
+    month_start,
+    projected_tokens,
+    created_at
+  )
+  values (p_team_id, v_month_start, p_projected_tokens, v_now)
+  returning id into v_claim_id;
+
+  return query select true, v_claim_id, v_month_start;
+end;
+$$;
+
+revoke execute on function public.claim_ai_token_budget(uuid, timestamptz, integer, integer) from public;
+revoke execute on function public.claim_ai_token_budget(uuid, timestamptz, integer, integer) from anon;
+revoke execute on function public.claim_ai_token_budget(uuid, timestamptz, integer, integer) from authenticated;
+grant execute on function public.claim_ai_token_budget(uuid, timestamptz, integer, integer) to service_role;
+
+create or replace function public.finalize_ai_token_budget_claim(
+  p_claim_id uuid,
+  p_actual_tokens integer
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_now timestamptz := timezone('utc', now());
+  v_team_id uuid;
+  v_month_start date;
+  v_projected_tokens integer;
+begin
+  if p_actual_tokens < 0 then
+    raise exception 'p_actual_tokens must be non-negative';
+  end if;
+
+  select c.team_id, c.month_start, c.projected_tokens
+  into v_team_id, v_month_start, v_projected_tokens
+  from public.ai_usage_budget_claims c
+  where c.id = p_claim_id
+    and c.finalized_at is null
+  for update;
+
+  if v_team_id is null then
+    return false;
+  end if;
+
+  update public.ai_usage_budget_claims c
+  set
+    actual_tokens = p_actual_tokens,
+    finalized_at = v_now
+  where c.id = p_claim_id
+    and c.finalized_at is null;
+
+  update public.ai_usage_monthly_totals totals
+  set
+    reserved_tokens = greatest(0, totals.reserved_tokens - v_projected_tokens),
+    used_tokens = totals.used_tokens + p_actual_tokens,
+    updated_at = v_now
+  where totals.team_id = v_team_id
+    and totals.month_start = v_month_start;
+
+  return true;
+end;
+$$;
+
+revoke execute on function public.finalize_ai_token_budget_claim(uuid, integer) from public;
+revoke execute on function public.finalize_ai_token_budget_claim(uuid, integer) from anon;
+revoke execute on function public.finalize_ai_token_budget_claim(uuid, integer) from authenticated;
+grant execute on function public.finalize_ai_token_budget_claim(uuid, integer) to service_role;
 
 create or replace function public.is_team_member(
   p_team_id uuid,
@@ -661,6 +814,8 @@ alter table public.stripe_webhook_events enable row level security;
 alter table public.rate_limit_windows enable row level security;
 alter table public.audit_events enable row level security;
 alter table public.ai_usage enable row level security;
+alter table public.ai_usage_monthly_totals enable row level security;
+alter table public.ai_usage_budget_claims enable row level security;
 alter table public.seat_sync_retries enable row level security;
 
 alter table public.subscriptions

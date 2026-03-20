@@ -21,6 +21,13 @@ export const LIVE_SUBSCRIPTION_STATUSES: readonly SubscriptionStatus[] = [
   "paused",
 ];
 
+/** Statuses that are allowed to access paid AI features. */
+export const AI_ELIGIBLE_SUBSCRIPTION_STATUSES: readonly SubscriptionStatus[] = [
+  "trialing",
+  "active",
+  "past_due",
+];
+
 export const PLAN_KEYS = ["starter", "growth", "pro"] as const;
 export type PlanKey = (typeof PLAN_KEYS)[number];
 
