@@ -6,10 +6,10 @@ import {
   SYNC_PENDING_RELOAD_DELAY_MS,
 } from "@/lib/constants/billing";
 import { getCsrfHeaders } from "@/lib/http/csrf";
-import { PLAN_KEYS, PLAN_LABELS } from "@/lib/stripe/plans";
+import { PLAN_KEYS, PLAN_LABELS, type PlanKey } from "@/lib/stripe/plans";
 
 type Props = {
-  currentPlanKey: string | null;
+  currentPlanKey: PlanKey | null;
   hasSubscription: boolean;
   canManageBilling: boolean;
 };
@@ -47,7 +47,7 @@ async function postJson(
   };
 }
 
-function createIdempotencyToken(action: "checkout" | "change-plan", planKey: string) {
+function createIdempotencyToken(action: "checkout" | "change-plan", planKey: PlanKey) {
   const storageKey = `${action}-idempotency:${planKey}`;
   const now = Date.now();
   const ttlMs = CLIENT_IDEMPOTENCY_TTL_MS;
@@ -92,7 +92,7 @@ export function BillingActions({ currentPlanKey, hasSubscription, canManageBilli
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  async function startCheckout(planKey: string) {
+  async function startCheckout(planKey: PlanKey) {
     setLoadingAction(`checkout-${planKey}`);
     setMessage(null);
     try {
@@ -117,7 +117,7 @@ export function BillingActions({ currentPlanKey, hasSubscription, canManageBilli
     }
   }
 
-  async function changePlan(planKey: string) {
+  async function changePlan(planKey: PlanKey) {
     setLoadingAction(`change-${planKey}`);
     setMessage(null);
     let waitForSyncRefresh = false;

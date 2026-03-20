@@ -18,6 +18,7 @@ type OptionalEnvKey =
   | "AI_ALLOWED_SUBSCRIPTION_STATUSES"
   | "AI_PLAN_MODEL_MAP_JSON"
   | "AI_PLAN_MONTHLY_TOKEN_BUDGET_MAP_JSON"
+  | "APP_FREE_PLAN_ENABLED"
   | "CRON_SECRET"
   | "INTERCOM_IDENTITY_SECRET"
   | "NEXT_PUBLIC_INTERCOM_APP_ID"
@@ -100,6 +101,9 @@ export const env = {
   },
   get AI_PLAN_MONTHLY_TOKEN_BUDGET_MAP_JSON() {
     return optionalEnv("AI_PLAN_MONTHLY_TOKEN_BUDGET_MAP_JSON");
+  },
+  get APP_FREE_PLAN_ENABLED() {
+    return optionalEnv("APP_FREE_PLAN_ENABLED") === "true";
   },
   get STRIPE_SECRET_KEY() {
     return ensureEnv("STRIPE_SECRET_KEY");
