@@ -24,6 +24,12 @@ type InviteApiResponse = {
   inviteUrl?: string;
 };
 
+type TeamMutationResponse = {
+  ok?: boolean;
+  error?: string;
+  inviteUrl?: string;
+};
+
 export function TeamInviteCard({
   canInvite,
   teamName,
@@ -44,6 +50,9 @@ export function TeamInviteCard({
   const [role, setRole] = useState<"member" | "admin">("member");
   const [submitting, setSubmitting] = useState(false);
   const [removingUserId, setRemovingUserId] = useState<string | null>(null);
+  const [updatingRoleUserId, setUpdatingRoleUserId] = useState<string | null>(null);
+  const [revokeInviteId, setRevokeInviteId] = useState<string | null>(null);
+  const [resendInviteId, setResendInviteId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
 
@@ -128,8 +137,97 @@ export function TeamInviteCard({
     }
   }
 
+  async function updateMemberRole(targetUserId: string, role: "member" | "admin") {
+    setUpdatingRoleUserId(targetUserId);
+    setFeedback(null);
+    try {
+      const response = await fetch(`/api/team/members/${targetUserId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...getCsrfHeaders(),
+        },
+        body: JSON.stringify({ role }),
+      });
+      const payload = (await response.json().catch(() => null)) as TeamMutationResponse | null;
+      if (!response.ok) {
+        throw new Error(payload?.error ?? "Failed to update member role.");
+      }
+      setFeedback("Member role updated.");
+      router.refresh();
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : "Failed to update member role.");
+    } finally {
+      setUpdatingRoleUserId(null);
+    }
+  }
+
+  async function revokeInvite(inviteId: string) {
+    const confirmed = window.confirm("Revoke this invite?");
+    if (!confirmed) {
+      return;
+    }
+    setRevokeInviteId(inviteId);
+    setFeedback(null);
+    try {
+      const response = await fetch(`/api/team/invites/${inviteId}`, {
+        method: "DELETE",
+        headers: getCsrfHeaders(),
+      });
+      const payload = (await response.json().catch(() => null)) as TeamMutationResponse | null;
+      if (!response.ok) {
+        throw new Error(payload?.error ?? "Failed to revoke invite.");
+      }
+      setFeedback("Invite revoked.");
+      router.refresh();
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : "Failed to revoke invite.");
+    } finally {
+      setRevokeInviteId(null);
+    }
+  }
+
+  async function resendInvite(inviteId: string) {
+    setResendInviteId(inviteId);
+    setFeedback(null);
+    setInviteUrl(null);
+    try {
+      const response = await fetch(`/api/team/invites/${inviteId}/resend`, {
+        method: "POST",
+        headers: getCsrfHeaders(),
+      });
+      const payload = (await response.json().catch(() => null)) as TeamMutationResponse | null;
+      if (!response.ok) {
+        throw new Error(payload?.error ?? "Failed to resend invite.");
+      }
+      setInviteUrl(payload?.inviteUrl ?? null);
+      setFeedback("Invite resent.");
+      router.refresh();
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : "Failed to resend invite.");
+    } finally {
+      setResendInviteId(null);
+    }
+  }
+
   function canRemoveMember(member: TeamMember) {
     if (member.userId === currentUserId) {
+      return false;
+    }
+    if (currentUserRole === "owner") {
+      return true;
+    }
+    if (currentUserRole === "admin") {
+      return member.role === "member";
+    }
+    return false;
+  }
+
+  function canManageRole(member: TeamMember) {
+    if (member.userId === currentUserId) {
+      return false;
+    }
+    if (member.role === "owner") {
       return false;
     }
     if (currentUserRole === "owner") {
@@ -164,9 +262,30 @@ export function TeamInviteCard({
                 {member.userId}
               </p>
             </div>
-            <span className="ml-3 rounded-full border app-border-subtle px-2 py-0.5 text-xs capitalize text-slate-700 dark:text-slate-200">
-              {member.role}
-            </span>
+            <div className="ml-3 flex items-center gap-2">
+              <span className="rounded-full border app-border-subtle px-2 py-0.5 text-xs capitalize text-slate-700 dark:text-slate-200">
+                {member.role}
+              </span>
+              {canManageRole(member) ? (
+                <button
+                  type="button"
+                  disabled={updatingRoleUserId !== null}
+                  onClick={() =>
+                    updateMemberRole(
+                      member.userId,
+                      member.role === "admin" ? "member" : "admin",
+                    )
+                  }
+                  className="rounded-md border app-border-subtle px-2 py-0.5 text-xs text-slate-700 hover:bg-slate-100 disabled:opacity-60 dark:text-slate-200 dark:hover:bg-slate-800"
+                >
+                  {updatingRoleUserId === member.userId
+                    ? "Saving..."
+                    : member.role === "admin"
+                      ? "Make member"
+                      : "Make admin"}
+                </button>
+              ) : null}
+            </div>
             {canRemoveMember(member) ? (
               <button
                 type="button"
@@ -204,9 +323,31 @@ export function TeamInviteCard({
                     Expires {new Date(invite.expiresAt).toLocaleDateString()}
                   </p>
                 </div>
-                <span className="ml-3 rounded-full border app-border-subtle px-2 py-0.5 text-xs capitalize text-slate-700 dark:text-slate-200">
-                  {invite.role}
-                </span>
+                <div className="ml-3 flex items-center gap-2">
+                  <span className="rounded-full border app-border-subtle px-2 py-0.5 text-xs capitalize text-slate-700 dark:text-slate-200">
+                    {invite.role}
+                  </span>
+                  {canInvite ? (
+                    <>
+                      <button
+                        type="button"
+                        disabled={resendInviteId !== null || revokeInviteId !== null}
+                        onClick={() => resendInvite(invite.id)}
+                        className="rounded-md border app-border-subtle px-2 py-0.5 text-xs text-slate-700 hover:bg-slate-100 disabled:opacity-60 dark:text-slate-200 dark:hover:bg-slate-800"
+                      >
+                        {resendInviteId === invite.id ? "Resending..." : "Resend"}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={revokeInviteId !== null || resendInviteId !== null}
+                        onClick={() => revokeInvite(invite.id)}
+                        className="rounded-md border border-rose-300/60 px-2 py-0.5 text-xs text-rose-700 hover:bg-rose-50 disabled:opacity-60 dark:border-rose-700/60 dark:text-rose-200 dark:hover:bg-rose-950/30"
+                      >
+                        {revokeInviteId === invite.id ? "Revoking..." : "Revoke"}
+                      </button>
+                    </>
+                  ) : null}
+                </div>
               </div>
             ))}
           </div>

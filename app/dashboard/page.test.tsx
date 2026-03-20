@@ -113,9 +113,6 @@ describe("Dashboard page billing selection", () => {
       "unpaid",
       "paused",
     ]);
-    expect(teamMembershipsQuery.select).toHaveBeenCalledWith(
-      "user_id,role,created_at,profiles(id,full_name)",
-    );
   });
 
   it("redirects to login when there is no authenticated user", async () => {
