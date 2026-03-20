@@ -80,7 +80,18 @@ describe("GET /api/cron/reconcile-seat-quantities", () => {
 
   it("runs seat reconciliation when bearer token matches", async () => {
     process.env.CRON_SECRET = "expected";
-    const reconcile = vi.fn().mockResolvedValue({
+    vi.doMock("@/lib/stripe/seat-reconcile", () => ({
+      reconcileTeamSeatQuantities: vi.fn().mockResolvedValue({
+        scannedTeams: 3,
+        synced: 3,
+        failed: 0,
+        queuedRetries: 1,
+        discoveredFromStripe: 1,
+        stripePagesScanned: 1,
+      }),
+    }));
+    const { reconcileTeamSeatQuantities } = await import("@/lib/stripe/seat-reconcile");
+    const reconcile = vi.mocked(reconcileTeamSeatQuantities).mockResolvedValue({
       scannedTeams: 3,
       synced: 3,
       failed: 0,
@@ -88,9 +99,6 @@ describe("GET /api/cron/reconcile-seat-quantities", () => {
       discoveredFromStripe: 1,
       stripePagesScanned: 1,
     });
-    vi.doMock("@/lib/stripe/seat-reconcile", () => ({
-      reconcileTeamSeatQuantities: reconcile,
-    }));
 
     const { GET } = await import("./route");
     const response = await GET(
@@ -100,7 +108,7 @@ describe("GET /api/cron/reconcile-seat-quantities", () => {
     );
 
     expect(response.status).toBe(200);
-    expect(reconcile).toHaveBeenCalledWith();
+    expect(reconcile).toHaveBeenCalledOnce();
     await expect(response.json()).resolves.toEqual({
       ok: true,
       scannedTeams: 3,

@@ -211,7 +211,7 @@ export function BillingActions({ currentPlanKey, hasSubscription, canManageBilli
               </button>
             ))}
 
-        {hasSubscription ? (
+        {canManageBilling && hasSubscription ? (
           <button
             onClick={openPortal}
             disabled={loadingAction !== null}
