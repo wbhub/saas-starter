@@ -85,10 +85,16 @@ describe("POST /api/stripe/change-plan", () => {
   });
 
   it("passes idempotency key to Stripe update", async () => {
-    const maybeSingle = vi.fn().mockResolvedValue({
-      data: { stripe_subscription_id: "sub_123", status: "active" },
-      error: null,
-    });
+    const maybeSingle = vi
+      .fn()
+      .mockResolvedValueOnce({
+        data: { stripe_subscription_id: "sub_123", status: "active" },
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: { stripe_price_id: "price_growth", status: "active" },
+        error: null,
+      });
     const subscriptionsQuery = {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),

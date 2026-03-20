@@ -11,6 +11,7 @@ This repo is a small SaaS starter app:
 - Team member removal flow (owners/admins can remove members; seat billing re-syncs)
 - Resend-powered dashboard support email form
 - Optional: Intercom chat widget
+- OpenAI-powered server-side AI chat endpoint (plan-gated + usage tracked)
 
 You can clone it, rename it, and use it as the base for your own SaaS.
 
@@ -22,6 +23,7 @@ You can clone it, rename it, and use it as the base for your own SaaS.
   - The schema from `supabase/schema.sql` applied
 - A Stripe account with 3 recurring subscription prices (Starter/Growth/Pro)
 - A Resend account (and a verified `RESEND_FROM_EMAIL` for production)
+- An OpenAI API key (for server-side AI features)
 - Stripe CLI installed locally (for local webhook testing)
   - Example: `brew install stripe/stripe-cli/stripe`
 
@@ -85,6 +87,7 @@ Follow these steps in order:
    - `SUPABASE_SERVICE_ROLE_KEY`
    - `STRIPE_SECRET_KEY`
    - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+   - `OPENAI_API_KEY`
    - `STRIPE_WEBHOOK_SECRET` (see next step)
    - `STRIPE_STARTER_PRICE_ID`
    - `STRIPE_GROWTH_PRICE_ID`
@@ -128,6 +131,7 @@ Follow these steps in order:
 - Supabase (Auth + Postgres)
 - Stripe (subscriptions, billing portal)
 - Resend (transactional/support email delivery)
+- OpenAI API (server-side AI features)
 - Vercel‑ready deployment
 
 ## Team model (multi-member)
@@ -163,6 +167,8 @@ If your database was created with the old single-user schema, migrate in this or
 ```txt
 app/
   api/
+    ai/
+      chat/route.ts
     auth/
       forgot-password/route.ts
     resend/
@@ -194,6 +200,8 @@ components/
   support-email-card.tsx
 lib/
   env.ts
+  openai/
+    client.ts
   resend/
     server.ts
   utils.ts
@@ -221,7 +229,7 @@ public/
 3. Set **all** environment variables in Vercel Project Settings (same as `.env.local`, but with production values).
    - `NEXT_PUBLIC_APP_URL` → your Vercel URL (for example `https://your-app.vercel.app`)
    - `STRIPE_WEBHOOK_SECRET` → from the Stripe webhook (configured in the next step)
-   - The rest (`NEXT_PUBLIC_SUPABASE_*`, `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_*_PRICE_ID`, `RESEND_*`, `NEXT_PUBLIC_INTERCOM_APP_ID`, `INTERCOM_IDENTITY_SECRET`, `STRIPE_SEAT_PRORATION_BEHAVIOR`, `TRUST_PROXY_HEADERS`) should match your local `.env.local`.
+  - The rest (`NEXT_PUBLIC_SUPABASE_*`, `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_*_PRICE_ID`, `RESEND_*`, `OPENAI_API_KEY`, `NEXT_PUBLIC_INTERCOM_APP_ID`, `INTERCOM_IDENTITY_SECRET`, `STRIPE_SEAT_PRORATION_BEHAVIOR`, `TRUST_PROXY_HEADERS`) should match your local `.env.local`.
 4. Update Supabase Auth redirect settings for production:
    - Set **Site URL** to `https://your-app.vercel.app`
    - Add redirect URL: `https://your-app.vercel.app/auth/callback`
@@ -258,6 +266,7 @@ Before your first real customer signs up, confirm:
 
 - **Stripe webhook dedupe cleanup (optional):** The webhook handler opportunistically prunes old rows in `stripe_webhook_events`. For low-traffic apps, add a scheduled job (e.g. Vercel Cron) that calls `GET /api/cron/prune-stripe-webhook-events` with `Authorization: Bearer <CRON_SECRET>`. Set `CRON_SECRET` in the environment; if it is unset, the route returns 503.
 - **Seat reconciliation cron (recommended):** Add a scheduled job that calls `GET /api/cron/reconcile-seat-quantities` with `Authorization: Bearer <CRON_SECRET>`. This reconciles Stripe subscription quantity against current team member counts, drains the durable `seat_sync_retries` queue, and self-heals missed seat syncs.
+- **AI features:** Set `OPENAI_API_KEY` in production. The app uses it server-side only (never exposed to client bundles). Ensure `supabase/schema.sql` has been applied so `ai_usage` exists for token tracking.
 
 ---
 
@@ -344,7 +353,83 @@ Production note: `RESEND_FROM_EMAIL` must be verified in Resend (otherwise deliv
 
 ---
 
-## 7. Forgot password flow (Resend + Supabase)
+## 7. OpenAI AI chat endpoint
+
+The starter now includes a server-side streaming AI route for app-owned OpenAI usage:
+
+- Route: `POST /api/ai/chat`
+- Access: authenticated users only
+- Security: CSRF check + `Content-Type: application/json`
+- Validation: Zod-validated `messages` payload
+- Billing gate:
+  - Requires a live team subscription
+  - Starter plan is denied
+  - Growth and Pro plans are allowed
+- Rate limiting: per user (`RATE_LIMITS.aiChatByUser`)
+- Usage logging:
+  - Audit event is recorded per request outcome
+  - Token usage is stored in `ai_usage` (`team_id`, `user_id`, `model`, `prompt_tokens`, `completion_tokens`, `created_at`)
+
+Request shape:
+
+```json
+{
+  "messages": [
+    { "role": "system", "content": "You are a helpful assistant." },
+    { "role": "user", "content": "Draft release notes for this sprint." }
+  ]
+}
+```
+
+Response:
+
+- Streams plain text tokens (`text/plain; charset=utf-8`) suitable for incremental rendering in your UI.
+
+Quick client example (streaming):
+
+```ts
+async function streamAiReply({
+  messages,
+  csrfToken,
+  onToken,
+}: {
+  messages: Array<{ role: "system" | "user" | "assistant"; content: string }>;
+  csrfToken: string;
+  onToken: (chunk: string) => void;
+}) {
+  const response = await fetch("/api/ai/chat", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-csrf-token": csrfToken,
+    },
+    body: JSON.stringify({ messages }),
+  });
+
+  if (!response.ok || !response.body) {
+    const payload = await response.json().catch(() => ({}));
+    throw new Error(payload?.error ?? "AI request failed");
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    onToken(decoder.decode(value, { stream: true }));
+  }
+}
+```
+
+Notes:
+
+- Include a valid CSRF token in both cookie + `x-csrf-token` header (same pattern as other write endpoints).
+- Handle `403` (plan/subscription gate), `429` (rate limit), and `500` (provider failure) states in your UI.
+
+---
+
+## 8. Forgot password flow (Resend + Supabase)
 
 The auth flow includes a custom forgot password implementation that uses **Resend** for delivery.
 
@@ -368,7 +453,7 @@ Security notes:
 
 ---
 
-## 8. Legal pages (footer, privacy policy, terms of use)
+## 9. Legal pages (footer, privacy policy, terms of use)
 
 This starter now includes filled default legal text and footer branding so you can run the app without placeholder tokens.
 

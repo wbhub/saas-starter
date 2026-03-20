@@ -7,6 +7,12 @@ describe("GET /api/cron/reconcile-seat-quantities", () => {
     vi.resetModules();
     vi.clearAllMocks();
     delete process.env.CRON_SECRET;
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({
+        allowed: true,
+        retryAfterSeconds: 0,
+      }),
+    }));
     vi.doMock("@/lib/stripe/seat-reconcile", () => ({
       reconcileTeamSeatQuantities: vi.fn().mockResolvedValue({
         scannedTeams: 0,

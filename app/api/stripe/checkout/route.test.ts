@@ -79,7 +79,9 @@ describe("POST /api/stripe/checkout", () => {
       .mockResolvedValue({ data: null, error: null });
     const customersMaybeSingle = vi
       .fn()
-      .mockResolvedValue({ data: null, error: null });
+      .mockResolvedValueOnce({ data: null, error: null })
+      .mockResolvedValueOnce({ data: { stripe_customer_id: "cus_new" }, error: null });
+    const customersUpsert = vi.fn().mockResolvedValue({ error: null });
 
     const subscriptionsQuery = {
       select: vi.fn().mockReturnThis(),
@@ -92,6 +94,7 @@ describe("POST /api/stripe/checkout", () => {
     const customersQuery = {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
+      upsert: customersUpsert,
       maybeSingle: customersMaybeSingle,
     };
     const teamMembershipsQuery = {
@@ -102,7 +105,6 @@ describe("POST /api/stripe/checkout", () => {
     const customersCreate = vi.fn().mockResolvedValue({ id: "cus_new" });
     const sessionsCreate = vi.fn().mockResolvedValue({ url: "https://checkout.stripe.test" });
     const hasLiveSubscriptions = vi.fn().mockResolvedValue({ data: [] });
-    const upsertStripeCustomer = vi.fn();
 
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: async () => ({
@@ -140,9 +142,6 @@ describe("POST /api/stripe/checkout", () => {
         checkout: { sessions: { create: sessionsCreate } },
       },
     }));
-    vi.doMock("@/lib/stripe/sync", () => ({
-      upsertStripeCustomer,
-    }));
     vi.doMock("@/lib/env", () => ({
       env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
     }));
@@ -177,7 +176,16 @@ describe("POST /api/stripe/checkout", () => {
       },
       { idempotencyKey: "checkout:team_123:starter:client-key-1:customer" },
     );
-    expect(upsertStripeCustomer).toHaveBeenCalledWith("team_123", "cus_new");
+    expect(customersUpsert).toHaveBeenCalledWith(
+      {
+        team_id: "team_123",
+        stripe_customer_id: "cus_new",
+      },
+      {
+        onConflict: "team_id",
+        ignoreDuplicates: true,
+      },
+    );
     expect(hasLiveSubscriptions).toHaveBeenCalledWith({
       customer: "cus_new",
       status: "all",

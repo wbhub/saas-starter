@@ -197,7 +197,7 @@ describe("reconcileTeamSeatQuantities", () => {
     });
     expect(listDueSeatSyncRetryTeamIds).toHaveBeenCalledWith(5);
     expect(syncTeamSeatQuantity).toHaveBeenCalledWith("team_retry", {
-      idempotencyKey: "seat-reconcile:team_retry",
+      idempotencyKey: expect.stringMatching(/^seat-reconcile:\d+:team_retry:0$/),
     });
     expect(clearSeatSyncRetry).toHaveBeenCalledWith("team_retry");
   });

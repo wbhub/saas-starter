@@ -109,6 +109,16 @@ create table if not exists public.audit_events (
   created_at timestamptz not null default timezone('utc', now())
 );
 
+create table if not exists public.ai_usage (
+  id uuid primary key default gen_random_uuid(),
+  team_id uuid not null references public.teams(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  model text not null,
+  prompt_tokens integer not null default 0 check (prompt_tokens >= 0),
+  completion_tokens integer not null default 0 check (completion_tokens >= 0),
+  created_at timestamptz not null default timezone('utc', now())
+);
+
 create table if not exists public.seat_sync_retries (
   team_id uuid primary key references public.teams(id) on delete cascade,
   reason text not null,
@@ -153,6 +163,9 @@ create index if not exists idx_audit_events_created_at on public.audit_events(cr
 create index if not exists idx_audit_events_action_created_at on public.audit_events(action, created_at desc);
 create index if not exists idx_audit_events_team_id_created_at on public.audit_events(team_id, created_at desc);
 create index if not exists idx_audit_events_actor_user_id_created_at on public.audit_events(actor_user_id, created_at desc);
+create index if not exists idx_ai_usage_team_id_created_at on public.ai_usage(team_id, created_at desc);
+create index if not exists idx_ai_usage_user_id_created_at on public.ai_usage(user_id, created_at desc);
+create index if not exists idx_ai_usage_model_created_at on public.ai_usage(model, created_at desc);
 create index if not exists idx_seat_sync_retries_next_attempt_at on public.seat_sync_retries(next_attempt_at asc);
 
 create or replace function public.set_updated_at()
@@ -647,6 +660,7 @@ alter table public.team_invites enable row level security;
 alter table public.stripe_webhook_events enable row level security;
 alter table public.rate_limit_windows enable row level security;
 alter table public.audit_events enable row level security;
+alter table public.ai_usage enable row level security;
 alter table public.seat_sync_retries enable row level security;
 
 alter table public.subscriptions
@@ -820,6 +834,13 @@ using (
     and public.is_team_member(team_id, array['owner', 'admin'])
   )
 );
+
+drop policy if exists "Users can read team ai usage" on public.ai_usage;
+create policy "Users can read team ai usage"
+on public.ai_usage
+for select
+to authenticated
+using (public.is_team_member(team_id));
 
 -- Intentionally no INSERT/UPDATE/DELETE policies on billing + internal tables
 -- (except team_invites where owners/admins can create/delete invites).
