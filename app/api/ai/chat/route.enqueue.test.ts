@@ -111,6 +111,7 @@ describe("POST /api/ai/chat finalize retry enqueue", () => {
     }));
     vi.doMock("@/lib/ai/budget-finalize-retries", () => ({
       enqueueAiBudgetFinalizeRetry: vi.fn(enqueueImpl),
+      maybeProcessAiBudgetFinalizeRetries: vi.fn().mockResolvedValue({ ran: false }),
     }));
     const loggerError = vi.fn();
     vi.doMock("@/lib/logger", () => ({

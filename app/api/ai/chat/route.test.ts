@@ -7,6 +7,8 @@ describe("resolveActualTokenUsage", () => {
       promptTokens: 120,
       completionTokens: 80,
       projectedRequestTokens: 900,
+      estimatedPromptTokens: 300,
+      streamedCompletionChars: 240,
     });
 
     expect(result).toEqual({
@@ -17,17 +19,19 @@ describe("resolveActualTokenUsage", () => {
     });
   });
 
-  it("falls back to projected tokens when usage metadata is missing", () => {
+  it("falls back to prompt + emitted completion estimate when usage metadata is missing", () => {
     const result = resolveActualTokenUsage({
       promptTokens: 0,
       completionTokens: 0,
       projectedRequestTokens: 4096,
+      estimatedPromptTokens: 350,
+      streamedCompletionChars: 400,
     });
 
     expect(result).toEqual({
-      actualTokens: 4096,
-      promptTokens: 4096,
-      completionTokens: 0,
+      actualTokens: 450,
+      promptTokens: 350,
+      completionTokens: 100,
       usedFallback: true,
     });
   });

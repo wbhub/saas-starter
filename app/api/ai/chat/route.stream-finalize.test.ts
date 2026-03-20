@@ -121,6 +121,7 @@ describe("POST /api/ai/chat stream finalization retry enqueue", () => {
     }));
     vi.doMock("@/lib/ai/budget-finalize-retries", () => ({
       enqueueAiBudgetFinalizeRetry,
+      maybeProcessAiBudgetFinalizeRetries: vi.fn().mockResolvedValue({ ran: false }),
     }));
     vi.doMock("@/lib/logger", () => ({
       logger: {
@@ -147,5 +148,135 @@ describe("POST /api/ai/chat stream finalization retry enqueue", () => {
       actualTokens: 15,
       error: expect.objectContaining({ message: "finalize failed" }),
     });
+  });
+
+  it("uses streamed output estimate when usage metadata is missing", async () => {
+    const maybeSingle = vi.fn().mockResolvedValue({
+      data: { stripe_price_id: "price_growth", status: "active" },
+      error: null,
+    });
+    const subscriptionsQuery = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      in: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+      maybeSingle,
+    };
+
+    const rpc = vi
+      .fn()
+      .mockResolvedValueOnce({
+        data: [{ allowed: true, claim_id: "claim_stream", month_start: "2026-03-01" }],
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: null,
+        error: null,
+      });
+
+    vi.doMock("@/lib/security/csrf", () => ({
+      verifyCsrfProtection: vi.fn().mockReturnValue(null),
+    }));
+    vi.doMock("@/lib/http/content-type", () => ({
+      requireJsonContentType: vi.fn().mockReturnValue(null),
+    }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({
+        allowed: true,
+        retryAfterSeconds: 0,
+      }),
+    }));
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          getUser: async () => ({
+            data: { user: { id: "user_123", email: "user@example.com" } },
+          }),
+        },
+        from: vi.fn((table: string) => {
+          if (table === "subscriptions") {
+            return subscriptionsQuery;
+          }
+          throw new Error(`Unexpected table: ${table}`);
+        }),
+      }),
+    }));
+    vi.doMock("@/lib/supabase/admin", () => ({
+      createAdminClient: () => ({
+        rpc,
+        from: vi.fn(() => ({
+          insert: vi.fn().mockResolvedValue({ error: null }),
+        })),
+      }),
+    }));
+    vi.doMock("@/lib/team-context", () => ({
+      getTeamContextForUser: vi.fn().mockResolvedValue({
+        teamId: "team_123",
+        teamName: "Acme Team",
+        role: "owner",
+      }),
+    }));
+    vi.doMock("@/lib/stripe/config", () => ({
+      getPlanByPriceId: vi.fn().mockReturnValue({ key: "growth" }),
+    }));
+    vi.doMock("@/lib/ai/config", () => ({
+      getAiAllowedSubscriptionStatuses: vi
+        .fn()
+        .mockReturnValue(["trialing", "active", "past_due"]),
+      getAiModelForPlan: vi.fn().mockReturnValue("gpt-4.1-mini"),
+      getAiMonthlyTokenBudgetForPlan: vi.fn().mockReturnValue(2_000_000),
+    }));
+    vi.doMock("@/lib/openai/client", () => ({
+      isOpenAiConfigured: true,
+      openai: {
+        chat: {
+          completions: {
+            create: vi.fn().mockResolvedValue(
+              makeAsyncStream([
+                {
+                  choices: [{ delta: { content: "hello" } }],
+                },
+              ]),
+            ),
+          },
+        },
+      },
+    }));
+    vi.doMock("@/lib/audit", () => ({
+      logAuditEvent: vi.fn(),
+    }));
+    vi.doMock("@/lib/ai/budget-finalize-retries", () => ({
+      enqueueAiBudgetFinalizeRetry: vi.fn().mockResolvedValue(undefined),
+      maybeProcessAiBudgetFinalizeRetries: vi.fn().mockResolvedValue({ ran: false }),
+    }));
+    vi.doMock("@/lib/logger", () => ({
+      logger: {
+        error: vi.fn(),
+        warn: vi.fn(),
+      },
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [{ role: "user", content: "hello" }],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.text()).resolves.toBe("hello");
+    expect(rpc).toHaveBeenNthCalledWith(
+      2,
+      "finalize_ai_token_budget_claim",
+      expect.objectContaining({
+        p_claim_id: "claim_stream",
+        p_actual_tokens: 12,
+      }),
+    );
   });
 });
