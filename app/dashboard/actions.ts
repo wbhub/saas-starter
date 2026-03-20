@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getAppUrl } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
@@ -8,6 +9,12 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { syncTeamSeatQuantity } from "@/lib/stripe/seats";
 import { enqueueSeatSyncRetry } from "@/lib/stripe/seat-sync-retries";
 import { logger } from "@/lib/logger";
+import {
+  CSRF_COOKIE_NAME,
+  createCsrfToken,
+  getServerActionCsrfCookieOptions,
+} from "@/lib/security/csrf";
+import { isValidEmail } from "@/lib/validation";
 
 export type UpdateDashboardSettingsState = {
   status: "idle" | "success" | "error";
@@ -31,6 +38,11 @@ export type DeleteAccountState = {
 
 type OwnedTeamMembershipRow = {
   team_id: string;
+};
+
+type TeamOwnerMembershipRow = {
+  team_id: string;
+  user_id: string;
 };
 
 type TeamMembershipRow = {
@@ -72,23 +84,27 @@ async function isLastOwnerOfAnyTeam(userId: string): Promise<boolean> {
     return false;
   }
 
-  const ownerCounts = await Promise.all(
-    ownedMemberships.map(async ({ team_id: teamId }) => {
-      const { count, error } = await adminClient
-        .from("team_memberships")
-        .select("user_id", { count: "exact", head: true })
-        .eq("team_id", teamId)
-        .eq("role", "owner");
+  const ownedTeamIds = Array.from(new Set(ownedMemberships.map((membership) => membership.team_id)));
+  const { data: ownerMemberships, error: ownerMembershipsError } = await adminClient
+    .from("team_memberships")
+    .select("team_id,user_id")
+    .in("team_id", ownedTeamIds)
+    .eq("role", "owner")
+    .returns<TeamOwnerMembershipRow[]>();
 
-      if (error) {
-        throw new Error(`Failed to count owners for team ${teamId}: ${error.message}`);
-      }
+  if (ownerMembershipsError) {
+    throw new Error(
+      `Failed to load owner memberships for teams before account deletion: ${ownerMembershipsError.message}`,
+    );
+  }
 
-      return count ?? 0;
-    }),
-  );
+  const ownerCountsByTeam = new Map<string, number>();
+  for (const membership of ownerMemberships ?? []) {
+    const currentCount = ownerCountsByTeam.get(membership.team_id) ?? 0;
+    ownerCountsByTeam.set(membership.team_id, currentCount + 1);
+  }
 
-  return ownerCounts.some((count) => count <= 1);
+  return ownedTeamIds.some((teamId) => (ownerCountsByTeam.get(teamId) ?? 0) <= 1);
 }
 
 async function getTeamIdsForUserMemberships(userId: string): Promise<string[]> {
@@ -141,15 +157,26 @@ async function syncTeamSeatsAfterAccountDeletion(teamIds: string[], deletedUserI
   );
 }
 
+async function rotateCsrfTokenForServerAction() {
+  const cookieStore = await cookies();
+  cookieStore.set({
+    name: CSRF_COOKIE_NAME,
+    value: createCsrfToken(),
+    ...getServerActionCsrfCookieOptions(),
+  });
+}
+
 export async function logout() {
   const supabase = await createClient();
   await supabase.auth.signOut();
+  await rotateCsrfTokenForServerAction();
   redirect("/login");
 }
 
 export async function logoutAllSessions() {
   const supabase = await createClient();
   await supabase.auth.signOut({ scope: "global" });
+  await rotateCsrfTokenForServerAction();
   redirect("/login");
 }
 
@@ -250,7 +277,7 @@ export async function requestEmailChange(
       ? emailInput.trim().toLowerCase()
       : "";
 
-  if (!newEmail || !newEmail.includes("@")) {
+  if (!newEmail || !isValidEmail(newEmail)) {
     return {
       status: "error",
       message: "Enter a valid email address.",
@@ -429,6 +456,7 @@ export async function deleteAccount(
   }
 
   await supabase.auth.signOut({ scope: "global" });
+  await rotateCsrfTokenForServerAction();
   revalidatePath("/");
   redirect("/?account=deleted");
 }
@@ -436,8 +464,9 @@ export async function deleteAccount(
 export async function switchActiveTeam(formData: FormData) {
   const requestedTeamId = formData.get("teamId");
   const redirectToInput = formData.get("redirectTo");
+  const DASHBOARD_REDIRECT_RE = /^\/dashboard(?:\/|$|\?)/;
   const redirectTo =
-    typeof redirectToInput === "string" && redirectToInput.startsWith("/dashboard")
+    typeof redirectToInput === "string" && DASHBOARD_REDIRECT_RE.test(redirectToInput)
       ? redirectToInput
       : "/dashboard";
 

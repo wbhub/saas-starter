@@ -28,7 +28,8 @@ type OptionalEnvKey =
   | "NEXT_PUBLIC_INTERCOM_APP_ID"
   | "TRUST_PROXY_HEADERS"
   | "TRUSTED_PROXY_HEADER_NAMES"
-  | "STRIPE_SEAT_PRORATION_BEHAVIOR";
+  | "STRIPE_SEAT_PRORATION_BEHAVIOR"
+  | "TEAM_MAX_MEMBERS";
 
 const warnedMissingEnv = new Set<string>();
 const SOFT_REQUIRED_KEYS: ReadonlySet<ServerEnvKey> = new Set([
@@ -165,5 +166,8 @@ export const env = {
   },
   get STRIPE_SEAT_PRORATION_BEHAVIOR() {
     return optionalEnv("STRIPE_SEAT_PRORATION_BEHAVIOR");
+  },
+  get TEAM_MAX_MEMBERS() {
+    return optionalEnv("TEAM_MAX_MEMBERS");
   },
 };

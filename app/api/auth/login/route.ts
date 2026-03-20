@@ -5,7 +5,7 @@ import { getClientRateLimitIdentifier } from "@/lib/http/client-ip";
 import { requireJsonContentType } from "@/lib/http/content-type";
 import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
 import { checkRateLimit } from "@/lib/security/rate-limit";
-import { verifyCsrfProtection } from "@/lib/security/csrf";
+import { rotateCsrfTokenOnResponse, verifyCsrfProtection } from "@/lib/security/csrf";
 import { isValidEmail } from "@/lib/validation";
 const loginPayloadSchema = z.object({
   email: z.string().trim().toLowerCase(),
@@ -78,5 +78,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
   }
 
-  return NextResponse.json({ ok: true });
+  const response = NextResponse.json({ ok: true });
+  return rotateCsrfTokenOnResponse(response, request);
 }

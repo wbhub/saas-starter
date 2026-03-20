@@ -9,6 +9,7 @@ import { getAppUrl } from "@/lib/env";
 import { getClientIp } from "@/lib/http/client-ip";
 import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/security/rate-limit";
+import { rotateCsrfTokenOnResponse } from "@/lib/security/csrf";
 
 function getSafeNextPath(next: string | null) {
   if (!next) {
@@ -176,6 +177,7 @@ export async function GET(request: NextRequest) {
   }
 
   const response = NextResponse.redirect(toAbsoluteUrl(safeNext));
+  rotateCsrfTokenOnResponse(response, request);
   if (recoveredUserId) {
     maybeSetPasswordRecoveryCookies(response, request, safeNext, recoveredUserId);
   }

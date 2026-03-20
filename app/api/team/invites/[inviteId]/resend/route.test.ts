@@ -78,7 +78,6 @@ describe("POST /api/team/invites/[inviteId]/resend", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
       ok: true,
-      inviteUrl: "http://localhost:3000/invite/token-123",
       emailSent: false,
     });
     expect(logAuditEvent).toHaveBeenCalledWith(

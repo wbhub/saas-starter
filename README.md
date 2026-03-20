@@ -119,6 +119,7 @@ Optional:
 - `NEXT_PUBLIC_SENTRY_ENVIRONMENT`
 - `SENTRY_ENVIRONMENT`
 - `STRIPE_SEAT_PRORATION_BEHAVIOR` (`create_prorations` or `none`)
+- `TEAM_MAX_MEMBERS` (default `100`; max active + pending invited members per team)
 - `TRUST_PROXY_HEADERS`
 - `TRUSTED_PROXY_HEADER_NAMES`
 

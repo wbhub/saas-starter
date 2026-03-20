@@ -35,4 +35,38 @@ describe("resolveActualTokenUsage", () => {
       usedFallback: true,
     });
   });
+
+  it("bounds fallback prompt tokens to projected request budget", () => {
+    const result = resolveActualTokenUsage({
+      promptTokens: 0,
+      completionTokens: 0,
+      projectedRequestTokens: 300,
+      estimatedPromptTokens: 900,
+      streamedCompletionChars: 2000,
+    });
+
+    expect(result).toEqual({
+      actualTokens: 300,
+      promptTokens: 300,
+      completionTokens: 0,
+      usedFallback: true,
+    });
+  });
+
+  it("never returns negative usage values in fallback mode", () => {
+    const result = resolveActualTokenUsage({
+      promptTokens: 0,
+      completionTokens: 0,
+      projectedRequestTokens: -20,
+      estimatedPromptTokens: -5,
+      streamedCompletionChars: -50,
+    });
+
+    expect(result).toEqual({
+      actualTokens: 0,
+      promptTokens: 0,
+      completionTokens: 0,
+      usedFallback: true,
+    });
+  });
 });
