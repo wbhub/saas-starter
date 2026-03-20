@@ -95,6 +95,9 @@ export async function POST(request: Request) {
 
   const bodyParse = await parseJsonWithSchema(request, invitePayloadSchema);
   if (!bodyParse.success) {
+    if (bodyParse.tooLarge) {
+      return NextResponse.json({ error: "Request payload is too large." }, { status: 413 });
+    }
     logAuditEvent({
       action: "team.invite.create",
       outcome: "failure",

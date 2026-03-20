@@ -41,6 +41,9 @@ export async function POST(request: NextRequest) {
 
   const bodyParse = await parseJsonWithSchema(request, resetPasswordPayloadSchema);
   if (!bodyParse.success) {
+    if (bodyParse.tooLarge) {
+      return jsonError("Request payload is too large.", 413);
+    }
     return jsonError("Password must be between 8 and 128 characters.", 400);
   }
   const { password } = bodyParse.data;

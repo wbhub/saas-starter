@@ -44,6 +44,21 @@ describe("GET /api/cron/prune-stripe-webhook-events", () => {
     });
   });
 
+  it("returns 401 for unicode token mismatch without throwing", async () => {
+    process.env.CRON_SECRET = "á";
+    const { GET } = await import("./route");
+    const response = await GET(
+      new Request("http://localhost/api/cron/prune-stripe-webhook-events", {
+        headers: { authorization: "Bearer a" },
+      }),
+    );
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({
+      ok: false,
+      error: "Unauthorized.",
+    });
+  });
+
   it("runs prune when the bearer token matches", async () => {
     process.env.CRON_SECRET = "expected";
     const prune = vi.fn().mockResolvedValue(undefined);

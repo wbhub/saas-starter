@@ -348,11 +348,10 @@ describe("POST /api/stripe/webhook", () => {
     mathRandomSpy.mockRestore();
   });
 
-  it("resolves legacy user-based checkout references to team ownership", async () => {
+  it("rejects legacy user-based checkout references without explicit team metadata", async () => {
     const mathRandomSpy = vi.spyOn(Math, "random").mockReturnValue(1);
     const tableMocks = createWebhookEventsTableMocks();
     const upsertStripeCustomer = vi.fn().mockResolvedValue(undefined);
-    const resolveDefaultTeamIdForUser = vi.fn().mockResolvedValue("team_legacy");
     const customerRetrieve = vi.fn().mockResolvedValue({ id: "cus_legacy", metadata: {} });
     const customerUpdate = vi.fn().mockResolvedValue({ id: "cus_legacy" });
 
@@ -387,7 +386,6 @@ describe("POST /api/stripe/webhook", () => {
       },
     }));
     vi.doMock("@/lib/stripe/sync", () => ({
-      resolveDefaultTeamIdForUser,
       syncSubscription: vi.fn(),
       upsertStripeCustomer,
     }));
@@ -420,13 +418,13 @@ describe("POST /api/stripe/webhook", () => {
       }),
     );
 
-    expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ received: true });
-    expect(resolveDefaultTeamIdForUser).toHaveBeenCalledWith("user_legacy");
-    expect(customerUpdate).toHaveBeenCalledWith("cus_legacy", {
-      metadata: { supabase_team_id: "team_legacy" },
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({
+      error: "Webhook handling failed.",
     });
-    expect(upsertStripeCustomer).toHaveBeenCalledWith("team_legacy", "cus_legacy");
+    expect(customerRetrieve).not.toHaveBeenCalled();
+    expect(customerUpdate).not.toHaveBeenCalled();
+    expect(upsertStripeCustomer).not.toHaveBeenCalled();
 
     mathRandomSpy.mockRestore();
   });

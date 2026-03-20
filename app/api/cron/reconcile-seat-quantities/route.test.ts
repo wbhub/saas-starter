@@ -62,6 +62,22 @@ describe("GET /api/cron/reconcile-seat-quantities", () => {
     });
   });
 
+  it("returns 401 for unicode token mismatch without throwing", async () => {
+    process.env.CRON_SECRET = "á";
+    const { GET } = await import("./route");
+    const response = await GET(
+      new Request("http://localhost/api/cron/reconcile-seat-quantities", {
+        headers: { authorization: "Bearer a" },
+      }),
+    );
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({
+      ok: false,
+      error: "Unauthorized.",
+    });
+  });
+
   it("runs seat reconciliation when bearer token matches", async () => {
     process.env.CRON_SECRET = "expected";
     const reconcile = vi.fn().mockResolvedValue({

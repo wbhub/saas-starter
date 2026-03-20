@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { env } from "@/lib/env";
 import { jsonError, jsonSuccess } from "@/lib/http/api-json";
+import { getClientRateLimitIdentifier } from "@/lib/http/client-ip";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { reconcileTeamSeatQuantities } from "@/lib/stripe/seat-reconcile";
@@ -14,14 +15,10 @@ function bearerToken(request: Request) {
 }
 
 function safeCompare(a: string, b: string) {
-  if (a.length !== b.length) {
+  if (Buffer.byteLength(a, "utf8") !== Buffer.byteLength(b, "utf8")) {
     return false;
   }
-  return timingSafeEqual(Buffer.from(a), Buffer.from(b));
-}
-
-function getClientIp(request: Request) {
-  return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  return timingSafeEqual(Buffer.from(a, "utf8"), Buffer.from(b, "utf8"));
 }
 
 export async function GET(request: Request) {
@@ -35,8 +32,9 @@ export async function GET(request: Request) {
     return jsonError("Unauthorized.", 401);
   }
 
+  const clientId = getClientRateLimitIdentifier(request);
   const rateLimit = await checkRateLimit({
-    key: `cron:reconcile-seat-quantities:${getClientIp(request)}`,
+    key: `cron:reconcile-seat-quantities:${clientId.keyType}:${clientId.value}`,
     ...RATE_LIMITS.cronByClientIp,
   });
   if (!rateLimit.allowed) {

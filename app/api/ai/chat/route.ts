@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { logAuditEvent } from "@/lib/audit";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
+import { resolveActualTokenUsage } from "@/lib/ai/usage";
 import { requireJsonContentType } from "@/lib/http/content-type";
 import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
 import { logger } from "@/lib/logger";
@@ -264,6 +265,9 @@ export async function POST(request: Request) {
 
   const bodyParse = await parseJsonWithSchema(request, chatPayloadSchema);
   if (!bodyParse.success) {
+    if (bodyParse.tooLarge) {
+      return NextResponse.json({ error: "Request payload is too large." }, { status: 413 });
+    }
     return NextResponse.json({ error: "Invalid request payload." }, { status: 400 });
   }
 
@@ -408,12 +412,24 @@ export async function POST(request: Request) {
           });
           controller.error(error);
         } finally {
-          const actualTokens = usage.promptTokens + usage.completionTokens;
+          const resolvedUsage = resolveActualTokenUsage({
+            promptTokens: usage.promptTokens,
+            completionTokens: usage.completionTokens,
+            projectedRequestTokens,
+          });
+          if (resolvedUsage.usedFallback && !streamError) {
+            logger.warn("AI stream completed without usage metadata; applying fallback usage", {
+              teamId: teamContext.teamId,
+              userId: user.id,
+              model,
+              projectedRequestTokens,
+            });
+          }
           if (budgetClaim) {
             try {
               await finalizeTeamAiBudgetClaim({
                 claimId: budgetClaim.claimId,
-                actualTokens,
+                actualTokens: resolvedUsage.actualTokens,
               });
             } catch (error) {
               logger.error("Failed to finalize AI budget claim", error, {
@@ -421,7 +437,7 @@ export async function POST(request: Request) {
                 userId: user.id,
                 model,
                 claimId: budgetClaim.claimId,
-                actualTokens,
+                actualTokens: resolvedUsage.actualTokens,
               });
             }
           }
@@ -431,16 +447,16 @@ export async function POST(request: Request) {
               teamId: teamContext.teamId,
               userId: user.id,
               model,
-              promptTokens: usage.promptTokens,
-              completionTokens: usage.completionTokens,
+              promptTokens: resolvedUsage.promptTokens,
+              completionTokens: resolvedUsage.completionTokens,
             });
           } catch (error) {
             logger.error("Failed to persist AI usage row", error, {
               teamId: teamContext.teamId,
               userId: user.id,
               model,
-              promptTokens: usage.promptTokens,
-              completionTokens: usage.completionTokens,
+              promptTokens: resolvedUsage.promptTokens,
+              completionTokens: resolvedUsage.completionTokens,
             });
           }
 
@@ -464,8 +480,9 @@ export async function POST(request: Request) {
               planKey: plan.key,
               model,
               budgetClaimId: budgetClaim?.claimId,
-              promptTokens: usage.promptTokens,
-              completionTokens: usage.completionTokens,
+              promptTokens: resolvedUsage.promptTokens,
+              completionTokens: resolvedUsage.completionTokens,
+              usageFallbackApplied: resolvedUsage.usedFallback,
             },
           });
         }
