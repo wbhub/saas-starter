@@ -1,12 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("GET /api/cron/reconcile-seat-quantities", () => {
-  const originalCron = process.env.CRON_SECRET;
-
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
-    delete process.env.CRON_SECRET;
+    vi.stubEnv("CRON_SECRET", undefined);
     vi.doMock("@/lib/security/rate-limit", () => ({
       checkRateLimit: vi.fn().mockResolvedValue({
         allowed: true,
@@ -34,11 +32,7 @@ describe("GET /api/cron/reconcile-seat-quantities", () => {
   });
 
   afterEach(() => {
-    if (originalCron === undefined) {
-      delete process.env.CRON_SECRET;
-    } else {
-      process.env.CRON_SECRET = originalCron;
-    }
+    vi.unstubAllEnvs();
   });
 
   it("returns 503 when CRON_SECRET is not set", async () => {
@@ -55,7 +49,7 @@ describe("GET /api/cron/reconcile-seat-quantities", () => {
   });
 
   it("returns 401 when bearer token is invalid", async () => {
-    process.env.CRON_SECRET = "expected";
+    vi.stubEnv("CRON_SECRET", "expected");
     const { GET } = await import("./route");
     const response = await GET(
       new Request("http://localhost/api/cron/reconcile-seat-quantities", {
@@ -71,7 +65,7 @@ describe("GET /api/cron/reconcile-seat-quantities", () => {
   });
 
   it("returns 401 for unicode token mismatch without throwing", async () => {
-    process.env.CRON_SECRET = "á";
+    vi.stubEnv("CRON_SECRET", "á");
     const { GET } = await import("./route");
     const response = await GET(
       new Request("http://localhost/api/cron/reconcile-seat-quantities", {
@@ -87,7 +81,7 @@ describe("GET /api/cron/reconcile-seat-quantities", () => {
   });
 
   it("runs seat reconciliation when bearer token matches", async () => {
-    process.env.CRON_SECRET = "expected";
+    vi.stubEnv("CRON_SECRET", "expected");
     vi.doMock("@/lib/stripe/seat-reconcile", () => ({
       reconcileTeamSeatQuantities: vi.fn().mockResolvedValue({
         scannedTeams: 3,
@@ -154,7 +148,7 @@ describe("GET /api/cron/reconcile-seat-quantities", () => {
   });
 
   it("still runs AI finalize retries when seat reconciliation fails", async () => {
-    process.env.CRON_SECRET = "expected";
+    vi.stubEnv("CRON_SECRET", "expected");
     vi.doMock("@/lib/ai/budget-finalize-retries", () => ({
       processDueAiBudgetFinalizeRetries: vi.fn().mockResolvedValue({
         processed: 1,
@@ -207,12 +201,13 @@ describe("GET /api/cron/reconcile-seat-quantities", () => {
   });
 
   it("returns 500 when AI budget finalize retry processing fails", async () => {
-    process.env.CRON_SECRET = "expected";
-    vi.doMock("@/lib/ai/budget-finalize-retries", () => ({
-      processDueAiBudgetFinalizeRetries: vi
-        .fn()
-        .mockRejectedValue(new Error("retry queue unavailable")),
-    }));
+    vi.stubEnv("CRON_SECRET", "expected");
+    const { processDueAiBudgetFinalizeRetries } = await import(
+      "@/lib/ai/budget-finalize-retries"
+    );
+    vi
+      .mocked(processDueAiBudgetFinalizeRetries)
+      .mockRejectedValueOnce(new Error("retry queue unavailable"));
     const { GET } = await import("./route");
     const response = await GET(
       new Request("http://localhost/api/cron/reconcile-seat-quantities", {

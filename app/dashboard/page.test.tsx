@@ -235,16 +235,18 @@ describe("Dashboard page billing selection", () => {
       canManageTeamBilling: vi.fn((role: string) => role === "owner" || role === "admin"),
       getTeamContextForUser: vi.fn().mockResolvedValue(null),
     }));
-    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
 
     const DashboardPage = (await import("./page")).default;
     await expect(DashboardPage()).resolves.toBeTruthy();
 
-    expect(consoleError).toHaveBeenCalledWith(
-      "Failed to load dashboard profile",
-      expect.objectContaining({ message: "boom" }),
+    expect(consoleWarn).toHaveBeenCalledWith(
+      "Failed to load dashboard profile; continuing with fallback profile data.",
+      expect.objectContaining({
+        error: expect.objectContaining({ message: "boom" }),
+      }),
     );
-    consoleError.mockRestore();
+    consoleWarn.mockRestore();
   });
 });
 
