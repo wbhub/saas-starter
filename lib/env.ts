@@ -3,6 +3,7 @@ type ServerEnvKey =
   | "NEXT_PUBLIC_SUPABASE_URL"
   | "NEXT_PUBLIC_SUPABASE_ANON_KEY"
   | "SUPABASE_SERVICE_ROLE_KEY"
+  | "OPENAI_API_KEY"
   | "STRIPE_SECRET_KEY"
   | "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY"
   | "STRIPE_WEBHOOK_SECRET"
@@ -46,6 +47,9 @@ export const env = {
   },
   get SUPABASE_SERVICE_ROLE_KEY() {
     return ensureEnv("SUPABASE_SERVICE_ROLE_KEY");
+  },
+  get OPENAI_API_KEY() {
+    return ensureEnv("OPENAI_API_KEY");
   },
   get STRIPE_SECRET_KEY() {
     return ensureEnv("STRIPE_SECRET_KEY");
