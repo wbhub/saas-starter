@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { enqueueAiBudgetFinalizeRetry } from "@/lib/ai/budget-finalize-retries";
+import {
+  enqueueAiBudgetFinalizeRetry,
+  maybeProcessAiBudgetFinalizeRetries,
+} from "@/lib/ai/budget-finalize-retries";
 import {
   getAiAllowedSubscriptionStatuses,
   getAiModelForPlan,
@@ -337,8 +340,8 @@ export async function POST(request: Request) {
   }
 
   const monthlyTokenBudget = getAiMonthlyTokenBudgetForPlan(plan.key);
-  const projectedRequestTokens =
-    estimatePromptTokens(bodyParse.data.messages) + AI_COMPLETION_MAX_TOKENS;
+  const estimatedPromptTokens = estimatePromptTokens(bodyParse.data.messages);
+  const projectedRequestTokens = estimatedPromptTokens + AI_COMPLETION_MAX_TOKENS;
   let budgetClaim: BudgetClaim | null = null;
   try {
     budgetClaim = await claimTeamAiBudget({
@@ -379,7 +382,20 @@ export async function POST(request: Request) {
     );
   }
 
+  // Best-effort queue healing so finalize retries do not depend solely on cron.
+  // Run only on the active AI execution path to avoid unnecessary background work.
+  void maybeProcessAiBudgetFinalizeRetries();
+
   try {
+    const upstreamAbortController = new AbortController();
+    request.signal.addEventListener(
+      "abort",
+      () => {
+        upstreamAbortController.abort("client_disconnected");
+      },
+      { once: true },
+    );
+
     const stream = await openai.chat.completions.create({
       model,
       stream: true,
@@ -389,10 +405,11 @@ export async function POST(request: Request) {
         role: message.role,
         content: message.content,
       })),
-    });
+    }, { signal: upstreamAbortController.signal });
 
     const encoder = new TextEncoder();
     const usage: UsageTotals = { promptTokens: 0, completionTokens: 0 };
+    let streamedCompletionChars = 0;
 
     const body = new ReadableStream<Uint8Array>({
       async start(controller) {
@@ -411,6 +428,7 @@ export async function POST(request: Request) {
             }
 
             controller.enqueue(encoder.encode(delta));
+            streamedCompletionChars += delta.length;
           }
           controller.close();
         } catch (error) {
@@ -426,6 +444,8 @@ export async function POST(request: Request) {
             promptTokens: usage.promptTokens,
             completionTokens: usage.completionTokens,
             projectedRequestTokens,
+            estimatedPromptTokens,
+            streamedCompletionChars,
           });
           if (resolvedUsage.usedFallback && !streamError) {
             logger.warn("AI stream completed without usage metadata; applying fallback usage", {
@@ -514,6 +534,9 @@ export async function POST(request: Request) {
             },
           });
         }
+      },
+      cancel() {
+        upstreamAbortController.abort("downstream_cancelled");
       },
     });
 

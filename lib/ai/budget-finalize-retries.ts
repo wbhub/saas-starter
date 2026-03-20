@@ -2,6 +2,9 @@ import { logger } from "@/lib/logger";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const MAX_ERROR_TEXT_LENGTH = 1_000;
+const DEFAULT_BACKGROUND_RETRY_DRAIN_LIMIT = 25;
+const DEFAULT_BACKGROUND_RETRY_DRAIN_MIN_INTERVAL_MS = 60_000;
+let lastBackgroundRetryDrainAt = 0;
 
 function toErrorMessage(error: unknown) {
   if (error instanceof Error && error.message) {
@@ -119,4 +122,28 @@ export async function processDueAiBudgetFinalizeRetries(limit = 100) {
     skipped,
     failed,
   };
+}
+
+export async function maybeProcessAiBudgetFinalizeRetries({
+  limit = DEFAULT_BACKGROUND_RETRY_DRAIN_LIMIT,
+  minIntervalMs = DEFAULT_BACKGROUND_RETRY_DRAIN_MIN_INTERVAL_MS,
+}: {
+  limit?: number;
+  minIntervalMs?: number;
+} = {}) {
+  const now = Date.now();
+  if (now - lastBackgroundRetryDrainAt < minIntervalMs) {
+    return { ran: false as const };
+  }
+  lastBackgroundRetryDrainAt = now;
+
+  try {
+    const summary = await processDueAiBudgetFinalizeRetries(limit);
+    return { ran: true as const, summary };
+  } catch (error) {
+    logger.warn("Best-effort AI budget finalize retry drain failed", {
+      error,
+    });
+    return { ran: true as const, failed: true as const };
+  }
 }
