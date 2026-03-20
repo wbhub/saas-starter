@@ -751,6 +751,72 @@ revoke execute on function public.accept_team_invite_atomic(text, uuid, text) fr
 revoke execute on function public.accept_team_invite_atomic(text, uuid, text) from authenticated;
 grant execute on function public.accept_team_invite_atomic(text, uuid, text) to service_role;
 
+create or replace function public.transfer_team_ownership_atomic(
+  p_team_id uuid,
+  p_current_owner_user_id uuid,
+  p_next_owner_user_id uuid
+)
+returns table(ok boolean, error_code text)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_current_role text;
+  v_target_role text;
+begin
+  if p_current_owner_user_id = p_next_owner_user_id then
+    return query select false, 'same_user';
+    return;
+  end if;
+
+  select tm.role
+  into v_current_role
+  from public.team_memberships tm
+  where tm.team_id = p_team_id
+    and tm.user_id = p_current_owner_user_id
+  for update;
+
+  if v_current_role is distinct from 'owner' then
+    return query select false, 'not_current_owner';
+    return;
+  end if;
+
+  select tm.role
+  into v_target_role
+  from public.team_memberships tm
+  where tm.team_id = p_team_id
+    and tm.user_id = p_next_owner_user_id
+  for update;
+
+  if not found then
+    return query select false, 'target_not_found';
+    return;
+  end if;
+
+  if v_target_role = 'owner' then
+    return query select false, 'target_already_owner';
+    return;
+  end if;
+
+  update public.team_memberships
+  set role = case
+    when user_id = p_next_owner_user_id then 'owner'
+    when user_id = p_current_owner_user_id then 'admin'
+    else role
+  end
+  where team_id = p_team_id
+    and user_id in (p_current_owner_user_id, p_next_owner_user_id);
+
+  return query select true, null::text;
+end;
+$$;
+
+revoke execute on function public.transfer_team_ownership_atomic(uuid, uuid, uuid) from public;
+revoke execute on function public.transfer_team_ownership_atomic(uuid, uuid, uuid) from anon;
+revoke execute on function public.transfer_team_ownership_atomic(uuid, uuid, uuid) from authenticated;
+grant execute on function public.transfer_team_ownership_atomic(uuid, uuid, uuid) to service_role;
+
 create or replace function public.recover_personal_team_if_missing(
   p_user_id uuid,
   p_email text,
