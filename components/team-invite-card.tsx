@@ -22,13 +22,12 @@ type InviteApiResponse = {
   ok?: boolean;
   error?: string;
   emailSent?: boolean;
-  inviteUrl?: string;
 };
 
 type TeamMutationResponse = {
   ok?: boolean;
   error?: string;
-  inviteUrl?: string;
+  emailSent?: boolean;
 };
 
 export function TeamInviteCard({
@@ -55,7 +54,6 @@ export function TeamInviteCard({
   const [revokeInviteId, setRevokeInviteId] = useState<string | null>(null);
   const [resendInviteId, setResendInviteId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
-  const [inviteUrl, setInviteUrl] = useState<string | null>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -65,7 +63,6 @@ export function TeamInviteCard({
 
     setSubmitting(true);
     setFeedback(null);
-    setInviteUrl(null);
 
     try {
       const response = await fetch("/api/team/invites", {
@@ -80,30 +77,16 @@ export function TeamInviteCard({
 
       setEmail("");
       setRole("member");
-      setInviteUrl(payload?.inviteUrl ?? null);
       setFeedback(
         payload?.emailSent
           ? "Invite email sent."
-          : "Invite created, but email delivery failed. Share the link manually.",
+          : "Invite created, but email delivery failed. Use resend later to retry.",
       );
       router.refresh();
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : "Failed to send invite.");
     } finally {
       setSubmitting(false);
-    }
-  }
-
-  async function copyInviteUrl() {
-    if (!inviteUrl) {
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(inviteUrl);
-      setFeedback("Invite link copied.");
-    } catch {
-      setFeedback("Could not copy invite link.");
     }
   }
 
@@ -192,7 +175,6 @@ export function TeamInviteCard({
   async function resendInvite(inviteId: string) {
     setResendInviteId(inviteId);
     setFeedback(null);
-    setInviteUrl(null);
     try {
       const response = await fetch(`/api/team/invites/${inviteId}/resend`, {
         method: "POST",
@@ -202,8 +184,7 @@ export function TeamInviteCard({
       if (!response.ok) {
         throw new Error(payload?.error ?? "Failed to resend invite.");
       }
-      setInviteUrl(payload?.inviteUrl ?? null);
-      setFeedback("Invite resent.");
+      setFeedback(payload?.emailSent ? "Invite resent." : "Invite token rotated, but email delivery failed.");
       router.refresh();
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : "Failed to resend invite.");
@@ -408,18 +389,6 @@ export function TeamInviteCard({
         </p>
       ) : null}
 
-      {inviteUrl ? (
-        <div className="mt-3 rounded-lg app-surface-subtle px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
-          <p className="break-all">{inviteUrl}</p>
-          <button
-            type="button"
-            onClick={copyInviteUrl}
-            className="mt-2 rounded-md border app-border-subtle px-3 py-1 text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
-          >
-            Copy link
-          </button>
-        </div>
-      ) : null}
     </section>
   );
 }

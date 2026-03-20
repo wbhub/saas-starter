@@ -6,7 +6,7 @@ import { getClientRateLimitIdentifier } from "@/lib/http/client-ip";
 import { requireJsonContentType } from "@/lib/http/content-type";
 import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
 import { checkRateLimit } from "@/lib/security/rate-limit";
-import { verifyCsrfProtection } from "@/lib/security/csrf";
+import { rotateCsrfTokenOnResponse, verifyCsrfProtection } from "@/lib/security/csrf";
 import { isValidEmail, validatePasswordComplexity } from "@/lib/validation";
 const signupPayloadSchema = z.object({
   email: z.string().trim().toLowerCase(),
@@ -86,11 +86,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unable to create your account." }, { status: 400 });
   }
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     ok: true,
     sessionCreated: Boolean(data.session),
     message: data.session
       ? undefined
       : "Account created. Check your inbox to verify email if confirmation is enabled.",
   });
+  return rotateCsrfTokenOnResponse(response, request);
 }

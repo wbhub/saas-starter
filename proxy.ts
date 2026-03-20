@@ -1,5 +1,10 @@
 import { type NextRequest } from "next/server";
-import { CSRF_COOKIE_NAME, createCsrfToken } from "@/lib/security/csrf";
+import {
+  CSRF_COOKIE_NAME,
+  createCsrfToken,
+  getCsrfCookieOptions,
+} from "@/lib/security/csrf";
+import { createRequestId, REQUEST_ID_HEADER } from "@/lib/http/request-id";
 import { updateSession } from "@/lib/supabase/middleware";
 
 function getSupabaseOrigin() {
@@ -102,20 +107,20 @@ function buildCspHeader(nonce: string) {
 
 export async function proxy(request: NextRequest) {
   const nonce = generateCspNonce();
+  const requestId = createRequestId();
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set(REQUEST_ID_HEADER, requestId);
 
   const response = await updateSession(request, { requestHeaders });
   response.headers.set("Content-Security-Policy", buildCspHeader(nonce));
+  response.headers.set(REQUEST_ID_HEADER, requestId);
   const hasCsrfCookie = request.cookies.get(CSRF_COOKIE_NAME)?.value;
   if (!hasCsrfCookie) {
     response.cookies.set({
       name: CSRF_COOKIE_NAME,
       value: createCsrfToken(),
-      sameSite: "strict",
-      secure: request.nextUrl.protocol === "https:",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 14,
+      ...getCsrfCookieOptions(request.nextUrl.protocol === "https:"),
     });
   }
 

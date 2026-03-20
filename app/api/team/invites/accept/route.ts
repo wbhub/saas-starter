@@ -5,12 +5,18 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireJsonContentType } from "@/lib/http/content-type";
 import { getClientRateLimitIdentifier } from "@/lib/http/client-ip";
+import {
+  getOrCreateRequestId,
+  jsonWithRequestId,
+  withRequestId,
+} from "@/lib/http/request-id";
 import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { hashInviteToken } from "@/lib/team-invites";
 import { syncTeamSeatQuantity } from "@/lib/stripe/seats";
 import { enqueueSeatSyncRetry } from "@/lib/stripe/seat-sync-retries";
+import { getTeamMaxMembers } from "@/lib/team/limits";
 import { logger } from "@/lib/logger";
 const acceptInvitePayloadSchema = z.object({
   token: z.string().trim().min(10).max(256),
@@ -23,15 +29,25 @@ type AcceptInviteRpcResult = {
   team_name: string | null;
 };
 
+type InviteTeamLookupRow = {
+  team_id: string;
+};
+
 export async function POST(request: Request) {
+  const requestId = getOrCreateRequestId(request);
+  const json = (
+    body: unknown,
+    init?: ResponseInit,
+  ) => jsonWithRequestId(requestId, body, init);
+
   const csrfError = verifyCsrfProtection(request);
   if (csrfError) {
-    return csrfError;
+    return withRequestId(csrfError, requestId);
   }
 
   const contentTypeError = requireJsonContentType(request);
   if (contentTypeError) {
-    return contentTypeError;
+    return withRequestId(contentTypeError, requestId);
   }
 
   const supabase = await createClient();
@@ -40,21 +56,21 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const bodyParse = await parseJsonWithSchema(request, acceptInvitePayloadSchema);
   if (!bodyParse.success) {
     if (bodyParse.tooLarge) {
-      return NextResponse.json({ error: "Request payload is too large." }, { status: 413 });
+      return json({ error: "Request payload is too large." }, { status: 413 });
     }
-    return NextResponse.json({ error: "Invalid invite token." }, { status: 400 });
+    return json({ error: "Invalid invite token." }, { status: 400 });
   }
   const { token } = bodyParse.data;
 
   const userEmail = user.email?.trim().toLowerCase();
   if (!userEmail) {
-    return NextResponse.json(
+    return json(
       { error: "No email found on this account." },
       { status: 400 },
     );
@@ -78,7 +94,7 @@ export async function POST(request: Request) {
       userRateLimit.retryAfterSeconds,
       clientRateLimit.retryAfterSeconds,
     );
-    return NextResponse.json(
+    return json(
       { error: "Too many invite acceptance attempts. Please try again shortly." },
       {
         status: 429,
@@ -88,6 +104,45 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient();
+  const teamMaxMembers = getTeamMaxMembers();
+  const nowIso = new Date().toISOString();
+  const inviteLookupResult = await admin
+    .from("team_invites")
+    .select("team_id")
+    .eq("token_hash", tokenHash)
+    .is("accepted_at", null)
+    .gt("expires_at", nowIso)
+    .limit(1)
+    .maybeSingle<InviteTeamLookupRow>();
+  if (inviteLookupResult.error) {
+    logger.error("Failed to resolve invite team before acceptance", inviteLookupResult.error, {
+      requestId,
+      userId: user.id,
+    });
+    return json({ error: "Unable to accept invite." }, { status: 500 });
+  }
+  if (inviteLookupResult.data?.team_id) {
+    const teamId = inviteLookupResult.data.team_id;
+    const { count: memberCount, error: memberCountError } = await admin
+      .from("team_memberships")
+      .select("user_id", { count: "exact", head: true })
+      .eq("team_id", teamId);
+    if (memberCountError) {
+      logger.error("Failed to enforce team member cap before invite acceptance", memberCountError, {
+        requestId,
+        teamId,
+        userId: user.id,
+      });
+      return json({ error: "Unable to accept invite." }, { status: 500 });
+    }
+    if ((memberCount ?? 0) >= teamMaxMembers) {
+      return json(
+        { error: "Team member limit reached. Ask an owner/admin to increase capacity first." },
+        { status: 409 },
+      );
+    }
+  }
+
   const { data, error: rpcError } = await admin.rpc("accept_team_invite_atomic", {
     p_token_hash: tokenHash,
     p_user_id: user.id,
@@ -95,14 +150,14 @@ export async function POST(request: Request) {
   });
 
   if (rpcError) {
-    logger.error("Failed to accept invite atomically", rpcError);
+    logger.error("Failed to accept invite atomically", rpcError, { requestId, userId: user.id });
     logAuditEvent({
       action: "team.invite.accept",
       outcome: "failure",
       actorUserId: user.id,
       metadata: { reason: "rpc_error" },
     });
-    return NextResponse.json({ error: "Unable to accept invite." }, { status: 500 });
+    return json({ error: "Unable to accept invite." }, { status: 500 });
   }
 
   const rpcRow = (Array.isArray(data) ? data[0] : data) as AcceptInviteRpcResult | null;
@@ -115,21 +170,21 @@ export async function POST(request: Request) {
         actorUserId: user.id,
         metadata: { reason: code },
       });
-      return NextResponse.json({ error: "Invite not found." }, { status: 404 });
+      return json({ error: "Invite not found." }, { status: 404 });
     }
     if (code === "already_accepted") {
-      return NextResponse.json({ error: "Invite has already been accepted." }, { status: 409 });
+      return json({ error: "Invite has already been accepted." }, { status: 409 });
     }
     if (code === "expired") {
-      return NextResponse.json({ error: "Invite has expired." }, { status: 410 });
+      return json({ error: "Invite has expired." }, { status: 410 });
     }
     if (code === "email_mismatch") {
-      return NextResponse.json(
+      return json(
         { error: "This invite was sent to a different email address." },
         { status: 403 },
       );
     }
-    return NextResponse.json({ error: "Unable to accept invite." }, { status: 500 });
+    return json({ error: "Unable to accept invite." }, { status: 500 });
   }
 
   let seatSynced = true;
@@ -140,7 +195,11 @@ export async function POST(request: Request) {
       });
     } catch (error) {
       seatSynced = false;
-      logger.error("Accepted invite but failed to sync Stripe seat quantity", error);
+      logger.error("Accepted invite but failed to sync Stripe seat quantity", error, {
+        requestId,
+        teamId: rpcRow.team_id,
+        userId: user.id,
+      });
       try {
         await enqueueSeatSyncRetry({
           teamId: rpcRow.team_id,
@@ -149,7 +208,9 @@ export async function POST(request: Request) {
         });
       } catch (retryError) {
         logger.error("Failed to enqueue seat sync retry after invite acceptance", retryError, {
+          requestId,
           teamId: rpcRow.team_id,
+          userId: user.id,
         });
       }
     }
@@ -163,7 +224,7 @@ export async function POST(request: Request) {
       teamId: rpcRow.team_id,
       metadata: { reason: "seat_sync_failed" },
     });
-    return NextResponse.json(
+    return json(
       {
         error: "Invite accepted, but billing sync failed. Please retry shortly.",
         inviteAccepted: true,
@@ -181,7 +242,7 @@ export async function POST(request: Request) {
     metadata: { seatSynced: true },
   });
 
-  return NextResponse.json({
+  return json({
     ok: true,
     teamName: rpcRow.team_name ?? "Team",
   });

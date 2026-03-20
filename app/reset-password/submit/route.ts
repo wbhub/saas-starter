@@ -6,7 +6,7 @@ import { requireJsonContentType } from "@/lib/http/content-type";
 import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
 import { logger } from "@/lib/logger";
 import { checkRateLimit } from "@/lib/security/rate-limit";
-import { verifyCsrfProtection } from "@/lib/security/csrf";
+import { rotateCsrfTokenOnResponse, verifyCsrfProtection } from "@/lib/security/csrf";
 import { createClient } from "@/lib/supabase/server";
 import { validatePasswordComplexity } from "@/lib/validation";
 
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
     return jsonError("Unable to update password. Please try again.", 400);
   }
 
-  const response = jsonSuccess();
+  const response = rotateCsrfTokenOnResponse(jsonSuccess(), request);
   const secure = request.nextUrl.protocol === "https:";
   response.cookies.set({
     name: PASSWORD_RECOVERY_COOKIE,

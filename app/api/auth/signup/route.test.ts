@@ -15,6 +15,7 @@ describe("POST /api/auth/signup", () => {
 
     vi.doMock("@/lib/security/csrf", () => ({
       verifyCsrfProtection: () => null,
+      rotateCsrfTokenOnResponse: (response: Response) => response,
     }));
     vi.doMock("@/lib/http/content-type", () => ({
       requireJsonContentType: () => null,
