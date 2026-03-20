@@ -28,7 +28,7 @@ This README reflects the app as it exists today and assumes a brand-new setup fr
 - OpenAI (`openai`)
 - Resend (`resend`)
 - Tailwind CSS 4
-- Vitest + ESLint
+- Vitest + Playwright + ESLint
 
 ## Quick Start (Fresh Project)
 
@@ -248,6 +248,35 @@ If `CRON_SECRET` is missing, these endpoints return `503`.
 - `npm run lint` - run ESLint
 - `npm run test` - run Vitest once
 - `npm run test:watch` - run Vitest in watch mode
+- `npm run test:e2e:smoke` - run Playwright smoke tests (`@smoke`)
+- `npm run test:e2e` - run full Playwright suite
+- `npm run test:e2e:ui` - run Playwright UI mode
+
+## Playwright E2E
+
+Lean smoke coverage is in `e2e/` and focuses on:
+
+- auth redirect for protected routes
+- dashboard render for seeded owner user
+- sidebar active navigation state
+- invite acceptance flow (fixture-backed API response)
+- billing permissions for seeded member role
+
+Seeded test users/tokens are provided with environment variables:
+
+- `E2E_OWNER_EMAIL`
+- `E2E_OWNER_PASSWORD`
+- `E2E_MEMBER_EMAIL`
+- `E2E_MEMBER_PASSWORD`
+- `E2E_INVITE_TOKEN` (optional; defaults to a fixture token)
+
+In CI, Playwright smoke tests run only when required seeded auth variables and
+`PLAYWRIGHT_BASE_URL` are configured; otherwise the workflow skips Playwright
+and still runs Vitest.
+
+CI setup:
+
+- PR workflow runs Vitest + Playwright smoke tests on every pull request
 
 ## API Surface (Summary)
 

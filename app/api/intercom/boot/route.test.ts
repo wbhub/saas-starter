@@ -33,6 +33,13 @@ describe("GET /api/intercom/boot", () => {
             },
           }),
         },
+        from: () => ({
+          select: () => ({
+            eq: () => ({
+              maybeSingle: async () => ({ data: { full_name: null } }),
+            }),
+          }),
+        }),
       }),
     }));
     vi.doMock("@/lib/env", () => ({
@@ -63,6 +70,13 @@ describe("GET /api/intercom/boot", () => {
             },
           }),
         },
+        from: () => ({
+          select: () => ({
+            eq: () => ({
+              maybeSingle: async () => ({ data: { full_name: null } }),
+            }),
+          }),
+        }),
       }),
     }));
     vi.doMock("@/lib/intercom/signature", () => ({ signIntercomUserId }));
