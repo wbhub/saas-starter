@@ -28,6 +28,12 @@ type TeamMembershipRow = {
     | null;
 };
 
+type DashboardTeamMembershipRow = {
+  team_id: string;
+  role: "owner" | "admin" | "member";
+  teams: { name: string | null } | null;
+};
+
 type PendingInviteRow = {
   id: string;
   email: string;
@@ -38,6 +44,12 @@ type PendingInviteRow = {
 type TeamMember = {
   userId: string;
   fullName: string | null;
+  role: "owner" | "admin" | "member";
+};
+
+export type DashboardTeamOption = {
+  teamId: string;
+  teamName: string | null;
   role: "owner" | "admin" | "member";
 };
 
@@ -65,13 +77,19 @@ export async function getDashboardBaseData() {
     redirect("/login");
   }
 
-  const [profileQuery, teamContextQuery] = await Promise.allSettled([
+  const [profileQuery, teamContextQuery, teamMembershipsQuery] = await Promise.allSettled([
     supabase
       .from("profiles")
       .select("id,full_name,created_at")
       .eq("id", user.id)
       .maybeSingle<ProfileRow>(),
     getTeamContextForUser(supabase, user.id),
+    supabase
+      .from("team_memberships")
+      .select("team_id,role,teams(name)")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: true })
+      .returns<DashboardTeamMembershipRow[]>(),
   ]);
 
   let profile: ProfileRow | null = null;
@@ -94,9 +112,36 @@ export async function getDashboardBaseData() {
     teamContextLoadFailed = true;
   }
 
+  const teamMemberships =
+    teamMembershipsQuery.status === "fulfilled" && !teamMembershipsQuery.value.error
+      ? (teamMembershipsQuery.value.data ?? []).map((row) => ({
+          teamId: row.team_id,
+          teamName: row.teams?.name ?? null,
+          role: row.role,
+        }))
+      : [];
+  if (teamMembershipsQuery.status === "fulfilled" && teamMembershipsQuery.value.error) {
+    logger.error("Failed to load dashboard team memberships", teamMembershipsQuery.value.error, {
+      userId: user.id,
+    });
+  }
+  if (teamMembershipsQuery.status === "rejected") {
+    logger.error("Failed to load dashboard team memberships", teamMembershipsQuery.reason, {
+      userId: user.id,
+    });
+  }
+
   const displayName = profile?.full_name?.trim() || user.email || "there";
 
-  return { supabase, user, profile, teamContext, teamContextLoadFailed, displayName };
+  return {
+    supabase,
+    user,
+    profile,
+    teamContext,
+    teamContextLoadFailed,
+    teamMemberships,
+    displayName,
+  };
 }
 
 export async function getLiveSubscription(

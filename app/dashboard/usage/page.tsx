@@ -12,7 +12,7 @@ function formatTokens(value: number) {
 }
 
 export default async function DashboardUsagePage() {
-  const { supabase, user, teamContext, teamContextLoadFailed, displayName } =
+  const { supabase, user, teamContext, teamContextLoadFailed, teamMemberships, displayName } =
     await getDashboardBaseData();
 
   if (teamContextLoadFailed) {
@@ -39,6 +39,8 @@ export default async function DashboardUsagePage() {
       userEmail={user.email ?? null}
       teamName={teamContext.teamName}
       role={teamContext.role}
+      activeTeamId={teamContext.teamId}
+      teamMemberships={teamMemberships}
     >
       <header className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm sm:p-6">
         <p className="text-sm text-slate-500 dark:text-slate-400">Usage</p>
