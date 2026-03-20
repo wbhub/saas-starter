@@ -22,7 +22,7 @@ import { logger } from "@/lib/logger";
 import { isOpenAiConfigured, openai } from "@/lib/openai/client";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { verifyCsrfProtection } from "@/lib/security/csrf";
-import { type SubscriptionStatus } from "@/lib/stripe/plans";
+import { LIVE_SUBSCRIPTION_STATUSES, type SubscriptionStatus } from "@/lib/stripe/plans";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getTeamContextForUser } from "@/lib/team-context";
@@ -335,29 +335,36 @@ export async function POST(request: Request) {
     }
   }
 
-  let subscriptionQuery = supabase
-    .from("subscriptions")
-    .select("stripe_price_id,status")
-    .eq("team_id", teamContext.teamId);
+  let subscriptionRow: { stripe_price_id: string | null; status: SubscriptionStatus | null } | null = null;
+  if (aiAccessMode !== "all") {
+    let subscriptionQuery = supabase
+      .from("subscriptions")
+      .select("stripe_price_id,status")
+      .eq("team_id", teamContext.teamId)
+      .in("status", LIVE_SUBSCRIPTION_STATUSES);
 
-  if (aiAccessMode === "paid") {
-    subscriptionQuery = subscriptionQuery.in("status", getAiAllowedSubscriptionStatuses());
-  }
+    if (aiAccessMode === "paid") {
+      subscriptionQuery = subscriptionQuery.in("status", getAiAllowedSubscriptionStatuses());
+    }
 
-  const { data: subscriptionRow, error: subscriptionError } = await subscriptionQuery
-    .order("current_period_end", { ascending: false })
-    .limit(1)
-    .maybeSingle<{ stripe_price_id: string | null; status: SubscriptionStatus | null }>();
+    const { data, error: subscriptionError } = await subscriptionQuery
+      .order("current_period_end", { ascending: false })
+      .limit(1)
+      .maybeSingle<{ stripe_price_id: string | null; status: SubscriptionStatus | null }>();
 
-  if (subscriptionError) {
-    logger.error("Failed to load subscription for AI chat request", subscriptionError, {
-      teamId: teamContext.teamId,
-      userId: user.id,
-    });
-    return NextResponse.json(
-      { error: AI_UNAVAILABLE_MESSAGE },
-      { status: AI_UNAVAILABLE_STATUS },
-    );
+    if (subscriptionError) {
+      logger.error("Failed to load subscription for AI chat request", subscriptionError, {
+        teamId: teamContext.teamId,
+        userId: user.id,
+        accessMode: aiAccessMode,
+      });
+      return NextResponse.json(
+        { error: AI_UNAVAILABLE_MESSAGE },
+        { status: AI_UNAVAILABLE_STATUS },
+      );
+    }
+
+    subscriptionRow = data;
   }
 
   const effectivePlanKey = resolveEffectivePlanKey(subscriptionRow);
