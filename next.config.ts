@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 import path from "node:path";
 
 const securityHeaders = [
@@ -34,4 +35,10 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+const sentryDsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
+
+export default sentryDsn
+  ? withSentryConfig(nextConfig, {
+      silent: true,
+    })
+  : nextConfig;

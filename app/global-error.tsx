@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
+
+const SENTRY_ENABLED = Boolean(process.env.NEXT_PUBLIC_SENTRY_DSN);
 
 export default function GlobalError({
   error,
@@ -11,6 +14,9 @@ export default function GlobalError({
 }) {
   useEffect(() => {
     console.error("Global app error:", error);
+    if (SENTRY_ENABLED) {
+      Sentry.captureException(error);
+    }
   }, [error]);
 
   return (

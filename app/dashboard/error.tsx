@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
+
+const SENTRY_ENABLED = Boolean(process.env.NEXT_PUBLIC_SENTRY_DSN);
 
 export default function DashboardError({
   error,
@@ -12,6 +15,9 @@ export default function DashboardError({
   useEffect(() => {
     // Keep full details in the browser console for debugging.
     console.error("Dashboard rendering failed:", error);
+    if (SENTRY_ENABLED) {
+      Sentry.captureException(error);
+    }
   }, [error]);
 
   return (

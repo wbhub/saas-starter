@@ -104,6 +104,8 @@ Optional:
 - `CRON_SECRET`
 - `NEXT_PUBLIC_INTERCOM_APP_ID`
 - `INTERCOM_IDENTITY_SECRET`
+- `NEXT_PUBLIC_SENTRY_DSN`
+- `SENTRY_ENVIRONMENT`
 - `STRIPE_SEAT_PRORATION_BEHAVIOR` (`create_prorations` or `none`)
 - `TRUST_PROXY_HEADERS`
 - `TRUSTED_PROXY_HEADER_NAMES`
@@ -244,6 +246,32 @@ If `CRON_SECRET` is missing, these endpoints return `503`.
 - `next.config.ts` sets:
   - HSTS, XFO, Referrer-Policy, Permissions-Policy, nosniff
   - `Cache-Control: no-store` for `/api/*`
+
+## Optional Sentry Monitoring
+
+This starter includes minimal Sentry wiring for App Router server, client, and edge runtimes, but it is fully opt-in.
+
+What is captured:
+
+- Unhandled App Router request errors (`instrumentation.ts` request hook)
+- Errors surfaced by app-level boundaries (`app/global-error.tsx`, `app/dashboard/error.tsx`)
+- `logger.error(...)` calls (keeps existing console/structured logging behavior)
+
+How to enable:
+
+1. Set `NEXT_PUBLIC_SENTRY_DSN` in your environment.
+2. Optionally set `SENTRY_ENVIRONMENT` (for example: `development`, `staging`, `production`).
+3. Redeploy/restart the app.
+
+How to disable:
+
+- Remove `NEXT_PUBLIC_SENTRY_DSN` (or leave it empty) and restart/redeploy.
+- With no DSN configured, Sentry initialization is disabled and capture calls become a no-op.
+
+Local dev behavior:
+
+- If `NEXT_PUBLIC_SENTRY_DSN` is not set locally, only normal console logs/errors are emitted.
+- If it is set, local errors can be sent to your Sentry project.
 
 ## Scripts
 
