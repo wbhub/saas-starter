@@ -94,6 +94,7 @@ describe("Dashboard page billing selection", () => {
       logout: vi.fn(),
     }));
     vi.doMock("@/lib/team-context", () => ({
+      canManageTeamBilling: vi.fn((role: string) => role === "owner" || role === "admin"),
       getTeamContextForUser: vi.fn().mockResolvedValue({
         teamId: "team_123",
         teamName: "Acme Team",
@@ -139,6 +140,7 @@ describe("Dashboard page billing selection", () => {
       logout: vi.fn(),
     }));
     vi.doMock("@/lib/team-context", () => ({
+      canManageTeamBilling: vi.fn((role: string) => role === "owner" || role === "admin"),
       getTeamContextForUser: vi.fn(),
     }));
 
@@ -194,6 +196,7 @@ describe("Dashboard page billing selection", () => {
       logout: vi.fn(),
     }));
     vi.doMock("@/lib/team-context", () => ({
+      canManageTeamBilling: vi.fn((role: string) => role === "owner" || role === "admin"),
       getTeamContextForUser: vi.fn().mockResolvedValue(null),
     }));
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
