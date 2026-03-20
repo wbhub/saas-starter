@@ -32,4 +32,20 @@ describe("parseJsonWithSchema", () => {
     expect(result.success).toBe(false);
     expect(result.tooLarge).toBeUndefined();
   });
+
+  it("rejects oversized body during streaming even when content-length lies", async () => {
+    const schema = z.object({ value: z.string() });
+    const request = new Request("http://localhost/test", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Length": "10",
+      },
+      body: JSON.stringify({ value: "x".repeat(1024) }),
+    });
+
+    const result = await parseJsonWithSchema(request, schema, { maxBytes: 128 });
+    expect(result.success).toBe(false);
+    expect(result.tooLarge).toBe(true);
+  });
 });

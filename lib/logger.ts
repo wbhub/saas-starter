@@ -69,14 +69,32 @@ export const logger = {
   },
 
   error(message: string, error?: unknown, context?: Record<string, unknown>) {
+    // Detect call-sites that pass a plain context object as the second arg
+    // instead of an Error (e.g. logger.error("msg", { teamId, error })).
+    // When no third arg is given and the second arg is a plain object without
+    // typical Error-like properties, treat it as structured context so it
+    // serializes into queryable fields rather than a noisy `err` blob.
+    let resolvedError = error;
+    let resolvedContext = context;
+    if (
+      context === undefined &&
+      error != null &&
+      typeof error === "object" &&
+      !(error instanceof Error) &&
+      !("message" in error && "stack" in error)
+    ) {
+      resolvedError = undefined;
+      resolvedContext = error as Record<string, unknown>;
+    }
+
     if (!IS_PRODUCTION) {
       const args: unknown[] = [message];
-      if (error != null) args.push(error);
-      if (context && Object.keys(context).length > 0) args.push(context);
+      if (resolvedError != null) args.push(resolvedError);
+      if (resolvedContext && Object.keys(resolvedContext).length > 0) args.push(resolvedContext);
       console.error(...args);
       return;
     }
-    const errorContext = error != null ? serializeError(error) : {};
-    emitStructured("error", message, { ...errorContext, ...context });
+    const errorContext = resolvedError != null ? serializeError(resolvedError) : {};
+    emitStructured("error", message, { ...errorContext, ...resolvedContext });
   },
 };

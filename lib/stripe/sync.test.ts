@@ -288,6 +288,45 @@ describe("syncSubscription", () => {
     consoleWarn.mockRestore();
   });
 
+  it("does not fall back to supabase_user_id for team resolution", async () => {
+    const adminMock = createAdminMock(null);
+
+    vi.doMock("@/lib/supabase/admin", () => ({
+      createAdminClient: () => adminMock,
+    }));
+    vi.doMock("@/lib/stripe/server", () => ({
+      stripe: {
+        customers: {
+          retrieve: vi.fn().mockResolvedValue({
+            id: "cus_user_only",
+            metadata: { supabase_user_id: "user_abc" },
+          }),
+        },
+      },
+    }));
+
+    const { syncSubscription } = await import("./sync");
+
+    await syncSubscription({
+      id: "sub_user_only",
+      created: 1_700_000_000,
+      status: "active",
+      customer: "cus_user_only",
+      cancel_at_period_end: false,
+      items: {
+        data: [
+          {
+            price: { id: "price_starter" },
+            current_period_start: 1_700_000_000,
+            current_period_end: 1_700_086_400,
+          },
+        ],
+      },
+    } as never);
+
+    expect(adminMock.rpc).not.toHaveBeenCalled();
+  });
+
   it("throws when subscription has no items", async () => {
     const adminMock = createAdminMock();
 

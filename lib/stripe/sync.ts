@@ -51,42 +51,10 @@ export async function resolveTeamIdFromStripeCustomer(
     return teamId;
   }
 
-  const userId = customer.metadata?.supabase_user_id;
-  if (!userId) {
-    return null;
-  }
-
-  return resolveDefaultTeamIdForUser(userId);
-}
-
-export async function resolveDefaultTeamIdForUser(userId: string) {
-  const profileResult = await getAdminClient()
-    .from("profiles")
-    .select("active_team_id")
-    .eq("id", userId)
-    .maybeSingle<{ active_team_id: string | null }>();
-
-  if (profileResult.error) {
-    throw new Error(`Failed to load active team from profile: ${profileResult.error.message}`);
-  }
-
-  if (profileResult.data?.active_team_id) {
-    return profileResult.data.active_team_id;
-  }
-
-  const membershipResult = await getAdminClient()
-    .from("team_memberships")
-    .select("team_id")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle<{ team_id: string }>();
-
-  if (membershipResult.error) {
-    throw new Error(`Failed to load fallback team membership: ${membershipResult.error.message}`);
-  }
-
-  return membershipResult.data?.team_id ?? null;
+  // Do NOT fall back to supabase_user_id -> profiles.active_team_id.
+  // For multi-team users that fallback can attach a subscription to the
+  // wrong team, and the SQL upsert would then silently rewrite team_id.
+  return null;
 }
 
 export async function upsertStripeCustomer(

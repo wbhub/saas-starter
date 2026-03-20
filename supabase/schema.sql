@@ -552,6 +552,7 @@ set search_path = public
 as $$
 declare
   v_live_statuses text[] := array['incomplete', 'trialing', 'active', 'past_due', 'unpaid', 'paused'];
+  v_existing_team_id uuid;
   v_existing_event_created_at timestamptz;
   v_has_newer_live_subscription boolean := false;
   v_upserted_count integer := 0;
@@ -584,11 +585,16 @@ begin
   on conflict (team_id) do update
   set stripe_customer_id = excluded.stripe_customer_id;
 
-  select s.stripe_event_created_at
-  into v_existing_event_created_at
+  select s.team_id, s.stripe_event_created_at
+  into v_existing_team_id, v_existing_event_created_at
   from public.subscriptions s
   where s.stripe_subscription_id = p_stripe_subscription_id
   for update;
+
+  -- Reject if an existing subscription row belongs to a different team.
+  if v_existing_team_id is not null and v_existing_team_id <> p_team_id then
+    return false;
+  end if;
 
   if v_existing_event_created_at is not null and v_existing_event_created_at > p_stripe_event_created_at then
     return false;
@@ -655,7 +661,6 @@ begin
   )
   on conflict (stripe_subscription_id) do update
   set
-    team_id = excluded.team_id,
     stripe_customer_id = excluded.stripe_customer_id,
     stripe_price_id = excluded.stripe_price_id,
     seat_quantity = excluded.seat_quantity,
@@ -949,82 +954,19 @@ using (
 drop policy if exists "Owners/admins can insert team memberships" on public.team_memberships;
 drop policy if exists "Owners can insert team memberships" on public.team_memberships;
 drop policy if exists "Admins can insert member-only team memberships" on public.team_memberships;
-create policy "Owners can insert team memberships"
-on public.team_memberships
-for insert
-to authenticated
-with check (
-  public.is_team_member(team_id, array['owner'])
-);
-
-create policy "Admins can insert member-only team memberships"
-on public.team_memberships
-for insert
-to authenticated
-with check (
-  public.is_team_member(team_id, array['admin'])
-  and role = 'member'
-  and auth.uid() <> user_id
-);
+-- No client-writable INSERT policy on team_memberships.
+-- Membership writes go through server-only API routes / RPC which enforce
+-- CSRF protection, rate limiting, audit logging, and Stripe seat sync.
 
 drop policy if exists "Owners/admins can update team memberships" on public.team_memberships;
 drop policy if exists "Owners can update team memberships" on public.team_memberships;
 drop policy if exists "Admins can update member-only team memberships" on public.team_memberships;
-create policy "Owners can update team memberships"
-on public.team_memberships
-for update
-to authenticated
-using (
-  public.is_team_member(team_id, array['owner'])
-)
-with check (
-  public.is_team_member(team_id, array['owner'])
-);
-
-create policy "Admins can update member-only team memberships"
-on public.team_memberships
-for update
-to authenticated
-using (
-  public.is_team_member(team_id, array['admin'])
-  and role = 'member'
-)
-with check (
-  public.is_team_member(team_id, array['admin'])
-  and role = 'member'
-);
+-- No client-writable UPDATE policy on team_memberships.
 
 drop policy if exists "Owners/admins can delete team memberships" on public.team_memberships;
 drop policy if exists "Owners can delete team memberships" on public.team_memberships;
 drop policy if exists "Admins can delete member-only team memberships" on public.team_memberships;
-create policy "Owners can delete team memberships"
-on public.team_memberships
-for delete
-to authenticated
-using (
-  public.is_team_member(team_id, array['owner'])
-  and auth.uid() <> user_id
-  and (
-    role <> 'owner'
-    or exists (
-      select 1
-      from public.team_memberships tm
-      where tm.team_id = team_memberships.team_id
-        and tm.role = 'owner'
-        and tm.user_id <> team_memberships.user_id
-    )
-  )
-);
-
-create policy "Admins can delete member-only team memberships"
-on public.team_memberships
-for delete
-to authenticated
-using (
-  public.is_team_member(team_id, array['admin'])
-  and auth.uid() <> user_id
-  and role = 'member'
-);
+-- No client-writable DELETE policy on team_memberships.
 
 drop policy if exists "Users can read team stripe customer" on public.stripe_customers;
 drop policy if exists "Users can read own stripe customer" on public.stripe_customers;
