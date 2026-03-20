@@ -50,6 +50,10 @@ cp .env.example .env.local
    - In Supabase Auth settings:
      - Site URL: `http://localhost:3000`
      - Redirect URL: `http://localhost:3000/auth/callback`
+   - Optional social login (Google/Microsoft):
+     - Enable provider(s) in Supabase Auth > Providers
+     - Add provider credentials in Supabase
+     - Set `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true` and/or `NEXT_PUBLIC_AUTH_MICROSOFT_ENABLED=true`
 
 4. Create Stripe products/prices (monthly recurring):
    - Starter
@@ -101,6 +105,8 @@ Required:
 Optional:
 
 - `OPENAI_API_KEY` (required only to enable `/api/ai/chat`)
+- `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED` (set to `true` to show Google OAuth on `/login` and `/signup`)
+- `NEXT_PUBLIC_AUTH_MICROSOFT_ENABLED` (set to `true` to show Microsoft OAuth on `/login` and `/signup`)
 - `CRON_SECRET`
 - `NEXT_PUBLIC_INTERCOM_APP_ID`
 - `INTERCOM_IDENTITY_SECRET`

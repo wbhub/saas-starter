@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  LAST_AUTH_PROVIDER_COOKIE,
+  parseSupabaseProvider,
+} from "@/lib/auth/social-auth";
 import { DAY_MS, MINUTE_MS } from "@/lib/constants/durations";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { getAppUrl } from "@/lib/env";
@@ -32,6 +36,7 @@ const CALLBACK_RATE_LIMIT_COOKIE_MAX_AGE_SECONDS = (30 * DAY_MS) / 1000;
 const PASSWORD_RECOVERY_COOKIE = "auth_password_recovery";
 const PASSWORD_RECOVERY_USER_COOKIE = "auth_password_recovery_user";
 const PASSWORD_RECOVERY_COOKIE_MAX_AGE_SECONDS = (10 * MINUTE_MS) / 1000;
+const LAST_AUTH_PROVIDER_MAX_AGE_SECONDS = (180 * DAY_MS) / 1000;
 
 function getCallbackClientId(request: NextRequest) {
   const existing = request.cookies.get(CALLBACK_RATE_LIMIT_COOKIE)?.value;
@@ -109,6 +114,28 @@ function maybeSetPasswordRecoveryCookies(
   return response;
 }
 
+function maybeSetLastAuthProviderCookie(
+  response: NextResponse,
+  request: NextRequest,
+  sessionProvider?: string | null,
+) {
+  const parsedProvider = parseSupabaseProvider(sessionProvider);
+  if (!parsedProvider) {
+    return response;
+  }
+
+  response.cookies.set({
+    name: LAST_AUTH_PROVIDER_COOKIE,
+    value: parsedProvider,
+    httpOnly: true,
+    sameSite: "lax",
+    secure: request.nextUrl.protocol === "https:",
+    path: "/",
+    maxAge: LAST_AUTH_PROVIDER_MAX_AGE_SECONDS,
+  });
+  return response;
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
@@ -152,5 +179,6 @@ export async function GET(request: NextRequest) {
   if (recoveredUserId) {
     maybeSetPasswordRecoveryCookies(response, request, safeNext, recoveredUserId);
   }
+  maybeSetLastAuthProviderCookie(response, request, data.session?.user.app_metadata?.provider);
   return maybeSetCallbackCookie(response, request, callbackClientId.isNew, callbackClientId.value);
 }
