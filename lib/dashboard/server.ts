@@ -108,12 +108,16 @@ export async function getDashboardBaseData() {
   let profile: ProfileRow | null = null;
   if (profileQuery.status === "fulfilled") {
     if (profileQuery.value.error) {
-      logger.error("Failed to load dashboard profile", profileQuery.value.error);
+      logger.warn("Failed to load dashboard profile; continuing with fallback profile data.", {
+        error: profileQuery.value.error,
+      });
     } else {
       profile = profileQuery.value.data;
     }
   } else {
-    logger.error("Failed to load dashboard profile", profileQuery.reason);
+    logger.warn("Failed to load dashboard profile; continuing with fallback profile data.", {
+      error: profileQuery.reason,
+    });
   }
 
   let teamContext: TeamContext | null = null;
@@ -121,7 +125,9 @@ export async function getDashboardBaseData() {
   if (teamContextQuery.status === "fulfilled") {
     teamContext = teamContextQuery.value;
   } else {
-    logger.error("Failed to load team context", teamContextQuery.reason);
+    logger.warn("Failed to load team context; dashboard will render degraded state.", {
+      error: teamContextQuery.reason,
+    });
     teamContextLoadFailed = true;
   }
 
@@ -134,13 +140,15 @@ export async function getDashboardBaseData() {
         }))
       : [];
   if (teamMembershipsQuery.status === "fulfilled" && teamMembershipsQuery.value.error) {
-    logger.error("Failed to load dashboard team memberships", teamMembershipsQuery.value.error, {
+    logger.warn("Failed to load dashboard team memberships; using empty list.", {
       userId: user.id,
+      error: teamMembershipsQuery.value.error,
     });
   }
   if (teamMembershipsQuery.status === "rejected") {
-    logger.error("Failed to load dashboard team memberships", teamMembershipsQuery.reason, {
+    logger.warn("Failed to load dashboard team memberships; using empty list.", {
       userId: user.id,
+      error: teamMembershipsQuery.reason,
     });
   }
 
@@ -152,20 +160,18 @@ export async function getDashboardBaseData() {
   };
   if (notificationPreferencesQuery.status === "fulfilled") {
     if (notificationPreferencesQuery.value.error) {
-      logger.error(
-        "Failed to load dashboard notification preferences",
-        notificationPreferencesQuery.value.error,
-        { userId: user.id },
-      );
+      logger.warn("Failed to load dashboard notification preferences; using defaults.", {
+        userId: user.id,
+        error: notificationPreferencesQuery.value.error,
+      });
     } else if (notificationPreferencesQuery.value.data) {
       notificationPreferences = notificationPreferencesQuery.value.data;
     }
   } else {
-    logger.error(
-      "Failed to load dashboard notification preferences",
-      notificationPreferencesQuery.reason,
-      { userId: user.id },
-    );
+    logger.warn("Failed to load dashboard notification preferences; using defaults.", {
+      userId: user.id,
+      error: notificationPreferencesQuery.reason,
+    });
   }
 
   return {
@@ -194,12 +200,16 @@ export async function getLiveSubscription(
       .limit(1)
       .maybeSingle<SubscriptionRow>();
     if (subscriptionFetchResult.error) {
-      logger.error("Failed to load dashboard subscription", subscriptionFetchResult.error);
+      logger.warn("Failed to load dashboard subscription; continuing without active subscription.", {
+        error: subscriptionFetchResult.error,
+      });
       return null;
     }
     return subscriptionFetchResult.data;
   } catch (error) {
-    logger.error("Failed to load dashboard subscription", error);
+    logger.warn("Failed to load dashboard subscription; continuing without active subscription.", {
+      error,
+    });
     return null;
   }
 }
@@ -230,10 +240,14 @@ export async function getTeamMembersAndPendingInvites(
       ? membershipResult.value.data ?? []
       : [];
   if (membershipResult.status === "fulfilled" && membershipResult.value.error) {
-    logger.error("Failed to load team members", membershipResult.value.error);
+    logger.warn("Failed to load team members; using empty member list.", {
+      error: membershipResult.value.error,
+    });
   }
   if (membershipResult.status === "rejected") {
-    logger.error("Failed to load team members", membershipResult.reason);
+    logger.warn("Failed to load team members; using empty member list.", {
+      error: membershipResult.reason,
+    });
   }
 
   const pendingInvitesData =
@@ -241,10 +255,14 @@ export async function getTeamMembersAndPendingInvites(
       ? pendingInvitesResult.value.data ?? []
       : [];
   if (pendingInvitesResult.status === "fulfilled" && pendingInvitesResult.value.error) {
-    logger.error("Failed to load pending team invites", pendingInvitesResult.value.error);
+    logger.warn("Failed to load pending team invites; using empty invite list.", {
+      error: pendingInvitesResult.value.error,
+    });
   }
   if (pendingInvitesResult.status === "rejected") {
-    logger.error("Failed to load pending team invites", pendingInvitesResult.reason);
+    logger.warn("Failed to load pending team invites; using empty invite list.", {
+      error: pendingInvitesResult.reason,
+    });
   }
 
   const teamMembers = mapMembershipsToTeamMembers(memberships);
@@ -270,7 +288,9 @@ export async function getTeamMembers(
     .returns<TeamMembershipRow[]>();
 
   if (membershipResult.error) {
-    logger.error("Failed to load team members", membershipResult.error);
+    logger.warn("Failed to load team members; using empty member list.", {
+      error: membershipResult.error,
+    });
     return [];
   }
 
@@ -306,13 +326,15 @@ export async function getUsageMonthlyTotals(
       .returns<UsageMonthlyTotalsRow[]>();
 
     if (usageResult.error) {
-      logger.error("Failed to load usage totals", usageResult.error);
+      logger.warn("Failed to load usage totals; using empty usage data.", {
+        error: usageResult.error,
+      });
       return [];
     }
 
     return usageResult.data ?? [];
   } catch (error) {
-    logger.error("Failed to load usage totals", error);
+    logger.warn("Failed to load usage totals; using empty usage data.", { error });
     return [];
   }
 }

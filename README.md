@@ -105,6 +105,7 @@ Optional:
 - `NEXT_PUBLIC_INTERCOM_APP_ID`
 - `INTERCOM_IDENTITY_SECRET`
 - `NEXT_PUBLIC_SENTRY_DSN`
+- `NEXT_PUBLIC_SENTRY_ENVIRONMENT`
 - `SENTRY_ENVIRONMENT`
 - `STRIPE_SEAT_PRORATION_BEHAVIOR` (`create_prorations` or `none`)
 - `TRUST_PROXY_HEADERS`
@@ -260,8 +261,9 @@ What is captured:
 How to enable:
 
 1. Set `NEXT_PUBLIC_SENTRY_DSN` in your environment.
-2. Optionally set `SENTRY_ENVIRONMENT` (for example: `development`, `staging`, `production`).
-3. Redeploy/restart the app.
+2. Optionally set `NEXT_PUBLIC_SENTRY_ENVIRONMENT` (for example: `development`, `staging`, `production`).
+3. Optionally set `SENTRY_ENVIRONMENT` only if you need a different server/edge value than client.
+4. Redeploy/restart the app.
 
 How to disable:
 
