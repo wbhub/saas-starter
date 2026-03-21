@@ -25,12 +25,12 @@ function getSubscriptionCreatedIso(subscriptionCreatedUnix?: number) {
 
 export async function resolveTeamIdFromStripeCustomer(
   stripeCustomerId: string,
-) {
+): Promise<string | null> {
   const { data: mapping, error } = await getAdminClient()
     .from("stripe_customers")
     .select("team_id")
     .eq("stripe_customer_id", stripeCustomerId)
-    .maybeSingle();
+    .maybeSingle<{ team_id: string | null }>();
 
   if (error) {
     throw new Error(`Failed to load stripe customer mapping: ${error.message}`);

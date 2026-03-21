@@ -18,6 +18,14 @@ const checkoutPayloadSchema = z.object({
   planKey: z.string().trim(),
 });
 
+type ExistingSubscriptionRow = {
+  stripe_subscription_id: string | null;
+};
+
+type StripeCustomerRow = {
+  stripe_customer_id: string | null;
+};
+
 async function isOwnedStripeCustomer(teamId: string, customerId: string) {
   const stripe = getStripeServerClient();
   if (!stripe) {
@@ -217,7 +225,7 @@ export async function POST(req: Request) {
       .in("status", LIVE_SUBSCRIPTION_STATUSES)
       .order("current_period_end", { ascending: false })
       .limit(1)
-      .maybeSingle();
+      .maybeSingle<ExistingSubscriptionRow>();
 
   if (existingSubscriptionError) {
     return NextResponse.json(
@@ -237,7 +245,7 @@ export async function POST(req: Request) {
     .from("stripe_customers")
     .select("stripe_customer_id")
     .eq("team_id", teamContext.teamId)
-    .maybeSingle();
+    .maybeSingle<StripeCustomerRow>();
 
   if (customerRowError) {
     return NextResponse.json(

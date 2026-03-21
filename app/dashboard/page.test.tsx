@@ -4,6 +4,9 @@ describe("Dashboard page billing selection", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    vi.doMock("next-intl/server", () => ({
+      getTranslations: vi.fn().mockResolvedValue((key: string) => key),
+    }));
   });
 
   it("filters subscription query to live statuses", async () => {
@@ -108,9 +111,8 @@ describe("Dashboard page billing selection", () => {
     vi.doMock("@/app/dashboard/actions", () => ({
       logout: vi.fn(),
     }));
-    vi.doMock("@/lib/team-context", () => ({
-      canManageTeamBilling: vi.fn((role: string) => role === "owner" || role === "admin"),
-      getTeamContextForUser: vi.fn().mockResolvedValue({
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
         teamId: "team_123",
         teamName: "Acme Team",
         role: "owner",
@@ -151,9 +153,8 @@ describe("Dashboard page billing selection", () => {
     vi.doMock("@/app/dashboard/actions", () => ({
       logout: vi.fn(),
     }));
-    vi.doMock("@/lib/team-context", () => ({
-      canManageTeamBilling: vi.fn((role: string) => role === "owner" || role === "admin"),
-      getTeamContextForUser: vi.fn(),
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn(),
     }));
 
     const DashboardPage = (await import("./page")).default;
@@ -231,9 +232,8 @@ describe("Dashboard page billing selection", () => {
     vi.doMock("@/app/dashboard/actions", () => ({
       logout: vi.fn(),
     }));
-    vi.doMock("@/lib/team-context", () => ({
-      canManageTeamBilling: vi.fn((role: string) => role === "owner" || role === "admin"),
-      getTeamContextForUser: vi.fn().mockResolvedValue(null),
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue(null),
     }));
     const consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
 

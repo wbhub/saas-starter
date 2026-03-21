@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SECOND_MS } from "@/lib/constants/durations";
+import { getRedisClient } from "@/lib/redis/client";
 
 type RateLimitOptions = {
   key: string;
@@ -120,6 +121,34 @@ function fallbackCheckRateLimit({
   return { allowed: true, retryAfterSeconds: 0 };
 }
 
+async function redisCheckRateLimit({
+  key,
+  limit,
+  windowMs,
+}: RateLimitOptions): Promise<RateLimitResult> {
+  const redis = getRedisClient();
+  if (!redis) {
+    throw new Error("Redis is not configured");
+  }
+
+  const windowSeconds = Math.max(1, Math.ceil(windowMs / 1000));
+  const redisKey = `rate-limit:${key}`;
+  const count = await redis.incr(redisKey);
+  if (count === 1) {
+    await redis.expire(redisKey, windowSeconds);
+  }
+
+  if (count > limit) {
+    const ttlSeconds = await redis.ttl(redisKey);
+    return {
+      allowed: false,
+      retryAfterSeconds: Math.max(1, typeof ttlSeconds === "number" ? ttlSeconds : windowSeconds),
+    };
+  }
+
+  return { allowed: true, retryAfterSeconds: 0 };
+}
+
 export async function checkRateLimit({
   key,
   limit,
@@ -128,6 +157,19 @@ export async function checkRateLimit({
   const isProduction = process.env.NODE_ENV === "production";
   const now = Date.now();
   const circuitBreaker = getCircuitBreakerState();
+  const redis = getRedisClient();
+
+  if (redis) {
+    try {
+      return await redisCheckRateLimit({ key, limit, windowMs });
+    } catch (error) {
+      if (isProduction) {
+        console.error("Redis rate limit check failed; using existing fallback path", error);
+      } else {
+        console.error("Redis rate limit check failed in development", error);
+      }
+    }
+  }
 
   if (isProduction && circuitBreaker.openUntil > now) {
     return fallbackCheckRateLimit({ key, limit, windowMs });

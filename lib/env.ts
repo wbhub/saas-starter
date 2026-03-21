@@ -29,7 +29,9 @@ type OptionalEnvKey =
   | "TRUST_PROXY_HEADERS"
   | "TRUSTED_PROXY_HEADER_NAMES"
   | "STRIPE_SEAT_PRORATION_BEHAVIOR"
-  | "TEAM_MAX_MEMBERS";
+  | "TEAM_MAX_MEMBERS"
+  | "UPSTASH_REDIS_REST_URL"
+  | "UPSTASH_REDIS_REST_TOKEN";
 
 const warnedMissingEnv = new Set<string>();
 const SOFT_REQUIRED_KEYS: ReadonlySet<ServerEnvKey> = new Set([
@@ -169,5 +171,11 @@ export const env = {
   },
   get TEAM_MAX_MEMBERS() {
     return optionalEnv("TEAM_MAX_MEMBERS");
+  },
+  get UPSTASH_REDIS_REST_URL() {
+    return optionalEnv("UPSTASH_REDIS_REST_URL");
+  },
+  get UPSTASH_REDIS_REST_TOKEN() {
+    return optionalEnv("UPSTASH_REDIS_REST_TOKEN");
   },
 };

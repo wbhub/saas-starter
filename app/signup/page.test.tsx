@@ -14,6 +14,9 @@ describe("Signup page social auth config", () => {
     vi.resetModules();
     vi.clearAllMocks();
     clearSocialFlags();
+    vi.doMock("next-intl/server", () => ({
+      getTranslations: vi.fn().mockResolvedValue((key: string) => key),
+    }));
   });
 
   afterEach(() => {
@@ -56,6 +59,9 @@ describe("Signup page social auth config", () => {
     }));
     vi.doMock("@/components/site-footer", () => ({
       SiteFooter: () => <footer data-testid="site-footer" />,
+    }));
+    vi.doMock("@/components/site-header", () => ({
+      SiteHeader: () => <header data-testid="site-header" />,
     }));
 
     const SignupPage = (await import("./page")).default;

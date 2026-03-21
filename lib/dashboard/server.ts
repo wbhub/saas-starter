@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
+import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { LIVE_SUBSCRIPTION_STATUSES, type SubscriptionStatus } from "@/lib/stripe/plans";
 import type { TeamContext } from "@/lib/team-context";
-import { getTeamContextForUser } from "@/lib/team-context";
+import { getCachedTeamContextForUser } from "@/lib/team-context-cache";
+import { getTeamMaxMembers } from "@/lib/team/limits";
 import { logger } from "@/lib/logger";
 import { createClient } from "@/lib/supabase/server";
 
@@ -74,7 +76,7 @@ export type UsageMonthlyTotalsRow = {
   reserved_tokens: number;
 };
 
-export async function getDashboardBaseData() {
+export const getDashboardBaseData = cache(async function getDashboardBaseData() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -91,7 +93,7 @@ export async function getDashboardBaseData() {
         .select("id,full_name,avatar_url,created_at")
       .eq("id", user.id)
       .maybeSingle<ProfileRow>(),
-      getTeamContextForUser(supabase, user.id),
+      getCachedTeamContextForUser(supabase, user.id),
       supabase
         .from("team_memberships")
         .select("team_id,role,teams(name)")
@@ -184,7 +186,7 @@ export async function getDashboardBaseData() {
     notificationPreferences,
     displayName,
   };
-}
+});
 
 export async function getLiveSubscription(
   supabase: SupabaseClient,
@@ -218,12 +220,14 @@ export async function getTeamMembersAndPendingInvites(
   supabase: SupabaseClient,
   teamId: string,
 ) {
+  const queryLimit = getTeamMaxMembers();
   const [membershipResult, pendingInvitesResult] = await Promise.allSettled([
     supabase
       .from("team_memberships")
       .select("user_id,role,created_at,profiles(id,full_name)")
       .eq("team_id", teamId)
       .order("created_at", { ascending: true })
+      .limit(queryLimit)
       .returns<TeamMembershipRow[]>(),
     supabase
       .from("team_invites")
@@ -232,6 +236,7 @@ export async function getTeamMembersAndPendingInvites(
       .is("accepted_at", null)
       .gt("expires_at", new Date().toISOString())
       .order("created_at", { ascending: false })
+      .limit(queryLimit)
       .returns<PendingInviteRow[]>(),
   ]);
 
@@ -280,11 +285,13 @@ export async function getTeamMembers(
   supabase: SupabaseClient,
   teamId: string,
 ): Promise<TeamMember[]> {
+  const queryLimit = getTeamMaxMembers();
   const membershipResult = await supabase
     .from("team_memberships")
     .select("user_id,role,created_at,profiles(id,full_name)")
     .eq("team_id", teamId)
     .order("created_at", { ascending: true })
+    .limit(queryLimit)
     .returns<TeamMembershipRow[]>();
 
   if (membershipResult.error) {

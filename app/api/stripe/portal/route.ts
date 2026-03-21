@@ -9,6 +9,10 @@ import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { logger } from "@/lib/logger";
 import { canManageTeamBilling, getTeamContextForUser } from "@/lib/team-context";
 
+type StripeCustomerRow = {
+  stripe_customer_id: string | null;
+};
+
 async function isOwnedStripeCustomer(teamId: string, customerId: string) {
   const stripe = getStripeServerClient();
   if (!stripe) {
@@ -82,7 +86,7 @@ export async function POST(request: Request) {
     .from("stripe_customers")
     .select("stripe_customer_id")
     .eq("team_id", teamContext.teamId)
-    .maybeSingle();
+    .maybeSingle<StripeCustomerRow>();
 
   if (customerRowError) {
     return NextResponse.json(
