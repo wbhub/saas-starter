@@ -515,7 +515,7 @@ export async function switchActiveTeam(formData: FormData) {
     redirect(redirectTo);
   }
 
-  invalidateCachedTeamContextForUser(user.id);
+  await invalidateCachedTeamContextForUser(user.id);
 
   revalidatePath("/dashboard");
   redirect(redirectTo);

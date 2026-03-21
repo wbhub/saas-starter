@@ -174,7 +174,7 @@ export async function DELETE(request: Request, context: TeamMembersRouteContext)
     return NextResponse.json({ error: t("errors.unableToRemoveMember") }, { status: 500 });
   }
 
-  invalidateCachedTeamContextForUser(targetUserId);
+  await invalidateCachedTeamContextForUser(targetUserId);
 
   let seatSynced = true;
   try {
@@ -344,7 +344,7 @@ export async function PATCH(request: Request, context: TeamMembersRouteContext) 
     return NextResponse.json({ error: t("errors.unableToUpdateMemberRole") }, { status: 500 });
   }
 
-  invalidateCachedTeamContextForUser(targetUserId);
+  await invalidateCachedTeamContextForUser(targetUserId);
 
   logAuditEvent({
     action: "team.member.role_update",

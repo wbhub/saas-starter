@@ -189,7 +189,7 @@ export async function POST(request: Request) {
     return json({ error: t("errors.unableToAcceptInvite") }, { status: 500 });
   }
 
-  invalidateCachedTeamContextForUser(user.id);
+  await invalidateCachedTeamContextForUser(user.id);
 
   let seatSynced = true;
   if (rpcRow.team_id) {

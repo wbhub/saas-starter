@@ -48,7 +48,7 @@ export async function POST(request: Request) {
       user.email,
       typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name : null,
     );
-    invalidateCachedTeamContextForUser(user.id);
+    await invalidateCachedTeamContextForUser(user.id);
     return NextResponse.json({ ok: true, teamId });
   } catch (error) {
     logger.error("Failed to recover personal team", error);

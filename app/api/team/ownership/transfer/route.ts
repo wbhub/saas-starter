@@ -139,8 +139,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: t("errors.unableToTransfer") }, { status: 500 });
   }
 
-  invalidateCachedTeamContextForUser(user.id);
-  invalidateCachedTeamContextForUser(nextOwnerUserId);
+  await Promise.all([
+    invalidateCachedTeamContextForUser(user.id),
+    invalidateCachedTeamContextForUser(nextOwnerUserId),
+  ]);
 
   logAuditEvent({
     action: "team.ownership.transfer",
