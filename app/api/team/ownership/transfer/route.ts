@@ -3,7 +3,10 @@ import { logAuditEvent } from "@/lib/audit";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getTeamContextForUser } from "@/lib/team-context";
+import {
+  getCachedTeamContextForUser,
+  invalidateCachedTeamContextForUser,
+} from "@/lib/team-context-cache";
 import { requireJsonContentType } from "@/lib/http/content-type";
 import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
 import { checkRateLimit } from "@/lib/security/rate-limit";
@@ -40,7 +43,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: t("errors.unauthorized") }, { status: 401 });
   }
 
-  const teamContext = await getTeamContextForUser(supabase, user.id);
+  const teamContext = await getCachedTeamContextForUser(supabase, user.id);
   if (!teamContext) {
     return NextResponse.json(
       { error: t("errors.noTeamMembership") },
@@ -135,6 +138,9 @@ export async function POST(request: Request) {
     });
     return NextResponse.json({ error: t("errors.unableToTransfer") }, { status: 500 });
   }
+
+  invalidateCachedTeamContextForUser(user.id);
+  invalidateCachedTeamContextForUser(nextOwnerUserId);
 
   logAuditEvent({
     action: "team.ownership.transfer",

@@ -13,7 +13,8 @@ import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { LIVE_SUBSCRIPTION_STATUSES } from "@/lib/stripe/plans";
 import { parsePlanKey } from "@/lib/validation";
 import { logger } from "@/lib/logger";
-import { canManageTeamBilling, getTeamContextForUser } from "@/lib/team-context";
+import { canManageTeamBilling } from "@/lib/team-context";
+import { getCachedTeamContextForUser } from "@/lib/team-context-cache";
 const checkoutPayloadSchema = z.object({
   planKey: z.string().trim(),
 });
@@ -153,7 +154,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const teamContext = await getTeamContextForUser(supabase, user.id);
+  const teamContext = await getCachedTeamContextForUser(supabase, user.id);
   if (!teamContext) {
     return NextResponse.json(
       { error: "No team membership found for this account." },

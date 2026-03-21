@@ -7,7 +7,8 @@ import { requireJsonContentType } from "@/lib/http/content-type";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { logger } from "@/lib/logger";
-import { canManageTeamBilling, getTeamContextForUser } from "@/lib/team-context";
+import { canManageTeamBilling } from "@/lib/team-context";
+import { getCachedTeamContextForUser } from "@/lib/team-context-cache";
 
 type StripeCustomerRow = {
   stripe_customer_id: string | null;
@@ -54,7 +55,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const teamContext = await getTeamContextForUser(supabase, user.id);
+  const teamContext = await getCachedTeamContextForUser(supabase, user.id);
   if (!teamContext) {
     return NextResponse.json(
       { error: "No team membership found for this account." },
