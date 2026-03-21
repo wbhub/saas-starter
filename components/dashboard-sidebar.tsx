@@ -2,8 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { LocaleSwitcher } from "@/components/locale-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
 import type { DashboardTeamOption } from "@/lib/dashboard/server";
+import { SHOW_LOCALE_SWITCHER } from "@/lib/i18n/config";
 import { logout, switchActiveTeam } from "@/app/dashboard/actions";
 
 type DashboardSidebarProps = {
@@ -15,14 +18,6 @@ type DashboardSidebarProps = {
   teamMemberships: DashboardTeamOption[];
 };
 
-const navItems: Array<{ label: string; href: string }> = [
-  { label: "Overview", href: "/dashboard" },
-  { label: "Billing", href: "/dashboard/billing" },
-  { label: "Team", href: "/dashboard/team" },
-  { label: "Usage", href: "/dashboard/usage" },
-  { label: "Settings", href: "/dashboard/settings" },
-];
-
 export function DashboardSidebar({
   displayName,
   userEmail,
@@ -31,7 +26,15 @@ export function DashboardSidebar({
   activeTeamId,
   teamMemberships,
 }: DashboardSidebarProps) {
+  const t = useTranslations();
   const pathname = usePathname();
+  const navItems: Array<{ label: string; href: string }> = [
+    { label: t("DashboardSidebar.overview"), href: "/dashboard" },
+    { label: t("DashboardSidebar.billing"), href: "/dashboard/billing" },
+    { label: t("DashboardSidebar.team"), href: "/dashboard/team" },
+    { label: t("DashboardSidebar.usage"), href: "/dashboard/usage" },
+    { label: t("DashboardSidebar.settings"), href: "/dashboard/settings" },
+  ];
 
   function isNavItemActive(href: string) {
     if (href === "/dashboard") {
@@ -45,13 +48,16 @@ export function DashboardSidebar({
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-            App Dashboard
+            {t("DashboardSidebar.appDashboard")}
           </p>
           <p className="mt-1 text-base font-semibold text-slate-900 dark:text-slate-50">
-            {teamName ?? "My Team"}
+            {teamName ?? t("Common.myTeam")}
           </p>
         </div>
-        <ThemeToggle />
+        <div className="flex items-center gap-2">
+          {SHOW_LOCALE_SWITCHER ? <LocaleSwitcher compact /> : null}
+          <ThemeToggle />
+        </div>
       </div>
 
       <div className="mt-5 rounded-lg app-surface-subtle px-3 py-2">
@@ -69,7 +75,7 @@ export function DashboardSidebar({
             htmlFor="active-team-select"
             className="block text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400"
           >
-            Team
+            {t("DashboardSidebar.team")}
           </label>
           <div className="flex gap-2">
             <select
@@ -80,7 +86,7 @@ export function DashboardSidebar({
             >
               {teamMemberships.map((membership) => (
                 <option key={membership.teamId} value={membership.teamId}>
-                  {membership.teamName ?? "My Team"}
+                  {membership.teamName ?? t("Common.myTeam")}
                 </option>
               ))}
             </select>
@@ -88,7 +94,7 @@ export function DashboardSidebar({
               type="submit"
               className="rounded-md border app-border-subtle px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800"
             >
-              Switch
+              {t("DashboardSidebar.switch")}
             </button>
           </div>
         </form>
@@ -120,14 +126,14 @@ export function DashboardSidebar({
           href="/"
           className="inline-flex flex-1 items-center justify-center rounded-md border app-border-subtle px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800"
         >
-          Home
+          {t("DashboardSidebar.home")}
         </Link>
         <form action={logout} className="flex-1">
           <button
             type="submit"
             className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
           >
-            Logout
+            {t("DashboardSidebar.logout")}
           </button>
         </form>
       </div>

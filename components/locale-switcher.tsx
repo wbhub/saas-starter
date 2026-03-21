@@ -1,0 +1,121 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { Check, ChevronDown, Languages } from "lucide-react";
+import Cookies from "js-cookie";
+import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
+import { routing, type AppLocale } from "@/i18n/routing";
+import { cn } from "@/lib/utils";
+
+const LOCALE_COOKIE = "NEXT_LOCALE";
+
+type LocaleSwitcherProps = {
+  className?: string;
+  compact?: boolean;
+};
+
+export function LocaleSwitcher({ className, compact = false }: LocaleSwitcherProps) {
+  const locale = useLocale() as AppLocale;
+  const router = useRouter();
+  const t = useTranslations("LocaleSwitcher");
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    function onDocumentPointerDown(event: MouseEvent) {
+      if (!containerRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", onDocumentPointerDown);
+    return () => {
+      document.removeEventListener("mousedown", onDocumentPointerDown);
+    };
+  }, []);
+
+  function onLocaleChange(nextLocale: AppLocale) {
+    if (nextLocale === locale) {
+      setOpen(false);
+      return;
+    }
+
+    Cookies.set(LOCALE_COOKIE, nextLocale, {
+      path: "/",
+      expires: 365,
+      sameSite: "lax",
+    });
+    setOpen(false);
+    router.refresh();
+  }
+
+  const currentLabel = locale === "en" ? t("english") : t("spanish");
+
+  return (
+    <div
+      ref={containerRef}
+      className={cn(
+        "relative inline-flex",
+        className,
+      )}
+    >
+      <button
+        type="button"
+        aria-label={t("label")}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+        className={cn(
+          "inline-flex items-center gap-2 rounded-lg border app-border-subtle app-surface-subtle text-[color:var(--foreground)] transition-colors hover:bg-[color:var(--surface)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring)]",
+          compact ? "h-9 px-2.5 text-xs" : "h-10 px-3 text-sm",
+        )}
+      >
+        <Languages className={compact ? "h-3.5 w-3.5" : "h-4 w-4"} />
+        <span className={cn("font-medium", compact ? "sr-only" : "")}>{currentLabel}</span>
+        <span className={cn("font-semibold tracking-wide", compact ? "" : "text-xs")}>
+          {locale.toUpperCase()}
+        </span>
+        <ChevronDown
+          className={cn(
+            "text-[color:var(--muted-foreground)] transition-transform",
+            compact ? "h-3.5 w-3.5" : "h-4 w-4",
+            open ? "rotate-180" : "",
+          )}
+        />
+      </button>
+
+      {open ? (
+        <div
+          role="menu"
+          aria-label={t("label")}
+          className="absolute right-0 top-[calc(100%+0.4rem)] z-30 min-w-40 rounded-xl border app-border-subtle app-surface p-1.5 shadow-lg"
+        >
+          {routing.locales.map((item) => {
+            const isActive = item === locale;
+            const localeLabel = item === "en" ? t("english") : t("spanish");
+
+            return (
+              <button
+                key={item}
+                type="button"
+                role="menuitemradio"
+                aria-checked={isActive}
+                onClick={() => onLocaleChange(item)}
+                className={cn(
+                  "flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm transition-colors",
+                  isActive
+                    ? "bg-[color:var(--surface-subtle)] text-[color:var(--foreground)]"
+                    : "text-[color:var(--foreground)] hover:bg-[color:var(--surface-subtle)]",
+                )}
+              >
+                <span>{localeLabel}</span>
+                {isActive ? <Check className="h-4 w-4 text-indigo-500" /> : null}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}

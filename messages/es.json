@@ -1,0 +1,189 @@
+{
+  "Common": {
+    "brandName": "SaaS Starter",
+    "myTeam": "Mi equipo"
+  },
+  "LocaleSwitcher": {
+    "label": "Idioma",
+    "english": "Ingles",
+    "spanish": "Espanol"
+  },
+  "SiteHeader": {
+    "dashboard": "Panel",
+    "login": "Iniciar sesion",
+    "openApp": "Abrir app",
+    "startFree": "Comenzar gratis"
+  },
+  "SiteFooter": {
+    "companyPlaceholder": "[Nombre de empresa]",
+    "privacyPolicy": "Politica de privacidad",
+    "termsOfUse": "Terminos de uso"
+  },
+  "AuthPages": {
+    "backHome": "Volver al inicio",
+    "backLogin": "Volver a iniciar sesion"
+  },
+  "AuthForm": {
+    "errors": {
+      "unableToLogIn": "No se pudo iniciar sesion.",
+      "unableToCreateAccount": "No se pudo crear la cuenta.",
+      "unexpected": "Error inesperado",
+      "unableSocialLogin": "No se pudo continuar con el acceso social."
+    },
+    "messages": {
+      "accountCreated": "Cuenta creada. Revisa tu correo para verificar el email si la confirmacion esta habilitada."
+    },
+    "title": {
+      "login": "Bienvenido de nuevo",
+      "signup": "Crea tu cuenta"
+    },
+    "description": {
+      "login": "Inicia sesion para gestionar tu suscripcion SaaS.",
+      "signup": "Empieza con autenticacion segura e infraestructura lista para facturacion."
+    },
+    "socialAuthLabel": "Autenticacion social",
+    "pleaseWait": "Espera...",
+    "continueWith": "Continuar con {provider}",
+    "lastUsed": "Ultimo usado",
+    "orContinueWithEmail": "o continua con email",
+    "email": "Email",
+    "password": "Contrasena",
+    "passwordHint": "Usa 12-128 caracteres. Las frases largas son bienvenidas.",
+    "submit": {
+      "login": "Entrar",
+      "signup": "Crear cuenta"
+    },
+    "needAccount": "Necesitas una cuenta?",
+    "signUp": "Registrate",
+    "forgotPassword": "Olvidaste tu contrasena?",
+    "alreadyHaveAccount": "Ya tienes una cuenta?",
+    "logIn": "Inicia sesion"
+  },
+  "Landing": {
+    "header": {
+      "dashboard": "Panel",
+      "login": "Iniciar sesion",
+      "openApp": "Abrir app",
+      "startFree": "Comenzar gratis"
+    },
+    "hero": {
+      "badge": "Base SaaS lista para produccion",
+      "title": "Lanza un SaaS listo para produccion en dias, no meses.",
+      "description": "Evita meses de trabajo de plataforma. Auth, acceso por equipos, facturacion por asientos, email de soporte y APIs listas para AI ya estan conectadas para que te enfoques en el producto.",
+      "goDashboard": "Ir al panel",
+      "startFreeNow": "Comenzar gratis",
+      "viewPricing": "Ver precios",
+      "feature1": "Flujos de auth con Supabase",
+      "feature2": "Invitaciones y roles de equipo",
+      "feature3": "Facturacion Stripe por asientos",
+      "feature4": "Endpoint de chat AI",
+      "feature5": "Email de soporte con Resend",
+      "feature6": "CSRF + CSP + limites de tasa",
+      "shipNowTitle": "Lo que lanzas de inmediato",
+      "shipNowDescription": "Flujos de app y API mapeados a un lanzamiento SaaS real.",
+      "shipItem1": "Registro, login, recuperar contrasena, reset y rutas de panel protegidas",
+      "shipItem2": "Onboarding de equipos con invitaciones, aceptacion, roles y transferencia de propiedad",
+      "shipItem3": "Checkout Stripe por asientos, portal de facturacion, cambios de plan y sincronizacion webhooks",
+      "shipItem4": "API de soporte con envio por Resend y contexto autenticado del remitente",
+      "shipItem5": "Ruta opcional de chat AI con respuestas streaming, presupuestos y acceso por plan",
+      "shipItem6": "Seguridad por defecto con CSRF, CSP, request IDs y rate limiting"
+    },
+    "gettingStarted": {
+      "title": "Como empezar rapido",
+      "description": "Sigue el README para pasar de un clon limpio a una app SaaS funcional con auth y facturacion reales.",
+      "step1Title": "1. Clonar e instalar",
+      "step1Text": "Instala dependencias, copia `.env.example` a `.env.local` y define tus valores requeridos.",
+      "step2Title": "2. Configurar proveedores",
+      "step2Text": "Aplica `supabase/schema.sql`, agrega IDs de precios Stripe + secreto de webhook y configura Resend.",
+      "step3Title": "3. Personalizar y lanzar",
+      "step3Text": "Actualiza marca, precios y logica de producto, luego despliega en Vercel con cron jobs opcionales."
+    },
+    "whyStarter": {
+      "label": "Por que este starter",
+      "title": "Creado para operaciones SaaS reales, no solo demos.",
+      "description": "El codigo incluye patrones de produccion para equipos, suscripciones, soporte, controles de acceso AI y endpoints operativos cron.",
+      "stat1Label": "Rutas incluidas",
+      "stat1Value": "Publico + Auth + Panel",
+      "stat2Label": "Flujos base listos",
+      "stat2Value": "Auth + Equipos + Facturacion",
+      "stat3Label": "Base de seguridad",
+      "stat3Value": "CSRF + CSP + rate limiting"
+    },
+    "bestPractices": {
+      "title": "Buenas practicas integradas",
+      "description": "Los caminos principales estan implementados con seguridad y mantenibilidad para que extiendas con confianza.",
+      "securityDefaultsTitle": "Seguridad por defecto",
+      "securityDefaultsText": "Incluye proteccion CSRF, CSP, headers API estrictos y middleware consciente de request.",
+      "teamBillingTitle": "Facturacion por equipo",
+      "teamBillingText": "Las suscripciones Stripe son por equipo con reconciliacion de asientos, portal y cambios de plan.",
+      "operationalTitle": "Endpoints operativos",
+      "operationalText": "Las rutas cron reconcilian asientos y limpian datos de webhooks con autorizacion por token."
+    },
+    "stack": {
+      "title": "Dentro del stack",
+      "description": "Next.js App Router con limites claros entre UI, handlers API y librerias compartidas.",
+      "authTitle": "Auth y flujo de usuarios",
+      "authText": "Helpers SSR de auth Supabase, aceptacion de invitaciones, contexto de equipo y ajustes de cuenta ya conectados.",
+      "billingTitle": "Facturacion y Stripe",
+      "billingText": "Checkout, portal y cambios de plan se apoyan en dedupe de webhooks y logica de sincronizacion.",
+      "opsTitle": "AI, soporte y observabilidad",
+      "opsText": "Chat AI, email de soporte con Resend e integraciones opcionales de Intercom + Sentry listas para configurar."
+    },
+    "pricing": {
+      "title": "Precios por asientos desde Stripe",
+      "description": "Configura una vez los IDs de precios Starter, Growth y Pro para mantener sincronizados landing y facturacion.",
+      "mostPopular": "Mas popular",
+      "managePlan": "Gestionar plan",
+      "choosePlan": "Elegir {name}"
+    },
+    "ctaFaq": {
+      "title": "Listo para enviar tu SaaS mas rapido?",
+      "description": "Empieza con infraestructura probada de auth, equipos, facturacion y APIs, y construye la experiencia que hace unica tu empresa.",
+      "openDashboard": "Abrir panel",
+      "createAccount": "Crear cuenta",
+      "comparePlans": "Comparar planes",
+      "faqTitle": "Preguntas frecuentes",
+      "q1": "Que incluye de base?",
+      "a1": "Una base SaaS orientada a produccion con auth Supabase, invitaciones y roles de equipo, facturacion Stripe por asientos, rutas de panel, email de soporte por Resend y middleware de seguridad ya conectado.",
+      "q2": "Debo construir auth y facturacion por mi cuenta?",
+      "a2": "No. Login, registro, reset de contrasena, rutas protegidas, checkout, cambios de plan, portal de facturacion y manejo de webhooks ya estan implementados.",
+      "q3": "Como se manejan equipos y permisos?",
+      "a3": "Los equipos soportan invitaciones y acceso por roles (`owner`, `admin`, `member`), con transferencia de propiedad y operaciones de membresia protegidas por rutas API y politicas de base de datos.",
+      "q4": "Incluye chat AI?",
+      "a4": "Si. Incluye `/api/ai/chat` con respuestas en streaming, chequeos CSRF, rate limiting y reglas de acceso configurables por plan cuando `OPENAI_API_KEY` esta definido."
+    }
+  },
+  "DashboardSidebar": {
+    "appDashboard": "Panel de la app",
+    "team": "Equipo",
+    "switch": "Cambiar",
+    "overview": "Resumen",
+    "billing": "Facturacion",
+    "usage": "Uso",
+    "settings": "Configuracion",
+    "home": "Inicio",
+    "logout": "Cerrar sesion"
+  },
+  "DashboardPage": {
+    "overview": "Resumen",
+    "welcome": "Bienvenido, {name}",
+    "navigate": "Navega por secciones para facturacion, gestion de equipos, uso y configuracion.",
+    "account": "Cuenta",
+    "userId": "ID de usuario",
+    "team": "Equipo",
+    "role": "Rol",
+    "memberSince": "Miembro desde",
+    "subscriptionSnapshot": "Estado de suscripcion",
+    "currentPlan": "Plan actual",
+    "unknown": "Desconocido",
+    "status": "Estado",
+    "seats": "Asientos",
+    "currentPlanFree": "Plan actual: Gratis",
+    "visitBillingUpgrade": "Visita facturacion para mejorar cuando quieras.",
+    "noActiveSubscription": "No hay suscripcion activa. Visita facturacion para iniciar un plan.",
+    "billing": "Facturacion",
+    "teamNav": "Equipo",
+    "usage": "Uso",
+    "settings": "Configuracion"
+  }
+}

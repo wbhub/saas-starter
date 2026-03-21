@@ -10,58 +10,17 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 import { AuthAwareLink } from "@/components/auth-aware-link";
+import { LocaleSwitcher } from "@/components/locale-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { SHOW_LOCALE_SWITCHER } from "@/lib/i18n/config";
 import { getPublicPricingCatalog } from "@/lib/stripe/public-pricing";
 
-const faqs = [
-  {
-    question: "What is included out of the box?",
-    answer:
-      "A production-oriented SaaS foundation with Supabase auth, team invites and roles, seat-based Stripe billing, dashboard routes, support email via Resend, and security middleware already wired in.",
-  },
-  {
-    question: "Do I need to build auth and billing myself?",
-    answer:
-      "No. Login, signup, password reset, protected routes, checkout, plan changes, billing portal, and webhook handling are already implemented so you can focus on product features.",
-  },
-  {
-    question: "How are teams and permissions handled?",
-    answer:
-      "Teams support invite flows and role-based access (`owner`, `admin`, `member`), with ownership transfer and guarded membership operations handled through API routes and database policies.",
-  },
-  {
-    question: "Is AI chat included?",
-    answer:
-      "Yes. `/api/ai/chat` is included with streaming responses, CSRF checks, rate limiting, and configurable access rules by paid status or plan when `OPENAI_API_KEY` is set.",
-  },
-];
-
-const stats = [
-  { label: "App routes included", value: "Public + Auth + Dashboard" },
-  { label: "Core workflows prewired", value: "Auth + Teams + Billing" },
-  {
-    label: "Security baseline included",
-    value: "CSRF + CSP + rate limiting",
-  },
-];
-
-const steps = [
-  {
-    title: "1. Clone & install",
-    text: "Install dependencies, copy `.env.example` to `.env.local`, and set your required values.",
-  },
-  {
-    title: "2. Configure providers",
-    text: "Apply `supabase/schema.sql`, add Stripe price IDs + webhook secret, and configure Resend.",
-  },
-  {
-    title: "3. Customize & launch",
-    text: "Update branding, pricing, and product logic, then deploy to Vercel with optional cron jobs.",
-  },
-];
-
 export function LandingHeader() {
+  const t = useTranslations();
+
   return (
     <header className="border-b app-border-subtle">
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
@@ -71,24 +30,25 @@ export function LandingHeader() {
           </div>
           <div className="flex flex-col">
             <span className="text-xl font-semibold leading-tight tracking-tight">
-              SaaS Starter
+              {t("Common.brandName")}
             </span>
           </div>
         </div>
         <div className="flex items-center gap-3">
+          {SHOW_LOCALE_SWITCHER ? <LocaleSwitcher /> : null}
           <ThemeToggle />
           <AuthAwareLink
             loggedInHref="/dashboard"
             loggedOutHref="/login"
-            loggedInLabel="Dashboard"
-            loggedOutLabel="Login"
+            loggedInLabel={t("Landing.header.dashboard")}
+            loggedOutLabel={t("Landing.header.login")}
             className="rounded-lg border app-border-subtle px-4 py-2 text-sm hover:bg-[color:var(--surface-subtle)]"
           />
           <AuthAwareLink
             loggedInHref="/dashboard"
             loggedOutHref="/signup"
-            loggedInLabel="Open App"
-            loggedOutLabel="Start Free"
+            loggedInLabel={t("Landing.header.openApp")}
+            loggedOutLabel={t("Landing.header.startFree")}
             className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400"
           />
         </div>
@@ -98,6 +58,16 @@ export function LandingHeader() {
 }
 
 export function HeroSection() {
+  const t = useTranslations("Landing.hero");
+  const shipItems = [
+    t("shipItem1"),
+    t("shipItem2"),
+    t("shipItem3"),
+    t("shipItem4"),
+    t("shipItem5"),
+    t("shipItem6"),
+  ];
+
   return (
     <section className="relative overflow-hidden rounded-3xl border app-border-subtle app-surface px-6 py-10 md:px-10 md:py-14">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.16),transparent_45%)]" />
@@ -105,22 +75,20 @@ export function HeroSection() {
         <div>
           <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-indigo-400/40 bg-indigo-500/5 px-3 py-1 text-sm app-accent">
             <Clock3 className="h-4 w-4" />
-            Production-grade SaaS foundation
+            {t("badge")}
           </p>
           <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">
-            Launch a production-ready SaaS in days, not months.
+            {t("title")}
           </h1>
           <p className="app-muted mt-5 max-w-xl text-base">
-            Skip months of platform work. Auth, team access, seat-based billing, support
-            email, and AI-ready APIs are already wired so you can focus on the product
-            customers pay for.
+            {t("description")}
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <AuthAwareLink
               loggedInHref="/dashboard"
               loggedOutHref="/signup"
-              loggedInLabel="Go to dashboard"
-              loggedOutLabel="Start free now"
+              loggedInLabel={t("goDashboard")}
+              loggedOutLabel={t("startFreeNow")}
               className="inline-flex items-center gap-2 rounded-lg bg-indigo-500 px-5 py-3 font-medium text-white hover:bg-indigo-400"
             >
               <ArrowRight className="h-4 w-4" />
@@ -129,33 +97,33 @@ export function HeroSection() {
               href="#pricing"
               className="rounded-lg border app-border-subtle px-5 py-3 font-medium hover:bg-[color:var(--surface-subtle)]"
             >
-              View pricing
+              {t("viewPricing")}
             </Link>
           </div>
           <div className="mt-8 flex flex-wrap items-center gap-4 text-sm app-muted">
             <span className="inline-flex items-center gap-2">
               <BadgeCheck className="h-4 w-4 text-emerald-500 dark:text-emerald-300" />
-              Supabase auth flows
+              {t("feature1")}
             </span>
             <span className="inline-flex items-center gap-2">
               <BadgeCheck className="h-4 w-4 text-emerald-500 dark:text-emerald-300" />
-              Team invites and roles
+              {t("feature2")}
             </span>
             <span className="inline-flex items-center gap-2">
               <BadgeCheck className="h-4 w-4 text-emerald-500 dark:text-emerald-300" />
-              Seat-based Stripe billing
+              {t("feature3")}
             </span>
             <span className="inline-flex items-center gap-2">
               <BadgeCheck className="h-4 w-4 text-emerald-500 dark:text-emerald-300" />
-              AI chat endpoint
+              {t("feature4")}
             </span>
             <span className="inline-flex items-center gap-2">
               <BadgeCheck className="h-4 w-4 text-emerald-500 dark:text-emerald-300" />
-              Resend support email
+              {t("feature5")}
             </span>
             <span className="inline-flex items-center gap-2">
               <BadgeCheck className="h-4 w-4 text-emerald-500 dark:text-emerald-300" />
-              CSRF + CSP + rate limits
+              {t("feature6")}
             </span>
           </div>
         </div>
@@ -163,20 +131,13 @@ export function HeroSection() {
         <div className="space-y-4">
           <div className="rounded-2xl border app-border-subtle app-surface-subtle p-6">
             <div className="mb-4">
-              <h2 className="text-lg font-semibold">What you ship immediately</h2>
+              <h2 className="text-lg font-semibold">{t("shipNowTitle")}</h2>
               <p className="app-muted mt-1 text-sm">
-                App and API flows mapped to a real SaaS launch.
+                {t("shipNowDescription")}
               </p>
             </div>
             <div className="grid gap-4">
-              {[
-                "Signup, login, forgot-password, reset-password, and protected dashboard routes",
-                "Team onboarding with invites, acceptance, role management, and ownership transfer",
-                "Seat-based Stripe checkout, billing portal, plan changes, and webhook syncing",
-                "Support request API with Resend delivery and authenticated sender context",
-                "Optional AI chat route with streaming responses, budgeting, and plan-aware access",
-                "Security defaults including CSRF checks, CSP headers, request IDs, and rate limiting",
-              ].map((item) => (
+              {shipItems.map((item) => (
                 <div key={item} className="flex items-start gap-3">
                   <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center">
                     <CheckCircle2
@@ -197,14 +158,20 @@ export function HeroSection() {
 }
 
 export function GettingStartedSection() {
+  const t = useTranslations("Landing.gettingStarted");
+  const steps = [
+    { title: t("step1Title"), text: t("step1Text") },
+    { title: t("step2Title"), text: t("step2Text") },
+    { title: t("step3Title"), text: t("step3Text") },
+  ];
+
   return (
     <section className="space-y-8">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <h2 className="text-2xl font-semibold md:text-3xl">How to get up-and-running</h2>
+          <h2 className="text-2xl font-semibold md:text-3xl">{t("title")}</h2>
           <p className="app-muted mt-2 max-w-2xl">
-            Follow the setup in the README to go from fresh clone to a working SaaS app
-            with real auth and billing flows.
+            {t("description")}
           </p>
         </div>
       </div>
@@ -226,19 +193,23 @@ export function GettingStartedSection() {
 }
 
 export function WhyStarterSection() {
+  const t = useTranslations("Landing.whyStarter");
+  const stats = [
+    { label: t("stat1Label"), value: t("stat1Value") },
+    { label: t("stat2Label"), value: t("stat2Value") },
+    { label: t("stat3Label"), value: t("stat3Value") },
+  ];
+
   return (
     <section className="rounded-3xl border app-border-subtle app-surface px-6 py-8 md:px-10 md:py-10">
       <div className="mx-auto max-w-3xl text-center">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] app-muted">
-          Why this starter
+          {t("label")}
         </p>
         <h2 className="mt-3 text-2xl font-semibold md:text-3xl">
-          Built for real SaaS operations, not just demos.
+          {t("title")}
         </h2>
-        <p className="app-muted mt-3">
-          The codebase includes production-minded patterns for teams, subscriptions,
-          support, AI access controls, and operational cron endpoints.
-        </p>
+        <p className="app-muted mt-3">{t("description")}</p>
       </div>
       <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
         {stats.map((stat) => (
@@ -258,32 +229,33 @@ export function WhyStarterSection() {
 }
 
 export function BestPracticesSection() {
+  const t = useTranslations("Landing.bestPractices");
+
   return (
     <section className="space-y-8">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <h2 className="text-3xl font-semibold">Built-in best practices</h2>
+          <h2 className="text-3xl font-semibold">{t("title")}</h2>
           <p className="app-muted mt-2 max-w-2xl">
-            Core paths are implemented with safety and maintainability in mind, so you
-            can extend confidently.
+            {t("description")}
           </p>
         </div>
       </div>
       <div className="grid gap-6 md:grid-cols-3">
         <FeatureCard
           icon={<ShieldCheck className="h-5 w-5 text-indigo-500 dark:text-indigo-300" />}
-          title="Security defaults"
-          text="CSRF protection, CSP, strict API headers, and request-aware middleware are included."
+          title={t("securityDefaultsTitle")}
+          text={t("securityDefaultsText")}
         />
         <FeatureCard
           icon={<CreditCard className="h-5 w-5 text-indigo-500 dark:text-indigo-300" />}
-          title="Team-based billing"
-          text="Stripe subscriptions are team-scoped with seat reconciliation, portal access, and plan changes."
+          title={t("teamBillingTitle")}
+          text={t("teamBillingText")}
         />
         <FeatureCard
           icon={<BarChart3 className="h-5 w-5 text-indigo-500 dark:text-indigo-300" />}
-          title="Operational endpoints"
-          text="Cron routes reconcile seats and clean webhook data, with token-based authorization."
+          title={t("operationalTitle")}
+          text={t("operationalText")}
         />
       </div>
     </section>
@@ -291,44 +263,36 @@ export function BestPracticesSection() {
 }
 
 export function StackSection() {
+  const t = useTranslations("Landing.stack");
+
   return (
     <section className="space-y-6 rounded-3xl border app-border-subtle app-surface px-6 py-8 md:px-8 md:py-9">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <h2 className="text-2xl font-semibold md:text-3xl">Inside the stack</h2>
+          <h2 className="text-2xl font-semibold md:text-3xl">{t("title")}</h2>
           <p className="app-muted mt-2 max-w-2xl">
-            Next.js App Router with clear boundaries across UI routes, API handlers, and
-            shared platform libraries.
+            {t("description")}
           </p>
         </div>
       </div>
       <div className="grid gap-6 md:grid-cols-3">
         <article className="rounded-2xl border app-border-subtle app-surface-subtle p-5 text-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] app-muted">
-            Auth & user flows
+            {t("authTitle")}
           </p>
-          <p className="app-muted mt-2">
-            Supabase SSR auth helpers, invite acceptance flow, team context, and account
-            settings are already connected.
-          </p>
+          <p className="app-muted mt-2">{t("authText")}</p>
         </article>
         <article className="rounded-2xl border app-border-subtle app-surface-subtle p-5 text-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] app-muted">
-            Billing & Stripe
+            {t("billingTitle")}
           </p>
-          <p className="app-muted mt-2">
-            Checkout, portal, and change-plan APIs are backed by webhook dedupe and
-            subscription sync logic.
-          </p>
+          <p className="app-muted mt-2">{t("billingText")}</p>
         </article>
         <article className="rounded-2xl border app-border-subtle app-surface-subtle p-5 text-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] app-muted">
-            AI, support, and observability
+            {t("opsTitle")}
           </p>
-          <p className="app-muted mt-2">
-            AI chat, Resend support email, and optional Intercom + Sentry integrations
-            are ready to configure.
-          </p>
+          <p className="app-muted mt-2">{t("opsText")}</p>
         </article>
       </div>
     </section>
@@ -336,16 +300,14 @@ export function StackSection() {
 }
 
 export async function PricingSection() {
+  const t = await getTranslations("Landing.pricing");
   const pricingCatalog = await getPublicPricingCatalog();
 
   return (
     <section id="pricing" className="space-y-8">
       <div>
-        <h2 className="text-3xl font-semibold">Seat-based pricing from Stripe</h2>
-        <p className="app-muted mt-3">
-          Configure Starter, Growth, and Pro price IDs once, and the landing page and
-          billing flows stay in sync.
-        </p>
+        <h2 className="text-3xl font-semibold">{t("title")}</h2>
+        <p className="app-muted mt-3">{t("description")}</p>
       </div>
       <div className="grid gap-4 md:grid-cols-3">
         {pricingCatalog.map((tier, idx) => (
@@ -363,7 +325,7 @@ export async function PricingSection() {
                 idx === 1 ? "" : "invisible"
               }`}
             >
-              Most popular
+              {t("mostPopular")}
             </p>
             <h3 className="text-lg font-semibold">{tier.name}</h3>
             <p className="mt-2 text-3xl font-semibold text-indigo-600 dark:text-indigo-300">
@@ -373,8 +335,8 @@ export async function PricingSection() {
             <AuthAwareLink
               loggedInHref="/dashboard"
               loggedOutHref="/signup"
-              loggedInLabel="Manage Plan"
-              loggedOutLabel={`Choose ${tier.name}`}
+              loggedInLabel={t("managePlan")}
+              loggedOutLabel={t("choosePlan", { name: tier.name })}
               className="mt-6 inline-block rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400"
             />
           </article>
@@ -385,23 +347,28 @@ export async function PricingSection() {
 }
 
 export function CtaFaqSection() {
+  const t = useTranslations("Landing.ctaFaq");
+  const faqs = [
+    { question: t("q1"), answer: t("a1") },
+    { question: t("q2"), answer: t("a2") },
+    { question: t("q3"), answer: t("a3") },
+    { question: t("q4"), answer: t("a4") },
+  ];
+
   return (
     <section className="space-y-10">
       <div className="rounded-3xl border app-border-subtle bg-indigo-500/[0.08] p-8 md:p-10">
         <div className="grid gap-6 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] md:items-center">
           <div>
-            <h2 className="text-3xl font-semibold">Ready to ship your SaaS faster?</h2>
-            <p className="app-muted mt-3 max-w-2xl">
-              Start with proven auth, team, billing, and API infrastructure, then build
-              the product experience that makes your business unique.
-            </p>
+            <h2 className="text-3xl font-semibold">{t("title")}</h2>
+            <p className="app-muted mt-3 max-w-2xl">{t("description")}</p>
           </div>
           <div className="flex flex-wrap justify-start gap-3 md:justify-end">
             <AuthAwareLink
               loggedInHref="/dashboard"
               loggedOutHref="/signup"
-              loggedInLabel="Open dashboard"
-              loggedOutLabel="Create your account"
+              loggedInLabel={t("openDashboard")}
+              loggedOutLabel={t("createAccount")}
               className="inline-flex items-center gap-2 rounded-lg bg-indigo-500 px-5 py-3 font-medium text-white hover:bg-indigo-400"
             >
               <ArrowRight className="h-4 w-4" />
@@ -410,14 +377,14 @@ export function CtaFaqSection() {
               href="#pricing"
               className="rounded-lg border app-border-subtle px-5 py-3 font-medium hover:bg-[color:var(--surface-subtle)]"
             >
-              Compare plans
+              {t("comparePlans")}
             </Link>
           </div>
         </div>
       </div>
 
       <div>
-        <h2 className="text-3xl font-semibold">FAQ</h2>
+        <h2 className="text-3xl font-semibold">{t("faqTitle")}</h2>
         <div className="mt-8 grid gap-4 md:grid-cols-2">
           {faqs.map((faq) => (
             <article key={faq.question} className="rounded-xl border app-border-subtle app-surface p-5">
