@@ -18,6 +18,11 @@ const changePlanPayloadSchema = z.object({
   planKey: z.string().trim(),
 });
 
+type ExistingSubscriptionRow = {
+  stripe_subscription_id: string | null;
+  status: SubscriptionStatus;
+};
+
 function getChangePlanIdempotencyKey(request: Request, teamId: string, planKey: string) {
   const rawKey = request.headers.get("x-idempotency-key")?.trim();
   if (!rawKey) {
@@ -137,7 +142,7 @@ export async function POST(req: Request) {
     .in("status", LIVE_SUBSCRIPTION_STATUSES)
     .order("current_period_end", { ascending: false })
     .limit(1)
-    .maybeSingle();
+    .maybeSingle<ExistingSubscriptionRow>();
 
   if (subscriptionRowError) {
     return NextResponse.json(

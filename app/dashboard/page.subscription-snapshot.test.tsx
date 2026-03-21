@@ -33,6 +33,23 @@ function mockDashboardDependencies(subscription: {
     }),
     getLiveSubscription: vi.fn().mockResolvedValue(subscription),
   }));
+  vi.doMock("next-intl/server", () => ({
+    getTranslations: vi.fn().mockResolvedValue((key: string, values?: { name?: string }) => {
+      if (key === "DashboardPage.currentPlanFree") {
+        return "Current plan: Free";
+      }
+      if (key === "DashboardPage.visitBillingUpgrade") {
+        return "Visit billing to upgrade anytime.";
+      }
+      if (key === "DashboardPage.noActiveSubscription") {
+        return "No active subscription. Visit billing to start a plan.";
+      }
+      if (key === "DashboardPage.welcome") {
+        return `Welcome back, ${values?.name ?? "there"}.`;
+      }
+      return key;
+    }),
+  }));
   vi.doMock("next/link", () => ({
     default: ({
       href,

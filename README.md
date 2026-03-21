@@ -145,6 +145,8 @@ Optional:
 - `CRON_SECRET`
 - `TRUST_PROXY_HEADERS`
 - `TRUSTED_PROXY_HEADER_NAMES`
+- `UPSTASH_REDIS_REST_URL` (optional; enables Redis-backed rate limiting + team-context cache)
+- `UPSTASH_REDIS_REST_TOKEN` (optional; required with URL)
 
 ### Stripe and Team Limits
 
@@ -169,6 +171,7 @@ Team and auth model:
 - New users get a personal team via DB trigger (`handle_new_user`).
 - Active team context lives in `profiles.active_team_id`.
 - Invites are create/resend/revoke + token-based acceptance.
+- Dashboard team member/invite list queries are bounded by `TEAM_MAX_MEMBERS` to avoid unbounded reads.
 - Only owners can transfer ownership.
 - Account settings include profile, email change flow, notification preferences, and guarded account deletion.
 
@@ -212,7 +215,9 @@ Cron endpoints:
 Security defaults:
 
 - CSRF token cookie + header checks on mutating routes.
-- Rate limiting with DB-backed windows + in-memory fallback.
+- Rate limiting uses optional Upstash Redis (when configured) for multi-instance enforcement, with fallback to existing DB/in-memory paths when unavailable.
+- Team context lookups are cached (Redis when configured, otherwise in-memory TTL cache).
+- Audit events are buffered and inserted in batches to reduce write amplification.
 - `proxy.ts` adds CSP (nonce in production), request ID, CSRF cookie bootstrap, and Supabase session refresh.
 - `next.config.ts` applies HSTS/XFO/nosniff/permissions/referrer headers and `Cache-Control: no-store` for `/api/*`.
 

@@ -5,7 +5,8 @@ import { parseJsonWithSchema } from "@/lib/http/request-validation";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { createClient } from "@/lib/supabase/server";
-import { getTeamContextForUser, type TeamContext, type TeamRole } from "@/lib/team-context";
+import { type TeamContext, type TeamRole } from "@/lib/team-context";
+import { getCachedTeamContextForUser } from "@/lib/team-context-cache";
 
 type RateLimitDescriptor = {
   key: string;
@@ -80,7 +81,7 @@ export async function withTeamRoute<TBody = undefined>({
     return json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const teamContext = await getTeamContextForUser(supabase, user.id);
+  const teamContext = await getCachedTeamContextForUser(supabase, user.id);
   if (!teamContext) {
     return json(
       { error: "No team membership found for this account." },
