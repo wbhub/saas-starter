@@ -7,6 +7,7 @@ import {
   getAiAccessMode,
   getAiAllowedSubscriptionStatuses,
 } from "@/lib/ai/config";
+import { type AiModality } from "@/lib/ai/config";
 import { logAuditEvent } from "@/lib/audit";
 import { resolveEffectivePlanKey } from "@/lib/billing/effective-plan";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
@@ -26,17 +27,41 @@ import { getCachedTeamContextForUser } from "@/lib/team-context-cache";
 const AI_COMPLETION_MAX_TOKENS = 4_096;
 const AI_UNAVAILABLE_MESSAGE = "AI assistant is currently unavailable.";
 const AI_UNAVAILABLE_STATUS = 503;
+const SUPPORTED_IMAGE_MIME_TYPES = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/gif",
+]);
+const SUPPORTED_FILE_MIME_TYPES = new Set(["application/pdf", "text/plain", "text/csv"]);
+
+const attachmentSchema = z
+  .object({
+    type: z.enum(["image", "file"]),
+    mimeType: z.string().trim().toLowerCase().min(1).max(255),
+    name: z.string().trim().min(1).max(255).optional(),
+    url: z.string().trim().url().optional(),
+    data: z.string().trim().min(1).max(300_000).optional(),
+    fileId: z.string().trim().min(1).max(255).optional(),
+  })
+  .superRefine((attachment, context) => {
+    const sourceCount = [attachment.url, attachment.data, attachment.fileId].filter(Boolean).length;
+    if (sourceCount !== 1) {
+      context.addIssue({
+        code: "custom",
+        message: "Attachment must provide exactly one source field (url, data, or fileId).",
+      });
+    }
+  });
+
+const messageSchema = z.object({
+  role: z.enum(["user", "assistant"]),
+  content: z.string().trim().min(1).max(8_000),
+  attachments: z.array(attachmentSchema).max(8).optional(),
+});
 
 const chatPayloadSchema = z.object({
-  messages: z
-    .array(
-      z.object({
-        role: z.enum(["user", "assistant"]),
-        content: z.string().trim().min(1).max(8_000),
-      }),
-    )
-    .min(1)
-    .max(30),
+  messages: z.array(messageSchema).min(1).max(30),
 });
 
 type UsageTotals = {
@@ -53,9 +78,105 @@ type OpenAiErrorInfo = {
   auditReason: string;
 };
 
-function estimatePromptTokens(messages: Array<{ content: string }>) {
+type ChatMessage = z.infer<typeof messageSchema>;
+type ChatAttachment = z.infer<typeof attachmentSchema>;
+
+type AttachmentValidationFailure = {
+  reason: "unsupported_file_type";
+  fileType: "image" | "file";
+  mimeType: string;
+};
+
+function estimatePromptTokens(messages: ChatMessage[]) {
   const totalChars = messages.reduce((sum, message) => sum + message.content.length, 0);
-  return Math.ceil(totalChars / 3) + messages.length * 8;
+  const textEstimate = Math.ceil(totalChars / 3) + messages.length * 8;
+  const attachmentEstimate = messages.reduce((sum, message) => {
+    const attachments = message.attachments ?? [];
+    return (
+      sum +
+      attachments.reduce((attachmentSum, attachment) => {
+        if (attachment.type === "image") {
+          return attachmentSum + 1_200;
+        }
+        if (attachment.data) {
+          return attachmentSum + Math.ceil(attachment.data.length / 3);
+        }
+        return attachmentSum + 600;
+      }, 0)
+    );
+  }, 0);
+  return textEstimate + attachmentEstimate;
+}
+
+function getRequestModalities(messages: ChatMessage[]): AiModality[] {
+  const modalities = new Set<AiModality>(["text"]);
+  for (const message of messages) {
+    for (const attachment of message.attachments ?? []) {
+      modalities.add(attachment.type);
+    }
+  }
+  return (["text", "image", "file"] as const).filter((modality) => modalities.has(modality));
+}
+
+function validateAttachmentTypes(messages: ChatMessage[]): AttachmentValidationFailure | null {
+  for (const message of messages) {
+    for (const attachment of message.attachments ?? []) {
+      if (attachment.type === "image" && !SUPPORTED_IMAGE_MIME_TYPES.has(attachment.mimeType)) {
+        return {
+          reason: "unsupported_file_type",
+          fileType: "image",
+          mimeType: attachment.mimeType,
+        };
+      }
+      if (attachment.type === "file" && !SUPPORTED_FILE_MIME_TYPES.has(attachment.mimeType)) {
+        return {
+          reason: "unsupported_file_type",
+          fileType: "file",
+          mimeType: attachment.mimeType,
+        };
+      }
+    }
+  }
+  return null;
+}
+
+function toImageSource(attachment: ChatAttachment) {
+  if (attachment.fileId) {
+    return { type: "input_image", file_id: attachment.fileId } as const;
+  }
+  if (attachment.url) {
+    return { type: "input_image", image_url: attachment.url } as const;
+  }
+  const imageUrl = attachment.data?.startsWith("data:")
+    ? attachment.data
+    : `data:${attachment.mimeType};base64,${attachment.data ?? ""}`;
+  return { type: "input_image", image_url: imageUrl } as const;
+}
+
+function toFileSource(attachment: ChatAttachment) {
+  if (attachment.fileId) {
+    return { type: "input_file", file_id: attachment.fileId } as const;
+  }
+  if (attachment.url) {
+    return { type: "input_file", file_url: attachment.url } as const;
+  }
+  return {
+    type: "input_file",
+    file_data: attachment.data,
+    filename: attachment.name ?? "attachment",
+  } as const;
+}
+
+function toResponsesInput(messages: ChatMessage[]) {
+  return messages.map((message) => ({
+    role: message.role,
+    content: [
+      { type: "input_text", text: message.content },
+      ...(message.attachments ?? []).map((attachment) =>
+        attachment.type === "image" ? toImageSource(attachment) : toFileSource(attachment),
+      ),
+    ],
+  }));
 }
 
 function getMonthStartIso(now = new Date()) {
@@ -255,6 +376,20 @@ export async function POST(request: Request) {
     }
     return NextResponse.json({ error: "Invalid request payload." }, { status: 400 });
   }
+  const requestModalities = getRequestModalities(bodyParse.data.messages);
+  const unsupportedAttachment = validateAttachmentTypes(bodyParse.data.messages);
+  if (unsupportedAttachment) {
+    return NextResponse.json(
+      {
+        error: "Unsupported attachment type.",
+        details: {
+          fileType: unsupportedAttachment.fileType,
+          mimeType: unsupportedAttachment.mimeType,
+        },
+      },
+      { status: 400 },
+    );
+  }
 
   const aiAccessMode = getAiAccessMode();
   if (aiAccessMode === "paid") {
@@ -265,7 +400,11 @@ export async function POST(request: Request) {
         outcome: "denied",
         actorUserId: user.id,
         teamId: teamContext.teamId,
-        metadata: { reason: "ai_statuses_not_configured", accessMode: aiAccessMode },
+        metadata: {
+          reason: "ai_statuses_not_configured",
+          accessMode: aiAccessMode,
+          requestModalities,
+        },
       });
       return NextResponse.json(
         { error: AI_UNAVAILABLE_MESSAGE },
@@ -319,6 +458,7 @@ export async function POST(request: Request) {
         accessMode: aiAccessMode,
         effectivePlanKey,
         stripePriceId: subscriptionRow?.stripe_price_id ?? null,
+        requestModalities,
       },
     });
     return NextResponse.json(
@@ -340,6 +480,7 @@ export async function POST(request: Request) {
         planKey: effectivePlanKey,
         accessMode: aiAccessMode,
         model: aiAccess.model,
+        requestModalities,
       },
     });
     return NextResponse.json(
@@ -349,6 +490,30 @@ export async function POST(request: Request) {
   }
 
   const model = aiAccess.model;
+  const disallowedModality = requestModalities.find(
+    (modality) => !aiAccess.allowedModalities.includes(modality),
+  );
+  if (disallowedModality) {
+    logAuditEvent({
+      action: "ai.chat.request",
+      outcome: "denied",
+      actorUserId: user.id,
+      teamId: teamContext.teamId,
+      metadata: {
+        reason: "modality_not_allowed",
+        planKey: effectivePlanKey,
+        accessMode: aiAccessMode,
+        model,
+        requestModalities,
+        allowedModalities: aiAccess.allowedModalities,
+        blockedModality: disallowedModality,
+      },
+    });
+    return NextResponse.json(
+      { error: AI_UNAVAILABLE_MESSAGE },
+      { status: AI_UNAVAILABLE_STATUS },
+    );
+  }
   const monthlyTokenBudget = aiAccess.monthlyTokenBudget;
   const estimatedPromptTokens = estimatePromptTokens(bodyParse.data.messages);
   const projectedRequestTokens = estimatedPromptTokens + AI_COMPLETION_MAX_TOKENS;
@@ -387,6 +552,7 @@ export async function POST(request: Request) {
           accessMode: aiAccessMode,
           monthlyTokenBudget,
           projectedRequestTokens,
+          requestModalities,
         },
       });
       return NextResponse.json(
@@ -412,16 +578,39 @@ export async function POST(request: Request) {
       { once: true },
     );
 
-    const stream = await openai.chat.completions.create({
-      model,
-      stream: true,
-      max_tokens: AI_COMPLETION_MAX_TOKENS,
-      stream_options: { include_usage: true },
-      messages: bodyParse.data.messages.map((message) => ({
-        role: message.role,
-        content: message.content,
-      })),
-    }, { signal: upstreamAbortController.signal });
+    const hasAttachments = bodyParse.data.messages.some((message) => (message.attachments?.length ?? 0) > 0);
+    const stream = (hasAttachments
+      ? await (
+          openai as unknown as {
+            responses: {
+              create: (
+                params: Record<string, unknown>,
+                options: { signal: AbortSignal },
+              ) => Promise<AsyncIterable<unknown>>;
+            };
+          }
+        ).responses.create(
+          {
+            model,
+            stream: true,
+            max_output_tokens: AI_COMPLETION_MAX_TOKENS,
+            input: toResponsesInput(bodyParse.data.messages),
+          },
+          { signal: upstreamAbortController.signal },
+        )
+      : await openai.chat.completions.create(
+          {
+            model,
+            stream: true,
+            max_tokens: AI_COMPLETION_MAX_TOKENS,
+            stream_options: { include_usage: true },
+            messages: bodyParse.data.messages.map((message) => ({
+              role: message.role,
+              content: message.content,
+            })),
+          },
+          { signal: upstreamAbortController.signal },
+        )) as AsyncIterable<unknown>;
 
     const encoder = new TextEncoder();
     const usage: UsageTotals = { promptTokens: 0, completionTokens: 0 };
@@ -433,18 +622,53 @@ export async function POST(request: Request) {
 
         try {
           for await (const chunk of stream) {
-            if (chunk.usage) {
-              usage.promptTokens = chunk.usage.prompt_tokens ?? 0;
-              usage.completionTokens = chunk.usage.completion_tokens ?? 0;
-            }
+            if (!hasAttachments) {
+              const chatChunk = chunk as {
+                usage?: { prompt_tokens?: number; completion_tokens?: number };
+                choices?: Array<{ delta?: { content?: string } }>;
+              };
+              if (chatChunk.usage) {
+                usage.promptTokens = chatChunk.usage.prompt_tokens ?? 0;
+                usage.completionTokens = chatChunk.usage.completion_tokens ?? 0;
+              }
 
-            const delta = chunk.choices[0]?.delta?.content;
-            if (!delta) {
+              const delta = chatChunk.choices?.[0]?.delta?.content;
+              if (!delta) {
+                continue;
+              }
+
+              controller.enqueue(encoder.encode(delta));
+              streamedCompletionChars += delta.length;
               continue;
             }
 
-            controller.enqueue(encoder.encode(delta));
-            streamedCompletionChars += delta.length;
+            const responseChunk = chunk as {
+              type?: string;
+              delta?: string;
+              response?: {
+                usage?: {
+                  input_tokens?: number;
+                  output_tokens?: number;
+                  prompt_tokens?: number;
+                  completion_tokens?: number;
+                };
+              };
+            };
+            if (responseChunk.type === "response.output_text.delta" && responseChunk.delta) {
+              controller.enqueue(encoder.encode(responseChunk.delta));
+              streamedCompletionChars += responseChunk.delta.length;
+              continue;
+            }
+            if (responseChunk.type === "response.completed" && responseChunk.response?.usage) {
+              usage.promptTokens =
+                responseChunk.response.usage.input_tokens ??
+                responseChunk.response.usage.prompt_tokens ??
+                usage.promptTokens;
+              usage.completionTokens =
+                responseChunk.response.usage.output_tokens ??
+                responseChunk.response.usage.completion_tokens ??
+                usage.completionTokens;
+            }
           }
           controller.close();
         } catch (error) {
@@ -535,6 +759,7 @@ export async function POST(request: Request) {
                 accessMode: aiAccessMode,
                 model,
                 reason: "stream_failed",
+                requestModalities,
               },
             });
             return;
@@ -553,6 +778,7 @@ export async function POST(request: Request) {
               promptTokens: resolvedUsage.promptTokens,
               completionTokens: resolvedUsage.completionTokens,
               usageFallbackApplied: resolvedUsage.usedFallback,
+              requestModalities,
             },
           });
         }
@@ -623,6 +849,7 @@ export async function POST(request: Request) {
         accessMode: aiAccessMode,
         model,
         reason: openAiError.auditReason,
+        requestModalities,
       },
     });
     return NextResponse.json(

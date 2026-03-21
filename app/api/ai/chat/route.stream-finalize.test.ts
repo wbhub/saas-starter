@@ -85,8 +85,8 @@ describe("POST /api/ai/chat stream finalization retry enqueue", () => {
         })),
       }),
     }));
-    vi.doMock("@/lib/team-context", () => ({
-      getTeamContextForUser: vi.fn().mockResolvedValue({
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
         teamId: "team_123",
         teamName: "Acme Team",
         role: "owner",
@@ -109,6 +109,8 @@ describe("POST /api/ai/chat stream finalization retry enqueue", () => {
       }),
       getAiModelForPlan: vi.fn().mockReturnValue("gpt-4.1-mini"),
       getAiMonthlyTokenBudgetForPlan: vi.fn().mockReturnValue(2_000_000),
+      getAiAllowedModalities: vi.fn().mockReturnValue(["text", "image", "file"]),
+      getAiAllowedModalitiesForPlan: vi.fn().mockReturnValue(["text", "image", "file"]),
     }));
     vi.doMock("@/lib/openai/client", () => ({
       isOpenAiConfigured: true,
@@ -221,8 +223,8 @@ describe("POST /api/ai/chat stream finalization retry enqueue", () => {
         })),
       }),
     }));
-    vi.doMock("@/lib/team-context", () => ({
-      getTeamContextForUser: vi.fn().mockResolvedValue({
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
         teamId: "team_123",
         teamName: "Acme Team",
         role: "owner",
@@ -245,6 +247,8 @@ describe("POST /api/ai/chat stream finalization retry enqueue", () => {
       }),
       getAiModelForPlan: vi.fn().mockReturnValue("gpt-4.1-mini"),
       getAiMonthlyTokenBudgetForPlan: vi.fn().mockReturnValue(2_000_000),
+      getAiAllowedModalities: vi.fn().mockReturnValue(["text", "image", "file"]),
+      getAiAllowedModalitiesForPlan: vi.fn().mockReturnValue(["text", "image", "file"]),
     }));
     vi.doMock("@/lib/openai/client", () => ({
       isOpenAiConfigured: true,
@@ -350,8 +354,8 @@ describe("POST /api/ai/chat stream finalization retry enqueue", () => {
         })),
       }),
     }));
-    vi.doMock("@/lib/team-context", () => ({
-      getTeamContextForUser: vi.fn().mockResolvedValue({
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
         teamId: "team_123",
         teamName: "Acme Team",
         role: "owner",
@@ -367,6 +371,8 @@ describe("POST /api/ai/chat stream finalization retry enqueue", () => {
       getAiRuleForPlan: vi.fn(),
       getAiModelForPlan: vi.fn().mockReturnValue("gpt-4.1-mini"),
       getAiMonthlyTokenBudgetForPlan: vi.fn().mockReturnValue(2_000_000),
+      getAiAllowedModalities: vi.fn().mockReturnValue(["text", "image", "file"]),
+      getAiAllowedModalitiesForPlan: vi.fn().mockReturnValue(["text", "image", "file"]),
     }));
     vi.doMock("@/lib/openai/client", () => ({
       isOpenAiConfigured: true,
@@ -421,6 +427,193 @@ describe("POST /api/ai/chat stream finalization retry enqueue", () => {
         model: "gpt-4.1-mini",
         prompt_tokens: 7,
         completion_tokens: 3,
+      }),
+    );
+  });
+
+  it("passes multimodal attachments natively and accounts for projected attachment tokens", async () => {
+    const maybeSingle = vi.fn().mockResolvedValue({
+      data: { stripe_price_id: "price_growth", status: "active" },
+      error: null,
+    });
+    const subscriptionsQuery = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      in: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+      maybeSingle,
+    };
+
+    const rpc = vi
+      .fn()
+      .mockResolvedValueOnce({
+        data: [{ allowed: true, claim_id: "claim_stream", month_start: "2026-03-01" }],
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: null,
+        error: null,
+      });
+    const responsesCreate = vi.fn().mockResolvedValue(
+      makeAsyncStream([
+        {
+          type: "response.output_text.delta",
+          delta: "hello",
+        },
+        {
+          type: "response.completed",
+          response: {
+            usage: { input_tokens: 30, output_tokens: 6 },
+          },
+        },
+      ]),
+    );
+
+    vi.doMock("@/lib/security/csrf", () => ({
+      verifyCsrfProtection: vi.fn().mockReturnValue(null),
+    }));
+    vi.doMock("@/lib/http/content-type", () => ({
+      requireJsonContentType: vi.fn().mockReturnValue(null),
+    }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({
+        allowed: true,
+        retryAfterSeconds: 0,
+      }),
+    }));
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          getUser: async () => ({
+            data: { user: { id: "user_123", email: "user@example.com" } },
+          }),
+        },
+        from: vi.fn((table: string) => {
+          if (table === "subscriptions") {
+            return subscriptionsQuery;
+          }
+          throw new Error(`Unexpected table: ${table}`);
+        }),
+      }),
+    }));
+    vi.doMock("@/lib/supabase/admin", () => ({
+      createAdminClient: () => ({
+        rpc,
+        from: vi.fn(() => ({
+          insert: vi.fn().mockResolvedValue({ error: null }),
+        })),
+      }),
+    }));
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
+        teamId: "team_123",
+        teamName: "Acme Team",
+        role: "owner",
+      }),
+    }));
+    vi.doMock("@/lib/stripe/config", () => ({
+      getPlanByPriceId: vi.fn().mockReturnValue({ key: "growth" }),
+    }));
+    vi.doMock("@/lib/ai/config", () => ({
+      getAiAccessMode: vi.fn().mockReturnValue("paid"),
+      getAiAllowedSubscriptionStatuses: vi
+        .fn()
+        .mockReturnValue(["trialing", "active", "past_due"]),
+      getAiDefaultModel: vi.fn().mockReturnValue("gpt-4.1-mini"),
+      getAiDefaultMonthlyTokenBudget: vi.fn().mockReturnValue(2_000_000),
+      getAiRuleForPlan: vi.fn().mockReturnValue({
+        enabled: true,
+        model: "gpt-4.1-mini",
+        monthlyBudget: 2_000_000,
+      }),
+      getAiModelForPlan: vi.fn().mockReturnValue("gpt-4.1-mini"),
+      getAiMonthlyTokenBudgetForPlan: vi.fn().mockReturnValue(2_000_000),
+      getAiAllowedModalities: vi.fn().mockReturnValue(["text", "image", "file"]),
+      getAiAllowedModalitiesForPlan: vi.fn().mockReturnValue(["text", "image", "file"]),
+    }));
+    vi.doMock("@/lib/openai/client", () => ({
+      isOpenAiConfigured: true,
+      openai: {
+        chat: {
+          completions: {
+            create: vi.fn(),
+          },
+        },
+        responses: {
+          create: responsesCreate,
+        },
+      },
+    }));
+    vi.doMock("@/lib/audit", () => ({
+      logAuditEvent: vi.fn(),
+    }));
+    vi.doMock("@/lib/ai/budget-finalize-retries", () => ({
+      enqueueAiBudgetFinalizeRetry: vi.fn().mockResolvedValue(undefined),
+      maybeProcessAiBudgetFinalizeRetries: vi.fn().mockResolvedValue({ ran: false }),
+    }));
+    vi.doMock("@/lib/logger", () => ({
+      logger: {
+        error: vi.fn(),
+        warn: vi.fn(),
+      },
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: "user",
+              content: "hello",
+              attachments: [
+                {
+                  type: "image",
+                  mimeType: "image/png",
+                  url: "https://example.com/image.png",
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.text()).resolves.toBe("hello");
+    expect(responsesCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: "gpt-4.1-mini",
+        stream: true,
+        max_output_tokens: 4096,
+        input: [
+          {
+            role: "user",
+            content: [
+              { type: "input_text", text: "hello" },
+              { type: "input_image", image_url: "https://example.com/image.png" },
+            ],
+          },
+        ],
+      }),
+      expect.any(Object),
+    );
+    expect(rpc).toHaveBeenNthCalledWith(
+      1,
+      "claim_ai_token_budget",
+      expect.objectContaining({
+        p_projected_tokens: 5306,
+      }),
+    );
+    expect(rpc).toHaveBeenNthCalledWith(
+      2,
+      "finalize_ai_token_budget_claim",
+      expect.objectContaining({
+        p_claim_id: "claim_stream",
+        p_actual_tokens: 36,
       }),
     );
   });

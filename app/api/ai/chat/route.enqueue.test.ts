@@ -82,8 +82,8 @@ describe("POST /api/ai/chat finalize retry enqueue", () => {
         })),
       }),
     }));
-    vi.doMock("@/lib/team-context", () => ({
-      getTeamContextForUser: vi.fn().mockResolvedValue({
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
         teamId: "team_123",
         teamName: "Acme Team",
         role: "owner",
@@ -106,6 +106,8 @@ describe("POST /api/ai/chat finalize retry enqueue", () => {
       }),
       getAiModelForPlan: vi.fn().mockReturnValue("gpt-4.1-mini"),
       getAiMonthlyTokenBudgetForPlan: vi.fn().mockReturnValue(2_000_000),
+      getAiAllowedModalities: vi.fn().mockReturnValue(["text", "image", "file"]),
+      getAiAllowedModalitiesForPlan: vi.fn().mockReturnValue(["text", "image", "file"]),
     }));
     vi.doMock("@/lib/openai/client", () => ({
       isOpenAiConfigured: true,
