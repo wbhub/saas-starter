@@ -48,13 +48,12 @@ describe("POST /api/ai/chat access and gating", () => {
     }));
     vi.doMock("@/lib/openai/client", () => ({
       isOpenAiConfigured: true,
-      openai: {
-        chat: {
-          completions: {
-            create: vi.fn().mockRejectedValue({ status: 503 }),
-          },
-        },
-      },
+      openai: vi.fn().mockReturnValue("openai-model"),
+    }));
+    vi.doMock("ai", () => ({
+      streamText: vi.fn(() => {
+        throw { status: 503 };
+      }),
     }));
     vi.doMock("@/lib/ai/budget-finalize-retries", () => ({
       enqueueAiBudgetFinalizeRetry: vi.fn().mockResolvedValue(undefined),
@@ -223,11 +222,8 @@ describe("POST /api/ai/chat access and gating", () => {
     await expect(response.json()).resolves.toEqual({
       error: "AI assistant is currently unavailable.",
     });
-    const { openai } = await import("@/lib/openai/client");
-    expect(
-      (openai as unknown as { chat: { completions: { create: ReturnType<typeof vi.fn> } } }).chat
-        .completions.create,
-    ).not.toHaveBeenCalled();
+    const { streamText } = await import("ai");
+    expect(streamText).not.toHaveBeenCalled();
   });
 
   it("keeps default paid mode behavior and denies free users", async () => {
@@ -287,11 +283,8 @@ describe("POST /api/ai/chat access and gating", () => {
     await expect(response.json()).resolves.toEqual({
       error: "AI assistant is currently unavailable.",
     });
-    const { openai } = await import("@/lib/openai/client");
-    expect(
-      (openai as unknown as { chat: { completions: { create: ReturnType<typeof vi.fn> } } }).chat
-        .completions.create,
-    ).not.toHaveBeenCalled();
+    const { streamText } = await import("ai");
+    expect(streamText).not.toHaveBeenCalled();
   });
 
   it("allows free users in all mode", async () => {
@@ -363,11 +356,8 @@ describe("POST /api/ai/chat access and gating", () => {
     await expect(response.json()).resolves.toEqual({
       error: "AI assistant is currently unavailable.",
     });
-    const { openai } = await import("@/lib/openai/client");
-    expect(
-      (openai as unknown as { chat: { completions: { create: ReturnType<typeof vi.fn> } } }).chat
-        .completions.create,
-    ).toHaveBeenCalledTimes(1);
+    const { streamText } = await import("ai");
+    expect(streamText).toHaveBeenCalledTimes(1);
   });
 
   it("fails safely in by_plan mode when model is missing", async () => {
@@ -435,11 +425,8 @@ describe("POST /api/ai/chat access and gating", () => {
     await expect(response.json()).resolves.toEqual({
       error: "AI assistant is currently unavailable.",
     });
-    const { openai } = await import("@/lib/openai/client");
-    expect(
-      (openai as unknown as { chat: { completions: { create: ReturnType<typeof vi.fn> } } }).chat
-        .completions.create,
-    ).not.toHaveBeenCalled();
+    const { streamText } = await import("ai");
+    expect(streamText).not.toHaveBeenCalled();
   });
 
   it("filters by_plan subscription lookup to live statuses", async () => {
@@ -574,11 +561,8 @@ describe("POST /api/ai/chat access and gating", () => {
         mimeType: "application/json",
       },
     });
-    const { openai } = await import("@/lib/openai/client");
-    expect(
-      (openai as unknown as { chat: { completions: { create: ReturnType<typeof vi.fn> } } }).chat
-        .completions.create,
-    ).not.toHaveBeenCalled();
+    const { streamText } = await import("ai");
+    expect(streamText).not.toHaveBeenCalled();
   });
 
   it("rejects assistant-role attachments", async () => {
@@ -814,27 +798,16 @@ describe("POST /api/ai/chat access and gating", () => {
         }),
       }),
     );
-    const { openai } = await import("@/lib/openai/client");
-    expect(
-      (openai as unknown as { chat: { completions: { create: ReturnType<typeof vi.fn> } } }).chat
-        .completions.create,
-    ).not.toHaveBeenCalled();
+    const { streamText } = await import("ai");
+    expect(streamText).not.toHaveBeenCalled();
   });
 
   it("denies multimodal requests for text-only model capability", async () => {
-    vi.doMock("@/lib/ai/config", () => ({
-      getAiAccessMode: vi.fn().mockReturnValue("all"),
-      getAiAllowedSubscriptionStatuses: vi
-        .fn()
-        .mockReturnValue(["trialing", "active", "past_due"]),
-      getAiDefaultModel: vi.fn().mockReturnValue("gpt-3.5-turbo"),
-      getAiDefaultMonthlyTokenBudget: vi.fn().mockReturnValue(0),
-      getAiRuleForPlan: vi.fn(),
-      getAiModelForPlan: vi.fn().mockReturnValue("gpt-3.5-turbo"),
-      getAiMonthlyTokenBudgetForPlan: vi.fn().mockReturnValue(2_000_000),
-      getAiAllowedModalities: vi.fn().mockReturnValue(["text", "image", "file"]),
-      getAiAllowedModalitiesForPlan: vi.fn().mockReturnValue(["text", "image", "file"]),
-    }));
+    const aiConfig = await import("@/lib/ai/config");
+    vi.mocked(aiConfig.getAiAccessMode).mockReturnValue("all");
+    vi.mocked(aiConfig.getAiDefaultModel).mockReturnValue("gpt-3.5-turbo");
+    vi.mocked(aiConfig.getAiDefaultMonthlyTokenBudget).mockReturnValue(0);
+    vi.mocked(aiConfig.getAiAllowedModalities).mockReturnValue(["text", "image", "file"]);
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: async () => ({
         auth: {

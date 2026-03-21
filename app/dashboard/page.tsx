@@ -141,7 +141,13 @@ export default async function DashboardPage() {
         </article>
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <Link
+          href="/dashboard/ai"
+          className="rounded-xl border app-border-subtle app-surface p-4 text-sm text-slate-700 shadow-sm hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+        >
+          {t("DashboardPage.ai")}
+        </Link>
         <Link
           href="/dashboard/billing"
           className="rounded-xl border app-border-subtle app-surface p-4 text-sm text-slate-700 shadow-sm hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"

@@ -1,5 +1,12 @@
 import { NextResponse } from "next/server";
 import {
+  streamText,
+  type AssistantModelMessage,
+  type ModelMessage,
+  type UserContent,
+  type UserModelMessage,
+} from "ai";
+import {
   enqueueAiBudgetFinalizeRetry,
   maybeProcessAiBudgetFinalizeRetries,
 } from "@/lib/ai/budget-finalize-retries";
@@ -24,7 +31,6 @@ import { LIVE_SUBSCRIPTION_STATUSES, type SubscriptionStatus } from "@/lib/strip
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getCachedTeamContextForUser } from "@/lib/team-context-cache";
-import type OpenAI from "openai";
 
 const AI_COMPLETION_MAX_TOKENS = 4_096;
 const AI_UNAVAILABLE_STATUS = 503;
@@ -200,70 +206,66 @@ function validateAttachmentTypes(messages: ChatMessage[]): AttachmentValidationF
   return null;
 }
 
-function toImageSource(attachment: ChatAttachment) {
-  if (attachment.fileId) {
-    return { type: "input_image", file_id: attachment.fileId, detail: "auto" } as const;
-  }
+function toAttachmentData(attachment: ChatAttachment) {
   if (attachment.url) {
-    return { type: "input_image", image_url: attachment.url, detail: "auto" } as const;
+    return attachment.url;
   }
-  const imageUrl = attachment.data?.startsWith("data:")
-    ? attachment.data
-    : `data:${attachment.mimeType};base64,${attachment.data ?? ""}`;
-  return { type: "input_image", image_url: imageUrl, detail: "auto" } as const;
+  if (attachment.data) {
+    return attachment.data.startsWith("data:")
+      ? attachment.data
+      : `data:${attachment.mimeType};base64,${attachment.data}`;
+  }
+  return attachment.fileId ?? "";
 }
 
-function toFileSource(attachment: ChatAttachment) {
-  if (attachment.fileId) {
-    return { type: "input_file", file_id: attachment.fileId } as const;
+function toUserMessageContent(message: ChatMessage): UserContent {
+  const attachments = message.attachments ?? [];
+  if (!attachments.length) {
+    return message.content;
   }
-  if (attachment.url) {
-    return { type: "input_file", file_url: attachment.url } as const;
+
+  const content: Array<Record<string, unknown>> = [{ type: "text", text: message.content }];
+  for (const attachment of attachments) {
+    const providerOptions = attachment.fileId
+      ? {
+          openai: {
+            fileId: attachment.fileId,
+          },
+        }
+      : undefined;
+
+    if (attachment.type === "image") {
+      content.push({
+        type: "image",
+        image: toAttachmentData(attachment),
+        ...(providerOptions ? { providerOptions } : {}),
+      });
+      continue;
+    }
+
+    content.push({
+      type: "file",
+      data: toAttachmentData(attachment),
+      mediaType: attachment.mimeType,
+      filename: attachment.name ?? "attachment",
+      ...(providerOptions ? { providerOptions } : {}),
+    });
   }
-  return {
-    type: "input_file",
-    file_data: attachment.data,
-    filename: attachment.name ?? "attachment",
-  } as const;
+
+  return content as unknown as UserContent;
 }
 
-function toResponsesInput(messages: ChatMessage[]) {
-  const inputMessages: Exclude<ResponsesCreateArgs[0]["input"], string | undefined> = messages.map((message) => ({
-    type: "message" as const,
-    role: message.role,
-    content: [
-      { type: "input_text" as const, text: message.content },
-      ...(message.attachments ?? []).map((attachment) =>
-        attachment.type === "image" ? toImageSource(attachment) : toFileSource(attachment),
-      ),
-    ],
-  }));
-  return inputMessages;
-}
+function toModelMessages(messages: ChatMessage[]): ModelMessage[] {
+  return messages.map((message): UserModelMessage | AssistantModelMessage => {
+    if (message.role === "assistant") {
+      return { role: "assistant", content: message.content };
+    }
 
-type ResponsesCreateArgs = Parameters<OpenAI["responses"]["create"]>;
-
-function createResponsesStream({
-  client,
-  model,
-  messages,
-  signal,
-}: {
-  client: OpenAI;
-  model: string;
-  messages: ChatMessage[];
-  signal: AbortSignal;
-}) {
-  const params = {
-    model,
-    stream: true,
-    max_output_tokens: AI_COMPLETION_MAX_TOKENS,
-    input: toResponsesInput(messages),
-  } satisfies ResponsesCreateArgs[0];
-
-  const options = { signal } satisfies Exclude<ResponsesCreateArgs[1], undefined>;
-
-  return client.responses.create(params, options);
+    return {
+      role: "user",
+      content: toUserMessageContent(message),
+    };
+  });
 }
 
 function getMonthStartIso(now = new Date()) {
@@ -708,27 +710,12 @@ export async function POST(request: Request) {
       { once: true },
     );
 
-    const hasAttachments = bodyParse.data.messages.some((message) => (message.attachments?.length ?? 0) > 0);
-    const stream = (hasAttachments
-      ? await createResponsesStream({
-          client: openai,
-          model,
-          messages: bodyParse.data.messages,
-          signal: upstreamAbortController.signal,
-        })
-      : await openai.chat.completions.create(
-          {
-            model,
-            stream: true,
-            max_tokens: AI_COMPLETION_MAX_TOKENS,
-            stream_options: { include_usage: true },
-            messages: bodyParse.data.messages.map((message) => ({
-              role: message.role,
-              content: message.content,
-            })),
-          },
-          { signal: upstreamAbortController.signal },
-        )) as AsyncIterable<unknown>;
+    const aiResult = streamText({
+      model: openai(model),
+      messages: toModelMessages(bodyParse.data.messages),
+      abortSignal: upstreamAbortController.signal,
+      maxOutputTokens: AI_COMPLETION_MAX_TOKENS,
+    });
 
     const encoder = new TextEncoder();
     const usage: UsageTotals = { promptTokens: 0, completionTokens: 0 };
@@ -739,53 +726,15 @@ export async function POST(request: Request) {
         let streamError: unknown | null = null;
 
         try {
-          for await (const chunk of stream) {
-            if (!hasAttachments) {
-              const chatChunk = chunk as {
-                usage?: { prompt_tokens?: number; completion_tokens?: number };
-                choices?: Array<{ delta?: { content?: string } }>;
-              };
-              if (chatChunk.usage) {
-                usage.promptTokens = chatChunk.usage.prompt_tokens ?? 0;
-                usage.completionTokens = chatChunk.usage.completion_tokens ?? 0;
-              }
-
-              const delta = chatChunk.choices?.[0]?.delta?.content;
-              if (!delta) {
-                continue;
-              }
-
-              controller.enqueue(encoder.encode(delta));
-              streamedCompletionChars += delta.length;
+          for await (const part of aiResult.fullStream) {
+            if (part.type === "text-delta") {
+              controller.enqueue(encoder.encode(part.text));
+              streamedCompletionChars += part.text.length;
               continue;
             }
-
-            const responseChunk = chunk as {
-              type?: string;
-              delta?: string;
-              response?: {
-                usage?: {
-                  input_tokens?: number;
-                  output_tokens?: number;
-                  prompt_tokens?: number;
-                  completion_tokens?: number;
-                };
-              };
-            };
-            if (responseChunk.type === "response.output_text.delta" && responseChunk.delta) {
-              controller.enqueue(encoder.encode(responseChunk.delta));
-              streamedCompletionChars += responseChunk.delta.length;
-              continue;
-            }
-            if (responseChunk.type === "response.completed" && responseChunk.response?.usage) {
-              usage.promptTokens =
-                responseChunk.response.usage.input_tokens ??
-                responseChunk.response.usage.prompt_tokens ??
-                usage.promptTokens;
-              usage.completionTokens =
-                responseChunk.response.usage.output_tokens ??
-                responseChunk.response.usage.completion_tokens ??
-                usage.completionTokens;
+            if (part.type === "finish") {
+              usage.promptTokens = part.totalUsage.inputTokens ?? usage.promptTokens;
+              usage.completionTokens = part.totalUsage.outputTokens ?? usage.completionTokens;
             }
           }
           controller.close();
