@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getClientRateLimitIdentifier } from "@/lib/http/client-ip";
 import { requireJsonContentType } from "@/lib/http/content-type";
 import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
+import { getRouteTranslator } from "@/lib/i18n/locale";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { rotateCsrfTokenOnResponse, verifyCsrfProtection } from "@/lib/security/csrf";
 import { isValidEmail } from "@/lib/validation";
@@ -13,12 +14,20 @@ const loginPayloadSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const csrfError = verifyCsrfProtection(request);
+  const t = await getRouteTranslator("ApiAuthLogin", request);
+
+  const csrfError = verifyCsrfProtection(request, {
+    invalidOrigin: t("errors.invalidOrigin"),
+    missingToken: t("errors.missingCsrfToken"),
+    invalidToken: t("errors.invalidCsrfToken"),
+  });
   if (csrfError) {
     return csrfError;
   }
 
-  const contentTypeError = requireJsonContentType(request);
+  const contentTypeError = requireJsonContentType(request, {
+    errorMessage: t("errors.invalidContentType"),
+  });
   if (contentTypeError) {
     return contentTypeError;
   }
@@ -26,9 +35,9 @@ export async function POST(request: Request) {
   const bodyParse = await parseJsonWithSchema(request, loginPayloadSchema);
   if (!bodyParse.success) {
     if (bodyParse.tooLarge) {
-      return NextResponse.json({ error: "Request payload is too large." }, { status: 413 });
+      return NextResponse.json({ error: t("errors.payloadTooLarge") }, { status: 413 });
     }
-    return NextResponse.json({ error: "Invalid email or password." }, { status: 400 });
+    return NextResponse.json({ error: t("errors.invalidCredentials") }, { status: 400 });
   }
   const { email, password } = bodyParse.data;
   const clientId = getClientRateLimitIdentifier(request);
@@ -56,7 +65,7 @@ export async function POST(request: Request) {
       emailRateLimit.retryAfterSeconds,
     );
     return NextResponse.json(
-      { error: "Too many login attempts. Please try again later." },
+      { error: t("errors.rateLimited") },
       {
         status: 429,
         headers: { "Retry-After": String(retryAfterSeconds) },
@@ -65,7 +74,7 @@ export async function POST(request: Request) {
   }
 
   if (!isValidEmail(email) || password.length < 8 || password.length > 128) {
-    return NextResponse.json({ error: "Invalid email or password." }, { status: 400 });
+    return NextResponse.json({ error: t("errors.invalidCredentials") }, { status: 400 });
   }
 
   const supabase = await createClient();
@@ -75,7 +84,7 @@ export async function POST(request: Request) {
   });
 
   if (error) {
-    return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
+    return NextResponse.json({ error: t("errors.invalidCredentials") }, { status: 401 });
   }
 
   const response = NextResponse.json({ ok: true });

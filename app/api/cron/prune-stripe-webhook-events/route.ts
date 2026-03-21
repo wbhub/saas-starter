@@ -5,6 +5,7 @@ import { timingSafeEqual } from "crypto";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { getClientRateLimitIdentifier } from "@/lib/http/client-ip";
 import { checkRateLimit } from "@/lib/security/rate-limit";
+import { getRouteTranslator } from "@/lib/i18n/locale";
 
 function bearerToken(request: Request) {
   const auth = request.headers.get("authorization");
@@ -28,14 +29,16 @@ function safeCompare(a: string, b: string) {
  * end up in access logs, browser history, and referrers).
  */
 export async function GET(request: Request) {
+  const t = await getRouteTranslator("ApiCronPruneStripeWebhookEvents", request);
+
   const secret = env.CRON_SECRET?.trim();
   if (!secret) {
-    return jsonError("Cron is not configured.", 503);
+    return jsonError(t("errors.cronNotConfigured"), 503);
   }
 
   const token = bearerToken(request);
   if (!token || !safeCompare(token, secret)) {
-    return jsonError("Unauthorized.", 401);
+    return jsonError(t("errors.unauthorized"), 401);
   }
 
   const clientId = getClientRateLimitIdentifier(request);
@@ -44,7 +47,7 @@ export async function GET(request: Request) {
     ...RATE_LIMITS.cronByClientIp,
   });
   if (!rateLimit.allowed) {
-    return jsonError("Too many requests.", 429, {
+    return jsonError(t("errors.rateLimited"), 429, {
       headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
     });
   }

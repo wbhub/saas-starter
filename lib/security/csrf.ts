@@ -80,13 +80,22 @@ export function getServerActionCsrfCookieOptions() {
   return getCsrfCookieOptions(process.env.NODE_ENV === "production");
 }
 
-export function verifyCsrfProtection(request: Request) {
+type CsrfErrorMessages = {
+  invalidOrigin?: string;
+  missingToken?: string;
+  invalidToken?: string;
+};
+
+export function verifyCsrfProtection(request: Request, messages?: CsrfErrorMessages) {
   if (process.env.NODE_ENV === "test") {
     return null;
   }
 
   if (!isBrowserRequestFromAllowedOrigin(request)) {
-    return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
+    return NextResponse.json(
+      { error: messages?.invalidOrigin ?? "Invalid request origin." },
+      { status: 403 },
+    );
   }
 
   const headerToken = request.headers.get(CSRF_HEADER_NAME)?.trim() ?? "";
@@ -96,11 +105,17 @@ export function verifyCsrfProtection(request: Request) {
   ).trim();
 
   if (!ensureTokenShape(headerToken) || !ensureTokenShape(cookieToken)) {
-    return NextResponse.json({ error: "Missing CSRF token." }, { status: 403 });
+    return NextResponse.json(
+      { error: messages?.missingToken ?? "Missing CSRF token." },
+      { status: 403 },
+    );
   }
 
   if (headerToken !== cookieToken) {
-    return NextResponse.json({ error: "Invalid CSRF token." }, { status: 403 });
+    return NextResponse.json(
+      { error: messages?.invalidToken ?? "Invalid CSRF token." },
+      { status: 403 },
+    );
   }
 
   return null;

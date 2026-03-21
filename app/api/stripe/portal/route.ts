@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getStripeServerClient } from "@/lib/stripe/server";
 import { getAppUrl } from "@/lib/env";
 import { requireJsonContentType } from "@/lib/http/content-type";
+import { getRouteTranslator } from "@/lib/i18n/locale";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { logger } from "@/lib/logger";
@@ -28,20 +29,28 @@ async function isOwnedStripeCustomer(teamId: string, customerId: string) {
 }
 
 export async function POST(request: Request) {
+  const t = await getRouteTranslator("ApiStripePortal", request);
+
   const stripe = getStripeServerClient();
   if (!stripe) {
     return NextResponse.json(
-      { error: "Billing is not configured for this deployment." },
+      { error: t("errors.billingNotConfigured") },
       { status: 503 },
     );
   }
 
-  const csrfError = verifyCsrfProtection(request);
+  const csrfError = verifyCsrfProtection(request, {
+    invalidOrigin: t("errors.invalidOrigin"),
+    missingToken: t("errors.missingCsrfToken"),
+    invalidToken: t("errors.invalidCsrfToken"),
+  });
   if (csrfError) {
     return csrfError;
   }
 
-  const contentTypeError = requireJsonContentType(request);
+  const contentTypeError = requireJsonContentType(request, {
+    errorMessage: t("errors.invalidContentType"),
+  });
   if (contentTypeError) {
     return contentTypeError;
   }
@@ -52,19 +61,19 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: t("errors.unauthorized") }, { status: 401 });
   }
 
   const teamContext = await getCachedTeamContextForUser(supabase, user.id);
   if (!teamContext) {
     return NextResponse.json(
-      { error: "No team membership found for this account." },
+      { error: t("errors.noTeamMembership") },
       { status: 403 },
     );
   }
   if (!canManageTeamBilling(teamContext.role)) {
     return NextResponse.json(
-      { error: "Only team owners and admins can manage billing." },
+      { error: t("errors.forbidden") },
       { status: 403 },
     );
   }
@@ -75,7 +84,7 @@ export async function POST(request: Request) {
   });
   if (!rateLimit.allowed) {
     return NextResponse.json(
-      { error: "Too many requests. Please wait and try again." },
+      { error: t("errors.rateLimited") },
       {
         status: 429,
         headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
@@ -91,14 +100,14 @@ export async function POST(request: Request) {
 
   if (customerRowError) {
     return NextResponse.json(
-      { error: "Could not load Stripe customer record." },
+      { error: t("errors.couldNotLoadStripeCustomer") },
       { status: 500 },
     );
   }
 
   if (!customerRow?.stripe_customer_id) {
     return NextResponse.json(
-      { error: "No customer record found for this account." },
+      { error: t("errors.noCustomerRecord") },
       { status: 404 },
     );
   }
@@ -108,8 +117,7 @@ export async function POST(request: Request) {
     if (!isOwned) {
       return NextResponse.json(
         {
-          error:
-            "Billing identity mismatch detected. Start a new checkout to re-link your account.",
+          error: t("errors.billingIdentityMismatch"),
         },
         { status: 409 },
       );
@@ -124,7 +132,7 @@ export async function POST(request: Request) {
   } catch (error) {
     logger.error("Failed to create Stripe billing portal session", error);
     return NextResponse.json(
-      { error: "Unable to open billing portal right now. Please try again." },
+      { error: t("errors.unableToOpenPortal") },
       { status: 500 },
     );
   }

@@ -691,5 +691,135 @@
       "noEmailOnAccount": "No se encontró email en esta cuenta.",
       "unableToRecover": "No se puede recuperar un equipo ahora mismo."
     }
+  },
+  "ApiAuthLogin": {
+    "errors": {
+      "invalidOrigin": "Origen de solicitud inválido.",
+      "missingCsrfToken": "Falta el token CSRF.",
+      "invalidCsrfToken": "Token CSRF inválido.",
+      "invalidContentType": "Content-Type debe ser application/json.",
+      "payloadTooLarge": "El cuerpo de la solicitud es demasiado grande.",
+      "invalidCredentials": "Email o contraseña inválidos.",
+      "rateLimited": "Demasiados intentos de inicio de sesión. Inténtalo de nuevo más tarde."
+    }
+  },
+  "ApiAuthSignup": {
+    "messages": {
+      "accountCreated": "Cuenta creada. Revisa tu correo para verificar el email si la confirmación está habilitada."
+    },
+    "errors": {
+      "invalidOrigin": "Origen de solicitud inválido.",
+      "missingCsrfToken": "Falta el token CSRF.",
+      "invalidCsrfToken": "Token CSRF inválido.",
+      "invalidContentType": "Content-Type debe ser application/json.",
+      "payloadTooLarge": "El cuerpo de la solicitud es demasiado grande.",
+      "invalidEmailOrPassword": "Proporciona un email y contraseña válidos.",
+      "passwordComplexity": "La contraseña debe tener entre 12 y 128 caracteres.",
+      "rateLimited": "Demasiados intentos de registro. Inténtalo de nuevo más tarde.",
+      "unableToCreateAccount": "No se pudo crear tu cuenta."
+    }
+  },
+  "ApiAiChat": {
+    "errors": {
+      "invalidOrigin": "Origen de solicitud inválido.",
+      "missingCsrfToken": "Falta el token CSRF.",
+      "invalidCsrfToken": "Token CSRF inválido.",
+      "invalidContentType": "Content-Type debe ser application/json.",
+      "unauthorized": "No autorizado",
+      "noTeamMembership": "No se encontró membresía de equipo para esta cuenta.",
+      "rateLimited": "Demasiadas solicitudes de AI. Espera e inténtalo de nuevo.",
+      "payloadTooLarge": "El cuerpo de la solicitud es demasiado grande.",
+      "invalidPayload": "Cuerpo de solicitud inválido.",
+      "maxAttachments": "Se permite un máximo de {max} adjuntos por solicitud.",
+      "unsupportedAttachmentType": "Tipo de adjunto no compatible.",
+      "unavailable": "El asistente de AI no está disponible actualmente."
+    }
+  },
+  "ApiStripeCheckout": {
+    "errors": {
+      "invalidOrigin": "Origen de solicitud inválido.",
+      "missingCsrfToken": "Falta el token CSRF.",
+      "invalidCsrfToken": "Token CSRF inválido.",
+      "invalidContentType": "Content-Type debe ser application/json.",
+      "billingNotConfigured": "La facturación no está configurada para este despliegue.",
+      "unauthorized": "No autorizado",
+      "noTeamMembership": "No se encontró membresía de equipo para esta cuenta.",
+      "forbidden": "Solo propietarios y administradores del equipo pueden gestionar la facturación.",
+      "rateLimited": "Demasiadas solicitudes. Espera e inténtalo de nuevo.",
+      "payloadTooLarge": "El cuerpo de la solicitud es demasiado grande.",
+      "invalidPayload": "Cuerpo de solicitud inválido",
+      "invalidPlan": "Plan seleccionado inválido",
+      "billingPlansNotConfigured": "Los planes de facturación no están completamente configurados para este despliegue.",
+      "checkoutInProgress": "Ya hay un checkout en progreso. Espera e inténtalo de nuevo.",
+      "couldNotVerifySubscription": "No se pudo verificar el estado actual de la suscripción.",
+      "activeSubscriptionExists": "Ya tienes una suscripción activa.",
+      "couldNotLoadStripeCustomer": "No se pudo cargar el registro de cliente de Stripe.",
+      "unableToStartCheckout": "No se puede iniciar el checkout ahora mismo. Inténtalo de nuevo."
+    }
+  },
+  "ApiStripeChangePlan": {
+    "errors": {
+      "invalidOrigin": "Origen de solicitud inválido.",
+      "missingCsrfToken": "Falta el token CSRF.",
+      "invalidCsrfToken": "Token CSRF inválido.",
+      "invalidContentType": "Content-Type debe ser application/json.",
+      "billingNotConfigured": "La facturación no está configurada para este despliegue.",
+      "unauthorized": "No autorizado",
+      "noTeamMembership": "No se encontró membresía de equipo para esta cuenta.",
+      "forbidden": "Solo propietarios y administradores del equipo pueden gestionar la facturación.",
+      "rateLimited": "Demasiadas solicitudes. Espera e inténtalo de nuevo.",
+      "payloadTooLarge": "El cuerpo de la solicitud es demasiado grande.",
+      "invalidPayload": "Cuerpo de solicitud inválido",
+      "invalidTargetPlan": "Plan de destino inválido",
+      "billingPlansNotConfigured": "Los planes de facturación no están completamente configurados para este despliegue.",
+      "couldNotLoadSubscription": "No se pudo cargar el estado actual de la suscripción.",
+      "noActiveSubscription": "No se encontró una suscripción activa. Inicia un nuevo checkout primero.",
+      "billingIdentityMismatch": "Se detectó un desajuste de identidad de facturación. Inicia un nuevo checkout para volver a vincular tu cuenta.",
+      "subscriptionItemNotFound": "No se encontró el elemento de suscripción.",
+      "alreadyOnPlan": "Tu suscripción ya está en este plan.",
+      "postChangeSyncFailed": "El plan cambió, pero falló la sincronización local de facturación. Reintenta en breve.",
+      "unableToChangePlan": "No se puede cambiar tu plan ahora mismo. Inténtalo de nuevo."
+    }
+  },
+  "ApiStripePortal": {
+    "errors": {
+      "invalidOrigin": "Origen de solicitud inválido.",
+      "missingCsrfToken": "Falta el token CSRF.",
+      "invalidCsrfToken": "Token CSRF inválido.",
+      "invalidContentType": "Content-Type debe ser application/json.",
+      "billingNotConfigured": "La facturación no está configurada para este despliegue.",
+      "unauthorized": "No autorizado",
+      "noTeamMembership": "No se encontró membresía de equipo para esta cuenta.",
+      "forbidden": "Solo propietarios y administradores del equipo pueden gestionar la facturación.",
+      "rateLimited": "Demasiadas solicitudes. Espera e inténtalo de nuevo.",
+      "couldNotLoadStripeCustomer": "No se pudo cargar el registro de cliente de Stripe.",
+      "noCustomerRecord": "No se encontró un registro de cliente para esta cuenta.",
+      "billingIdentityMismatch": "Se detectó un desajuste de identidad de facturación. Inicia un nuevo checkout para volver a vincular tu cuenta.",
+      "unableToOpenPortal": "No se puede abrir el portal de facturación ahora mismo. Inténtalo de nuevo."
+    }
+  },
+  "ApiStripeWebhook": {
+    "errors": {
+      "invalidContentType": "Content-Type debe ser application/json.",
+      "webhooksNotConfigured": "Los webhooks de facturación no están configurados para este despliegue.",
+      "missingSignature": "Falta la firma de Stripe",
+      "signatureVerificationFailed": "Falló la verificación de la firma del webhook.",
+      "webhookHandlingFailed": "Falló el procesamiento del webhook."
+    }
+  },
+  "ApiCronReconcileSeatQuantities": {
+    "errors": {
+      "cronNotConfigured": "Cron no está configurado.",
+      "unauthorized": "No autorizado.",
+      "rateLimited": "Demasiadas solicitudes.",
+      "partialFailure": "La ejecución del cron terminó con uno o más fallos internos."
+    }
+  },
+  "ApiCronPruneStripeWebhookEvents": {
+    "errors": {
+      "cronNotConfigured": "Cron no está configurado.",
+      "unauthorized": "No autorizado.",
+      "rateLimited": "Demasiadas solicitudes."
+    }
   }
 }

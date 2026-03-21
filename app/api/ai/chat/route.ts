@@ -15,6 +15,7 @@ import { resolveActualTokenUsage } from "@/lib/ai/usage";
 import { resolveAiAccess } from "@/lib/ai/access";
 import { requireJsonContentType } from "@/lib/http/content-type";
 import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
+import { getRouteTranslator } from "@/lib/i18n/locale";
 import { logger } from "@/lib/logger";
 import { isOpenAiConfigured, openai } from "@/lib/openai/client";
 import { checkRateLimit } from "@/lib/security/rate-limit";
@@ -26,7 +27,6 @@ import { getCachedTeamContextForUser } from "@/lib/team-context-cache";
 import type OpenAI from "openai";
 
 const AI_COMPLETION_MAX_TOKENS = 4_096;
-const AI_UNAVAILABLE_MESSAGE = "AI assistant is currently unavailable.";
 const AI_UNAVAILABLE_STATUS = 503;
 const MAX_ATTACHMENTS_PER_MESSAGE = 8;
 const MAX_ATTACHMENTS_PER_REQUEST = 16;
@@ -403,12 +403,21 @@ async function insertAiUsageRow({
 }
 
 export async function POST(request: Request) {
-  const csrfError = verifyCsrfProtection(request);
+  const t = await getRouteTranslator("ApiAiChat", request);
+  const aiUnavailableMessage = t("errors.unavailable");
+
+  const csrfError = verifyCsrfProtection(request, {
+    invalidOrigin: t("errors.invalidOrigin"),
+    missingToken: t("errors.missingCsrfToken"),
+    invalidToken: t("errors.invalidCsrfToken"),
+  });
   if (csrfError) {
     return csrfError;
   }
 
-  const contentTypeError = requireJsonContentType(request);
+  const contentTypeError = requireJsonContentType(request, {
+    errorMessage: t("errors.invalidContentType"),
+  });
   if (contentTypeError) {
     return contentTypeError;
   }
@@ -419,13 +428,13 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: t("errors.unauthorized") }, { status: 401 });
   }
 
   const teamContext = await getCachedTeamContextForUser(supabase, user.id);
   if (!teamContext) {
     return NextResponse.json(
-      { error: "No team membership found for this account." },
+      { error: t("errors.noTeamMembership") },
       { status: 403 },
     );
   }
@@ -448,7 +457,7 @@ export async function POST(request: Request) {
       teamRateLimit.retryAfterSeconds,
     );
     return NextResponse.json(
-      { error: "Too many AI requests. Please wait and try again." },
+      { error: t("errors.rateLimited") },
       {
         status: 429,
         headers: { "Retry-After": String(retryAfterSeconds) },
@@ -459,16 +468,16 @@ export async function POST(request: Request) {
   const bodyParse = await parseJsonWithSchema(request, chatPayloadSchema);
   if (!bodyParse.success) {
     if (bodyParse.tooLarge) {
-      return NextResponse.json({ error: "Request payload is too large." }, { status: 413 });
+      return NextResponse.json({ error: t("errors.payloadTooLarge") }, { status: 413 });
     }
-    return NextResponse.json({ error: "Invalid request payload." }, { status: 400 });
+    return NextResponse.json({ error: t("errors.invalidPayload") }, { status: 400 });
   }
   const requestModalities = getRequestModalities(bodyParse.data.messages);
   const attachmentCounts = getAttachmentCounts(bodyParse.data.messages);
   if (attachmentCounts.total > MAX_ATTACHMENTS_PER_REQUEST) {
     return NextResponse.json(
       {
-        error: `A maximum of ${MAX_ATTACHMENTS_PER_REQUEST} attachments is allowed per request.`,
+        error: t("errors.maxAttachments", { max: MAX_ATTACHMENTS_PER_REQUEST }),
       },
       { status: 400 },
     );
@@ -477,7 +486,7 @@ export async function POST(request: Request) {
   if (unsupportedAttachment) {
     return NextResponse.json(
       {
-        error: "Unsupported attachment type.",
+        error: t("errors.unsupportedAttachmentType"),
         details: {
           fileType: unsupportedAttachment.fileType,
           mimeType: unsupportedAttachment.mimeType,
@@ -504,7 +513,7 @@ export async function POST(request: Request) {
         },
       });
       return NextResponse.json(
-        { error: AI_UNAVAILABLE_MESSAGE },
+        { error: aiUnavailableMessage },
         { status: AI_UNAVAILABLE_STATUS },
       );
     }
@@ -534,7 +543,7 @@ export async function POST(request: Request) {
         accessMode: aiAccessMode,
       });
       return NextResponse.json(
-        { error: AI_UNAVAILABLE_MESSAGE },
+        { error: aiUnavailableMessage },
         { status: AI_UNAVAILABLE_STATUS },
       );
     }
@@ -561,7 +570,7 @@ export async function POST(request: Request) {
     });
     return NextResponse.json(
       {
-        error: AI_UNAVAILABLE_MESSAGE,
+        error: aiUnavailableMessage,
       },
       { status: AI_UNAVAILABLE_STATUS },
     );
@@ -583,7 +592,7 @@ export async function POST(request: Request) {
       },
     });
     return NextResponse.json(
-      { error: AI_UNAVAILABLE_MESSAGE },
+      { error: aiUnavailableMessage },
       { status: AI_UNAVAILABLE_STATUS },
     );
   }
@@ -610,7 +619,7 @@ export async function POST(request: Request) {
       },
     });
     return NextResponse.json(
-      { error: AI_UNAVAILABLE_MESSAGE },
+      { error: aiUnavailableMessage },
       { status: AI_UNAVAILABLE_STATUS },
     );
   }
@@ -630,7 +639,7 @@ export async function POST(request: Request) {
       },
     });
     return NextResponse.json(
-      { error: AI_UNAVAILABLE_MESSAGE },
+      { error: aiUnavailableMessage },
       { status: AI_UNAVAILABLE_STATUS },
     );
   }
@@ -655,7 +664,7 @@ export async function POST(request: Request) {
         projectedRequestTokens,
       });
       return NextResponse.json(
-        { error: AI_UNAVAILABLE_MESSAGE },
+        { error: aiUnavailableMessage },
         { status: AI_UNAVAILABLE_STATUS },
       );
     }
@@ -677,7 +686,7 @@ export async function POST(request: Request) {
         },
       });
       return NextResponse.json(
-        { error: AI_UNAVAILABLE_MESSAGE },
+        { error: aiUnavailableMessage },
         { status: AI_UNAVAILABLE_STATUS },
       );
     }
@@ -965,7 +974,7 @@ export async function POST(request: Request) {
       },
     });
     return NextResponse.json(
-      { error: AI_UNAVAILABLE_MESSAGE },
+      { error: aiUnavailableMessage },
       { status: AI_UNAVAILABLE_STATUS },
     );
   }

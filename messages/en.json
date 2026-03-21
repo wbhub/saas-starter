@@ -691,5 +691,135 @@
       "noEmailOnAccount": "No email found on this account.",
       "unableToRecover": "Unable to recover a team right now."
     }
+  },
+  "ApiAuthLogin": {
+    "errors": {
+      "invalidOrigin": "Invalid request origin.",
+      "missingCsrfToken": "Missing CSRF token.",
+      "invalidCsrfToken": "Invalid CSRF token.",
+      "invalidContentType": "Content-Type must be application/json.",
+      "payloadTooLarge": "Request payload is too large.",
+      "invalidCredentials": "Invalid email or password.",
+      "rateLimited": "Too many login attempts. Please try again later."
+    }
+  },
+  "ApiAuthSignup": {
+    "messages": {
+      "accountCreated": "Account created. Check your inbox to verify email if confirmation is enabled."
+    },
+    "errors": {
+      "invalidOrigin": "Invalid request origin.",
+      "missingCsrfToken": "Missing CSRF token.",
+      "invalidCsrfToken": "Invalid CSRF token.",
+      "invalidContentType": "Content-Type must be application/json.",
+      "payloadTooLarge": "Request payload is too large.",
+      "invalidEmailOrPassword": "Please provide a valid email and password.",
+      "passwordComplexity": "Password must be between 12 and 128 characters.",
+      "rateLimited": "Too many signup attempts. Please try again later.",
+      "unableToCreateAccount": "Unable to create your account."
+    }
+  },
+  "ApiAiChat": {
+    "errors": {
+      "invalidOrigin": "Invalid request origin.",
+      "missingCsrfToken": "Missing CSRF token.",
+      "invalidCsrfToken": "Invalid CSRF token.",
+      "invalidContentType": "Content-Type must be application/json.",
+      "unauthorized": "Unauthorized",
+      "noTeamMembership": "No team membership found for this account.",
+      "rateLimited": "Too many AI requests. Please wait and try again.",
+      "payloadTooLarge": "Request payload is too large.",
+      "invalidPayload": "Invalid request payload.",
+      "maxAttachments": "A maximum of {max} attachments is allowed per request.",
+      "unsupportedAttachmentType": "Unsupported attachment type.",
+      "unavailable": "AI assistant is currently unavailable."
+    }
+  },
+  "ApiStripeCheckout": {
+    "errors": {
+      "invalidOrigin": "Invalid request origin.",
+      "missingCsrfToken": "Missing CSRF token.",
+      "invalidCsrfToken": "Invalid CSRF token.",
+      "invalidContentType": "Content-Type must be application/json.",
+      "billingNotConfigured": "Billing is not configured for this deployment.",
+      "unauthorized": "Unauthorized",
+      "noTeamMembership": "No team membership found for this account.",
+      "forbidden": "Only team owners and admins can manage billing.",
+      "rateLimited": "Too many requests. Please wait and try again.",
+      "payloadTooLarge": "Request payload is too large.",
+      "invalidPayload": "Invalid request payload",
+      "invalidPlan": "Invalid plan selected",
+      "billingPlansNotConfigured": "Billing plans are not fully configured for this deployment.",
+      "checkoutInProgress": "Checkout is already in progress. Please wait and try again.",
+      "couldNotVerifySubscription": "Could not verify current subscription state.",
+      "activeSubscriptionExists": "You already have an active subscription.",
+      "couldNotLoadStripeCustomer": "Could not load Stripe customer record.",
+      "unableToStartCheckout": "Unable to start checkout right now. Please try again."
+    }
+  },
+  "ApiStripeChangePlan": {
+    "errors": {
+      "invalidOrigin": "Invalid request origin.",
+      "missingCsrfToken": "Missing CSRF token.",
+      "invalidCsrfToken": "Invalid CSRF token.",
+      "invalidContentType": "Content-Type must be application/json.",
+      "billingNotConfigured": "Billing is not configured for this deployment.",
+      "unauthorized": "Unauthorized",
+      "noTeamMembership": "No team membership found for this account.",
+      "forbidden": "Only team owners and admins can manage billing.",
+      "rateLimited": "Too many requests. Please wait and try again.",
+      "payloadTooLarge": "Request payload is too large.",
+      "invalidPayload": "Invalid request payload",
+      "invalidTargetPlan": "Invalid target plan",
+      "billingPlansNotConfigured": "Billing plans are not fully configured for this deployment.",
+      "couldNotLoadSubscription": "Could not load current subscription state.",
+      "noActiveSubscription": "No active subscription found. Start a new checkout first.",
+      "billingIdentityMismatch": "Billing identity mismatch detected. Start a new checkout to re-link your account.",
+      "subscriptionItemNotFound": "Subscription item not found.",
+      "alreadyOnPlan": "Your subscription is already on this plan.",
+      "postChangeSyncFailed": "Plan changed, but local billing sync failed. Please retry shortly.",
+      "unableToChangePlan": "Unable to change your plan right now. Please try again."
+    }
+  },
+  "ApiStripePortal": {
+    "errors": {
+      "invalidOrigin": "Invalid request origin.",
+      "missingCsrfToken": "Missing CSRF token.",
+      "invalidCsrfToken": "Invalid CSRF token.",
+      "invalidContentType": "Content-Type must be application/json.",
+      "billingNotConfigured": "Billing is not configured for this deployment.",
+      "unauthorized": "Unauthorized",
+      "noTeamMembership": "No team membership found for this account.",
+      "forbidden": "Only team owners and admins can manage billing.",
+      "rateLimited": "Too many requests. Please wait and try again.",
+      "couldNotLoadStripeCustomer": "Could not load Stripe customer record.",
+      "noCustomerRecord": "No customer record found for this account.",
+      "billingIdentityMismatch": "Billing identity mismatch detected. Start a new checkout to re-link your account.",
+      "unableToOpenPortal": "Unable to open billing portal right now. Please try again."
+    }
+  },
+  "ApiStripeWebhook": {
+    "errors": {
+      "invalidContentType": "Content-Type must be application/json.",
+      "webhooksNotConfigured": "Billing webhooks are not configured for this deployment.",
+      "missingSignature": "Missing Stripe signature",
+      "signatureVerificationFailed": "Webhook signature verification failed.",
+      "webhookHandlingFailed": "Webhook handling failed."
+    }
+  },
+  "ApiCronReconcileSeatQuantities": {
+    "errors": {
+      "cronNotConfigured": "Cron is not configured.",
+      "unauthorized": "Unauthorized.",
+      "rateLimited": "Too many requests.",
+      "partialFailure": "Cron run completed with one or more internal job failures."
+    }
+  },
+  "ApiCronPruneStripeWebhookEvents": {
+    "errors": {
+      "cronNotConfigured": "Cron is not configured.",
+      "unauthorized": "Unauthorized.",
+      "rateLimited": "Too many requests."
+    }
   }
 }
