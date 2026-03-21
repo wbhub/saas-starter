@@ -1,9 +1,14 @@
 import * as Sentry from "@sentry/nextjs";
 import type { Instrumentation } from "next";
+import { validateRequiredEnvAtBoot } from "./lib/env";
 
 const SENTRY_ENABLED = Boolean(process.env.NEXT_PUBLIC_SENTRY_DSN);
 
 export async function register() {
+  if (process.env.NEXT_RUNTIME !== "edge") {
+    validateRequiredEnvAtBoot();
+  }
+
   if (!SENTRY_ENABLED) {
     return;
   }

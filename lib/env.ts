@@ -36,11 +36,14 @@ type OptionalEnvKey =
   | "UPSTASH_REDIS_REST_TOKEN";
 
 const warnedMissingEnv = new Set<string>();
-const SOFT_REQUIRED_KEYS: ReadonlySet<ServerEnvKey> = new Set([
+const SOFT_REQUIRED_KEYS = [
   "NEXT_PUBLIC_APP_URL",
   "NEXT_PUBLIC_SUPABASE_URL",
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-]);
+ ] as const satisfies ReadonlyArray<ServerEnvKey>;
+type SoftRequiredEnvKey = (typeof SOFT_REQUIRED_KEYS)[number];
+type HardRequiredEnvKey = Exclude<ServerEnvKey, SoftRequiredEnvKey>;
+const SOFT_REQUIRED_KEY_SET: ReadonlySet<ServerEnvKey> = new Set(SOFT_REQUIRED_KEYS);
 const ENV_FALLBACKS: Partial<Record<ServerEnvKey, string>> = {
   NEXT_PUBLIC_APP_URL: "http://localhost:3000",
   NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321",
@@ -50,7 +53,7 @@ const ENV_FALLBACKS: Partial<Record<ServerEnvKey, string>> = {
 function ensureEnv(key: ServerEnvKey) {
   const value = process.env[key]?.trim();
   if (!value) {
-    if (SOFT_REQUIRED_KEYS.has(key)) {
+    if (SOFT_REQUIRED_KEY_SET.has(key)) {
       if (!warnedMissingEnv.has(key)) {
         warnedMissingEnv.add(key);
         console.warn(`Missing optional runtime variable (using fallback): ${key}`);
@@ -187,3 +190,23 @@ export const env = {
     return optionalEnv("UPSTASH_REDIS_REST_TOKEN");
   },
 };
+
+const REQUIRED_ENV_GETTERS: Readonly<Record<HardRequiredEnvKey, true>> = {
+  SUPABASE_SERVICE_ROLE_KEY: true,
+  STRIPE_SECRET_KEY: true,
+  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: true,
+  STRIPE_WEBHOOK_SECRET: true,
+  STRIPE_STARTER_PRICE_ID: true,
+  STRIPE_GROWTH_PRICE_ID: true,
+  STRIPE_PRO_PRICE_ID: true,
+  RESEND_API_KEY: true,
+  RESEND_FROM_EMAIL: true,
+  RESEND_SUPPORT_EMAIL: true,
+};
+
+export function validateRequiredEnvAtBoot() {
+  for (const key of Object.keys(REQUIRED_ENV_GETTERS) as HardRequiredEnvKey[]) {
+    // Access each required env getter to fail fast on startup misconfiguration.
+    void env[key];
+  }
+}
