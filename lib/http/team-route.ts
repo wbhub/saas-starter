@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { type ZodType } from "zod";
 import { requireJsonContentType } from "@/lib/http/content-type";
 import { getOrCreateRequestId, jsonWithRequestId, withRequestId } from "@/lib/http/request-id";
