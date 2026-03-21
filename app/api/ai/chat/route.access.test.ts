@@ -581,6 +581,159 @@ describe("POST /api/ai/chat access and gating", () => {
     ).not.toHaveBeenCalled();
   });
 
+  it("rejects assistant-role attachments", async () => {
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          getUser: async () => ({
+            data: { user: { id: "user_123" } },
+          }),
+        },
+      }),
+    }));
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
+        teamId: "team_123",
+        teamName: "Acme Team",
+        role: "owner",
+      }),
+    }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({
+        allowed: true,
+        retryAfterSeconds: 0,
+      }),
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: "assistant",
+              content: "I attached a file.",
+              attachments: [
+                {
+                  type: "file",
+                  mimeType: "text/plain",
+                  data: "dGVzdA==",
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: "Invalid request payload." });
+  });
+
+  it("rejects non-https attachment URLs", async () => {
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          getUser: async () => ({
+            data: { user: { id: "user_123" } },
+          }),
+        },
+      }),
+    }));
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
+        teamId: "team_123",
+        teamName: "Acme Team",
+        role: "owner",
+      }),
+    }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({
+        allowed: true,
+        retryAfterSeconds: 0,
+      }),
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: "user",
+              content: "Review this image",
+              attachments: [
+                {
+                  type: "image",
+                  mimeType: "image/png",
+                  url: "http://example.com/photo.png",
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: "Invalid request payload." });
+  });
+
+  it("rejects requests with more than 16 attachments total", async () => {
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          getUser: async () => ({
+            data: { user: { id: "user_123" } },
+          }),
+        },
+      }),
+    }));
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
+        teamId: "team_123",
+        teamName: "Acme Team",
+        role: "owner",
+      }),
+    }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({
+        allowed: true,
+        retryAfterSeconds: 0,
+      }),
+    }));
+
+    const attachments = Array.from({ length: 6 }, (_, index) => ({
+      type: "image",
+      mimeType: "image/png",
+      url: `https://example.com/photo-${index}.png`,
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [
+            { role: "user", content: "set one", attachments },
+            { role: "user", content: "set two", attachments },
+            { role: "user", content: "set three", attachments },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: "A maximum of 16 attachments is allowed per request.",
+    });
+  });
+
   it("denies requests that use disallowed modalities", async () => {
     vi.doMock("@/lib/ai/config", () => ({
       getAiAccessMode: vi.fn().mockReturnValue("all"),
@@ -602,6 +755,14 @@ describe("POST /api/ai/chat access and gating", () => {
             data: { user: { id: "user_123" } },
           }),
         },
+        from: vi.fn(() => ({
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          in: vi.fn().mockReturnThis(),
+          order: vi.fn().mockReturnThis(),
+          limit: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+        })),
       }),
     }));
     vi.doMock("@/lib/team-context-cache", () => ({
@@ -645,10 +806,100 @@ describe("POST /api/ai/chat access and gating", () => {
     await expect(response.json()).resolves.toEqual({
       error: "AI assistant is currently unavailable.",
     });
+    const { logAuditEvent } = await import("@/lib/audit");
+    expect(logAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          attachmentCounts: { image: 1, file: 0, total: 1 },
+        }),
+      }),
+    );
     const { openai } = await import("@/lib/openai/client");
     expect(
       (openai as unknown as { chat: { completions: { create: ReturnType<typeof vi.fn> } } }).chat
         .completions.create,
     ).not.toHaveBeenCalled();
+  });
+
+  it("denies multimodal requests for text-only model capability", async () => {
+    vi.doMock("@/lib/ai/config", () => ({
+      getAiAccessMode: vi.fn().mockReturnValue("all"),
+      getAiAllowedSubscriptionStatuses: vi
+        .fn()
+        .mockReturnValue(["trialing", "active", "past_due"]),
+      getAiDefaultModel: vi.fn().mockReturnValue("gpt-3.5-turbo"),
+      getAiDefaultMonthlyTokenBudget: vi.fn().mockReturnValue(0),
+      getAiRuleForPlan: vi.fn(),
+      getAiModelForPlan: vi.fn().mockReturnValue("gpt-3.5-turbo"),
+      getAiMonthlyTokenBudgetForPlan: vi.fn().mockReturnValue(2_000_000),
+      getAiAllowedModalities: vi.fn().mockReturnValue(["text", "image", "file"]),
+      getAiAllowedModalitiesForPlan: vi.fn().mockReturnValue(["text", "image", "file"]),
+    }));
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          getUser: async () => ({
+            data: { user: { id: "user_123" } },
+          }),
+        },
+        from: vi.fn(() => ({
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          in: vi.fn().mockReturnThis(),
+          order: vi.fn().mockReturnThis(),
+          limit: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+        })),
+      }),
+    }));
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
+        teamId: "team_123",
+        teamName: "Acme Team",
+        role: "owner",
+      }),
+    }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({
+        allowed: true,
+        retryAfterSeconds: 0,
+      }),
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: "user",
+              content: "What is in this image?",
+              attachments: [
+                {
+                  type: "image",
+                  mimeType: "image/png",
+                  url: "https://example.com/photo.png",
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      error: "AI assistant is currently unavailable.",
+    });
+    const { logAuditEvent } = await import("@/lib/audit");
+    expect(logAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          reason: "model_modality_mismatch",
+        }),
+      }),
+    );
   });
 });
