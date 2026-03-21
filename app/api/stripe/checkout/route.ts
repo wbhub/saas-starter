@@ -301,7 +301,6 @@ export async function POST(req: Request) {
         mode: "subscription",
         customer: customerId,
         client_reference_id: teamContext.teamId,
-        payment_method_types: ["card"],
         line_items: [{ price: plan.priceId, quantity: seatCount }],
         success_url: `${appUrl}/dashboard?checkout=success`,
         cancel_url: `${appUrl}/dashboard?checkout=canceled`,
