@@ -38,10 +38,10 @@ const nextConfig: NextConfig = {
 
 const sentryDsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
 const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
-const configuredNextConfig = withNextIntl(nextConfig);
-
-export default sentryDsn
-  ? withSentryConfig(configuredNextConfig, {
+const configuredNextConfig = sentryDsn
+  ? withSentryConfig(nextConfig, {
       silent: true,
     })
-  : configuredNextConfig;
+  : nextConfig;
+
+export default withNextIntl(configuredNextConfig);
