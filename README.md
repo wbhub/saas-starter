@@ -44,7 +44,9 @@ Backend routes:
 - OpenAI (`openai`)
 - Resend (`resend`)
 - Tailwind CSS 4
+- Internationalization: `next-intl` (locales: `en`, `es`; locale prefix disabled)
 - Vitest, Playwright, ESLint
+- Optional observability/runtime: Sentry, Upstash Redis
 
 ## Quick Start
 
@@ -166,6 +168,22 @@ Optional:
 - `NEXT_PUBLIC_SENTRY_ENVIRONMENT`
 - `SENTRY_ENVIRONMENT`
 
+### Testing and CI (optional)
+
+- `PLAYWRIGHT_BASE_URL`
+- `E2E_OWNER_EMAIL`
+- `E2E_OWNER_PASSWORD`
+- `E2E_MEMBER_EMAIL`
+- `E2E_MEMBER_PASSWORD`
+- `E2E_INVITE_TOKEN`
+
+## Internationalization
+
+- `next-intl` is configured with locales `en` and `es`.
+- `localePrefix` is set to `never` (no locale segment in URLs).
+- Automatic locale detection is enabled (Accept-Language/cookie/request locale).
+- `lib/i18n/config.ts` currently has `SHOW_LOCALE_SWITCHER=false` by default.
+
 ## How Core Features Work
 
 Team and auth model:
@@ -188,21 +206,29 @@ AI chat model (`POST /api/ai/chat`):
 
 - Authenticated users only.
 - CSRF + JSON content-type enforced.
+- Max JSON request size is `256KB` (`413` when exceeded).
 - Input schema:
   - `messages` length: 1-30
   - each message `content`: 1-8000 chars
+  - each message `attachments`: max 8
   - optional message `attachments`:
     - images: `image/png`, `image/jpeg`, `image/webp`, `image/gif`
     - files: `application/pdf`, `text/plain`, `text/csv`
     - each attachment must provide exactly one source: `url`, `data`, or `fileId`
+    - `data` payload max length: `300000`
   - allowed roles: `user`, `assistant`
 - Unsupported attachment MIME types are rejected with `400`.
 - Modalities are policy-gated by `AI_ALLOWED_MODALITIES` with optional per-plan overrides.
-- Streaming response (`text/plain; charset=utf-8`) with `max_tokens: 4096`.
+- Streaming response (`text/plain; charset=utf-8`) with a 4096-token output cap.
+- OpenAI call path:
+  - no attachments: Chat Completions API (streamed)
+  - with attachments: Responses API (streamed multimodal input)
 - Rate limits are applied per-user and per-team.
 - Budgeting can reserve/finalize tokens atomically via DB RPC.
+- Usage is persisted to `ai_usage`; audit events log `success`/`denied`/`failure`.
+- Budget finalize failures are queued for retry and drained by cron (plus best-effort processing on active AI requests).
 - AI access can be controlled in three modes:
-  - `paid`: plan/status-based
+  - `paid`: plan/status-based (requires non-empty `AI_ALLOWED_SUBSCRIPTION_STATUSES`)
   - `all`: all authenticated users, one default model
   - `by_plan`: explicit rules for `free|starter|growth|pro`
 
