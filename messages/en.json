@@ -1,0 +1,189 @@
+{
+  "Common": {
+    "brandName": "SaaS Starter",
+    "myTeam": "My Team"
+  },
+  "LocaleSwitcher": {
+    "label": "Language",
+    "english": "English",
+    "spanish": "Spanish"
+  },
+  "SiteHeader": {
+    "dashboard": "Dashboard",
+    "login": "Login",
+    "openApp": "Open App",
+    "startFree": "Start Free"
+  },
+  "SiteFooter": {
+    "companyPlaceholder": "[Company Name]",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfUse": "Terms of Use"
+  },
+  "AuthPages": {
+    "backHome": "Back to home",
+    "backLogin": "Back to login"
+  },
+  "AuthForm": {
+    "errors": {
+      "unableToLogIn": "Unable to log in.",
+      "unableToCreateAccount": "Unable to create account.",
+      "unexpected": "Unexpected error",
+      "unableSocialLogin": "Unable to continue with social login."
+    },
+    "messages": {
+      "accountCreated": "Account created. Check your inbox to verify email if confirmation is enabled."
+    },
+    "title": {
+      "login": "Welcome back",
+      "signup": "Create your account"
+    },
+    "description": {
+      "login": "Sign in to manage your SaaS subscription.",
+      "signup": "Start with secure auth and billing-ready infrastructure."
+    },
+    "socialAuthLabel": "Social authentication",
+    "pleaseWait": "Please wait...",
+    "continueWith": "Continue with {provider}",
+    "lastUsed": "Last used",
+    "orContinueWithEmail": "or continue with email",
+    "email": "Email",
+    "password": "Password",
+    "passwordHint": "Use 12-128 characters. Passphrases are welcome.",
+    "submit": {
+      "login": "Log In",
+      "signup": "Create Account"
+    },
+    "needAccount": "Need an account?",
+    "signUp": "Sign up",
+    "forgotPassword": "Forgot password?",
+    "alreadyHaveAccount": "Already have an account?",
+    "logIn": "Log in"
+  },
+  "Landing": {
+    "header": {
+      "dashboard": "Dashboard",
+      "login": "Login",
+      "openApp": "Open App",
+      "startFree": "Start Free"
+    },
+    "hero": {
+      "badge": "Production-grade SaaS foundation",
+      "title": "Launch a production-ready SaaS in days, not months.",
+      "description": "Skip months of platform work. Auth, team access, seat-based billing, support email, and AI-ready APIs are already wired so you can focus on the product customers pay for.",
+      "goDashboard": "Go to dashboard",
+      "startFreeNow": "Start free now",
+      "viewPricing": "View pricing",
+      "feature1": "Supabase auth flows",
+      "feature2": "Team invites and roles",
+      "feature3": "Seat-based Stripe billing",
+      "feature4": "AI chat endpoint",
+      "feature5": "Resend support email",
+      "feature6": "CSRF + CSP + rate limits",
+      "shipNowTitle": "What you ship immediately",
+      "shipNowDescription": "App and API flows mapped to a real SaaS launch.",
+      "shipItem1": "Signup, login, forgot-password, reset-password, and protected dashboard routes",
+      "shipItem2": "Team onboarding with invites, acceptance, role management, and ownership transfer",
+      "shipItem3": "Seat-based Stripe checkout, billing portal, plan changes, and webhook syncing",
+      "shipItem4": "Support request API with Resend delivery and authenticated sender context",
+      "shipItem5": "Optional AI chat route with streaming responses, budgeting, and plan-aware access",
+      "shipItem6": "Security defaults including CSRF checks, CSP headers, request IDs, and rate limiting"
+    },
+    "gettingStarted": {
+      "title": "How to get up-and-running",
+      "description": "Follow the setup in the README to go from fresh clone to a working SaaS app with real auth and billing flows.",
+      "step1Title": "1. Clone & install",
+      "step1Text": "Install dependencies, copy `.env.example` to `.env.local`, and set your required values.",
+      "step2Title": "2. Configure providers",
+      "step2Text": "Apply `supabase/schema.sql`, add Stripe price IDs + webhook secret, and configure Resend.",
+      "step3Title": "3. Customize & launch",
+      "step3Text": "Update branding, pricing, and product logic, then deploy to Vercel with optional cron jobs."
+    },
+    "whyStarter": {
+      "label": "Why this starter",
+      "title": "Built for real SaaS operations, not just demos.",
+      "description": "The codebase includes production-minded patterns for teams, subscriptions, support, AI access controls, and operational cron endpoints.",
+      "stat1Label": "App routes included",
+      "stat1Value": "Public + Auth + Dashboard",
+      "stat2Label": "Core workflows prewired",
+      "stat2Value": "Auth + Teams + Billing",
+      "stat3Label": "Security baseline included",
+      "stat3Value": "CSRF + CSP + rate limiting"
+    },
+    "bestPractices": {
+      "title": "Built-in best practices",
+      "description": "Core paths are implemented with safety and maintainability in mind, so you can extend confidently.",
+      "securityDefaultsTitle": "Security defaults",
+      "securityDefaultsText": "CSRF protection, CSP, strict API headers, and request-aware middleware are included.",
+      "teamBillingTitle": "Team-based billing",
+      "teamBillingText": "Stripe subscriptions are team-scoped with seat reconciliation, portal access, and plan changes.",
+      "operationalTitle": "Operational endpoints",
+      "operationalText": "Cron routes reconcile seats and clean webhook data, with token-based authorization."
+    },
+    "stack": {
+      "title": "Inside the stack",
+      "description": "Next.js App Router with clear boundaries across UI routes, API handlers, and shared platform libraries.",
+      "authTitle": "Auth & user flows",
+      "authText": "Supabase SSR auth helpers, invite acceptance flow, team context, and account settings are already connected.",
+      "billingTitle": "Billing & Stripe",
+      "billingText": "Checkout, portal, and change-plan APIs are backed by webhook dedupe and subscription sync logic.",
+      "opsTitle": "AI, support, and observability",
+      "opsText": "AI chat, Resend support email, and optional Intercom + Sentry integrations are ready to configure."
+    },
+    "pricing": {
+      "title": "Seat-based pricing from Stripe",
+      "description": "Configure Starter, Growth, and Pro price IDs once, and the landing page and billing flows stay in sync.",
+      "mostPopular": "Most popular",
+      "managePlan": "Manage Plan",
+      "choosePlan": "Choose {name}"
+    },
+    "ctaFaq": {
+      "title": "Ready to ship your SaaS faster?",
+      "description": "Start with proven auth, team, billing, and API infrastructure, then build the product experience that makes your business unique.",
+      "openDashboard": "Open dashboard",
+      "createAccount": "Create your account",
+      "comparePlans": "Compare plans",
+      "faqTitle": "FAQ",
+      "q1": "What is included out of the box?",
+      "a1": "A production-oriented SaaS foundation with Supabase auth, team invites and roles, seat-based Stripe billing, dashboard routes, support email via Resend, and security middleware already wired in.",
+      "q2": "Do I need to build auth and billing myself?",
+      "a2": "No. Login, signup, password reset, protected routes, checkout, plan changes, billing portal, and webhook handling are already implemented so you can focus on product features.",
+      "q3": "How are teams and permissions handled?",
+      "a3": "Teams support invite flows and role-based access (`owner`, `admin`, `member`), with ownership transfer and guarded membership operations handled through API routes and database policies.",
+      "q4": "Is AI chat included?",
+      "a4": "Yes. `/api/ai/chat` is included with streaming responses, CSRF checks, rate limiting, and configurable access rules by paid status or plan when `OPENAI_API_KEY` is set."
+    }
+  },
+  "DashboardSidebar": {
+    "appDashboard": "App Dashboard",
+    "team": "Team",
+    "switch": "Switch",
+    "overview": "Overview",
+    "billing": "Billing",
+    "usage": "Usage",
+    "settings": "Settings",
+    "home": "Home",
+    "logout": "Logout"
+  },
+  "DashboardPage": {
+    "overview": "Overview",
+    "welcome": "Welcome, {name}",
+    "navigate": "Navigate by section for billing, team management, usage, and settings.",
+    "account": "Account",
+    "userId": "User ID",
+    "team": "Team",
+    "role": "Role",
+    "memberSince": "Member since",
+    "subscriptionSnapshot": "Subscription snapshot",
+    "currentPlan": "Current plan",
+    "unknown": "Unknown",
+    "status": "Status",
+    "seats": "Seats",
+    "currentPlanFree": "Current plan: Free",
+    "visitBillingUpgrade": "Visit billing to upgrade anytime.",
+    "noActiveSubscription": "No active subscription. Visit billing to start a plan.",
+    "billing": "Billing",
+    "teamNav": "Team",
+    "usage": "Usage",
+    "settings": "Settings"
+  }
+}

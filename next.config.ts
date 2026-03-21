@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
+import createNextIntlPlugin from "next-intl/plugin";
 import path from "node:path";
 
 const securityHeaders = [
@@ -36,9 +37,11 @@ const nextConfig: NextConfig = {
 };
 
 const sentryDsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
+const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
+const configuredNextConfig = withNextIntl(nextConfig);
 
 export default sentryDsn
-  ? withSentryConfig(nextConfig, {
+  ? withSentryConfig(configuredNextConfig, {
       silent: true,
     })
-  : nextConfig;
+  : configuredNextConfig;

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   AuthProvider,
   getSocialProviderOptions,
@@ -75,6 +76,7 @@ export function AuthForm({
   lastUsedProvider?: AuthProvider | null;
 }) {
   const router = useRouter();
+  const t = useTranslations("AuthForm");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -114,7 +116,7 @@ export function AuthForm({
           | AuthApiResponse
           | null;
         if (!response.ok) {
-          throw new Error(payload?.error ?? "Unable to log in.");
+          throw new Error(payload?.error ?? t("errors.unableToLogIn"));
         }
 
         router.push(redirectTo);
@@ -134,7 +136,7 @@ export function AuthForm({
           | AuthApiResponse
           | null;
         if (!response.ok) {
-          throw new Error(payload?.error ?? "Unable to create account.");
+          throw new Error(payload?.error ?? t("errors.unableToCreateAccount"));
         }
 
         if (payload?.sessionCreated) {
@@ -145,12 +147,12 @@ export function AuthForm({
         setMessageType("success");
         setMessage(
           payload?.message ??
-            "Account created. Check your inbox to verify email if confirmation is enabled.",
+            t("messages.accountCreated"),
         );
       }
     } catch (error) {
       setMessageType("error");
-      setMessage(error instanceof Error ? error.message : "Unexpected error");
+      setMessage(error instanceof Error ? error.message : t("errors.unexpected"));
     } finally {
       setLoading(false);
     }
@@ -171,11 +173,11 @@ export function AuthForm({
       });
 
       if (error) {
-        throw new Error(error.message || "Unable to continue with social login.");
+        throw new Error(error.message || t("errors.unableSocialLogin"));
       }
     } catch (error) {
       setMessageType("error");
-      setMessage(error instanceof Error ? error.message : "Unexpected error");
+      setMessage(error instanceof Error ? error.message : t("errors.unexpected"));
       setSocialLoadingProvider(null);
     }
   }
@@ -183,16 +185,16 @@ export function AuthForm({
   return (
     <div className="w-full max-w-md rounded-2xl border app-border-subtle app-surface p-8 text-[color:var(--foreground)] shadow-sm">
       <h1 className="text-2xl font-semibold">
-        {isLogin ? "Welcome back" : "Create your account"}
+        {isLogin ? t("title.login") : t("title.signup")}
       </h1>
       <p className="mt-2 text-sm text-[color:var(--muted-foreground)]">
         {isLogin
-          ? "Sign in to manage your SaaS subscription."
-          : "Start with secure auth and billing-ready infrastructure."}
+          ? t("description.login")
+          : t("description.signup")}
       </p>
 
       {hasSocialProviders ? (
-        <div className="mt-6 space-y-3" aria-label="Social authentication">
+        <div className="mt-6 space-y-3" aria-label={t("socialAuthLabel")}>
           {socialProviderOptions.map(({ provider, label, isLastUsed }) => {
             const isProviderLoading = socialLoadingProvider === provider;
 
@@ -205,10 +207,14 @@ export function AuthForm({
                 className="flex w-full items-center justify-center gap-2 rounded-lg border app-border-subtle px-4 py-2 text-sm font-medium hover:bg-[color:var(--surface-subtle)] disabled:opacity-60"
               >
                 <SocialProviderIcon provider={provider} />
-                <span>{isProviderLoading ? "Please wait..." : `Continue with ${label}`}</span>
+                <span>
+                  {isProviderLoading
+                    ? t("pleaseWait")
+                    : t("continueWith", { provider: label })}
+                </span>
                 {isLastUsed ? (
                   <span className="rounded-full border app-border-subtle px-2 py-0.5 text-[10px] uppercase tracking-wide text-[color:var(--muted-foreground)]">
-                    Last used
+                    {t("lastUsed")}
                   </span>
                 ) : null}
               </button>
@@ -220,7 +226,7 @@ export function AuthForm({
             </div>
             <div className="relative flex justify-center">
               <span className="app-surface px-2 text-xs text-[color:var(--muted-foreground)]">
-                or continue with email
+                {t("orContinueWithEmail")}
               </span>
             </div>
           </div>
@@ -230,7 +236,7 @@ export function AuthForm({
       <form className="mt-6 space-y-4" onSubmit={onSubmit} aria-busy={loading}>
         <label className="block">
           <span className="mb-1 block text-sm font-medium text-[color:var(--foreground)]">
-            Email
+            {t("email")}
           </span>
           <input
             type="email"
@@ -245,7 +251,7 @@ export function AuthForm({
         </label>
         <label className="block">
           <span className="mb-1 block text-sm font-medium text-[color:var(--foreground)]">
-            Password
+            {t("password")}
           </span>
           <input
             type="password"
@@ -261,7 +267,7 @@ export function AuthForm({
         </label>
         {!isLogin ? (
           <p id={passwordHintId} className="text-xs text-[color:var(--muted-foreground)]">
-            Use 12-128 characters. Passphrases are welcome.
+            {t("passwordHint")}
           </p>
         ) : null}
         <button
@@ -269,7 +275,7 @@ export function AuthForm({
           disabled={loading}
           className="w-full rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
         >
-          {loading ? "Please wait..." : isLogin ? "Log In" : "Create Account"}
+          {loading ? t("pleaseWait") : isLogin ? t("submit.login") : t("submit.signup")}
         </button>
       </form>
 
@@ -287,29 +293,29 @@ export function AuthForm({
       {isLogin ? (
         <div className="mt-5 flex items-center justify-between gap-3 text-sm">
           <p className="text-[color:var(--muted-foreground)]">
-            Need an account?{" "}
+            {t("needAccount")}{" "}
             <Link
               href="/signup"
               className="font-medium text-[color:var(--accent)] hover:opacity-90"
             >
-              Sign up
+              {t("signUp")}
             </Link>
           </p>
           <Link
             href="/forgot-password"
             className="font-medium text-[color:var(--accent)] hover:opacity-90"
           >
-            Forgot password?
+            {t("forgotPassword")}
           </Link>
         </div>
       ) : (
         <p className="mt-5 text-sm text-[color:var(--muted-foreground)]">
-          Already have an account?{" "}
+          {t("alreadyHaveAccount")}{" "}
           <Link
             href="/login"
             className="font-medium text-[color:var(--accent)] hover:opacity-90"
           >
-            Log in
+            {t("logIn")}
           </Link>
         </p>
       )}

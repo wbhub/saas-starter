@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { Sparkles } from "lucide-react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { AuthForm } from "@/components/auth-form";
 import {
   getEnabledSocialAuthProviders,
@@ -9,7 +9,7 @@ import {
   parseAuthProvider,
 } from "@/lib/auth/social-auth";
 import { SiteFooter } from "@/components/site-footer";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { SiteHeader } from "@/components/site-header";
 import { createClient } from "@/lib/supabase/server";
 
 function getSafeNextPath(nextValue: string | string[] | undefined) {
@@ -38,6 +38,7 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ next?: string | string[] }>;
 }) {
+  const t = await getTranslations("AuthPages");
   const supabase = await createClient();
   const cookieStore = await cookies();
   const params = await searchParams;
@@ -56,36 +57,7 @@ export default async function LoginPage({
 
   return (
     <div className="flex min-h-screen flex-col bg-[color:var(--background)] text-[color:var(--foreground)]">
-      <header className="border-b app-border-subtle">
-        <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-emerald-400 text-white shadow-sm shadow-indigo-500/30">
-              <Sparkles className="h-4 w-4" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xl font-semibold leading-tight tracking-tight">
-                SaaS Starter
-              </span>
-            </div>
-          </Link>
-
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            <Link
-              href="/login"
-              className="rounded-lg border app-border-subtle px-4 py-2 text-sm hover:bg-[color:var(--surface-subtle)]"
-            >
-              Login
-            </Link>
-            <Link
-              href="/signup"
-              className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400"
-            >
-              Start Free
-            </Link>
-          </div>
-        </nav>
-      </header>
+      <SiteHeader isLoggedIn={false} />
 
       <main className="flex flex-1 flex-col items-center justify-center px-4 py-12">
         <AuthForm
@@ -98,7 +70,7 @@ export default async function LoginPage({
           href="/"
           className="mt-6 text-sm text-[color:var(--muted-foreground)] hover:text-[color:var(--foreground)]"
         >
-          Back to home
+          {t("backHome")}
         </Link>
       </main>
 
