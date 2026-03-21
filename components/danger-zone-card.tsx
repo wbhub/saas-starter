@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
+import { useTranslations } from "next-intl";
 import { deleteAccount, logoutAllSessions, type DeleteAccountState } from "@/app/dashboard/actions";
 
 const initialState: DeleteAccountState = {
@@ -9,7 +10,7 @@ const initialState: DeleteAccountState = {
   message: null,
 };
 
-function DeleteButton() {
+function DeleteButton({ pendingLabel, idleLabel }: { pendingLabel: string; idleLabel: string }) {
   const { pending } = useFormStatus();
 
   return (
@@ -18,7 +19,7 @@ function DeleteButton() {
       disabled={pending}
       className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:bg-rose-500 disabled:opacity-60"
     >
-      {pending ? "Deleting..." : "Delete account permanently"}
+      {pending ? pendingLabel : idleLabel}
     </button>
   );
 }
@@ -28,13 +29,14 @@ type DangerZoneCardProps = {
 };
 
 export function DangerZoneCard({ email }: DangerZoneCardProps) {
+  const t = useTranslations("DangerZoneCard");
   const [state, formAction] = useActionState(deleteAccount, initialState);
 
   return (
     <section className="rounded-xl border border-rose-300/60 bg-rose-50/60 p-5 shadow-sm dark:border-rose-900/70 dark:bg-rose-950/20">
-      <h2 className="text-lg font-semibold text-rose-800 dark:text-rose-200">Danger Zone</h2>
+      <h2 className="text-lg font-semibold text-rose-800 dark:text-rose-200">{t("title")}</h2>
       <p className="mt-2 text-sm text-rose-700/90 dark:text-rose-200/80">
-        Deactivation signs you out of all sessions. Deletion permanently removes your account.
+        {t("description")}
       </p>
 
       <div className="mt-4">
@@ -43,7 +45,7 @@ export function DangerZoneCard({ email }: DangerZoneCardProps) {
             type="submit"
             className="rounded-lg border border-rose-300/80 px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-100 dark:border-rose-800 dark:text-rose-200 dark:hover:bg-rose-900/40"
           >
-            Deactivate for now (sign out everywhere)
+            {t("actions.deactivate")}
           </button>
         </form>
       </div>
@@ -51,26 +53,26 @@ export function DangerZoneCard({ email }: DangerZoneCardProps) {
       <form action={formAction} className="mt-4 space-y-3">
         <label className="block">
           <span className="mb-1 block text-sm font-medium text-rose-800 dark:text-rose-100">
-            Type DELETE to confirm
+            {t("fields.confirmDelete")}
           </span>
           <input
             name="confirmDelete"
             required
             autoComplete="off"
             className="w-full rounded-lg border border-rose-300/80 bg-white px-3 py-2 text-sm text-slate-900 outline-none ring-rose-400/50 placeholder:text-slate-500 focus:ring-2 dark:border-rose-800 dark:bg-rose-950/30 dark:text-slate-50 dark:placeholder:text-slate-400"
-            placeholder="DELETE"
+            placeholder={t("fields.deleteToken")}
           />
         </label>
         <label className="block">
           <span className="mb-1 block text-sm font-medium text-rose-800 dark:text-rose-100">
-            Confirm your email address
+            {t("fields.confirmEmail")}
           </span>
           <input
             type="email"
             name="confirmEmail"
             required
             autoComplete="off"
-            placeholder={email ?? "you@example.com"}
+            placeholder={email ?? t("fields.confirmEmailPlaceholder")}
             className="w-full rounded-lg border border-rose-300/80 bg-white px-3 py-2 text-sm text-slate-900 outline-none ring-rose-400/50 placeholder:text-slate-500 focus:ring-2 dark:border-rose-800 dark:bg-rose-950/30 dark:text-slate-50 dark:placeholder:text-slate-400"
           />
         </label>
@@ -81,9 +83,9 @@ export function DangerZoneCard({ email }: DangerZoneCardProps) {
             required
             className="mt-0.5 h-4 w-4 rounded border border-rose-400 bg-transparent"
           />
-          <span>I understand this action is permanent and cannot be undone.</span>
+          <span>{t("fields.confirmPermanent")}</span>
         </label>
-        <DeleteButton />
+        <DeleteButton pendingLabel={t("actions.deleting")} idleLabel={t("actions.deletePermanently")} />
       </form>
 
       {state.message ? (

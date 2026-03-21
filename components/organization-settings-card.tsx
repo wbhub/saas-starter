@@ -2,6 +2,7 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { getCsrfHeaders } from "@/lib/http/csrf";
 
 type TeamMember = {
@@ -23,6 +24,7 @@ export function OrganizationSettingsCard({
   currentUserId,
   currentUserRole,
 }: OrganizationSettingsCardProps) {
+  const t = useTranslations("OrganizationSettingsCard");
   const router = useRouter();
   const [nameValue, setNameValue] = useState(teamName);
   const [savingName, setSavingName] = useState(false);
@@ -57,13 +59,13 @@ export function OrganizationSettingsCard({
         | { error?: string; ok?: boolean }
         | null;
       if (!response.ok) {
-        throw new Error(payload?.error ?? "Failed to update team name.");
+        throw new Error(payload?.error ?? t("errors.updateName"));
       }
-      setFeedback("Organization name updated.");
+      setFeedback(t("feedback.nameUpdated"));
       router.refresh();
     } catch (submitError) {
       setError(
-        submitError instanceof Error ? submitError.message : "Failed to update team name.",
+        submitError instanceof Error ? submitError.message : t("errors.updateName"),
       );
     } finally {
       setSavingName(false);
@@ -73,11 +75,11 @@ export function OrganizationSettingsCard({
   async function transferOwnership(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!nextOwnerUserId) {
-      setError("Select a teammate to transfer ownership.");
+      setError(t("errors.selectTeammate"));
       return;
     }
     const confirmed = window.confirm(
-      "Transfer ownership? You will become an admin after this action.",
+      t("confirm.transferOwnership"),
     );
     if (!confirmed) {
       return;
@@ -99,13 +101,13 @@ export function OrganizationSettingsCard({
         | { error?: string; ok?: boolean }
         | null;
       if (!response.ok) {
-        throw new Error(payload?.error ?? "Failed to transfer ownership.");
+        throw new Error(payload?.error ?? t("errors.transferOwnership"));
       }
-      setFeedback("Ownership transferred.");
+      setFeedback(t("feedback.ownershipTransferred"));
       router.refresh();
     } catch (submitError) {
       setError(
-        submitError instanceof Error ? submitError.message : "Failed to transfer ownership.",
+        submitError instanceof Error ? submitError.message : t("errors.transferOwnership"),
       );
     } finally {
       setTransferring(false);
@@ -115,16 +117,16 @@ export function OrganizationSettingsCard({
   return (
     <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
       <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
-        Organization settings
+        {t("title")}
       </h2>
       <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-        Rename your workspace and transfer ownership when needed.
+        {t("description")}
       </p>
 
       <form className="mt-4 space-y-3" onSubmit={saveTeamName}>
         <label className="block">
           <span className="mb-1 block text-sm font-medium text-slate-800 dark:text-slate-100">
-            Team name
+            {t("fields.teamName")}
           </span>
           <input
             type="text"
@@ -141,18 +143,18 @@ export function OrganizationSettingsCard({
           disabled={currentUserRole === "member" || savingName}
           className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
         >
-          {savingName ? "Saving..." : "Save organization"}
+          {savingName ? t("actions.saving") : t("actions.saveOrganization")}
         </button>
       </form>
 
       {currentUserRole === "owner" ? (
         <form className="mt-6 space-y-3 border-t app-border-subtle pt-5" onSubmit={transferOwnership}>
           <h3 className="text-sm font-medium text-slate-900 dark:text-slate-100">
-            Transfer ownership
+            {t("ownership.title")}
           </h3>
           <label className="block">
             <span className="mb-1 block text-sm text-slate-700 dark:text-slate-200">
-              New owner
+              {t("ownership.newOwner")}
             </span>
             <select
               value={nextOwnerUserId}
@@ -160,7 +162,7 @@ export function OrganizationSettingsCard({
               disabled={transferring || ownershipCandidates.length === 0}
               className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-sm text-slate-900 outline-none ring-[color:var(--ring)] focus:ring-2 disabled:opacity-60 dark:text-slate-50"
             >
-              <option value="">Select teammate...</option>
+              <option value="">{t("ownership.selectTeammate")}</option>
               {ownershipCandidates.map((member) => (
                 <option key={member.userId} value={member.userId}>
                   {(member.fullName?.trim() || member.userId) + ` (${member.role})`}
@@ -173,7 +175,7 @@ export function OrganizationSettingsCard({
             disabled={transferring || !nextOwnerUserId}
             className="rounded-lg border border-amber-300/60 px-4 py-2 text-sm font-medium text-amber-800 hover:bg-amber-50 disabled:opacity-60 dark:border-amber-700/60 dark:text-amber-200 dark:hover:bg-amber-950/30"
           >
-            {transferring ? "Transferring..." : "Transfer ownership"}
+            {transferring ? t("actions.transferring") : t("actions.transferOwnership")}
           </button>
         </form>
       ) : null}

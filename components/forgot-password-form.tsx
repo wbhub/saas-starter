@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useTranslations } from "next-intl";
 import { getCsrfHeaders } from "@/lib/http/csrf";
 
 type ApiResponse = {
@@ -9,6 +10,7 @@ type ApiResponse = {
 };
 
 export function ForgotPasswordForm() {
+  const t = useTranslations("ForgotPasswordForm");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -32,17 +34,17 @@ export function ForgotPasswordForm() {
 
       if (!response.ok) {
         setMessageType("error");
-        throw new Error(payload?.error ?? "Unable to send reset link.");
+        throw new Error(payload?.error ?? t("errors.unableToSendResetLink"));
       }
 
       setMessageType("success");
       setMessage(
         payload?.message ??
-          "If an account exists for that email, a reset link has been sent.",
+          t("messages.resetLinkSentIfAccountExists"),
       );
     } catch (error) {
       setMessageType("error");
-      setMessage(error instanceof Error ? error.message : "Unexpected error");
+      setMessage(error instanceof Error ? error.message : t("errors.unexpected"));
     } finally {
       setLoading(false);
     }
@@ -50,15 +52,15 @@ export function ForgotPasswordForm() {
 
   return (
     <div className="w-full max-w-md rounded-2xl border app-border-subtle app-surface p-8 text-[color:var(--foreground)] shadow-sm">
-      <h1 className="text-2xl font-semibold">Forgot your password?</h1>
+      <h1 className="text-2xl font-semibold">{t("title")}</h1>
       <p className="mt-2 text-sm text-[color:var(--muted-foreground)]">
-        Enter your email and we will send a password reset link.
+        {t("description")}
       </p>
 
       <form className="mt-6 space-y-4" onSubmit={onSubmit} aria-busy={loading}>
         <label className="block">
           <span className="mb-1 block text-sm font-medium text-[color:var(--foreground)]">
-            Email
+            {t("email")}
           </span>
           <input
             type="email"
@@ -75,7 +77,7 @@ export function ForgotPasswordForm() {
           disabled={loading}
           className="w-full rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
         >
-          {loading ? "Sending..." : "Send reset link"}
+          {loading ? t("sending") : t("sendResetLink")}
         </button>
       </form>
 

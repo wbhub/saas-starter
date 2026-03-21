@@ -9,6 +9,7 @@ import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { logger } from "@/lib/logger";
+import { getRouteTranslator } from "@/lib/i18n/locale";
 
 const transferOwnershipSchema = z.object({
   nextOwnerUserId: z.string().uuid(),
@@ -20,6 +21,7 @@ type TransferOwnershipRpcResult = {
 };
 
 export async function POST(request: Request) {
+  const t = await getRouteTranslator("ApiTeamOwnershipTransfer", request);
   const csrfError = verifyCsrfProtection(request);
   if (csrfError) {
     return csrfError;
@@ -35,20 +37,20 @@ export async function POST(request: Request) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: t("errors.unauthorized") }, { status: 401 });
   }
 
   const teamContext = await getTeamContextForUser(supabase, user.id);
   if (!teamContext) {
     return NextResponse.json(
-      { error: "No team membership found for this account." },
+      { error: t("errors.noTeamMembership") },
       { status: 403 },
     );
   }
 
   if (teamContext.role !== "owner") {
     return NextResponse.json(
-      { error: "Only owners can transfer ownership." },
+      { error: t("errors.forbidden") },
       { status: 403 },
     );
   }
@@ -59,7 +61,7 @@ export async function POST(request: Request) {
   });
   if (!rateLimit.allowed) {
     return NextResponse.json(
-      { error: "Too many ownership transfer attempts. Please try again later." },
+      { error: t("errors.rateLimited") },
       {
         status: 429,
         headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
@@ -70,15 +72,15 @@ export async function POST(request: Request) {
   const parseResult = await parseJsonWithSchema(request, transferOwnershipSchema);
   if (!parseResult.success) {
     if (parseResult.tooLarge) {
-      return NextResponse.json({ error: "Request payload is too large." }, { status: 413 });
+      return NextResponse.json({ error: t("errors.payloadTooLarge") }, { status: 413 });
     }
-    return NextResponse.json({ error: "Invalid ownership transfer payload." }, { status: 400 });
+    return NextResponse.json({ error: t("errors.invalidPayload") }, { status: 400 });
   }
 
   const { nextOwnerUserId } = parseResult.data;
   if (nextOwnerUserId === user.id) {
     return NextResponse.json(
-      { error: "You are already the owner." },
+      { error: t("errors.alreadyOwner") },
       { status: 409 },
     );
   }
@@ -102,7 +104,7 @@ export async function POST(request: Request) {
       resourceId: nextOwnerUserId,
       metadata: { reason: "rpc_error" },
     });
-    return NextResponse.json({ error: "Unable to transfer ownership." }, { status: 500 });
+    return NextResponse.json({ error: t("errors.unableToTransfer") }, { status: 500 });
   }
 
   const rpcRow = (Array.isArray(rpcData) ? rpcData[0] : rpcData) as
@@ -111,16 +113,16 @@ export async function POST(request: Request) {
   if (!rpcRow || !rpcRow.ok) {
     const code = rpcRow?.error_code;
     if (code === "target_not_found") {
-      return NextResponse.json({ error: "Target user is not a team member." }, { status: 404 });
+      return NextResponse.json({ error: t("errors.targetNotFound") }, { status: 404 });
     }
     if (code === "target_already_owner") {
-      return NextResponse.json({ error: "Target user is already an owner." }, { status: 409 });
+      return NextResponse.json({ error: t("errors.targetAlreadyOwner") }, { status: 409 });
     }
     if (code === "not_current_owner") {
-      return NextResponse.json({ error: "Only owners can transfer ownership." }, { status: 403 });
+      return NextResponse.json({ error: t("errors.forbidden") }, { status: 403 });
     }
     if (code === "same_user") {
-      return NextResponse.json({ error: "You are already the owner." }, { status: 409 });
+      return NextResponse.json({ error: t("errors.alreadyOwner") }, { status: 409 });
     }
 
     logAuditEvent({
@@ -131,7 +133,7 @@ export async function POST(request: Request) {
       resourceId: nextOwnerUserId,
       metadata: { reason: code ?? "unknown" },
     });
-    return NextResponse.json({ error: "Unable to transfer ownership." }, { status: 500 });
+    return NextResponse.json({ error: t("errors.unableToTransfer") }, { status: 500 });
   }
 
   logAuditEvent({

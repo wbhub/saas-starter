@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   CLIENT_IDEMPOTENCY_TTL_MS,
   SYNC_PENDING_RELOAD_DELAY_MS,
@@ -16,6 +17,7 @@ type Props = {
 
 type PostJsonOptions = {
   headers?: HeadersInit;
+  fallbackErrorMessage?: string;
 };
 
 async function postJson(
@@ -37,7 +39,7 @@ async function postJson(
     const payload = (await response.json().catch(() => null)) as
       | { error?: string }
       | null;
-    throw new Error(payload?.error ?? "Request failed");
+    throw new Error(payload?.error ?? options?.fallbackErrorMessage ?? "Request failed");
   }
 
   return (await response.json()) as {
@@ -89,6 +91,7 @@ function createIdempotencyToken(action: "checkout" | "change-plan", planKey: Pla
 }
 
 export function BillingActions({ currentPlanKey, hasSubscription, canManageBilling }: Props) {
+  const t = useTranslations("BillingActions");
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -100,18 +103,19 @@ export function BillingActions({ currentPlanKey, hasSubscription, canManageBilli
         "/api/stripe/checkout",
         { planKey },
         {
+          fallbackErrorMessage: t("errors.requestFailed"),
           headers: {
             "x-idempotency-key": createIdempotencyToken("checkout", planKey),
           },
         },
       );
-      if (!payload.url) throw new Error("Missing checkout URL");
+      if (!payload.url) throw new Error(t("errors.missingCheckoutUrl"));
       const opened = window.open(payload.url, "_blank", "noopener,noreferrer");
       if (!opened) {
         window.location.assign(payload.url);
       }
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Checkout failed");
+      setMessage(error instanceof Error ? error.message : t("errors.checkoutFailed"));
     } finally {
       setLoadingAction(null);
     }
@@ -126,6 +130,7 @@ export function BillingActions({ currentPlanKey, hasSubscription, canManageBilli
         "/api/stripe/change-plan",
         { planKey },
         {
+          fallbackErrorMessage: t("errors.requestFailed"),
           headers: {
             "x-idempotency-key": createIdempotencyToken("change-plan", planKey),
           },
@@ -134,17 +139,17 @@ export function BillingActions({ currentPlanKey, hasSubscription, canManageBilli
       if (payload.syncPending) {
         waitForSyncRefresh = true;
         setLoadingAction("sync-pending");
-        setMessage("Plan updated in Stripe. Sync in progress. Refreshing shortly...");
+        setMessage(t("messages.syncPending"));
         window.setTimeout(() => {
           window.location.reload();
         }, SYNC_PENDING_RELOAD_DELAY_MS);
         return;
       }
 
-      setMessage("Plan updated. Refreshing billing details...");
+      setMessage(t("messages.planUpdated"));
       window.location.reload();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Plan change failed");
+      setMessage(error instanceof Error ? error.message : t("errors.planChangeFailed"));
     } finally {
       if (!waitForSyncRefresh) {
         setLoadingAction(null);
@@ -156,14 +161,16 @@ export function BillingActions({ currentPlanKey, hasSubscription, canManageBilli
     setLoadingAction("portal");
     setMessage(null);
     try {
-      const payload = await postJson("/api/stripe/portal", {});
-      if (!payload.url) throw new Error("Missing portal URL");
+      const payload = await postJson("/api/stripe/portal", {}, {
+        fallbackErrorMessage: t("errors.requestFailed"),
+      });
+      if (!payload.url) throw new Error(t("errors.missingPortalUrl"));
       const opened = window.open(payload.url, "_blank", "noopener,noreferrer");
       if (!opened) {
         window.location.assign(payload.url);
       }
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Portal unavailable");
+      setMessage(error instanceof Error ? error.message : t("errors.portalUnavailable"));
     } finally {
       setLoadingAction(null);
     }
@@ -174,14 +181,14 @@ export function BillingActions({ currentPlanKey, hasSubscription, canManageBilli
   return (
     <div className="space-y-4 rounded-xl border app-border-subtle app-surface p-5">
       <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
-        Billing actions
+        {t("title")}
       </h3>
       <p className="text-sm text-slate-600 dark:text-slate-300">
         {!canManageBilling
-          ? "Only team owners and admins can manage billing."
+          ? t("description.noPermission")
           : hasSubscription
-            ? "Upgrade, downgrade, or open Stripe Billing Portal."
-            : "Choose a plan to start your subscription."}
+            ? t("description.hasSubscription")
+            : t("description.noSubscription")}
       </p>
 
       <div className="flex flex-wrap gap-2">
@@ -194,8 +201,8 @@ export function BillingActions({ currentPlanKey, hasSubscription, canManageBilli
                 className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
               >
                 {loadingAction === `checkout-${key}`
-                  ? "Opening..."
-                  : `Subscribe ${PLAN_LABELS[key]}`}
+                  ? t("actions.opening")
+                  : t("actions.subscribe", { name: PLAN_LABELS[key] })}
               </button>
             ))
           : availablePlanKeys.map((key) => (
@@ -206,8 +213,8 @@ export function BillingActions({ currentPlanKey, hasSubscription, canManageBilli
                 className="rounded-lg border app-border-subtle px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800 disabled:opacity-60"
               >
                 {loadingAction === `change-${key}`
-                  ? "Updating..."
-                  : `Switch to ${PLAN_LABELS[key]}`}
+                  ? t("actions.updating")
+                  : t("actions.switchTo", { name: PLAN_LABELS[key] })}
               </button>
             ))}
 
@@ -217,7 +224,7 @@ export function BillingActions({ currentPlanKey, hasSubscription, canManageBilli
             disabled={loadingAction !== null}
             className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
           >
-            {loadingAction === "portal" ? "Opening..." : "Manage billing"}
+            {loadingAction === "portal" ? t("actions.opening") : t("actions.manageBilling")}
           </button>
         ) : null}
       </div>

@@ -10,12 +10,11 @@ import { checkRateLimit } from "@/lib/security/rate-limit";
 import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { isValidEmail } from "@/lib/validation";
 import { logger } from "@/lib/logger";
+import { getLocaleTranslator, resolveRequestLocale } from "@/lib/i18n/locale";
+import { type AppLocale } from "@/i18n/routing";
 const forgotPasswordPayloadSchema = z.object({
   email: z.string().trim().toLowerCase(),
 });
-
-const GENERIC_SUCCESS_MESSAGE =
-  "If an account exists for that email, a reset link has been sent.";
 
 function isProviderOutageError(error: unknown) {
   if (!error || typeof error !== "object") {
@@ -37,8 +36,9 @@ function isProviderOutageError(error: unknown) {
   );
 }
 
-async function sendPasswordResetEmailInBackground(email: string) {
+async function sendPasswordResetEmailInBackground(email: string, locale: AppLocale) {
   try {
+    const t = await getLocaleTranslator("ApiForgotPassword", locale);
     const supabaseAdmin = createAdminClient();
     const { data, error } = await supabaseAdmin.auth.admin.generateLink({
       type: "recovery",
@@ -70,14 +70,14 @@ async function sendPasswordResetEmailInBackground(email: string) {
       await resend.emails.send({
         from: fromEmail,
         to: email,
-        subject: "Reset your password",
+        subject: t("email.subject"),
         text: [
-          "We received a request to reset your password.",
+          t("email.line1"),
           "",
-          "Use this link to continue:",
+          t("email.useLink"),
           data.properties.action_link,
           "",
-          "If you did not request this, you can ignore this email.",
+          t("email.ignoreIfNotRequested"),
         ].join("\n"),
       });
     } catch (sendError) {
@@ -89,6 +89,10 @@ async function sendPasswordResetEmailInBackground(email: string) {
 }
 
 export async function POST(request: Request) {
+  const locale = resolveRequestLocale(request);
+  const t = await getLocaleTranslator("ApiForgotPassword", locale);
+  const genericSuccessMessage = t("messages.genericSuccess");
+
   const csrfError = verifyCsrfProtection(request);
   if (csrfError) {
     return csrfError;
@@ -102,9 +106,9 @@ export async function POST(request: Request) {
   const bodyParse = await parseJsonWithSchema(request, forgotPasswordPayloadSchema);
   if (!bodyParse.success) {
     if (bodyParse.tooLarge) {
-      return NextResponse.json({ error: "Request payload is too large." }, { status: 413 });
+      return NextResponse.json({ error: t("errors.payloadTooLarge") }, { status: 413 });
     }
-    return NextResponse.json({ message: GENERIC_SUCCESS_MESSAGE });
+    return NextResponse.json({ message: genericSuccessMessage });
   }
   const { email } = bodyParse.data;
   const clientId = getClientRateLimitIdentifier(request);
@@ -113,11 +117,11 @@ export async function POST(request: Request) {
     ...RATE_LIMITS.forgotPasswordByClient,
   });
   if (!ipRateLimit.allowed) {
-    return NextResponse.json({ message: GENERIC_SUCCESS_MESSAGE });
+    return NextResponse.json({ message: genericSuccessMessage });
   }
 
   if (!isValidEmail(email)) {
-    return NextResponse.json({ message: GENERIC_SUCCESS_MESSAGE });
+    return NextResponse.json({ message: genericSuccessMessage });
   }
 
   const emailRateLimit = await checkRateLimit({
@@ -125,10 +129,10 @@ export async function POST(request: Request) {
     ...RATE_LIMITS.forgotPasswordByEmail,
   });
   if (!emailRateLimit.allowed) {
-    return NextResponse.json({ message: GENERIC_SUCCESS_MESSAGE });
+    return NextResponse.json({ message: genericSuccessMessage });
   }
 
-  after(() => sendPasswordResetEmailInBackground(email));
+  after(() => sendPasswordResetEmailInBackground(email, locale));
 
-  return NextResponse.json({ message: GENERIC_SUCCESS_MESSAGE });
+  return NextResponse.json({ message: genericSuccessMessage });
 }

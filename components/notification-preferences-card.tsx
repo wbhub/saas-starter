@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
+import { useTranslations } from "next-intl";
 import {
   updateNotificationPreferences,
   type UpdateNotificationPreferencesState,
@@ -18,7 +19,7 @@ const initialState: UpdateNotificationPreferencesState = {
   message: null,
 };
 
-function SaveButton() {
+function SaveButton({ pendingLabel, idleLabel }: { pendingLabel: string; idleLabel: string }) {
   const { pending } = useFormStatus();
 
   return (
@@ -27,7 +28,7 @@ function SaveButton() {
       disabled={pending}
       className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
     >
-      {pending ? "Saving..." : "Save preferences"}
+      {pending ? pendingLabel : idleLabel}
     </button>
   );
 }
@@ -64,37 +65,38 @@ export function NotificationPreferencesCard({
   productUpdates,
   securityAlerts,
 }: NotificationPreferencesCardProps) {
+  const t = useTranslations("NotificationPreferencesCard");
   const [state, formAction] = useActionState(updateNotificationPreferences, initialState);
 
   return (
     <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
       <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
-        Notification preferences
+        {t("title")}
       </h2>
       <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-        Choose which account emails you want to receive.
+        {t("description")}
       </p>
 
       <form action={formAction} className="mt-4 space-y-3">
         <PreferenceToggle
           name="securityAlerts"
-          label="Security alerts"
-          description="Sign-ins, password resets, and important account activity."
+          label={t("items.securityAlerts.label")}
+          description={t("items.securityAlerts.description")}
           defaultChecked={securityAlerts}
         />
         <PreferenceToggle
           name="productUpdates"
-          label="Product updates"
-          description="Feature announcements and release notes."
+          label={t("items.productUpdates.label")}
+          description={t("items.productUpdates.description")}
           defaultChecked={productUpdates}
         />
         <PreferenceToggle
           name="marketingEmails"
-          label="Marketing emails"
-          description="Tips, offers, and occasional product highlights."
+          label={t("items.marketingEmails.label")}
+          description={t("items.marketingEmails.description")}
           defaultChecked={marketingEmails}
         />
-        <SaveButton />
+        <SaveButton pendingLabel={t("actions.saving")} idleLabel={t("actions.savePreferences")} />
       </form>
 
       {state.message ? (

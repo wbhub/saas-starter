@@ -12,6 +12,7 @@ import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { logger } from "@/lib/logger";
+import { getRouteTranslator } from "@/lib/i18n/locale";
 const supportPayloadSchema = z.object({
   subject: z
     .string()
@@ -23,6 +24,8 @@ const supportPayloadSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const t = await getRouteTranslator("ApiSupport", request);
+
   const csrfError = verifyCsrfProtection(request);
   if (csrfError) {
     return csrfError;
@@ -39,7 +42,7 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: t("errors.unauthorized") }, { status: 401 });
   }
 
   const clientId = getClientRateLimitIdentifier(request);
@@ -64,7 +67,7 @@ export async function POST(request: Request) {
       ipRateLimit.retryAfterSeconds,
     );
     return NextResponse.json(
-      { error: "Too many requests. Please try again shortly." },
+      { error: t("errors.rateLimited") },
       {
         status: 429,
         headers: { "Retry-After": String(retryAfterSeconds) },
@@ -75,30 +78,30 @@ export async function POST(request: Request) {
   const bodyParse = await parseJsonWithSchema(request, supportPayloadSchema);
   if (!bodyParse.success) {
     if (bodyParse.tooLarge) {
-      return NextResponse.json({ error: "Request payload is too large." }, { status: 413 });
+      return NextResponse.json({ error: t("errors.payloadTooLarge") }, { status: 413 });
     }
     const issuePath = bodyParse.error.issues[0]?.path?.[0];
     const issueCode = bodyParse.error.issues[0]?.code;
     if (issuePath === "subject" && issueCode === "too_big") {
       return NextResponse.json(
-        { error: "Subject must be 120 characters or less." },
+        { error: t("errors.subjectTooLong") },
         { status: 400 },
       );
     }
     if (issuePath === "message" && issueCode === "too_small") {
       return NextResponse.json(
-        { error: "Message must be at least 10 characters long." },
+        { error: t("errors.messageTooShort") },
         { status: 400 },
       );
     }
     if (issuePath === "message" && issueCode === "too_big") {
       return NextResponse.json(
-        { error: "Message must be 2000 characters or less." },
+        { error: t("errors.messageTooLong") },
         { status: 400 },
       );
     }
     return NextResponse.json(
-      { error: "Invalid support request payload." },
+      { error: t("errors.invalidPayload") },
       { status: 400 },
     );
   }
@@ -108,23 +111,23 @@ export async function POST(request: Request) {
     const resend = getResendClient();
     const fromEmail = getResendFromEmail();
     const supportEmail = getResendSupportEmail();
-    const submittedBy = user.email ?? "Unknown email";
+    const submittedBy = user.email ?? t("email.unknownEmail");
     const renderedSubject =
       subject.length > 0
-        ? `[Dashboard Support] ${subject}`
-        : "[Dashboard Support] New message";
+        ? t("email.subjectWithInput", { subject })
+        : t("email.defaultSubject");
 
     await resend.emails.send({
       from: fromEmail,
       to: supportEmail,
       subject: renderedSubject,
       text: [
-        "New support message from your SaaS Starter dashboard.",
+        t("email.line1"),
         "",
-        `User ID: ${user.id}`,
-        `Email: ${submittedBy}`,
+        t("email.userId", { userId: user.id }),
+        t("email.email", { email: submittedBy }),
         "",
-        "Message:",
+        t("email.messageLabel"),
         message,
       ].join("\n"),
       replyTo: user.email ?? undefined,
@@ -134,7 +137,7 @@ export async function POST(request: Request) {
   } catch (error) {
     logger.error("Failed to send support email", error);
     return NextResponse.json(
-      { error: "Unable to send support email right now. Please try again." },
+      { error: t("errors.unableToSend") },
       { status: 500 },
     );
   }

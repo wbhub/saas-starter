@@ -2,6 +2,7 @@
 
 import { ChangeEvent, useActionState, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
+import { useTranslations } from "next-intl";
 import {
   updateDashboardSettings,
   type UpdateDashboardSettingsState,
@@ -20,7 +21,7 @@ const initialState: UpdateDashboardSettingsState = {
   message: null,
 };
 
-function SaveButton() {
+function SaveButton({ pendingLabel, idleLabel }: { pendingLabel: string; idleLabel: string }) {
   const { pending } = useFormStatus();
 
   return (
@@ -29,7 +30,7 @@ function SaveButton() {
       disabled={pending}
       className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
     >
-      {pending ? "Saving..." : "Save settings"}
+      {pending ? pendingLabel : idleLabel}
     </button>
   );
 }
@@ -40,6 +41,7 @@ export function DashboardSettingsCard({
   avatarUrl: initialAvatarUrl,
   email,
 }: DashboardSettingsCardProps) {
+  const t = useTranslations("DashboardSettingsCard");
   const [state, formAction] = useActionState(updateDashboardSettings, initialState);
   const [avatarUrl, setAvatarUrl] = useState(initialAvatarUrl ?? "");
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
@@ -52,7 +54,7 @@ export function DashboardSettingsCard({
     selectedFileRef.current = selectedFile;
     setUploadError(null);
     if (selectedFile) {
-      setUploadMessage(`Ready to upload ${selectedFile.name}`);
+      setUploadMessage(t("upload.ready", { name: selectedFile.name }));
     } else {
       setUploadMessage(null);
     }
@@ -61,17 +63,17 @@ export function DashboardSettingsCard({
   const uploadAvatar = async () => {
     const file = selectedFileRef.current;
     if (!file) {
-      setUploadError("Select an image before uploading.");
+      setUploadError(t("upload.errors.selectImage"));
       return;
     }
 
     if (!file.type.startsWith("image/")) {
-      setUploadError("Only image files are supported.");
+      setUploadError(t("upload.errors.imageOnly"));
       return;
     }
 
     if (file.size > 2 * 1024 * 1024) {
-      setUploadError("Image must be 2MB or smaller.");
+      setUploadError(t("upload.errors.maxSize"));
       return;
     }
 
@@ -88,7 +90,7 @@ export function DashboardSettingsCard({
     });
 
     if (uploadResult.error) {
-      setUploadError("Could not upload image. Please try again.");
+      setUploadError(t("upload.errors.failed"));
       setIsUploading(false);
       return;
     }
@@ -97,29 +99,29 @@ export function DashboardSettingsCard({
       data: { publicUrl },
     } = supabase.storage.from("profile-photos").getPublicUrl(filePath);
     setAvatarUrl(publicUrl);
-    setUploadMessage("Photo uploaded. Click Save settings to persist.");
+    setUploadMessage(t("upload.success"));
     setIsUploading(false);
   };
 
   return (
     <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
-      <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Settings</h2>
+      <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">{t("title")}</h2>
       <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-        Update your basic account settings.
+        {t("description")}
       </p>
 
       <form action={formAction} className="mt-4 space-y-3">
         <input type="hidden" name="avatarUrl" value={avatarUrl} />
 
         <div className="rounded-lg border app-border-subtle p-3">
-          <p className="text-sm font-medium text-slate-800 dark:text-slate-100">Profile photo</p>
+          <p className="text-sm font-medium text-slate-800 dark:text-slate-100">{t("upload.profilePhoto")}</p>
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-slate-100 text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-300">
               {avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={avatarUrl} alt="Profile avatar" className="h-full w-full object-cover" />
+                <img src={avatarUrl} alt={t("upload.profileAvatarAlt")} className="h-full w-full object-cover" />
               ) : (
-                "No photo"
+                t("upload.noPhoto")
               )}
             </div>
             <input
@@ -134,7 +136,7 @@ export function DashboardSettingsCard({
               disabled={isUploading}
               className="rounded-lg border app-border-subtle px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-60 dark:text-slate-200 dark:hover:bg-slate-800"
             >
-              {isUploading ? "Uploading..." : "Upload photo"}
+              {isUploading ? t("upload.uploading") : t("upload.uploadPhoto")}
             </button>
             {avatarUrl ? (
               <button
@@ -142,7 +144,7 @@ export function DashboardSettingsCard({
                 onClick={() => setAvatarUrl("")}
                 className="rounded-lg border app-border-subtle px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
               >
-                Remove photo
+                {t("upload.removePhoto")}
               </button>
             ) : null}
           </div>
@@ -154,7 +156,7 @@ export function DashboardSettingsCard({
 
         <label className="block">
           <span className="mb-1 block text-sm font-medium text-slate-800 dark:text-slate-100">
-            Display name
+            {t("fields.displayName")}
           </span>
           <input
             type="text"
@@ -162,13 +164,13 @@ export function DashboardSettingsCard({
             maxLength={80}
             defaultValue={fullName ?? ""}
             className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-sm text-slate-900 outline-none ring-[color:var(--ring)] placeholder:text-slate-500 focus:ring-2 dark:text-slate-50 dark:placeholder:text-slate-400"
-            placeholder="Your name"
+            placeholder={t("fields.displayNamePlaceholder")}
           />
         </label>
 
         <label className="block">
           <span className="mb-1 block text-sm font-medium text-slate-800 dark:text-slate-100">
-            Email
+            {t("fields.email")}
           </span>
           <input
             type="email"
@@ -177,11 +179,11 @@ export function DashboardSettingsCard({
             className="w-full rounded-lg border app-border-subtle app-surface-subtle px-3 py-2 text-sm text-slate-600 outline-none dark:text-slate-300"
           />
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            Email is managed in your authentication provider.
+            {t("fields.emailHint")}
           </p>
         </label>
 
-        <SaveButton />
+        <SaveButton pendingLabel={t("actions.saving")} idleLabel={t("actions.saveSettings")} />
       </form>
 
       {state.message ? (

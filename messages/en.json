@@ -6,7 +6,11 @@
   "LocaleSwitcher": {
     "label": "Language",
     "english": "English",
-    "spanish": "Spanish"
+    "spanish": "Spanish",
+    "localeNames": {
+      "en": "English",
+      "es": "Spanish"
+    }
   },
   "SiteHeader": {
     "dashboard": "Dashboard",
@@ -185,5 +189,507 @@
     "teamNav": "Team",
     "usage": "Usage",
     "settings": "Settings"
+  },
+  "BillingActions": {
+    "title": "Billing actions",
+    "description": {
+      "noPermission": "Only team owners and admins can manage billing.",
+      "hasSubscription": "Upgrade, downgrade, or open Stripe Billing Portal.",
+      "noSubscription": "Choose a plan to start your subscription."
+    },
+    "actions": {
+      "opening": "Opening...",
+      "updating": "Updating...",
+      "manageBilling": "Manage billing",
+      "subscribe": "Subscribe {name}",
+      "switchTo": "Switch to {name}"
+    },
+    "messages": {
+      "syncPending": "Plan updated in Stripe. Sync in progress. Refreshing shortly...",
+      "planUpdated": "Plan updated. Refreshing billing details..."
+    },
+    "errors": {
+      "checkoutFailed": "Checkout failed",
+      "planChangeFailed": "Plan change failed",
+      "portalUnavailable": "Portal unavailable",
+      "missingCheckoutUrl": "Missing checkout URL",
+      "missingPortalUrl": "Missing portal URL",
+      "requestFailed": "Request failed"
+    }
+  },
+  "DashboardBillingPage": {
+    "header": {
+      "eyebrow": "Billing",
+      "title": "Manage your subscription",
+      "description": "Update plans, open the Stripe portal, and review your subscription status."
+    },
+    "currentSubscription": {
+      "title": "Current subscription",
+      "currentPlan": "Current plan",
+      "unknown": "Unknown",
+      "status": "Status",
+      "seats": "Seats",
+      "periodEnd": "Period end",
+      "notAvailable": "N/A",
+      "currentPlanFree": "Current plan: Free",
+      "upgradeHint": "Upgrade below to unlock paid features.",
+      "noSubscription": "No subscription yet. Choose a plan below to get started."
+    }
+  },
+  "DashboardSettingsPage": {
+    "header": {
+      "eyebrow": "Settings",
+      "title": "Account preferences",
+      "description": "Update your profile basics and review account-level preferences."
+    }
+  },
+  "DashboardTeamPage": {
+    "header": {
+      "eyebrow": "Team",
+      "title": "Team access and invites",
+      "description": "Manage members, roles, and invitation links for your workspace."
+    }
+  },
+  "DashboardUsagePage": {
+    "header": {
+      "eyebrow": "Usage",
+      "title": "AI usage and monthly totals",
+      "description": "Track recent token usage for your team."
+    },
+    "table": {
+      "title": "Last 6 months",
+      "noUsage": "No usage data yet.",
+      "month": "Month",
+      "usedTokens": "Used tokens",
+      "reservedTokens": "Reserved tokens"
+    }
+  },
+  "DashboardSettingsCard": {
+    "title": "Settings",
+    "description": "Update your basic account settings.",
+    "actions": {
+      "saving": "Saving...",
+      "saveSettings": "Save settings"
+    },
+    "fields": {
+      "displayName": "Display name",
+      "displayNamePlaceholder": "Your name",
+      "email": "Email",
+      "emailHint": "Email is managed in your authentication provider."
+    },
+    "upload": {
+      "profilePhoto": "Profile photo",
+      "profileAvatarAlt": "Profile avatar",
+      "noPhoto": "No photo",
+      "uploading": "Uploading...",
+      "uploadPhoto": "Upload photo",
+      "removePhoto": "Remove photo",
+      "ready": "Ready to upload {name}",
+      "success": "Photo uploaded. Click Save settings to persist.",
+      "errors": {
+        "selectImage": "Select an image before uploading.",
+        "imageOnly": "Only image files are supported.",
+        "maxSize": "Image must be 2MB or smaller.",
+        "failed": "Could not upload image. Please try again."
+      }
+    }
+  },
+  "TeamInviteCard": {
+    "title": "Team members",
+    "description": "Manage who can access {teamName}.",
+    "roles": {
+      "owner": "Owner",
+      "admin": "Admin",
+      "member": "Member"
+    },
+    "actions": {
+      "saving": "Saving...",
+      "makeMember": "Make member",
+      "makeAdmin": "Make admin",
+      "remove": "Remove",
+      "removing": "Removing...",
+      "resend": "Resend",
+      "resending": "Resending...",
+      "revoke": "Revoke",
+      "revoking": "Revoking...",
+      "sending": "Sending...",
+      "sendInvite": "Send invite"
+    },
+    "inviteForm": {
+      "emailLabel": "Invite email",
+      "emailPlaceholder": "teammate@example.com",
+      "roleLabel": "Role"
+    },
+    "pending": {
+      "title": "Pending invites",
+      "none": "No pending invites.",
+      "expires": "Expires {date}"
+    },
+    "permissions": {
+      "onlyOwnersAdmins": "Only owners and admins can invite teammates."
+    },
+    "confirmations": {
+      "removeMember": "Remove this member from the team? They will immediately lose access.",
+      "revokeInvite": "Revoke this invite?"
+    },
+    "feedback": {
+      "inviteEmailSent": "Invite email sent.",
+      "inviteCreatedEmailFailed": "Invite created, but email delivery failed. Use resend later to retry.",
+      "memberRemoved": "Member removed.",
+      "roleUpdated": "Member role updated.",
+      "inviteRevoked": "Invite revoked.",
+      "inviteResent": "Invite resent.",
+      "inviteResentEmailFailed": "Invite token rotated, but email delivery failed."
+    },
+    "errors": {
+      "sendInvite": "Failed to send invite.",
+      "removeMember": "Failed to remove member.",
+      "updateRole": "Failed to update member role.",
+      "revokeInvite": "Failed to revoke invite.",
+      "resendInvite": "Failed to resend invite."
+    }
+  },
+  "ForgotPasswordForm": {
+    "title": "Forgot your password?",
+    "description": "Enter your email and we will send a password reset link.",
+    "email": "Email",
+    "sending": "Sending...",
+    "sendResetLink": "Send reset link",
+    "messages": {
+      "resetLinkSentIfAccountExists": "If an account exists for that email, a reset link has been sent."
+    },
+    "errors": {
+      "unableToSendResetLink": "Unable to send reset link.",
+      "unexpected": "Unexpected error"
+    }
+  },
+  "ResetPasswordForm": {
+    "checking": "Verifying your reset link...",
+    "invalidTitle": "Reset link is invalid or expired",
+    "invalidDescription": "Request a new password reset email to continue.",
+    "requestNewLink": "Request a new link",
+    "title": "Set a new password",
+    "description": "Choose a strong password with at least 12 characters.",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm password",
+    "passwordHint": "Use 12-128 characters. Passphrases are welcome.",
+    "saving": "Saving...",
+    "updatePassword": "Update password",
+    "messages": {
+      "passwordUpdated": "Password updated. Redirecting to login..."
+    },
+    "errors": {
+      "passwordsDoNotMatch": "Passwords do not match.",
+      "invalidOrExpired": "Reset link is invalid or expired. Please request a new link.",
+      "unableToUpdatePassword": "Unable to update password. Please try again.",
+      "unexpected": "Unexpected error"
+    }
+  },
+  "NoTeamCard": {
+    "title": "No team access found",
+    "description": "You do not currently belong to an active team. Recover a personal team to continue.",
+    "actions": {
+      "recovering": "Recovering...",
+      "recover": "Recover personal team"
+    },
+    "messages": {
+      "recovered": "Personal team recovered."
+    },
+    "errors": {
+      "recoverFailed": "Failed to recover team."
+    }
+  },
+  "TeamContextErrorCard": {
+    "title": "Could not load team access",
+    "description": "We hit a temporary issue loading your team context. Please refresh and try again."
+  },
+  "NotificationPreferencesCard": {
+    "title": "Notification preferences",
+    "description": "Choose which account emails you want to receive.",
+    "actions": {
+      "saving": "Saving...",
+      "savePreferences": "Save preferences"
+    },
+    "items": {
+      "securityAlerts": {
+        "label": "Security alerts",
+        "description": "Sign-ins, password resets, and important account activity."
+      },
+      "productUpdates": {
+        "label": "Product updates",
+        "description": "Feature announcements and release notes."
+      },
+      "marketingEmails": {
+        "label": "Marketing emails",
+        "description": "Tips, offers, and occasional product highlights."
+      }
+    }
+  },
+  "EmailSettingsCard": {
+    "title": "Email address",
+    "description": "Request an email update. We will send confirmation instructions based on your auth security settings.",
+    "fields": {
+      "currentEmail": "Current email",
+      "newEmail": "New email",
+      "newEmailPlaceholder": "name@company.com"
+    },
+    "actions": {
+      "sending": "Sending...",
+      "requestEmailChange": "Request email change"
+    }
+  },
+  "DangerZoneCard": {
+    "title": "Danger Zone",
+    "description": "Deactivation signs you out of all sessions. Deletion permanently removes your account.",
+    "fields": {
+      "confirmDelete": "Type DELETE to confirm",
+      "deleteToken": "DELETE",
+      "confirmEmail": "Confirm your email address",
+      "confirmEmailPlaceholder": "you@example.com",
+      "confirmPermanent": "I understand this action is permanent and cannot be undone."
+    },
+    "actions": {
+      "deactivate": "Deactivate for now (sign out everywhere)",
+      "deleting": "Deleting...",
+      "deletePermanently": "Delete account permanently"
+    }
+  },
+  "SecuritySettingsCard": {
+    "title": "Session and security",
+    "description": "Manage account sessions and reset your password.",
+    "actions": {
+      "signOutAll": "Sign out all sessions",
+      "resetPassword": "Reset password"
+    }
+  },
+  "OrganizationSettingsCard": {
+    "title": "Organization settings",
+    "description": "Rename your workspace and transfer ownership when needed.",
+    "fields": {
+      "teamName": "Team name"
+    },
+    "ownership": {
+      "title": "Transfer ownership",
+      "newOwner": "New owner",
+      "selectTeammate": "Select teammate..."
+    },
+    "actions": {
+      "saving": "Saving...",
+      "saveOrganization": "Save organization",
+      "transferring": "Transferring...",
+      "transferOwnership": "Transfer ownership"
+    },
+    "confirm": {
+      "transferOwnership": "Transfer ownership? You will become an admin after this action."
+    },
+    "feedback": {
+      "nameUpdated": "Organization name updated.",
+      "ownershipTransferred": "Ownership transferred."
+    },
+    "errors": {
+      "updateName": "Failed to update team name.",
+      "selectTeammate": "Select a teammate to transfer ownership.",
+      "transferOwnership": "Failed to transfer ownership."
+    }
+  },
+  "SupportEmailCard": {
+    "title": "Email support (Resend)",
+    "description": "Send a message directly to your support inbox using Resend.",
+    "fields": {
+      "subject": "Subject (optional)",
+      "subjectPlaceholder": "Billing question",
+      "message": "Message",
+      "messagePlaceholder": "Tell us what you need help with..."
+    },
+    "actions": {
+      "sending": "Sending...",
+      "sendSupportEmail": "Send support email"
+    },
+    "feedback": {
+      "sent": "Message sent. We will follow up shortly."
+    },
+    "errors": {
+      "sendFailed": "Failed to send support email."
+    }
+  },
+  "InviteAcceptCard": {
+    "title": "Team invite",
+    "description": "Accept this invite to join the shared workspace.",
+    "loginFirst": "Log in first, then return to this page to accept the invite.",
+    "actions": {
+      "accepting": "Accepting...",
+      "acceptInvite": "Accept invite"
+    },
+    "messages": {
+      "joined": "Joined {teamName} successfully.",
+      "defaultTeamName": "team"
+    },
+    "errors": {
+      "unableToAccept": "Unable to accept invite."
+    }
+  },
+  "ApiTeamInvites": {
+    "errors": {
+      "unauthorized": "Unauthorized",
+      "noTeamMembership": "No team membership found for this account.",
+      "payloadTooLarge": "Request payload is too large.",
+      "forbidden": "Only team owners and admins can send invites.",
+      "invalidPayload": "Invalid request payload.",
+      "rateLimited": "Too many invites sent. Please wait and try again.",
+      "invalidEmail": "Please provide a valid email.",
+      "invalidRole": "Role must be admin or member.",
+      "alreadyInTeam": "You are already part of this team.",
+      "unableToCreateInvite": "Unable to create invite right now.",
+      "teamMemberLimitReached": "Team member limit reached. Revoke pending invites or remove members first.",
+      "pendingInviteExists": "A pending invite already exists for this email."
+    },
+    "email": {
+      "defaultTeamName": "a team",
+      "subject": "You're invited to join {teamName}",
+      "line1": "You've been invited to join {teamName} on SaaS Starter.",
+      "role": "Role: {role}",
+      "acceptInvite": "Accept invite: {inviteUrl}",
+      "expiresIn7Days": "This invite expires in 7 days."
+    }
+  },
+  "ApiTeamInviteResend": {
+    "errors": {
+      "unauthorized": "Unauthorized",
+      "noTeamMembership": "No team membership found for this account.",
+      "payloadTooLarge": "Request payload is too large.",
+      "forbidden": "Only team owners and admins can resend invites.",
+      "rateLimited": "Too many invite management requests. Please try again shortly.",
+      "invalidInviteId": "Invalid invite id.",
+      "unableToResendInvite": "Unable to resend invite.",
+      "pendingInviteNotFound": "Pending invite not found."
+    },
+    "email": {
+      "defaultTeamName": "a team",
+      "subject": "Reminder: join {teamName}",
+      "line1": "You were invited to join {teamName} on SaaS Starter.",
+      "role": "Role: {role}",
+      "acceptInvite": "Accept invite: {inviteUrl}",
+      "expiresIn7Days": "This invite expires in 7 days."
+    }
+  },
+  "ApiTeamInviteRevoke": {
+    "errors": {
+      "unauthorized": "Unauthorized",
+      "noTeamMembership": "No team membership found for this account.",
+      "forbidden": "Only team owners and admins can revoke invites.",
+      "rateLimited": "Too many invite management requests. Please try again shortly.",
+      "invalidInviteId": "Invalid invite id.",
+      "unableToRevokeInvite": "Unable to revoke invite.",
+      "pendingInviteNotFound": "Pending invite not found."
+    }
+  },
+  "ApiTeamInviteAccept": {
+    "defaults": {
+      "teamName": "Team"
+    },
+    "errors": {
+      "unauthorized": "Unauthorized",
+      "payloadTooLarge": "Request payload is too large.",
+      "invalidInviteToken": "Invalid invite token.",
+      "noEmailOnAccount": "No email found on this account.",
+      "rateLimited": "Too many invite acceptance attempts. Please try again shortly.",
+      "unableToAcceptInvite": "Unable to accept invite.",
+      "teamMemberLimitReached": "Team member limit reached. Ask an owner/admin to increase capacity first.",
+      "inviteNotFound": "Invite not found.",
+      "inviteAlreadyAccepted": "Invite has already been accepted.",
+      "inviteExpired": "Invite has expired.",
+      "inviteEmailMismatch": "This invite was sent to a different email address.",
+      "billingSyncFailedAfterAccept": "Invite accepted, but billing sync failed. Please retry shortly."
+    }
+  },
+  "ApiSupport": {
+    "errors": {
+      "unauthorized": "Unauthorized",
+      "rateLimited": "Too many requests. Please try again shortly.",
+      "payloadTooLarge": "Request payload is too large.",
+      "subjectTooLong": "Subject must be 120 characters or less.",
+      "messageTooShort": "Message must be at least 10 characters long.",
+      "messageTooLong": "Message must be 2000 characters or less.",
+      "invalidPayload": "Invalid support request payload.",
+      "unableToSend": "Unable to send support email right now. Please try again."
+    },
+    "email": {
+      "unknownEmail": "Unknown email",
+      "subjectWithInput": "[Dashboard Support] {subject}",
+      "defaultSubject": "[Dashboard Support] New message",
+      "line1": "New support message from your SaaS Starter dashboard.",
+      "userId": "User ID: {userId}",
+      "email": "Email: {email}",
+      "messageLabel": "Message:"
+    }
+  },
+  "ApiForgotPassword": {
+    "messages": {
+      "genericSuccess": "If an account exists for that email, a reset link has been sent."
+    },
+    "errors": {
+      "payloadTooLarge": "Request payload is too large."
+    },
+    "email": {
+      "subject": "Reset your password",
+      "line1": "We received a request to reset your password.",
+      "useLink": "Use this link to continue:",
+      "ignoreIfNotRequested": "If you did not request this, you can ignore this email."
+    }
+  },
+  "ApiTeamMembers": {
+    "errors": {
+      "unauthorized": "Unauthorized",
+      "noTeamMembership": "No team membership found for this account.",
+      "removeForbidden": "Only team owners and admins can remove members.",
+      "updateRoleForbidden": "Only team owners and admins can update member roles.",
+      "rateLimited": "Too many member management requests. Please try again shortly.",
+      "invalidMemberId": "Invalid member id.",
+      "selfRemovalNotSupported": "Self-removal is not supported from this action.",
+      "unableToRemoveMember": "Unable to remove member.",
+      "memberNotFound": "Member not found in this team.",
+      "adminRemoveLimit": "Admins can only remove members.",
+      "cannotRemoveLastOwner": "Cannot remove the last team owner.",
+      "billingSyncFailedAfterRemoval": "Member removed, but billing sync failed. Please retry shortly.",
+      "useOwnershipTransferForSelf": "Use ownership transfer to change your own owner role.",
+      "payloadTooLarge": "Request payload is too large.",
+      "invalidRolePayload": "Invalid role update payload.",
+      "unableToUpdateMemberRole": "Unable to update member role.",
+      "useOwnershipTransferForOwner": "Use ownership transfer to update owner role.",
+      "adminUpdateRoleLimit": "Admins can only update member roles."
+    }
+  },
+  "ApiTeamOwnershipTransfer": {
+    "errors": {
+      "unauthorized": "Unauthorized",
+      "noTeamMembership": "No team membership found for this account.",
+      "forbidden": "Only owners can transfer ownership.",
+      "rateLimited": "Too many ownership transfer attempts. Please try again later.",
+      "payloadTooLarge": "Request payload is too large.",
+      "invalidPayload": "Invalid ownership transfer payload.",
+      "alreadyOwner": "You are already the owner.",
+      "unableToTransfer": "Unable to transfer ownership.",
+      "targetNotFound": "Target user is not a team member.",
+      "targetAlreadyOwner": "Target user is already an owner."
+    }
+  },
+  "ApiTeamSettings": {
+    "errors": {
+      "unauthorized": "Unauthorized",
+      "noTeamMembership": "No team membership found for this account.",
+      "forbidden": "Only team owners and admins can update organization settings.",
+      "rateLimited": "Too many settings updates. Please try again shortly.",
+      "payloadTooLarge": "Request payload is too large.",
+      "invalidPayload": "Invalid organization settings payload.",
+      "unableToUpdate": "Unable to update organization settings."
+    }
+  },
+  "ApiTeamRecoverPersonal": {
+    "errors": {
+      "unauthorized": "Unauthorized",
+      "rateLimited": "Too many recovery requests. Please try again shortly.",
+      "noEmailOnAccount": "No email found on this account.",
+      "unableToRecover": "Unable to recover a team right now."
+    }
   }
 }

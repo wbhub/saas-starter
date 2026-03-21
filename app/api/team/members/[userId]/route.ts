@@ -11,6 +11,7 @@ import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { syncTeamSeatQuantity } from "@/lib/stripe/seats";
 import { enqueueSeatSyncRetry } from "@/lib/stripe/seat-sync-retries";
 import { logger } from "@/lib/logger";
+import { getRouteTranslator } from "@/lib/i18n/locale";
 
 type TeamMembershipRow = {
   user_id: string;
@@ -29,6 +30,7 @@ const updateMemberRoleSchema = z.object({
 });
 
 export async function DELETE(request: Request, context: TeamMembersRouteContext) {
+  const t = await getRouteTranslator("ApiTeamMembers", request);
   const csrfError = verifyCsrfProtection(request);
   if (csrfError) {
     return csrfError;
@@ -40,20 +42,20 @@ export async function DELETE(request: Request, context: TeamMembersRouteContext)
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: t("errors.unauthorized") }, { status: 401 });
   }
 
   const teamContext = await getTeamContextForUser(supabase, user.id);
   if (!teamContext) {
     return NextResponse.json(
-      { error: "No team membership found for this account." },
+      { error: t("errors.noTeamMembership") },
       { status: 403 },
     );
   }
 
   if (teamContext.role !== "owner" && teamContext.role !== "admin") {
     return NextResponse.json(
-      { error: "Only team owners and admins can remove members." },
+      { error: t("errors.removeForbidden") },
       { status: 403 },
     );
   }
@@ -64,7 +66,7 @@ export async function DELETE(request: Request, context: TeamMembersRouteContext)
   });
   if (!rateLimit.allowed) {
     return NextResponse.json(
-      { error: "Too many member management requests. Please try again shortly." },
+      { error: t("errors.rateLimited") },
       {
         status: 429,
         headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
@@ -74,7 +76,7 @@ export async function DELETE(request: Request, context: TeamMembersRouteContext)
 
   const { userId: targetUserId } = await context.params;
   if (!UUID_RE.test(targetUserId)) {
-    return NextResponse.json({ error: "Invalid member id." }, { status: 400 });
+    return NextResponse.json({ error: t("errors.invalidMemberId") }, { status: 400 });
   }
 
   if (targetUserId === user.id) {
@@ -87,7 +89,7 @@ export async function DELETE(request: Request, context: TeamMembersRouteContext)
       metadata: { reason: "self_removal_not_supported" },
     });
     return NextResponse.json(
-      { error: "Self-removal is not supported from this action." },
+      { error: t("errors.selfRemovalNotSupported") },
       { status: 400 },
     );
   }
@@ -102,16 +104,16 @@ export async function DELETE(request: Request, context: TeamMembersRouteContext)
 
   if (targetMembershipError) {
     logger.error("Failed to load target membership for removal", targetMembershipError);
-    return NextResponse.json({ error: "Unable to remove member." }, { status: 500 });
+    return NextResponse.json({ error: t("errors.unableToRemoveMember") }, { status: 500 });
   }
 
   if (!targetMembership) {
-    return NextResponse.json({ error: "Member not found in this team." }, { status: 404 });
+    return NextResponse.json({ error: t("errors.memberNotFound") }, { status: 404 });
   }
 
   if (teamContext.role === "admin" && targetMembership.role !== "member") {
     return NextResponse.json(
-      { error: "Admins can only remove members." },
+      { error: t("errors.adminRemoveLimit") },
       { status: 403 },
     );
   }
@@ -125,12 +127,12 @@ export async function DELETE(request: Request, context: TeamMembersRouteContext)
 
     if (ownerCountError) {
       logger.error("Failed to count team owners before removal", ownerCountError);
-      return NextResponse.json({ error: "Unable to remove member." }, { status: 500 });
+      return NextResponse.json({ error: t("errors.unableToRemoveMember") }, { status: 500 });
     }
 
     if ((ownerCount ?? 0) <= 1) {
       return NextResponse.json(
-        { error: "Cannot remove the last team owner." },
+        { error: t("errors.cannotRemoveLastOwner") },
         { status: 409 },
       );
     }
@@ -154,7 +156,7 @@ export async function DELETE(request: Request, context: TeamMembersRouteContext)
         metadata: { reason: "last_owner_db_guard" },
       });
       return NextResponse.json(
-        { error: "Cannot remove the last team owner." },
+        { error: t("errors.cannotRemoveLastOwner") },
         { status: 409 },
       );
     }
@@ -166,7 +168,7 @@ export async function DELETE(request: Request, context: TeamMembersRouteContext)
       resourceId: targetUserId,
       metadata: { reason: "delete_error" },
     });
-    return NextResponse.json({ error: "Unable to remove member." }, { status: 500 });
+    return NextResponse.json({ error: t("errors.unableToRemoveMember") }, { status: 500 });
   }
 
   let seatSynced = true;
@@ -201,7 +203,7 @@ export async function DELETE(request: Request, context: TeamMembersRouteContext)
     });
     return NextResponse.json(
       {
-        error: "Member removed, but billing sync failed. Please retry shortly.",
+        error: t("errors.billingSyncFailedAfterRemoval"),
         memberRemoved: true,
       },
       { status: 500 },
@@ -221,6 +223,7 @@ export async function DELETE(request: Request, context: TeamMembersRouteContext)
 }
 
 export async function PATCH(request: Request, context: TeamMembersRouteContext) {
+  const t = await getRouteTranslator("ApiTeamMembers", request);
   const csrfError = verifyCsrfProtection(request);
   if (csrfError) {
     return csrfError;
@@ -236,19 +239,19 @@ export async function PATCH(request: Request, context: TeamMembersRouteContext) 
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: t("errors.unauthorized") }, { status: 401 });
   }
 
   const teamContext = await getTeamContextForUser(supabase, user.id);
   if (!teamContext) {
     return NextResponse.json(
-      { error: "No team membership found for this account." },
+      { error: t("errors.noTeamMembership") },
       { status: 403 },
     );
   }
   if (teamContext.role !== "owner" && teamContext.role !== "admin") {
     return NextResponse.json(
-      { error: "Only team owners and admins can update member roles." },
+      { error: t("errors.updateRoleForbidden") },
       { status: 403 },
     );
   }
@@ -259,7 +262,7 @@ export async function PATCH(request: Request, context: TeamMembersRouteContext) 
   });
   if (!rateLimit.allowed) {
     return NextResponse.json(
-      { error: "Too many member management requests. Please try again shortly." },
+      { error: t("errors.rateLimited") },
       {
         status: 429,
         headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
@@ -269,11 +272,11 @@ export async function PATCH(request: Request, context: TeamMembersRouteContext) 
 
   const { userId: targetUserId } = await context.params;
   if (!UUID_RE.test(targetUserId)) {
-    return NextResponse.json({ error: "Invalid member id." }, { status: 400 });
+    return NextResponse.json({ error: t("errors.invalidMemberId") }, { status: 400 });
   }
   if (targetUserId === user.id) {
     return NextResponse.json(
-      { error: "Use ownership transfer to change your own owner role." },
+      { error: t("errors.useOwnershipTransferForSelf") },
       { status: 400 },
     );
   }
@@ -281,9 +284,9 @@ export async function PATCH(request: Request, context: TeamMembersRouteContext) 
   const parseResult = await parseJsonWithSchema(request, updateMemberRoleSchema);
   if (!parseResult.success) {
     if (parseResult.tooLarge) {
-      return NextResponse.json({ error: "Request payload is too large." }, { status: 413 });
+      return NextResponse.json({ error: t("errors.payloadTooLarge") }, { status: 413 });
     }
-    return NextResponse.json({ error: "Invalid role update payload." }, { status: 400 });
+    return NextResponse.json({ error: t("errors.invalidRolePayload") }, { status: 400 });
   }
   const { role: nextRole } = parseResult.data;
 
@@ -296,20 +299,20 @@ export async function PATCH(request: Request, context: TeamMembersRouteContext) 
     .maybeSingle<TeamMembershipRow>();
   if (targetMembershipError) {
     logger.error("Failed to load target membership for role update", targetMembershipError);
-    return NextResponse.json({ error: "Unable to update member role." }, { status: 500 });
+    return NextResponse.json({ error: t("errors.unableToUpdateMemberRole") }, { status: 500 });
   }
   if (!targetMembership) {
-    return NextResponse.json({ error: "Member not found in this team." }, { status: 404 });
+    return NextResponse.json({ error: t("errors.memberNotFound") }, { status: 404 });
   }
   if (targetMembership.role === "owner") {
     return NextResponse.json(
-      { error: "Use ownership transfer to update owner role." },
+      { error: t("errors.useOwnershipTransferForOwner") },
       { status: 409 },
     );
   }
   if (teamContext.role === "admin" && targetMembership.role !== "member") {
     return NextResponse.json(
-      { error: "Admins can only update member roles." },
+      { error: t("errors.adminUpdateRoleLimit") },
       { status: 403 },
     );
   }
@@ -333,7 +336,7 @@ export async function PATCH(request: Request, context: TeamMembersRouteContext) 
       resourceId: targetUserId,
       metadata: { reason: "update_error", nextRole },
     });
-    return NextResponse.json({ error: "Unable to update member role." }, { status: 500 });
+    return NextResponse.json({ error: t("errors.unableToUpdateMemberRole") }, { status: 500 });
   }
 
   logAuditEvent({

@@ -30,9 +30,13 @@ type TeamRouteOptions<TBody> = {
   request: Request;
   allowedRoles?: TeamRole[];
   forbiddenMessage?: string;
+  unauthorizedMessage?: string;
+  missingTeamMembershipMessage?: string;
   requireJsonBody?: boolean;
   schema?: ZodType<TBody>;
   invalidPayloadMessage?: string;
+  payloadTooLargeMessage?: string;
+  tooManyRequestsMessage?: string;
   onInvalidPayload?: (ctx: { userId: string; teamId: string }) => void;
   rateLimits?: (ctx: {
     request: Request;
@@ -47,9 +51,13 @@ export async function withTeamRoute<TBody = undefined>({
   request,
   allowedRoles,
   forbiddenMessage,
+  unauthorizedMessage,
+  missingTeamMembershipMessage,
   requireJsonBody = false,
   schema,
   invalidPayloadMessage = "Invalid request payload.",
+  payloadTooLargeMessage = "Request payload is too large.",
+  tooManyRequestsMessage = "Too many requests. Please try again shortly.",
   onInvalidPayload,
   rateLimits,
   handler,
@@ -78,13 +86,13 @@ export async function withTeamRoute<TBody = undefined>({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return json({ error: "Unauthorized" }, { status: 401 });
+    return json({ error: unauthorizedMessage ?? "Unauthorized" }, { status: 401 });
   }
 
   const teamContext = await getCachedTeamContextForUser(supabase, user.id);
   if (!teamContext) {
     return json(
-      { error: "No team membership found for this account." },
+      { error: missingTeamMembershipMessage ?? "No team membership found for this account." },
       { status: 403 },
     );
   }
@@ -109,7 +117,7 @@ export async function withTeamRoute<TBody = undefined>({
       if (deniedIndex >= 0) {
         const retryAfterSeconds = Math.max(...results.map((result) => result.retryAfterSeconds));
         return json(
-          { error: descriptors[deniedIndex]?.message ?? "Too many requests. Please try again shortly." },
+          { error: descriptors[deniedIndex]?.message ?? tooManyRequestsMessage },
           {
             status: 429,
             headers: { "Retry-After": String(retryAfterSeconds) },
@@ -124,7 +132,7 @@ export async function withTeamRoute<TBody = undefined>({
     const bodyParse = await parseJsonWithSchema(request, schema);
     if (!bodyParse.success) {
       if (bodyParse.tooLarge) {
-        return json({ error: "Request payload is too large." }, { status: 413 });
+        return json({ error: payloadTooLargeMessage }, { status: 413 });
       }
       onInvalidPayload?.({ userId: user.id, teamId: teamContext.teamId });
       return json({ error: invalidPayloadMessage }, { status: 400 });

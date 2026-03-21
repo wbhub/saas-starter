@@ -3,6 +3,7 @@ import { logAuditEvent } from "@/lib/audit";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { withTeamRoute } from "@/lib/http/team-route";
 import { logger } from "@/lib/logger";
+import { getRouteTranslator } from "@/lib/i18n/locale";
 
 type InviteRouteContext = {
   params: Promise<{ inviteId: string }>;
@@ -12,21 +13,25 @@ const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export async function DELETE(request: Request, context: InviteRouteContext) {
+  const t = await getRouteTranslator("ApiTeamInviteRevoke", request);
+
   return withTeamRoute({
     request,
     allowedRoles: ["owner", "admin"],
-    forbiddenMessage: "Only team owners and admins can revoke invites.",
+    unauthorizedMessage: t("errors.unauthorized"),
+    missingTeamMembershipMessage: t("errors.noTeamMembership"),
+    forbiddenMessage: t("errors.forbidden"),
     rateLimits: ({ teamId, userId }) => [
       {
         key: `team-invite:revoke:${teamId}:${userId}`,
         ...RATE_LIMITS.teamInviteRevokeByActor,
-        message: "Too many invite management requests. Please try again shortly.",
+        message: t("errors.rateLimited"),
       },
     ],
     handler: async ({ supabase, user, teamContext, requestId }) => {
       const { inviteId } = await context.params;
       if (!UUID_RE.test(inviteId)) {
-        return NextResponse.json({ error: "Invalid invite id." }, { status: 400 });
+        return NextResponse.json({ error: t("errors.invalidInviteId") }, { status: 400 });
       }
 
       const { data: deletedInvite, error } = await supabase
@@ -52,10 +57,10 @@ export async function DELETE(request: Request, context: InviteRouteContext) {
           resourceId: inviteId,
           metadata: { reason: "delete_error" },
         });
-        return NextResponse.json({ error: "Unable to revoke invite." }, { status: 500 });
+        return NextResponse.json({ error: t("errors.unableToRevokeInvite") }, { status: 500 });
       }
       if (!deletedInvite) {
-        return NextResponse.json({ error: "Pending invite not found." }, { status: 404 });
+        return NextResponse.json({ error: t("errors.pendingInviteNotFound") }, { status: 404 });
       }
 
       logAuditEvent({

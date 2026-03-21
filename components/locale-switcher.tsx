@@ -50,7 +50,8 @@ export function LocaleSwitcher({ className, compact = false }: LocaleSwitcherPro
     router.refresh();
   }
 
-  const currentLabel = locale === "en" ? t("english") : t("spanish");
+  const getLocaleLabel = (value: AppLocale) => t(`localeNames.${value}`);
+  const currentLabel = getLocaleLabel(locale);
 
   return (
     <div
@@ -93,7 +94,7 @@ export function LocaleSwitcher({ className, compact = false }: LocaleSwitcherPro
         >
           {routing.locales.map((item) => {
             const isActive = item === locale;
-            const localeLabel = item === "en" ? t("english") : t("spanish");
+            const localeLabel = getLocaleLabel(item);
 
             return (
               <button
