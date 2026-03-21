@@ -16,6 +16,18 @@ type RateLimitResult = {
 const PRODUCTION_FAIL_OPEN_WINDOW_MS = 5 * SECOND_MS;
 const PRODUCTION_CIRCUIT_BREAKER_FAILURE_THRESHOLD = 3;
 const PRODUCTION_CIRCUIT_BREAKER_COOLDOWN_MS = 30 * SECOND_MS;
+const ATOMIC_RATE_LIMIT_INCREMENT_SCRIPT = `
+local count = redis.call("INCR", KEYS[1])
+if count == 1 then
+  redis.call("EXPIRE", KEYS[1], tonumber(ARGV[1]))
+else
+  local ttl = redis.call("TTL", KEYS[1])
+  if ttl < 0 then
+    redis.call("EXPIRE", KEYS[1], tonumber(ARGV[1]))
+  end
+end
+return count
+`;
 
 type InMemoryRateLimitRecord = {
   count: number;
@@ -133,16 +145,16 @@ async function redisCheckRateLimit({
 
   const windowSeconds = Math.max(1, Math.ceil(windowMs / 1000));
   const redisKey = `rate-limit:${key}`;
-  const count = await redis.incr(redisKey);
-  if (count === 1) {
-    await redis.expire(redisKey, windowSeconds);
-  }
+  const count = await redis.eval<[string], number>(ATOMIC_RATE_LIMIT_INCREMENT_SCRIPT, [redisKey], [
+    String(windowSeconds),
+  ]);
 
   if (count > limit) {
     const ttlSeconds = await redis.ttl(redisKey);
+    const retryAfterSeconds = ttlSeconds > 0 ? ttlSeconds : windowSeconds;
     return {
       allowed: false,
-      retryAfterSeconds: Math.max(1, typeof ttlSeconds === "number" ? ttlSeconds : windowSeconds),
+      retryAfterSeconds: Math.max(1, retryAfterSeconds),
     };
   }
 
