@@ -110,15 +110,15 @@ export async function PATCH(request: Request) {
       actorUserId: user.id,
       error: teamMembersError,
     });
-    invalidateCachedTeamContextForUser(user.id);
+    await invalidateCachedTeamContextForUser(user.id);
   } else {
     const userIds = new Set((teamMembers ?? []).map((membership) => membership.user_id));
     if (userIds.size === 0) {
       userIds.add(user.id);
     }
-    for (const memberUserId of userIds) {
-      invalidateCachedTeamContextForUser(memberUserId);
-    }
+    await Promise.all(
+      Array.from(userIds, (memberUserId) => invalidateCachedTeamContextForUser(memberUserId)),
+    );
   }
 
   logAuditEvent({

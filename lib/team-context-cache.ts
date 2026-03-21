@@ -30,17 +30,7 @@ function getCacheKey(userId: string) {
   return `team-context:${userId}`;
 }
 
-function cleanupInMemoryCache(cache: Map<string, TeamContextCacheEntry>, now: number) {
-  const lastSweepAt = globalThis.__saasStarterTeamContextCacheLastSweepAt ?? 0;
-  if (now - lastSweepAt >= FALLBACK_SWEEP_INTERVAL_MS) {
-    globalThis.__saasStarterTeamContextCacheLastSweepAt = now;
-    for (const [key, value] of cache.entries()) {
-      if (value.expiresAt <= now) {
-        cache.delete(key);
-      }
-    }
-  }
-
+function trimOverflowEntries(cache: Map<string, TeamContextCacheEntry>) {
   if (cache.size <= FALLBACK_MAX_ENTRIES) {
     return;
   }
@@ -54,6 +44,20 @@ function cleanupInMemoryCache(cache: Map<string, TeamContextCacheEntry>, now: nu
       break;
     }
   }
+}
+
+function cleanupInMemoryCache(cache: Map<string, TeamContextCacheEntry>, now: number) {
+  const lastSweepAt = globalThis.__saasStarterTeamContextCacheLastSweepAt ?? 0;
+  if (now - lastSweepAt >= FALLBACK_SWEEP_INTERVAL_MS) {
+    globalThis.__saasStarterTeamContextCacheLastSweepAt = now;
+    for (const [key, value] of cache.entries()) {
+      if (value.expiresAt <= now) {
+        cache.delete(key);
+      }
+    }
+  }
+
+  trimOverflowEntries(cache);
 }
 
 function readInMemoryCache(userId: string): TeamContext | null | undefined {
@@ -81,7 +85,7 @@ function writeInMemoryCache(userId: string, value: TeamContext | null) {
     value,
     expiresAt: now + TEAM_CONTEXT_CACHE_TTL_MS,
   });
-  cleanupInMemoryCache(cache, now);
+  trimOverflowEntries(cache);
 }
 
 async function readRedisCache(userId: string): Promise<TeamContext | null | undefined> {
@@ -153,12 +157,20 @@ export async function getCachedTeamContextForUser(
   return teamContext;
 }
 
-export function invalidateCachedTeamContextForUser(userId: string) {
-  getInMemoryTeamContextCache().delete(getCacheKey(userId));
+export async function invalidateCachedTeamContextForUser(userId: string) {
+  const cacheKey = getCacheKey(userId);
+  getInMemoryTeamContextCache().delete(cacheKey);
   const redis = getRedisClient();
   if (!redis) {
     return;
   }
 
-  void redis.del(getCacheKey(userId));
+  try {
+    await redis.del(cacheKey);
+  } catch (error) {
+    logger.warn("Failed to invalidate team context cache from redis; continuing.", {
+      userId,
+      error,
+    });
+  }
 }

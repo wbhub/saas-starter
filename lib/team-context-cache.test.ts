@@ -110,7 +110,7 @@ describe("team context cache", () => {
     expect(getTeamContextForUser).toHaveBeenCalledTimes(1);
     expect(redisStore.get(TEST_CACHE_KEY)).toEqual(TEST_TEAM_CONTEXT);
 
-    invalidateCachedTeamContextForUser(TEST_USER_ID);
+    await invalidateCachedTeamContextForUser(TEST_USER_ID);
 
     const globalCacheState = globalThis as GlobalCacheState;
     expect(globalCacheState.__saasStarterTeamContextCache?.has(TEST_CACHE_KEY)).toBe(false);
@@ -119,6 +119,51 @@ describe("team context cache", () => {
 
     await getCachedTeamContextForUser({} as never, TEST_USER_ID);
     expect(getTeamContextForUser).toHaveBeenCalledTimes(2);
+  });
+
+  it("continues when redis invalidation fails", async () => {
+    const getTeamContextForUser = vi.fn().mockResolvedValue(TEST_TEAM_CONTEXT);
+    const logger = {
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    };
+    const redisStore = new Map<string, TeamContext | null>();
+    const redis = {
+      get: vi.fn(async (key: string) => redisStore.get(key)),
+      set: vi.fn(async (key: string, value: TeamContext | null) => {
+        redisStore.set(key, value);
+        return "OK";
+      }),
+      del: vi.fn(async () => {
+        throw new Error("redis down");
+      }),
+    };
+
+    vi.doMock("@/lib/logger", () => ({ logger }));
+    vi.doMock("@/lib/redis/client", () => ({
+      getRedisClient: () => redis,
+    }));
+    vi.doMock("@/lib/team-context", () => ({
+      getTeamContextForUser,
+    }));
+
+    const { getCachedTeamContextForUser, invalidateCachedTeamContextForUser } =
+      await import("./team-context-cache");
+    await getCachedTeamContextForUser({} as never, TEST_USER_ID);
+    expect(redisStore.get(TEST_CACHE_KEY)).toEqual(TEST_TEAM_CONTEXT);
+
+    await expect(invalidateCachedTeamContextForUser(TEST_USER_ID)).resolves.toBeUndefined();
+
+    const globalCacheState = globalThis as GlobalCacheState;
+    expect(globalCacheState.__saasStarterTeamContextCache?.has(TEST_CACHE_KEY)).toBe(false);
+    expect(logger.warn).toHaveBeenCalledWith(
+      "Failed to invalidate team context cache from redis; continuing.",
+      expect.objectContaining({
+        userId: TEST_USER_ID,
+        error: expect.any(Error),
+      }),
+    );
   });
 
   it("enforces max entries for in-memory fallback cache", async () => {

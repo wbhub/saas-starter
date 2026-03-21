@@ -29,10 +29,20 @@ function getPositiveIntegerFromEnv(name: string, fallback: number) {
   return fallback;
 }
 
+function getBoundedFloatFromEnv(name: string, fallback: number, min: number, max: number) {
+  const parsed = Number(process.env[name]);
+  if (Number.isFinite(parsed) && parsed >= min && parsed <= max) {
+    return parsed;
+  }
+  return fallback;
+}
+
 const AUDIT_BATCH_SIZE = 25;
 const AUDIT_FLUSH_INTERVAL_MS = 200;
 const AUDIT_MAX_QUEUE_SIZE = getPositiveIntegerFromEnv("AUDIT_MAX_QUEUE_SIZE", 1000);
 const AUDIT_RETRY_MAX_INTERVAL_MS = getPositiveIntegerFromEnv("AUDIT_RETRY_MAX_INTERVAL_MS", 5000);
+const AUDIT_RETRY_MAX_ATTEMPTS = getPositiveIntegerFromEnv("AUDIT_RETRY_MAX_ATTEMPTS", 5);
+const AUDIT_RETRY_JITTER_FACTOR = getBoundedFloatFromEnv("AUDIT_RETRY_JITTER_FACTOR", 0.2, 0, 1);
 
 const auditInsertQueue: AuditInsertRow[] = [];
 let flushTimer: ReturnType<typeof setTimeout> | null = null;
@@ -54,8 +64,20 @@ function getRetryDelayMs() {
   if (consecutiveFlushFailures <= 0) {
     return AUDIT_FLUSH_INTERVAL_MS;
   }
+
   const exponentialDelay = AUDIT_FLUSH_INTERVAL_MS * 2 ** consecutiveFlushFailures;
-  return Math.min(exponentialDelay, AUDIT_RETRY_MAX_INTERVAL_MS);
+  const boundedExponentialDelay = Math.min(exponentialDelay, AUDIT_RETRY_MAX_INTERVAL_MS);
+  if (AUDIT_RETRY_JITTER_FACTOR <= 0) {
+    return boundedExponentialDelay;
+  }
+
+  const jitterMultiplier =
+    1 + (Math.random() * 2 - 1) * AUDIT_RETRY_JITTER_FACTOR;
+  const jitteredDelay = Math.round(boundedExponentialDelay * jitterMultiplier);
+  return Math.max(
+    AUDIT_FLUSH_INTERVAL_MS,
+    Math.min(jitteredDelay, AUDIT_RETRY_MAX_INTERVAL_MS),
+  );
 }
 
 function enforceQueueLimit() {
@@ -118,6 +140,20 @@ async function flushAuditQueue() {
     consecutiveFlushFailures = 0;
   } catch (error) {
     consecutiveFlushFailures += 1;
+    if (consecutiveFlushFailures >= AUDIT_RETRY_MAX_ATTEMPTS) {
+      logger.error(
+        "Dropping audit batch after max retry attempts due to persistent failures",
+        error,
+        {
+          droppedEvents: batch.length,
+          maxRetryAttempts: AUDIT_RETRY_MAX_ATTEMPTS,
+          consecutiveFlushFailures,
+          queuedEvents: auditInsertQueue.length,
+        },
+      );
+      consecutiveFlushFailures = 0;
+      return;
+    }
     auditInsertQueue.unshift(...batch);
     enforceQueueLimit();
     throw error;
