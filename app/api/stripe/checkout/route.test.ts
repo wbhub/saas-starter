@@ -4,6 +4,9 @@ describe("POST /api/stripe/checkout", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    vi.doMock("@/lib/security/csrf", () => ({
+      verifyCsrfProtection: vi.fn().mockReturnValue(null),
+    }));
   });
 
   it("returns 409 when a live subscription already exists", async () => {

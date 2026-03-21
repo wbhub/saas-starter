@@ -17,6 +17,9 @@ describe("POST /api/auth/forgot-password", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    vi.doMock("@/lib/security/csrf", () => ({
+      verifyCsrfProtection: vi.fn().mockReturnValue(null),
+    }));
   });
 
   it("returns a generic success payload when rate limited", async () => {

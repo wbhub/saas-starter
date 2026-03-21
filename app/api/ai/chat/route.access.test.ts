@@ -723,6 +723,14 @@ describe("POST /api/ai/chat access and gating", () => {
   });
 
   it("denies requests that use disallowed modalities", async () => {
+    vi.doMock("@/lib/ai/access", () => ({
+      resolveAiAccess: vi.fn().mockReturnValue({
+        allowed: true,
+        model: "gpt-4.1-mini",
+        monthlyTokenBudget: 0,
+        allowedModalities: ["text"],
+      }),
+    }));
     vi.doMock("@/lib/ai/config", () => ({
       getAiAccessMode: vi.fn().mockReturnValue("all"),
       getAiAllowedSubscriptionStatuses: vi
@@ -816,6 +824,14 @@ describe("POST /api/ai/chat access and gating", () => {
   });
 
   it("denies multimodal requests for text-only model capability", async () => {
+    vi.doMock("@/lib/ai/access", () => ({
+      resolveAiAccess: vi.fn().mockReturnValue({
+        allowed: true,
+        model: "gpt-3.5-turbo",
+        monthlyTokenBudget: 0,
+        allowedModalities: ["text", "image", "file"],
+      }),
+    }));
     const aiConfig = await import("@/lib/ai/config");
     vi.mocked(aiConfig.getAiAccessMode).mockReturnValue("all");
     vi.mocked(aiConfig.getAiDefaultModel).mockReturnValue("gpt-3.5-turbo");

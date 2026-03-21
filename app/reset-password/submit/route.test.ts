@@ -20,6 +20,15 @@ describe("POST /reset-password/submit", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    vi.doMock("@/lib/security/csrf", async () => {
+      const actual = await vi.importActual<typeof import("@/lib/security/csrf")>(
+        "@/lib/security/csrf",
+      );
+      return {
+        ...actual,
+        verifyCsrfProtection: vi.fn().mockReturnValue(null),
+      };
+    });
   });
 
   it("returns 429 when rate limited", async () => {

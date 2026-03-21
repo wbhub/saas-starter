@@ -4,6 +4,9 @@ describe("POST /api/team/invites/[inviteId]/resend", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    vi.doMock("@/lib/security/csrf", () => ({
+      verifyCsrfProtection: vi.fn().mockReturnValue(null),
+    }));
   });
 
   it("logs failure outcome when email delivery fails", async () => {

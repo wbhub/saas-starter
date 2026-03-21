@@ -4,6 +4,9 @@ describe("POST /api/team/invites/accept", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    vi.doMock("@/lib/security/csrf", () => ({
+      verifyCsrfProtection: vi.fn().mockReturnValue(null),
+    }));
   });
 
   it("accepts invite for matching email", async () => {

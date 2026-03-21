@@ -4,6 +4,9 @@ describe("POST /api/stripe/change-plan", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    vi.doMock("@/lib/security/csrf", () => ({
+      verifyCsrfProtection: vi.fn().mockReturnValue(null),
+    }));
   });
 
   it("returns 409 when subscription ownership does not match user", async () => {
