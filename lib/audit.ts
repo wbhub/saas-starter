@@ -21,12 +21,23 @@ type AuditInsertRow = {
   metadata: Record<string, unknown>;
 };
 
+function getPositiveIntegerFromEnv(name: string, fallback: number) {
+  const parsed = Number(process.env[name]);
+  if (Number.isInteger(parsed) && parsed > 0) {
+    return parsed;
+  }
+  return fallback;
+}
+
 const AUDIT_BATCH_SIZE = 25;
 const AUDIT_FLUSH_INTERVAL_MS = 200;
+const AUDIT_MAX_QUEUE_SIZE = getPositiveIntegerFromEnv("AUDIT_MAX_QUEUE_SIZE", 1000);
+const AUDIT_RETRY_MAX_INTERVAL_MS = getPositiveIntegerFromEnv("AUDIT_RETRY_MAX_INTERVAL_MS", 5000);
 
 const auditInsertQueue: AuditInsertRow[] = [];
 let flushTimer: ReturnType<typeof setTimeout> | null = null;
 let flushInFlight: Promise<void> | null = null;
+let consecutiveFlushFailures = 0;
 
 function mapAuditEventToRow(event: AuditEvent): AuditInsertRow {
   return {
@@ -39,7 +50,29 @@ function mapAuditEventToRow(event: AuditEvent): AuditInsertRow {
   };
 }
 
-function scheduleFlush() {
+function getRetryDelayMs() {
+  if (consecutiveFlushFailures <= 0) {
+    return AUDIT_FLUSH_INTERVAL_MS;
+  }
+  const exponentialDelay = AUDIT_FLUSH_INTERVAL_MS * 2 ** consecutiveFlushFailures;
+  return Math.min(exponentialDelay, AUDIT_RETRY_MAX_INTERVAL_MS);
+}
+
+function enforceQueueLimit() {
+  if (auditInsertQueue.length <= AUDIT_MAX_QUEUE_SIZE) {
+    return;
+  }
+
+  const droppedEvents = auditInsertQueue.length - AUDIT_MAX_QUEUE_SIZE;
+  auditInsertQueue.splice(0, droppedEvents);
+  logger.warn("Audit queue capacity exceeded; dropping oldest events", {
+    droppedEvents,
+    maxQueueSize: AUDIT_MAX_QUEUE_SIZE,
+    queuedEvents: auditInsertQueue.length,
+  });
+}
+
+function scheduleFlush(delayMs = AUDIT_FLUSH_INTERVAL_MS) {
   if (flushTimer || process.env.NODE_ENV === "test") {
     return;
   }
@@ -51,7 +84,7 @@ function scheduleFlush() {
         queuedEvents: auditInsertQueue.length,
       });
     });
-  }, AUDIT_FLUSH_INTERVAL_MS);
+  }, delayMs);
 }
 
 async function persistBatch(batch: AuditInsertRow[]) {
@@ -82,20 +115,28 @@ async function flushAuditQueue() {
 
   try {
     await flushInFlight;
+    consecutiveFlushFailures = 0;
   } catch (error) {
+    consecutiveFlushFailures += 1;
     auditInsertQueue.unshift(...batch);
+    enforceQueueLimit();
     throw error;
   } finally {
     flushInFlight = null;
     if (auditInsertQueue.length > 0) {
-      scheduleFlush();
+      scheduleFlush(getRetryDelayMs());
     }
   }
 }
 
 function enqueueAuditEvent(event: AuditEvent) {
   auditInsertQueue.push(mapAuditEventToRow(event));
+  enforceQueueLimit();
   if (auditInsertQueue.length >= AUDIT_BATCH_SIZE) {
+    if (consecutiveFlushFailures > 0) {
+      scheduleFlush(getRetryDelayMs());
+      return;
+    }
     void flushAuditQueue().catch((error) => {
       logger.error("Failed to persist audit event batch", error, {
         queuedEvents: auditInsertQueue.length,
@@ -130,4 +171,5 @@ export function __resetAuditBufferForTests() {
     flushTimer = null;
   }
   flushInFlight = null;
+  consecutiveFlushFailures = 0;
 }
