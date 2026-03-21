@@ -14,6 +14,7 @@ type DashboardSettingsCardProps = {
   fullName: string | null;
   avatarUrl: string | null;
   email: string | null;
+  csrfToken: string;
 };
 
 const initialState: UpdateDashboardSettingsState = {
@@ -40,6 +41,7 @@ export function DashboardSettingsCard({
   fullName,
   avatarUrl: initialAvatarUrl,
   email,
+  csrfToken,
 }: DashboardSettingsCardProps) {
   const t = useTranslations("DashboardSettingsCard");
   const [state, formAction] = useActionState(updateDashboardSettings, initialState);
@@ -111,6 +113,7 @@ export function DashboardSettingsCard({
       </p>
 
       <form action={formAction} className="mt-4 space-y-3">
+        <input type="hidden" name="csrf_token" value={csrfToken} />
         <input type="hidden" name="avatarUrl" value={avatarUrl} />
 
         <div className="rounded-lg border app-border-subtle p-3">

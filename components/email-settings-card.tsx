@@ -7,6 +7,7 @@ import { requestEmailChange, type RequestEmailChangeState } from "@/app/dashboar
 
 type EmailSettingsCardProps = {
   email: string | null;
+  csrfToken: string;
 };
 
 const initialState: RequestEmailChangeState = {
@@ -28,7 +29,7 @@ function SubmitButton({ pendingLabel, idleLabel }: { pendingLabel: string; idleL
   );
 }
 
-export function EmailSettingsCard({ email }: EmailSettingsCardProps) {
+export function EmailSettingsCard({ email, csrfToken }: EmailSettingsCardProps) {
   const t = useTranslations("EmailSettingsCard");
   const [state, formAction] = useActionState(requestEmailChange, initialState);
 
@@ -39,6 +40,7 @@ export function EmailSettingsCard({ email }: EmailSettingsCardProps) {
         {t("description")}
       </p>
       <form action={formAction} className="mt-4 space-y-3">
+        <input type="hidden" name="csrf_token" value={csrfToken} />
         <label className="block">
           <span className="mb-1 block text-sm font-medium text-slate-800 dark:text-slate-100">
             {t("fields.currentEmail")}

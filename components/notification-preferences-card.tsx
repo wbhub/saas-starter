@@ -12,6 +12,7 @@ type NotificationPreferencesCardProps = {
   marketingEmails: boolean;
   productUpdates: boolean;
   securityAlerts: boolean;
+  csrfToken: string;
 };
 
 const initialState: UpdateNotificationPreferencesState = {
@@ -64,6 +65,7 @@ export function NotificationPreferencesCard({
   marketingEmails,
   productUpdates,
   securityAlerts,
+  csrfToken,
 }: NotificationPreferencesCardProps) {
   const t = useTranslations("NotificationPreferencesCard");
   const [state, formAction] = useActionState(updateNotificationPreferences, initialState);
@@ -78,6 +80,7 @@ export function NotificationPreferencesCard({
       </p>
 
       <form action={formAction} className="mt-4 space-y-3">
+        <input type="hidden" name="csrf_token" value={csrfToken} />
         <PreferenceToggle
           name="securityAlerts"
           label={t("items.securityAlerts.label")}

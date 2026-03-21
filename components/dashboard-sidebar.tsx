@@ -16,6 +16,7 @@ type DashboardSidebarProps = {
   role: "owner" | "admin" | "member";
   activeTeamId: string;
   teamMemberships: DashboardTeamOption[];
+  csrfToken: string;
 };
 
 export function DashboardSidebar({
@@ -25,6 +26,7 @@ export function DashboardSidebar({
   role,
   activeTeamId,
   teamMemberships,
+  csrfToken,
 }: DashboardSidebarProps) {
   const t = useTranslations();
   const pathname = usePathname();
@@ -71,6 +73,7 @@ export function DashboardSidebar({
 
       {teamMemberships.length > 1 ? (
         <form action={switchActiveTeam} className="mt-5 space-y-2">
+          <input type="hidden" name="csrf_token" value={csrfToken} />
           <input type="hidden" name="redirectTo" value={pathname} />
           <label
             htmlFor="active-team-select"
@@ -130,6 +133,7 @@ export function DashboardSidebar({
           {t("DashboardSidebar.home")}
         </Link>
         <form action={logout} className="flex-1">
+          <input type="hidden" name="csrf_token" value={csrfToken} />
           <button
             type="submit"
             className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"

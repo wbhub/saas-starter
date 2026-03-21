@@ -178,6 +178,7 @@ describe("POST /api/ai/chat finalize retry enqueue", () => {
     expect(response.status).toBe(503);
     await expect(response.json()).resolves.toEqual({
       error: "AI assistant is currently unavailable.",
+      code: "upstream_error",
     });
     expect(loggerError).toHaveBeenCalledWith(
       "Failed to enqueue AI budget finalize retry after create failure",

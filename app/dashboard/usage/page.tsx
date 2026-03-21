@@ -15,7 +15,15 @@ function formatTokens(value: number, locale: string) {
 export default async function DashboardUsagePage() {
   const t = await getTranslations("DashboardUsagePage");
   const locale = await getLocale();
-  const { supabase, user, teamContext, teamContextLoadFailed, teamMemberships, displayName } =
+  const {
+    supabase,
+    user,
+    teamContext,
+    teamContextLoadFailed,
+    teamMemberships,
+    displayName,
+    csrfToken,
+  } =
     await getDashboardBaseData();
 
   if (teamContextLoadFailed) {
@@ -44,6 +52,7 @@ export default async function DashboardUsagePage() {
       role={teamContext.role}
       activeTeamId={teamContext.teamId}
       teamMemberships={teamMemberships}
+      csrfToken={csrfToken}
     >
       <header className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm sm:p-6">
         <p className="text-sm text-slate-500 dark:text-slate-400">{t("header.eyebrow")}</p>

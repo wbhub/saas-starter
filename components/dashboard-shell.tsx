@@ -10,6 +10,7 @@ type DashboardShellProps = {
   role: TeamRole;
   activeTeamId: string;
   teamMemberships: DashboardTeamOption[];
+  csrfToken: string;
   children: ReactNode;
 };
 
@@ -20,6 +21,7 @@ export function DashboardShell({
   role,
   activeTeamId,
   teamMemberships,
+  csrfToken,
   children,
 }: DashboardShellProps) {
   return (
@@ -33,6 +35,7 @@ export function DashboardShell({
             role={role}
             activeTeamId={activeTeamId}
             teamMemberships={teamMemberships}
+            csrfToken={csrfToken}
           />
           <div className="space-y-4">{children}</div>
         </div>

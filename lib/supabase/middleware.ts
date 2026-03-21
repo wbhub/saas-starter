@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import type { User } from "@supabase/supabase-js";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 
@@ -8,6 +9,7 @@ export async function updateSession(
   options?: { requestHeaders?: Headers },
 ) {
   const requestHeaders = options?.requestHeaders ?? request.headers;
+  let user: User | null = null;
   let response = NextResponse.next({
     request: {
       headers: requestHeaders,
@@ -40,9 +42,10 @@ export async function updateSession(
       },
     );
 
-    await supabase.auth.getUser();
+    const authResult = await supabase.auth.getUser();
+    user = authResult.data.user;
   } catch (error) {
     logger.error("Supabase middleware session refresh skipped due to configuration/runtime error", error);
   }
-  return response;
+  return { response, user };
 }
