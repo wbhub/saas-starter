@@ -8,6 +8,7 @@ import { getStripeServerClient } from "@/lib/stripe/server";
 import { getAppUrl } from "@/lib/env";
 import { requireJsonContentType } from "@/lib/http/content-type";
 import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
+import { getRouteTranslator } from "@/lib/i18n/locale";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { LIVE_SUBSCRIPTION_STATUSES } from "@/lib/stripe/plans";
@@ -127,20 +128,28 @@ async function getTeamSeatCount(
 }
 
 export async function POST(req: Request) {
+  const t = await getRouteTranslator("ApiStripeCheckout", req);
+
   const stripe = getStripeServerClient();
   if (!stripe) {
     return NextResponse.json(
-      { error: "Billing is not configured for this deployment." },
+      { error: t("errors.billingNotConfigured") },
       { status: 503 },
     );
   }
 
-  const csrfError = verifyCsrfProtection(req);
+  const csrfError = verifyCsrfProtection(req, {
+    invalidOrigin: t("errors.invalidOrigin"),
+    missingToken: t("errors.missingCsrfToken"),
+    invalidToken: t("errors.invalidCsrfToken"),
+  });
   if (csrfError) {
     return csrfError;
   }
 
-  const contentTypeError = requireJsonContentType(req);
+  const contentTypeError = requireJsonContentType(req, {
+    errorMessage: t("errors.invalidContentType"),
+  });
   if (contentTypeError) {
     return contentTypeError;
   }
@@ -151,19 +160,19 @@ export async function POST(req: Request) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: t("errors.unauthorized") }, { status: 401 });
   }
 
   const teamContext = await getCachedTeamContextForUser(supabase, user.id);
   if (!teamContext) {
     return NextResponse.json(
-      { error: "No team membership found for this account." },
+      { error: t("errors.noTeamMembership") },
       { status: 403 },
     );
   }
   if (!canManageTeamBilling(teamContext.role)) {
     return NextResponse.json(
-      { error: "Only team owners and admins can manage billing." },
+      { error: t("errors.forbidden") },
       { status: 403 },
     );
   }
@@ -174,7 +183,7 @@ export async function POST(req: Request) {
   });
   if (!rateLimit.allowed) {
     return NextResponse.json(
-      { error: "Too many requests. Please wait and try again." },
+      { error: t("errors.rateLimited") },
       {
         status: 429,
         headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
@@ -184,20 +193,20 @@ export async function POST(req: Request) {
 
   const bodyParse = await parseJsonWithSchema(req, checkoutPayloadSchema);
   if (!bodyParse.success && bodyParse.tooLarge) {
-    return NextResponse.json({ error: "Request payload is too large." }, { status: 413 });
+    return NextResponse.json({ error: t("errors.payloadTooLarge") }, { status: 413 });
   }
   const planKey = bodyParse.success ? parsePlanKey(bodyParse.data) : null;
   if (!planKey) {
-    return NextResponse.json({ error: "Invalid request payload" }, { status: 400 });
+    return NextResponse.json({ error: t("errors.invalidPayload") }, { status: 400 });
   }
 
   const plan = getPlanByKey(planKey);
   if (!plan) {
-    return NextResponse.json({ error: "Invalid plan selected" }, { status: 400 });
+    return NextResponse.json({ error: t("errors.invalidPlan") }, { status: 400 });
   }
   if (!plan.priceId) {
     return NextResponse.json(
-      { error: "Billing plans are not fully configured for this deployment." },
+      { error: t("errors.billingPlansNotConfigured") },
       { status: 503 },
     );
   }
@@ -210,7 +219,7 @@ export async function POST(req: Request) {
   });
   if (!inFlightCheckout.allowed) {
     return NextResponse.json(
-      { error: "Checkout is already in progress. Please wait and try again." },
+      { error: t("errors.checkoutInProgress") },
       {
         status: 409,
         headers: { "Retry-After": String(inFlightCheckout.retryAfterSeconds) },
@@ -230,14 +239,14 @@ export async function POST(req: Request) {
 
   if (existingSubscriptionError) {
     return NextResponse.json(
-      { error: "Could not verify current subscription state." },
+      { error: t("errors.couldNotVerifySubscription") },
       { status: 500 },
     );
   }
 
   if (existingSubscription?.stripe_subscription_id) {
     return NextResponse.json(
-      { error: "You already have an active subscription." },
+      { error: t("errors.activeSubscriptionExists") },
       { status: 409 },
     );
   }
@@ -250,7 +259,7 @@ export async function POST(req: Request) {
 
   if (customerRowError) {
     return NextResponse.json(
-      { error: "Could not load Stripe customer record." },
+      { error: t("errors.couldNotLoadStripeCustomer") },
       { status: 500 },
     );
   }
@@ -299,7 +308,7 @@ export async function POST(req: Request) {
 
     if (await hasLiveStripeSubscription(customerId)) {
       return NextResponse.json(
-        { error: "You already have an active subscription." },
+        { error: t("errors.activeSubscriptionExists") },
         { status: 409 },
       );
     }
@@ -327,7 +336,7 @@ export async function POST(req: Request) {
   } catch (error) {
     logger.error("Failed to create Stripe checkout session", error);
     return NextResponse.json(
-      { error: "Unable to start checkout right now. Please try again." },
+      { error: t("errors.unableToStartCheckout") },
       { status: 500 },
     );
   }

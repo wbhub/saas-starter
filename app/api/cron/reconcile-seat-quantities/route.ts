@@ -8,6 +8,7 @@ import { checkRateLimit } from "@/lib/security/rate-limit";
 import { processDueAiBudgetFinalizeRetries } from "@/lib/ai/budget-finalize-retries";
 import { reconcileTeamSeatQuantities } from "@/lib/stripe/seat-reconcile";
 import { logger } from "@/lib/logger";
+import { getRouteTranslator } from "@/lib/i18n/locale";
 
 function bearerToken(request: Request) {
   const auth = request.headers.get("authorization");
@@ -25,14 +26,16 @@ function safeCompare(a: string, b: string) {
 }
 
 export async function GET(request: Request) {
+  const t = await getRouteTranslator("ApiCronReconcileSeatQuantities", request);
+
   const secret = env.CRON_SECRET?.trim();
   if (!secret) {
-    return jsonError("Cron is not configured.", 503);
+    return jsonError(t("errors.cronNotConfigured"), 503);
   }
 
   const token = bearerToken(request);
   if (!token || !safeCompare(token, secret)) {
-    return jsonError("Unauthorized.", 401);
+    return jsonError(t("errors.unauthorized"), 401);
   }
 
   const clientId = getClientRateLimitIdentifier(request);
@@ -41,7 +44,7 @@ export async function GET(request: Request) {
     ...RATE_LIMITS.cronByClientIp,
   });
   if (!rateLimit.allowed) {
-    return jsonError("Too many requests.", 429, {
+    return jsonError(t("errors.rateLimited"), 429, {
       headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
     });
   }
@@ -88,7 +91,7 @@ export async function GET(request: Request) {
     return NextResponse.json(
       {
         ok: false,
-        error: "Cron run completed with one or more internal job failures.",
+        error: t("errors.partialFailure"),
         ...responsePayload,
       },
       { status: 500 },

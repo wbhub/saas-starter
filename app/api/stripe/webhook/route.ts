@@ -8,6 +8,7 @@ import {
 } from "@/lib/stripe/sync";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireJsonContentType } from "@/lib/http/content-type";
+import { getRouteTranslator } from "@/lib/i18n/locale";
 import { logger } from "@/lib/logger";
 import {
   WEBHOOK_CLAIM_TTL_SECONDS,
@@ -177,15 +178,19 @@ async function resolveTeamIdFromSessionReference(referenceId: string) {
 }
 
 export async function POST(req: Request) {
+  const t = await getRouteTranslator("ApiStripeWebhook", req);
+
   const stripe = getStripeServerClient();
   if (!stripe) {
     return NextResponse.json(
-      { error: "Billing webhooks are not configured for this deployment." },
+      { error: t("errors.webhooksNotConfigured") },
       { status: 503 },
     );
   }
 
-  const contentTypeError = requireJsonContentType(req);
+  const contentTypeError = requireJsonContentType(req, {
+    errorMessage: t("errors.invalidContentType"),
+  });
   if (contentTypeError) {
     return contentTypeError;
   }
@@ -193,7 +198,7 @@ export async function POST(req: Request) {
   const signature = (await headers()).get("stripe-signature");
   if (!signature) {
     return NextResponse.json(
-      { error: "Missing Stripe signature" },
+      { error: t("errors.missingSignature") },
       { status: 400 },
     );
   }
@@ -202,7 +207,7 @@ export async function POST(req: Request) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
   if (!webhookSecret) {
     return NextResponse.json(
-      { error: "Billing webhooks are not configured for this deployment." },
+      { error: t("errors.webhooksNotConfigured") },
       { status: 503 },
     );
   }
@@ -218,7 +223,7 @@ export async function POST(req: Request) {
   } catch (error) {
     logger.error("Stripe webhook signature verification failed", error);
     return NextResponse.json(
-      { error: "Webhook signature verification failed." },
+      { error: t("errors.signatureVerificationFailed") },
       { status: 400 },
     );
   }
@@ -319,7 +324,7 @@ export async function POST(req: Request) {
     }
     logger.error("Stripe webhook handling failed", error);
     return NextResponse.json(
-      { error: "Webhook handling failed." },
+      { error: t("errors.webhookHandlingFailed") },
       { status: 500 },
     );
   }
