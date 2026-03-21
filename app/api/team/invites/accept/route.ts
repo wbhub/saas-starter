@@ -18,6 +18,7 @@ import { enqueueSeatSyncRetry } from "@/lib/stripe/seat-sync-retries";
 import { getTeamMaxMembers } from "@/lib/team/limits";
 import { logger } from "@/lib/logger";
 import { getRouteTranslator } from "@/lib/i18n/locale";
+import { invalidateCachedTeamContextForUser } from "@/lib/team-context-cache";
 const acceptInvitePayloadSchema = z.object({
   token: z.string().trim().min(10).max(256),
 });
@@ -187,6 +188,8 @@ export async function POST(request: Request) {
     }
     return json({ error: t("errors.unableToAcceptInvite") }, { status: 500 });
   }
+
+  invalidateCachedTeamContextForUser(user.id);
 
   let seatSynced = true;
   if (rpcRow.team_id) {

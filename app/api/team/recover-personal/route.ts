@@ -6,6 +6,7 @@ import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { recoverPersonalTeamForUser } from "@/lib/team-recovery";
 import { logger } from "@/lib/logger";
 import { getRouteTranslator } from "@/lib/i18n/locale";
+import { invalidateCachedTeamContextForUser } from "@/lib/team-context-cache";
 
 export async function POST(request: Request) {
   const t = await getRouteTranslator("ApiTeamRecoverPersonal", request);
@@ -47,6 +48,7 @@ export async function POST(request: Request) {
       user.email,
       typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name : null,
     );
+    invalidateCachedTeamContextForUser(user.id);
     return NextResponse.json({ ok: true, teamId });
   } catch (error) {
     logger.error("Failed to recover personal team", error);

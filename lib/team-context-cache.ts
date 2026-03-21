@@ -5,6 +5,8 @@ import { getTeamContextForUser, type TeamContext } from "@/lib/team-context";
 
 const TEAM_CONTEXT_CACHE_TTL_SECONDS = 30;
 const TEAM_CONTEXT_CACHE_TTL_MS = TEAM_CONTEXT_CACHE_TTL_SECONDS * 1000;
+const FALLBACK_SWEEP_INTERVAL_MS = 30 * 1000;
+const FALLBACK_MAX_ENTRIES = 10_000;
 
 type TeamContextCacheEntry = {
   value: TeamContext | null;
@@ -13,6 +15,7 @@ type TeamContextCacheEntry = {
 
 declare global {
   var __saasStarterTeamContextCache: Map<string, TeamContextCacheEntry> | undefined;
+  var __saasStarterTeamContextCacheLastSweepAt: number | undefined;
 }
 
 function getInMemoryTeamContextCache() {
@@ -27,14 +30,42 @@ function getCacheKey(userId: string) {
   return `team-context:${userId}`;
 }
 
+function cleanupInMemoryCache(cache: Map<string, TeamContextCacheEntry>, now: number) {
+  const lastSweepAt = globalThis.__saasStarterTeamContextCacheLastSweepAt ?? 0;
+  if (now - lastSweepAt >= FALLBACK_SWEEP_INTERVAL_MS) {
+    globalThis.__saasStarterTeamContextCacheLastSweepAt = now;
+    for (const [key, value] of cache.entries()) {
+      if (value.expiresAt <= now) {
+        cache.delete(key);
+      }
+    }
+  }
+
+  if (cache.size <= FALLBACK_MAX_ENTRIES) {
+    return;
+  }
+
+  const overflow = cache.size - FALLBACK_MAX_ENTRIES;
+  let removed = 0;
+  for (const key of cache.keys()) {
+    cache.delete(key);
+    removed += 1;
+    if (removed >= overflow) {
+      break;
+    }
+  }
+}
+
 function readInMemoryCache(userId: string): TeamContext | null | undefined {
   const cache = getInMemoryTeamContextCache();
+  const now = Date.now();
+  cleanupInMemoryCache(cache, now);
   const entry = cache.get(getCacheKey(userId));
   if (!entry) {
     return undefined;
   }
 
-  if (entry.expiresAt <= Date.now()) {
+  if (entry.expiresAt <= now) {
     cache.delete(getCacheKey(userId));
     return undefined;
   }
@@ -44,10 +75,13 @@ function readInMemoryCache(userId: string): TeamContext | null | undefined {
 
 function writeInMemoryCache(userId: string, value: TeamContext | null) {
   const cache = getInMemoryTeamContextCache();
+  const now = Date.now();
+  cleanupInMemoryCache(cache, now);
   cache.set(getCacheKey(userId), {
     value,
-    expiresAt: Date.now() + TEAM_CONTEXT_CACHE_TTL_MS,
+    expiresAt: now + TEAM_CONTEXT_CACHE_TTL_MS,
   });
+  cleanupInMemoryCache(cache, now);
 }
 
 async function readRedisCache(userId: string): Promise<TeamContext | null | undefined> {
@@ -56,9 +90,13 @@ async function readRedisCache(userId: string): Promise<TeamContext | null | unde
     return undefined;
   }
 
-  const raw = await redis.get<string>(getCacheKey(userId));
-  if (!raw) {
+  const raw = await redis.get<string | TeamContext | null>(getCacheKey(userId));
+  if (raw === null || raw === undefined) {
     return undefined;
+  }
+
+  if (typeof raw === "object") {
+    return raw;
   }
 
   try {
@@ -74,7 +112,7 @@ async function writeRedisCache(userId: string, value: TeamContext | null) {
     return;
   }
 
-  await redis.set(getCacheKey(userId), JSON.stringify(value), {
+  await redis.set(getCacheKey(userId), value, {
     ex: TEAM_CONTEXT_CACHE_TTL_SECONDS,
   });
 }

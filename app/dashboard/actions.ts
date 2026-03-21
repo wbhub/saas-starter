@@ -9,6 +9,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { syncTeamSeatQuantity } from "@/lib/stripe/seats";
 import { enqueueSeatSyncRetry } from "@/lib/stripe/seat-sync-retries";
 import { logger } from "@/lib/logger";
+import { invalidateCachedTeamContextForUser } from "@/lib/team-context-cache";
 import {
   CSRF_COOKIE_NAME,
   createCsrfToken,
@@ -513,6 +514,8 @@ export async function switchActiveTeam(formData: FormData) {
     });
     redirect(redirectTo);
   }
+
+  invalidateCachedTeamContextForUser(user.id);
 
   revalidatePath("/dashboard");
   redirect(redirectTo);

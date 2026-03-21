@@ -75,12 +75,17 @@ describe("checkRateLimit redis behavior", () => {
 
   it("uses redis for distributed rate limiting when configured", async () => {
     let count = 0;
+    const callOrder: string[] = [];
     const redis = {
       incr: vi.fn(async () => {
+        callOrder.push("incr");
         count += 1;
         return count;
       }),
-      expire: vi.fn(async () => 1),
+      expire: vi.fn(async () => {
+        callOrder.push("expire");
+        return 1;
+      }),
       ttl: vi.fn(async () => 42),
     };
     const createAdminClient = vi.fn(() => ({
@@ -101,6 +106,9 @@ describe("checkRateLimit redis behavior", () => {
     expect(first).toEqual({ allowed: true, retryAfterSeconds: 0 });
     expect(second).toEqual({ allowed: false, retryAfterSeconds: 42 });
     expect(redis.expire).toHaveBeenCalledTimes(1);
+    expect(callOrder).toEqual(["incr", "expire", "incr"]);
+    // Current implementation intentionally uses non-atomic INCR then EXPIRE.
+    // This keeps dependencies simple while accepting the standard tiny race window.
     expect(createAdminClient).not.toHaveBeenCalled();
   });
 

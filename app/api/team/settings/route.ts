@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import { logAuditEvent } from "@/lib/audit";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { createClient } from "@/lib/supabase/server";
-import { getTeamContextForUser } from "@/lib/team-context";
+import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  getCachedTeamContextForUser,
+  invalidateCachedTeamContextForUser,
+} from "@/lib/team-context-cache";
 import { requireJsonContentType } from "@/lib/http/content-type";
 import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
 import { checkRateLimit } from "@/lib/security/rate-limit";
@@ -13,6 +17,10 @@ import { getRouteTranslator } from "@/lib/i18n/locale";
 const teamSettingsSchema = z.object({
   teamName: z.string().trim().min(2).max(80),
 });
+
+type TeamMembershipUserRow = {
+  user_id: string;
+};
 
 export async function PATCH(request: Request) {
   const t = await getRouteTranslator("ApiTeamSettings", request);
@@ -34,7 +42,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: t("errors.unauthorized") }, { status: 401 });
   }
 
-  const teamContext = await getTeamContextForUser(supabase, user.id);
+  const teamContext = await getCachedTeamContextForUser(supabase, user.id);
   if (!teamContext) {
     return NextResponse.json(
       { error: t("errors.noTeamMembership") },
@@ -87,6 +95,30 @@ export async function PATCH(request: Request) {
       metadata: { reason: "update_error" },
     });
     return NextResponse.json({ error: t("errors.unableToUpdate") }, { status: 500 });
+  }
+
+  const admin = createAdminClient();
+  const { data: teamMembers, error: teamMembersError } = await admin
+    .from("team_memberships")
+    .select("user_id")
+    .eq("team_id", teamContext.teamId)
+    .returns<TeamMembershipUserRow[]>();
+
+  if (teamMembersError) {
+    logger.warn("Failed to load team members for team-context cache invalidation", {
+      teamId: teamContext.teamId,
+      actorUserId: user.id,
+      error: teamMembersError,
+    });
+    invalidateCachedTeamContextForUser(user.id);
+  } else {
+    const userIds = new Set((teamMembers ?? []).map((membership) => membership.user_id));
+    if (userIds.size === 0) {
+      userIds.add(user.id);
+    }
+    for (const memberUserId of userIds) {
+      invalidateCachedTeamContextForUser(memberUserId);
+    }
   }
 
   logAuditEvent({

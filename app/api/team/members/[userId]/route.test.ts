@@ -27,12 +27,13 @@ describe("DELETE /api/team/members/[userId]", () => {
         },
       }),
     }));
-    vi.doMock("@/lib/team-context", () => ({
-      getTeamContextForUser: vi.fn().mockResolvedValue({
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
         teamId: "team_123",
         teamName: "Acme Team",
         role: "owner",
       }),
+      invalidateCachedTeamContextForUser: vi.fn(),
     }));
     vi.doMock("@/lib/security/rate-limit", () => ({
       checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),
@@ -105,12 +106,13 @@ describe("DELETE /api/team/members/[userId]", () => {
         },
       }),
     }));
-    vi.doMock("@/lib/team-context", () => ({
-      getTeamContextForUser: vi.fn().mockResolvedValue({
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
         teamId: "team_123",
         teamName: "Acme Team",
         role: "admin",
       }),
+      invalidateCachedTeamContextForUser: vi.fn(),
     }));
     vi.doMock("@/lib/security/rate-limit", () => ({
       checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),
@@ -173,12 +175,13 @@ describe("DELETE /api/team/members/[userId]", () => {
         },
       }),
     }));
-    vi.doMock("@/lib/team-context", () => ({
-      getTeamContextForUser: vi.fn().mockResolvedValue({
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
         teamId: "team_123",
         teamName: "Acme Team",
         role: "owner",
       }),
+      invalidateCachedTeamContextForUser: vi.fn(),
     }));
     vi.doMock("@/lib/security/rate-limit", () => ({
       checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),

@@ -14,12 +14,13 @@ describe("PATCH /api/team/settings", () => {
         },
       }),
     }));
-    vi.doMock("@/lib/team-context", () => ({
-      getTeamContextForUser: vi.fn().mockResolvedValue({
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
         teamId: "team_123",
         teamName: "Acme",
         role: "member",
       }),
+      invalidateCachedTeamContextForUser: vi.fn(),
     }));
     vi.doMock("@/lib/security/rate-limit", () => ({
       checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),
@@ -60,15 +61,35 @@ describe("PATCH /api/team/settings", () => {
         from,
       }),
     }));
-    vi.doMock("@/lib/team-context", () => ({
-      getTeamContextForUser: vi.fn().mockResolvedValue({
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
         teamId: "team_123",
         teamName: "Acme",
         role: "owner",
       }),
+      invalidateCachedTeamContextForUser: vi.fn(),
     }));
     vi.doMock("@/lib/security/rate-limit", () => ({
       checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),
+    }));
+    vi.doMock("@/lib/supabase/admin", () => ({
+      createAdminClient: () => ({
+        from: vi.fn((table: string) => {
+          if (table === "team_memberships") {
+            const returns = vi.fn().mockResolvedValue({
+              data: [{ user_id: "user_1" }],
+              error: null,
+            });
+            return {
+              select: vi.fn().mockReturnThis(),
+              eq: vi.fn(() => ({
+                returns,
+              })),
+            };
+          }
+          throw new Error(`Unexpected table: ${table}`);
+        }),
+      }),
     }));
 
     const { PATCH } = await import("./route");

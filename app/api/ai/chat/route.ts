@@ -21,7 +21,7 @@ import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { LIVE_SUBSCRIPTION_STATUSES, type SubscriptionStatus } from "@/lib/stripe/plans";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { getTeamContextForUser } from "@/lib/team-context";
+import { getCachedTeamContextForUser } from "@/lib/team-context-cache";
 
 const AI_COMPLETION_MAX_TOKENS = 4_096;
 const AI_UNAVAILABLE_MESSAGE = "AI assistant is currently unavailable.";
@@ -214,7 +214,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const teamContext = await getTeamContextForUser(supabase, user.id);
+  const teamContext = await getCachedTeamContextForUser(supabase, user.id);
   if (!teamContext) {
     return NextResponse.json(
       { error: "No team membership found for this account." },
