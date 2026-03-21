@@ -4,6 +4,9 @@ describe("POST /api/resend/support", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    vi.doMock("@/lib/security/csrf", () => ({
+      verifyCsrfProtection: vi.fn().mockReturnValue(null),
+    }));
   });
 
   it("enforces application/json content type", async () => {

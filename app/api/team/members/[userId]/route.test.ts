@@ -4,6 +4,9 @@ describe("DELETE /api/team/members/[userId]", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    vi.doMock("@/lib/security/csrf", () => ({
+      verifyCsrfProtection: vi.fn().mockReturnValue(null),
+    }));
   });
 
   it("removes member and triggers seat sync", async () => {

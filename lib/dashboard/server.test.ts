@@ -4,6 +4,13 @@ describe("getDashboardBaseData", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    vi.doMock("next/headers", () => ({
+      cookies: async () => ({
+        get: vi.fn().mockReturnValue({
+          value: "abcdefghijklmnopqrstuvwx",
+        }),
+      }),
+    }));
   });
 
   it("deduplicates repeated calls via react cache", async () => {

@@ -4,6 +4,9 @@ describe("PATCH /api/team/settings", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    vi.doMock("@/lib/security/csrf", () => ({
+      verifyCsrfProtection: vi.fn().mockReturnValue(null),
+    }));
   });
 
   it("returns 403 for members", async () => {

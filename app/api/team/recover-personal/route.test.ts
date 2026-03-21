@@ -4,6 +4,9 @@ describe("POST /api/team/recover-personal", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    vi.doMock("@/lib/security/csrf", () => ({
+      verifyCsrfProtection: vi.fn().mockReturnValue(null),
+    }));
   });
 
   it("recovers a personal team for authenticated user", async () => {

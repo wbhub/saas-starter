@@ -4,6 +4,13 @@ describe("Dashboard page billing selection", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    vi.doMock("next/headers", () => ({
+      cookies: async () => ({
+        get: vi.fn().mockReturnValue({
+          value: "abcdefghijklmnopqrstuvwx",
+        }),
+      }),
+    }));
     vi.doMock("next-intl/server", () => ({
       getTranslations: vi.fn().mockResolvedValue((key: string) => key),
     }));

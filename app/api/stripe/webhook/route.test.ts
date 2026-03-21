@@ -48,6 +48,7 @@ function createWebhookEventsTableMocks() {
   return {
     from,
     insert,
+    update,
     maybeSingle,
     deleteLt,
     deleteByEqIsLt,
@@ -263,6 +264,12 @@ describe("POST /api/stripe/webhook", () => {
     expect(tableMocks.deleteLt).toHaveBeenCalledTimes(2);
     // Event is marked complete after successful processing.
     expect(tableMocks.updateIs).toHaveBeenCalledTimes(1);
+    expect(tableMocks.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        completed_at: expect.any(String),
+        claim_expires_at: null,
+      }),
+    );
 
     mathRandomSpy.mockRestore();
   });
@@ -430,6 +437,11 @@ describe("POST /api/stripe/webhook", () => {
     expect(customerRetrieve).not.toHaveBeenCalled();
     expect(customerUpdate).not.toHaveBeenCalled();
     expect(upsertStripeCustomer).not.toHaveBeenCalled();
+    expect(tableMocks.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        claim_expires_at: expect.any(String),
+      }),
+    );
 
     mathRandomSpy.mockRestore();
   });
