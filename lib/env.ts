@@ -18,10 +18,12 @@ type OptionalEnvKey =
   | "AI_ACCESS_MODE"
   | "AI_DEFAULT_MODEL"
   | "AI_DEFAULT_MONTHLY_TOKEN_BUDGET"
+  | "AI_ALLOWED_MODALITIES"
   | "AI_PLAN_RULES_JSON"
   | "AI_ALLOWED_SUBSCRIPTION_STATUSES"
   | "AI_PLAN_MODEL_MAP_JSON"
   | "AI_PLAN_MONTHLY_TOKEN_BUDGET_MAP_JSON"
+  | "AI_PLAN_MODALITIES_MAP_JSON"
   | "APP_FREE_PLAN_ENABLED"
   | "CRON_SECRET"
   | "INTERCOM_IDENTITY_SECRET"
@@ -109,6 +111,9 @@ export const env = {
   get AI_DEFAULT_MONTHLY_TOKEN_BUDGET() {
     return optionalEnv("AI_DEFAULT_MONTHLY_TOKEN_BUDGET");
   },
+  get AI_ALLOWED_MODALITIES() {
+    return optionalEnv("AI_ALLOWED_MODALITIES");
+  },
   get AI_PLAN_RULES_JSON() {
     return optionalEnv("AI_PLAN_RULES_JSON");
   },
@@ -120,6 +125,9 @@ export const env = {
   },
   get AI_PLAN_MONTHLY_TOKEN_BUDGET_MAP_JSON() {
     return optionalEnv("AI_PLAN_MONTHLY_TOKEN_BUDGET_MAP_JSON");
+  },
+  get AI_PLAN_MODALITIES_MAP_JSON() {
+    return optionalEnv("AI_PLAN_MODALITIES_MAP_JSON");
   },
   get APP_FREE_PLAN_ENABLED() {
     return optionalEnv("APP_FREE_PLAN_ENABLED") === "true";

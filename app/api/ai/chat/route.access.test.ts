@@ -39,9 +39,12 @@ describe("POST /api/ai/chat access and gating", () => {
         enabled: true,
         model: "gpt-4.1-mini",
         monthlyBudget: 2_000_000,
+        allowedModalities: ["text", "image", "file"],
       }),
       getAiModelForPlan: vi.fn().mockReturnValue("gpt-4.1-mini"),
       getAiMonthlyTokenBudgetForPlan: vi.fn().mockReturnValue(2_000_000),
+      getAiAllowedModalities: vi.fn().mockReturnValue(["text", "image", "file"]),
+      getAiAllowedModalitiesForPlan: vi.fn().mockReturnValue(["text", "image", "file"]),
     }));
     vi.doMock("@/lib/openai/client", () => ({
       isOpenAiConfigured: true,
@@ -90,8 +93,8 @@ describe("POST /api/ai/chat access and gating", () => {
         },
       }),
     }));
-    vi.doMock("@/lib/team-context", () => ({
-      getTeamContextForUser: vi.fn(),
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn(),
     }));
     vi.doMock("@/lib/security/rate-limit", () => ({
       checkRateLimit: vi.fn(),
@@ -122,8 +125,8 @@ describe("POST /api/ai/chat access and gating", () => {
         },
       }),
     }));
-    vi.doMock("@/lib/team-context", () => ({
-      getTeamContextForUser: vi.fn().mockResolvedValue({
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
         teamId: "team_123",
         teamName: "Acme Team",
         role: "owner",
@@ -161,9 +164,12 @@ describe("POST /api/ai/chat access and gating", () => {
         enabled: true,
         model: "gpt-4.1-mini",
         monthlyBudget: 2_000_000,
+        allowedModalities: ["text", "image", "file"],
       }),
       getAiModelForPlan: vi.fn().mockReturnValue("gpt-4.1-mini"),
       getAiMonthlyTokenBudgetForPlan: vi.fn().mockReturnValue(2_000_000),
+      getAiAllowedModalities: vi.fn().mockReturnValue(["text", "image", "file"]),
+      getAiAllowedModalitiesForPlan: vi.fn().mockReturnValue(["text", "image", "file"]),
     }));
     const subscriptionsQuery = {
       select: vi.fn().mockReturnThis(),
@@ -188,8 +194,8 @@ describe("POST /api/ai/chat access and gating", () => {
         }),
       }),
     }));
-    vi.doMock("@/lib/team-context", () => ({
-      getTeamContextForUser: vi.fn().mockResolvedValue({
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
         teamId: "team_123",
         teamName: "Acme Team",
         role: "owner",
@@ -252,8 +258,8 @@ describe("POST /api/ai/chat access and gating", () => {
         }),
       }),
     }));
-    vi.doMock("@/lib/team-context", () => ({
-      getTeamContextForUser: vi.fn().mockResolvedValue({
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
         teamId: "team_123",
         teamName: "Acme Team",
         role: "owner",
@@ -299,6 +305,8 @@ describe("POST /api/ai/chat access and gating", () => {
       getAiRuleForPlan: vi.fn(),
       getAiModelForPlan: vi.fn().mockReturnValue("gpt-4.1-mini"),
       getAiMonthlyTokenBudgetForPlan: vi.fn().mockReturnValue(2_000_000),
+      getAiAllowedModalities: vi.fn().mockReturnValue(["text", "image", "file"]),
+      getAiAllowedModalitiesForPlan: vi.fn().mockReturnValue(["text", "image", "file"]),
     }));
     const subscriptionsQuery = {
       select: vi.fn().mockReturnThis(),
@@ -326,8 +334,8 @@ describe("POST /api/ai/chat access and gating", () => {
         }),
       }),
     }));
-    vi.doMock("@/lib/team-context", () => ({
-      getTeamContextForUser: vi.fn().mockResolvedValue({
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
         teamId: "team_123",
         teamName: "Acme Team",
         role: "owner",
@@ -369,6 +377,7 @@ describe("POST /api/ai/chat access and gating", () => {
       enabled: true,
       model: null,
       monthlyBudget: 10_000,
+      allowedModalities: ["text", "image", "file"],
     });
     const maybeSingle = vi.fn().mockResolvedValue({
       data: { stripe_price_id: "price_growth", status: "active" },
@@ -397,8 +406,8 @@ describe("POST /api/ai/chat access and gating", () => {
         }),
       }),
     }));
-    vi.doMock("@/lib/team-context", () => ({
-      getTeamContextForUser: vi.fn().mockResolvedValue({
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
         teamId: "team_123",
         teamName: "Acme Team",
         role: "owner",
@@ -445,9 +454,12 @@ describe("POST /api/ai/chat access and gating", () => {
         enabled: true,
         model: "gpt-4.1-mini",
         monthlyBudget: 10_000,
+        allowedModalities: ["text", "image", "file"],
       }),
       getAiModelForPlan: vi.fn().mockReturnValue("gpt-4.1-mini"),
       getAiMonthlyTokenBudgetForPlan: vi.fn().mockReturnValue(2_000_000),
+      getAiAllowedModalities: vi.fn().mockReturnValue(["text", "image", "file"]),
+      getAiAllowedModalitiesForPlan: vi.fn().mockReturnValue(["text", "image", "file"]),
     }));
     const maybeSingle = vi.fn().mockResolvedValue({
       data: { stripe_price_id: "price_growth", status: "active" },
@@ -477,8 +489,8 @@ describe("POST /api/ai/chat access and gating", () => {
         }),
       }),
     }));
-    vi.doMock("@/lib/team-context", () => ({
-      getTeamContextForUser: vi.fn().mockResolvedValue({
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
         teamId: "team_123",
         teamName: "Acme Team",
         role: "owner",
@@ -504,5 +516,139 @@ describe("POST /api/ai/chat access and gating", () => {
 
     expect(response.status).toBe(503);
     expect(inFn).toHaveBeenCalledWith("status", LIVE_SUBSCRIPTION_STATUSES);
+  });
+
+  it("rejects unsupported attachment MIME types", async () => {
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          getUser: async () => ({
+            data: { user: { id: "user_123" } },
+          }),
+        },
+      }),
+    }));
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
+        teamId: "team_123",
+        teamName: "Acme Team",
+        role: "owner",
+      }),
+    }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({
+        allowed: true,
+        retryAfterSeconds: 0,
+      }),
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: "user",
+              content: "Analyze this file",
+              attachments: [
+                {
+                  type: "file",
+                  mimeType: "application/json",
+                  name: "payload.json",
+                  data: "eyJrZXkiOiAidmFsdWUifQ==",
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: "Unsupported attachment type.",
+      details: {
+        fileType: "file",
+        mimeType: "application/json",
+      },
+    });
+    const { openai } = await import("@/lib/openai/client");
+    expect(
+      (openai as unknown as { chat: { completions: { create: ReturnType<typeof vi.fn> } } }).chat
+        .completions.create,
+    ).not.toHaveBeenCalled();
+  });
+
+  it("denies requests that use disallowed modalities", async () => {
+    vi.doMock("@/lib/ai/config", () => ({
+      getAiAccessMode: vi.fn().mockReturnValue("all"),
+      getAiAllowedSubscriptionStatuses: vi
+        .fn()
+        .mockReturnValue(["trialing", "active", "past_due"]),
+      getAiDefaultModel: vi.fn().mockReturnValue("gpt-4.1-mini"),
+      getAiDefaultMonthlyTokenBudget: vi.fn().mockReturnValue(0),
+      getAiRuleForPlan: vi.fn(),
+      getAiModelForPlan: vi.fn().mockReturnValue("gpt-4.1-mini"),
+      getAiMonthlyTokenBudgetForPlan: vi.fn().mockReturnValue(2_000_000),
+      getAiAllowedModalities: vi.fn().mockReturnValue(["text"]),
+      getAiAllowedModalitiesForPlan: vi.fn().mockReturnValue(["text"]),
+    }));
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          getUser: async () => ({
+            data: { user: { id: "user_123" } },
+          }),
+        },
+      }),
+    }));
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
+        teamId: "team_123",
+        teamName: "Acme Team",
+        role: "owner",
+      }),
+    }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({
+        allowed: true,
+        retryAfterSeconds: 0,
+      }),
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: "user",
+              content: "What is in this image?",
+              attachments: [
+                {
+                  type: "image",
+                  mimeType: "image/png",
+                  url: "https://example.com/photo.png",
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      error: "AI assistant is currently unavailable.",
+    });
+    const { openai } = await import("@/lib/openai/client");
+    expect(
+      (openai as unknown as { chat: { completions: { create: ReturnType<typeof vi.fn> } } }).chat
+        .completions.create,
+    ).not.toHaveBeenCalled();
   });
 });

@@ -129,10 +129,12 @@ Optional:
 - `AI_ACCESS_MODE` (`paid`, `all`, `by_plan`; default `paid`)
 - `AI_DEFAULT_MODEL` (used by `AI_ACCESS_MODE=all`)
 - `AI_DEFAULT_MONTHLY_TOKEN_BUDGET` (used by `AI_ACCESS_MODE=all`)
-- `AI_PLAN_RULES_JSON` (used by `AI_ACCESS_MODE=by_plan`; includes `free|starter|growth|pro`)
+- `AI_ALLOWED_MODALITIES` (comma-separated `text,image,file`; defaults to `text`)
+- `AI_PLAN_RULES_JSON` (used by `AI_ACCESS_MODE=by_plan`; includes `free|starter|growth|pro` and optional `allowedModalities`)
 - `AI_ALLOWED_SUBSCRIPTION_STATUSES` (used by `AI_ACCESS_MODE=paid`)
 - `AI_PLAN_MODEL_MAP_JSON` (used by `AI_ACCESS_MODE=paid`)
 - `AI_PLAN_MONTHLY_TOKEN_BUDGET_MAP_JSON` (used by `AI_ACCESS_MODE=paid`)
+- `AI_PLAN_MODALITIES_MAP_JSON` (used by `AI_ACCESS_MODE=paid`; per-plan modality override map)
 - `APP_FREE_PLAN_ENABLED` (if `true`, teams without a live paid subscription resolve to `free`)
 
 ### Auth
@@ -189,7 +191,13 @@ AI chat model (`POST /api/ai/chat`):
 - Input schema:
   - `messages` length: 1-30
   - each message `content`: 1-8000 chars
+  - optional message `attachments`:
+    - images: `image/png`, `image/jpeg`, `image/webp`, `image/gif`
+    - files: `application/pdf`, `text/plain`, `text/csv`
+    - each attachment must provide exactly one source: `url`, `data`, or `fileId`
   - allowed roles: `user`, `assistant`
+- Unsupported attachment MIME types are rejected with `400`.
+- Modalities are policy-gated by `AI_ALLOWED_MODALITIES` with optional per-plan overrides.
 - Streaming response (`text/plain; charset=utf-8`) with `max_tokens: 4096`.
 - Rate limits are applied per-user and per-team.
 - Budgeting can reserve/finalize tokens atomically via DB RPC.
