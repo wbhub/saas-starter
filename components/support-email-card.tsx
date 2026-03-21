@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useTranslations } from "next-intl";
 import { getCsrfHeaders } from "@/lib/http/csrf";
 
 type ApiError = {
@@ -8,6 +9,7 @@ type ApiError = {
 };
 
 export function SupportEmailCard() {
+  const t = useTranslations("SupportEmailCard");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -29,15 +31,15 @@ export function SupportEmailCard() {
         const payload = (await response.json().catch(() => null)) as
           | ApiError
           | null;
-        throw new Error(payload?.error ?? "Failed to send support email.");
+        throw new Error(payload?.error ?? t("errors.sendFailed"));
       }
 
       setMessage("");
       setSubject("");
-      setFeedback("Message sent. We will follow up shortly.");
+      setFeedback(t("feedback.sent"));
     } catch (error) {
       setFeedback(
-        error instanceof Error ? error.message : "Failed to send support email.",
+        error instanceof Error ? error.message : t("errors.sendFailed"),
       );
     } finally {
       setSubmitting(false);
@@ -47,16 +49,16 @@ export function SupportEmailCard() {
   return (
     <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
       <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
-        Email support (Resend)
+        {t("title")}
       </h2>
       <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-        Send a message directly to your support inbox using Resend.
+        {t("description")}
       </p>
 
       <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
         <label className="block">
           <span className="mb-1 block text-sm font-medium text-slate-800 dark:text-slate-100">
-            Subject (optional)
+            {t("fields.subject")}
           </span>
           <input
             type="text"
@@ -64,13 +66,13 @@ export function SupportEmailCard() {
             value={subject}
             onChange={(event) => setSubject(event.target.value)}
             className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-sm text-slate-900 outline-none ring-[color:var(--ring)] placeholder:text-slate-500 focus:ring-2 dark:text-slate-50 dark:placeholder:text-slate-400"
-            placeholder="Billing question"
+            placeholder={t("fields.subjectPlaceholder")}
           />
         </label>
 
         <label className="block">
           <span className="mb-1 block text-sm font-medium text-slate-800 dark:text-slate-100">
-            Message
+            {t("fields.message")}
           </span>
           <textarea
             required
@@ -80,7 +82,7 @@ export function SupportEmailCard() {
             value={message}
             onChange={(event) => setMessage(event.target.value)}
             className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-sm text-slate-900 outline-none ring-[color:var(--ring)] placeholder:text-slate-500 focus:ring-2 dark:text-slate-50 dark:placeholder:text-slate-400"
-            placeholder="Tell us what you need help with..."
+            placeholder={t("fields.messagePlaceholder")}
           />
         </label>
 
@@ -89,7 +91,7 @@ export function SupportEmailCard() {
           disabled={submitting}
           className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
         >
-          {submitting ? "Sending..." : "Send support email"}
+          {submitting ? t("actions.sending") : t("actions.sendSupportEmail")}
         </button>
       </form>
 

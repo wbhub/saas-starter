@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { getCsrfHeaders } from "@/lib/http/csrf";
 import { createClient } from "@/lib/supabase/client";
 import { validatePasswordComplexity } from "@/lib/validation";
@@ -61,6 +62,7 @@ type ResetPasswordResponse = {
 };
 
 export function ResetPasswordForm({ hasRecoveryProof, recoveryUserId }: ResetPasswordFormProps) {
+  const t = useTranslations("ResetPasswordForm");
   const router = useRouter();
   const [supabase] = useState(() => createClient());
   const [password, setPassword] = useState("");
@@ -118,7 +120,7 @@ export function ResetPasswordForm({ hasRecoveryProof, recoveryUserId }: ResetPas
 
     if (password !== confirmPassword) {
       setMessageType("error");
-      setMessage("Passwords do not match.");
+      setMessage(t("errors.passwordsDoNotMatch"));
       return;
     }
 
@@ -127,7 +129,7 @@ export function ResetPasswordForm({ hasRecoveryProof, recoveryUserId }: ResetPas
     try {
       if (!(hasRecoveryProof || hasValidRecoveryMarker())) {
         setMessageType("error");
-        setMessage("Reset link is invalid or expired. Please request a new link.");
+        setMessage(t("errors.invalidOrExpired"));
         return;
       }
 
@@ -140,17 +142,17 @@ export function ResetPasswordForm({ hasRecoveryProof, recoveryUserId }: ResetPas
       });
       if (!response.ok) {
         const payload = (await response.json().catch(() => null)) as ResetPasswordResponse | null;
-        throw new Error(payload?.error ?? "Unable to update password. Please try again.");
+        throw new Error(payload?.error ?? t("errors.unableToUpdatePassword"));
       }
       clearRecoveryMarker();
       setMessageType("success");
-      setMessage("Password updated. Redirecting to login...");
+      setMessage(t("messages.passwordUpdated"));
       setTimeout(() => {
         router.push("/login");
       }, 1000);
     } catch (error) {
       setMessageType("error");
-      setMessage(error instanceof Error ? error.message : "Unexpected error");
+      setMessage(error instanceof Error ? error.message : t("errors.unexpected"));
     } finally {
       setLoading(false);
     }
@@ -164,7 +166,7 @@ export function ResetPasswordForm({ hasRecoveryProof, recoveryUserId }: ResetPas
           aria-live="polite"
           className="text-sm text-[color:var(--muted-foreground)]"
         >
-          Verifying your reset link...
+          {t("checking")}
         </p>
       </div>
     );
@@ -173,15 +175,15 @@ export function ResetPasswordForm({ hasRecoveryProof, recoveryUserId }: ResetPas
   if (!hasRecoverySession) {
     return (
       <div className="w-full max-w-md rounded-2xl border app-border-subtle app-surface p-8 text-[color:var(--foreground)] shadow-sm">
-        <h1 className="text-2xl font-semibold">Reset link is invalid or expired</h1>
+        <h1 className="text-2xl font-semibold">{t("invalidTitle")}</h1>
         <p className="mt-2 text-sm text-[color:var(--muted-foreground)]">
-          Request a new password reset email to continue.
+          {t("invalidDescription")}
         </p>
         <Link
           href="/forgot-password"
           className="mt-5 inline-flex rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500"
         >
-          Request a new link
+          {t("requestNewLink")}
         </Link>
       </div>
     );
@@ -189,15 +191,15 @@ export function ResetPasswordForm({ hasRecoveryProof, recoveryUserId }: ResetPas
 
   return (
     <div className="w-full max-w-md rounded-2xl border app-border-subtle app-surface p-8 text-[color:var(--foreground)] shadow-sm">
-      <h1 className="text-2xl font-semibold">Set a new password</h1>
+      <h1 className="text-2xl font-semibold">{t("title")}</h1>
       <p className="mt-2 text-sm text-[color:var(--muted-foreground)]">
-        Choose a strong password with at least 12 characters.
+        {t("description")}
       </p>
 
       <form className="mt-6 space-y-4" onSubmit={onSubmit} aria-busy={loading}>
         <label className="block">
           <span className="mb-1 block text-sm font-medium text-[color:var(--foreground)]">
-            New password
+            {t("newPassword")}
           </span>
           <input
             type="password"
@@ -212,7 +214,7 @@ export function ResetPasswordForm({ hasRecoveryProof, recoveryUserId }: ResetPas
         </label>
         <label className="block">
           <span className="mb-1 block text-sm font-medium text-[color:var(--foreground)]">
-            Confirm password
+            {t("confirmPassword")}
           </span>
           <input
             type="password"
@@ -226,14 +228,14 @@ export function ResetPasswordForm({ hasRecoveryProof, recoveryUserId }: ResetPas
           />
         </label>
         <p id={passwordHintId} className="text-xs text-[color:var(--muted-foreground)]">
-          Use 12-128 characters. Passphrases are welcome.
+          {t("passwordHint")}
         </p>
         <button
           type="submit"
           disabled={loading}
           className="w-full rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
         >
-          {loading ? "Saving..." : "Update password"}
+          {loading ? t("saving") : t("updatePassword")}
         </button>
       </form>
 

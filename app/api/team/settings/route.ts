@@ -8,12 +8,14 @@ import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { logger } from "@/lib/logger";
+import { getRouteTranslator } from "@/lib/i18n/locale";
 
 const teamSettingsSchema = z.object({
   teamName: z.string().trim().min(2).max(80),
 });
 
 export async function PATCH(request: Request) {
+  const t = await getRouteTranslator("ApiTeamSettings", request);
   const csrfError = verifyCsrfProtection(request);
   if (csrfError) {
     return csrfError;
@@ -29,20 +31,20 @@ export async function PATCH(request: Request) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: t("errors.unauthorized") }, { status: 401 });
   }
 
   const teamContext = await getTeamContextForUser(supabase, user.id);
   if (!teamContext) {
     return NextResponse.json(
-      { error: "No team membership found for this account." },
+      { error: t("errors.noTeamMembership") },
       { status: 403 },
     );
   }
 
   if (teamContext.role !== "owner" && teamContext.role !== "admin") {
     return NextResponse.json(
-      { error: "Only team owners and admins can update organization settings." },
+      { error: t("errors.forbidden") },
       { status: 403 },
     );
   }
@@ -53,7 +55,7 @@ export async function PATCH(request: Request) {
   });
   if (!rateLimit.allowed) {
     return NextResponse.json(
-      { error: "Too many settings updates. Please try again shortly." },
+      { error: t("errors.rateLimited") },
       {
         status: 429,
         headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
@@ -64,9 +66,9 @@ export async function PATCH(request: Request) {
   const parseResult = await parseJsonWithSchema(request, teamSettingsSchema);
   if (!parseResult.success) {
     if (parseResult.tooLarge) {
-      return NextResponse.json({ error: "Request payload is too large." }, { status: 413 });
+      return NextResponse.json({ error: t("errors.payloadTooLarge") }, { status: 413 });
     }
-    return NextResponse.json({ error: "Invalid organization settings payload." }, { status: 400 });
+    return NextResponse.json({ error: t("errors.invalidPayload") }, { status: 400 });
   }
 
   const { teamName } = parseResult.data;
@@ -84,7 +86,7 @@ export async function PATCH(request: Request) {
       teamId: teamContext.teamId,
       metadata: { reason: "update_error" },
     });
-    return NextResponse.json({ error: "Unable to update organization settings." }, { status: 500 });
+    return NextResponse.json({ error: t("errors.unableToUpdate") }, { status: 500 });
   }
 
   logAuditEvent({

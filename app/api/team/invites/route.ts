@@ -16,6 +16,7 @@ import { getAppUrl } from "@/lib/env";
 import { getResendClient, getResendFromEmail } from "@/lib/resend/server";
 import { logger } from "@/lib/logger";
 import { getTeamMaxMembers } from "@/lib/team/limits";
+import { getRouteTranslator } from "@/lib/i18n/locale";
 
 const invitePayloadSchema = z.object({
   email: z.string().trim(),
@@ -43,12 +44,18 @@ async function deleteExpiredInvitesForEmail({
 }
 
 export async function POST(request: Request) {
+  const t = await getRouteTranslator("ApiTeamInvites", request);
+
   return withTeamRoute({
     request,
     allowedRoles: ["owner", "admin"],
-    forbiddenMessage: "Only team owners and admins can send invites.",
+    unauthorizedMessage: t("errors.unauthorized"),
+    missingTeamMembershipMessage: t("errors.noTeamMembership"),
+    payloadTooLargeMessage: t("errors.payloadTooLarge"),
+    forbiddenMessage: t("errors.forbidden"),
     requireJsonBody: true,
     schema: invitePayloadSchema,
+    invalidPayloadMessage: t("errors.invalidPayload"),
     onInvalidPayload: ({ userId, teamId }) => {
       logAuditEvent({
         action: "team.invite.create",
@@ -62,7 +69,7 @@ export async function POST(request: Request) {
       {
         key: `team-invite:create:${teamId}`,
         ...RATE_LIMITS.teamInviteCreateByTeam,
-        message: "Too many invites sent. Please wait and try again.",
+        message: t("errors.rateLimited"),
       },
     ],
     handler: async ({ supabase, user, teamContext, body, requestId }) => {
@@ -70,16 +77,16 @@ export async function POST(request: Request) {
       const role = body.role;
 
       if (!isValidEmail(email)) {
-        return NextResponse.json({ error: "Please provide a valid email." }, { status: 400 });
+        return NextResponse.json({ error: t("errors.invalidEmail") }, { status: 400 });
       }
 
       if (!isInviteRole(role)) {
-        return NextResponse.json({ error: "Role must be admin or member." }, { status: 400 });
+        return NextResponse.json({ error: t("errors.invalidRole") }, { status: 400 });
       }
 
       if (user.email && normalizeEmail(user.email) === email) {
         return NextResponse.json(
-          { error: "You are already part of this team." },
+          { error: t("errors.alreadyInTeam") },
           { status: 409 },
         );
       }
@@ -108,7 +115,7 @@ export async function POST(request: Request) {
           },
         );
         return NextResponse.json(
-          { error: "Unable to create invite right now." },
+          { error: t("errors.unableToCreateInvite") },
           { status: 500 },
         );
       }
@@ -117,7 +124,7 @@ export async function POST(request: Request) {
         (memberCountResult.count ?? 0) + (pendingInviteCountResult.count ?? 0);
       if (projectedTeamSize >= teamMaxMembers) {
         return NextResponse.json(
-          { error: "Team member limit reached. Revoke pending invites or remove members first." },
+          { error: t("errors.teamMemberLimitReached") },
           { status: 409 },
         );
       }
@@ -176,7 +183,7 @@ export async function POST(request: Request) {
             metadata: { reason: "duplicate_pending_invite", email },
           });
           return NextResponse.json(
-            { error: "A pending invite already exists for this email." },
+            { error: t("errors.pendingInviteExists") },
             { status: 409 },
           );
         }
@@ -192,7 +199,7 @@ export async function POST(request: Request) {
           metadata: { reason: "insert_error", email },
         });
         return NextResponse.json(
-          { error: "Unable to create invite right now." },
+          { error: t("errors.unableToCreateInvite") },
           { status: 500 },
         );
       }
@@ -205,14 +212,14 @@ export async function POST(request: Request) {
         await resend.emails.send({
           from: getResendFromEmail(),
           to: email,
-          subject: `You're invited to join ${teamContext.teamName ?? "a team"}`,
+          subject: t("email.subject", { teamName: teamContext.teamName ?? t("email.defaultTeamName") }),
           text: [
-            `You've been invited to join ${teamContext.teamName ?? "a team"} on SaaS Starter.`,
+            t("email.line1", { teamName: teamContext.teamName ?? t("email.defaultTeamName") }),
             "",
-            `Role: ${role}`,
-            `Accept invite: ${inviteUrl}`,
+            t("email.role", { role }),
+            t("email.acceptInvite", { inviteUrl }),
             "",
-            "This invite expires in 7 days.",
+            t("email.expiresIn7Days"),
           ].join("\n"),
           replyTo: user.email ?? undefined,
         });

@@ -5,8 +5,10 @@ import { checkRateLimit } from "@/lib/security/rate-limit";
 import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { recoverPersonalTeamForUser } from "@/lib/team-recovery";
 import { logger } from "@/lib/logger";
+import { getRouteTranslator } from "@/lib/i18n/locale";
 
 export async function POST(request: Request) {
+  const t = await getRouteTranslator("ApiTeamRecoverPersonal", request);
   const csrfError = verifyCsrfProtection(request);
   if (csrfError) {
     return csrfError;
@@ -18,7 +20,7 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: t("errors.unauthorized") }, { status: 401 });
   }
 
   const rateLimit = await checkRateLimit({
@@ -27,7 +29,7 @@ export async function POST(request: Request) {
   });
   if (!rateLimit.allowed) {
     return NextResponse.json(
-      { error: "Too many recovery requests. Please try again shortly." },
+      { error: t("errors.rateLimited") },
       {
         status: 429,
         headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
@@ -36,7 +38,7 @@ export async function POST(request: Request) {
   }
 
   if (!user.email) {
-    return NextResponse.json({ error: "No email found on this account." }, { status: 400 });
+    return NextResponse.json({ error: t("errors.noEmailOnAccount") }, { status: 400 });
   }
 
   try {
@@ -48,6 +50,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, teamId });
   } catch (error) {
     logger.error("Failed to recover personal team", error);
-    return NextResponse.json({ error: "Unable to recover a team right now." }, { status: 500 });
+    return NextResponse.json({ error: t("errors.unableToRecover") }, { status: 500 });
   }
 }

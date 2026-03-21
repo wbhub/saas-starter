@@ -1,3 +1,4 @@
+import { getLocale, getTranslations } from "next-intl/server";
 import { BillingActions } from "@/components/billing-actions";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { NoTeamCard } from "@/components/no-team-card";
@@ -13,6 +14,8 @@ import {
 import { PLAN_LABELS } from "@/lib/stripe/plans";
 
 export default async function DashboardBillingPage() {
+  const t = await getTranslations("DashboardBillingPage");
+  const locale = await getLocale();
   const { supabase, user, teamContext, teamContextLoadFailed, teamMemberships, displayName } =
     await getDashboardBaseData();
 
@@ -49,54 +52,54 @@ export default async function DashboardBillingPage() {
       teamMemberships={teamMemberships}
     >
       <header className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm sm:p-6">
-        <p className="text-sm text-slate-500 dark:text-slate-400">Billing</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">{t("header.eyebrow")}</p>
         <h1 className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-50">
-          Manage your subscription
+          {t("header.title")}
         </h1>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-          Update plans, open the Stripe portal, and review your subscription status.
+          {t("header.description")}
         </p>
       </header>
 
       <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
-          Current subscription
+          {t("currentSubscription.title")}
         </h2>
         {subscription ? (
           <dl className="mt-4 space-y-2 text-sm">
             <div className="flex items-center justify-between">
-              <dt className="text-slate-500 dark:text-slate-400">Current plan</dt>
+              <dt className="text-slate-500 dark:text-slate-400">{t("currentSubscription.currentPlan")}</dt>
               <dd className="font-medium text-slate-900 dark:text-slate-100">
-                {currentPaidPlanKey ? PLAN_LABELS[currentPaidPlanKey] : "Unknown"}
+                {currentPaidPlanKey ? PLAN_LABELS[currentPaidPlanKey] : t("currentSubscription.unknown")}
               </dd>
             </div>
             <div className="flex items-center justify-between">
-              <dt className="text-slate-500 dark:text-slate-400">Status</dt>
+              <dt className="text-slate-500 dark:text-slate-400">{t("currentSubscription.status")}</dt>
               <dd className="uppercase tracking-wide text-slate-800 dark:text-slate-100">
                 {subscription.status}
               </dd>
             </div>
             <div className="flex items-center justify-between">
-              <dt className="text-slate-500 dark:text-slate-400">Seats</dt>
+              <dt className="text-slate-500 dark:text-slate-400">{t("currentSubscription.seats")}</dt>
               <dd className="text-slate-800 dark:text-slate-100">{subscription.seat_quantity}</dd>
             </div>
             <div className="flex items-center justify-between">
-              <dt className="text-slate-500 dark:text-slate-400">Period end</dt>
+              <dt className="text-slate-500 dark:text-slate-400">{t("currentSubscription.periodEnd")}</dt>
               <dd className="text-slate-800 dark:text-slate-100">
                 {subscription.current_period_end
-                  ? formatUtcDate(subscription.current_period_end)
-                  : "N/A"}
+                  ? formatUtcDate(subscription.current_period_end, undefined, locale)
+                  : t("currentSubscription.notAvailable")}
               </dd>
             </div>
           </dl>
         ) : effectivePlanKey === "free" ? (
           <div className="mt-4 rounded-lg app-surface-subtle p-4 text-sm text-slate-600 dark:text-slate-200">
-            <p className="font-medium text-slate-900 dark:text-slate-100">Current plan: Free</p>
-            <p className="mt-1">Upgrade below to unlock paid features.</p>
+            <p className="font-medium text-slate-900 dark:text-slate-100">{t("currentSubscription.currentPlanFree")}</p>
+            <p className="mt-1">{t("currentSubscription.upgradeHint")}</p>
           </div>
         ) : (
           <div className="mt-4 rounded-lg app-surface-subtle p-4 text-sm text-slate-600 dark:text-slate-200">
-            No subscription yet. Choose a plan below to get started.
+            {t("currentSubscription.noSubscription")}
           </div>
         )}
       </section>

@@ -17,6 +17,37 @@ function mockBillingPageDependencies(subscription: {
   current_period_end: string | null;
   cancel_at_period_end: boolean;
 } | null) {
+  vi.doMock("next-intl/server", () => ({
+    getTranslations: vi.fn(async (namespaceOrOptions?: string | { namespace?: string }) => {
+      const namespace =
+        typeof namespaceOrOptions === "string"
+          ? namespaceOrOptions
+          : namespaceOrOptions?.namespace;
+      if (namespace === "DashboardBillingPage") {
+        return (key: string) => {
+          const dictionary: Record<string, string> = {
+            "header.eyebrow": "Billing",
+            "header.title": "Manage your subscription",
+            "header.description": "Update plans, open the Stripe portal, and review your subscription status.",
+            "currentSubscription.title": "Current subscription",
+            "currentSubscription.currentPlan": "Current plan",
+            "currentSubscription.unknown": "Unknown",
+            "currentSubscription.status": "Status",
+            "currentSubscription.seats": "Seats",
+            "currentSubscription.periodEnd": "Period end",
+            "currentSubscription.notAvailable": "N/A",
+            "currentSubscription.currentPlanFree": "Current plan: Free",
+            "currentSubscription.upgradeHint": "Upgrade below to unlock paid features.",
+            "currentSubscription.noSubscription": "No subscription yet. Choose a plan below to get started.",
+          };
+          return dictionary[key] ?? key;
+        };
+      }
+      return (key: string) => key;
+    }),
+    getLocale: vi.fn(async () => "en"),
+  }));
+
   vi.doMock("@/lib/dashboard/server", () => ({
     getDashboardBaseData: vi.fn().mockResolvedValue({
       supabase: {},
