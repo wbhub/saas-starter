@@ -7,14 +7,19 @@ import {
   type UserModelMessage,
 } from "ai";
 import {
-  enqueueAiBudgetFinalizeRetry,
   maybeProcessAiBudgetFinalizeRetries,
 } from "@/lib/ai/budget-finalize-retries";
+import {
+  claimTeamAiBudget,
+  finalizeTeamAiBudgetClaimWithRetry,
+  type BudgetClaim,
+} from "@/lib/ai/chat-budget";
 import {
   getAiAccessMode,
   getAiAllowedSubscriptionStatuses,
 } from "@/lib/ai/config";
 import { type AiModality } from "@/lib/ai/config";
+import { estimatePromptTokens } from "@/lib/ai/token-estimation";
 import { logAuditEvent } from "@/lib/audit";
 import { resolveEffectivePlanKey } from "@/lib/billing/effective-plan";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
@@ -96,11 +101,6 @@ type UsageTotals = {
   completionTokens: number;
 };
 
-type BudgetClaim = {
-  claimId: string;
-  monthStart: string;
-};
-
 type OpenAiErrorInfo = {
   auditReason: string;
   code: "upstream_rate_limited" | "upstream_bad_request" | "upstream_error";
@@ -108,7 +108,6 @@ type OpenAiErrorInfo = {
 };
 
 type ChatMessage = z.infer<typeof messageSchema>;
-type ChatAttachment = z.infer<typeof attachmentSchema>;
 
 type AttachmentValidationFailure = {
   reason: "unsupported_file_type";
@@ -135,42 +134,6 @@ function aiErrorResponse({
     { error, code },
     { status },
   );
-}
-
-function estimatePromptTokens(messages: ChatMessage[]) {
-  const totalChars = messages.reduce((sum, message) => sum + message.content.length, 0);
-  const textEstimate = Math.ceil(totalChars / 3) + messages.length * 8;
-  const attachmentEstimate = messages.reduce((sum, message) => {
-    const attachments = message.attachments ?? [];
-    return (
-      sum +
-      attachments.reduce((attachmentSum, attachment) => {
-        if (attachment.type === "image") {
-          return attachmentSum + estimateImagePromptTokens(attachment);
-        }
-        if (attachment.data) {
-          return attachmentSum + Math.ceil(attachment.data.length / 3);
-        }
-        return attachmentSum + 600;
-      }, 0)
-    );
-  }, 0);
-  return textEstimate + attachmentEstimate;
-}
-
-function estimateImagePromptTokens(attachment: ChatAttachment) {
-  if (attachment.data) {
-    const base64Payload = attachment.data.startsWith("data:")
-      ? (attachment.data.split(",", 2)[1] ?? "")
-      : attachment.data;
-    const approxBytes = Math.ceil((base64Payload.length * 3) / 4);
-    const estimateFromBytes = Math.ceil(approxBytes / 4);
-    return Math.min(Math.max(estimateFromBytes, 400), 3_200);
-  }
-  if (attachment.fileId) {
-    return 1_000;
-  }
-  return 900;
 }
 
 function getRequestModalities(messages: ChatMessage[]): AiModality[] {
@@ -285,60 +248,6 @@ function toModelMessages(messages: ChatMessage[]): ModelMessage[] {
       content: toUserMessageContent(message),
     };
   });
-}
-
-function getMonthStartIso(now = new Date()) {
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
-}
-
-async function claimTeamAiBudget({
-  teamId,
-  tokenBudget,
-  projectedTokens,
-}: {
-  teamId: string;
-  tokenBudget: number;
-  projectedTokens: number;
-}): Promise<BudgetClaim | null> {
-  const supabase = createAdminClient();
-  const { data, error } = await supabase.rpc("claim_ai_token_budget", {
-    p_team_id: teamId,
-    p_month_start: getMonthStartIso(),
-    p_token_budget: tokenBudget,
-    p_projected_tokens: projectedTokens,
-  });
-
-  if (error) {
-    throw error;
-  }
-
-  const row = Array.isArray(data) ? data[0] : data;
-  if (!row || row.allowed !== true || typeof row.claim_id !== "string") {
-    return null;
-  }
-
-  return {
-    claimId: row.claim_id,
-    monthStart: row.month_start,
-  };
-}
-
-async function finalizeTeamAiBudgetClaim({
-  claimId,
-  actualTokens,
-}: {
-  claimId: string;
-  actualTokens: number;
-}) {
-  const supabase = createAdminClient();
-  const { error } = await supabase.rpc("finalize_ai_token_budget_claim", {
-    p_claim_id: claimId,
-    p_actual_tokens: actualTokens,
-  });
-
-  if (error) {
-    throw error;
-  }
 }
 
 function mapOpenAiError(error: unknown): OpenAiErrorInfo {
@@ -783,38 +692,18 @@ export async function POST(request: Request) {
             });
           }
           if (budgetClaim) {
-            try {
-              await finalizeTeamAiBudgetClaim({
-                claimId: budgetClaim.claimId,
-                actualTokens: resolvedUsage.actualTokens,
-              });
-            } catch (error) {
-              logger.error("Failed to finalize AI budget claim", error, {
+            await finalizeTeamAiBudgetClaimWithRetry({
+              claimId: budgetClaim.claimId,
+              actualTokens: resolvedUsage.actualTokens,
+              context: {
                 teamId: teamContext.teamId,
                 userId: user.id,
                 model,
-                claimId: budgetClaim.claimId,
-                actualTokens: resolvedUsage.actualTokens,
-              });
-              try {
-                await enqueueAiBudgetFinalizeRetry({
-                  claimId: budgetClaim.claimId,
-                  actualTokens: resolvedUsage.actualTokens,
-                  error,
-                });
-              } catch (enqueueError) {
-                logger.error(
-                  "Failed to enqueue AI budget finalize retry after stream finalization error",
-                  enqueueError,
-                  {
-                    teamId: teamContext.teamId,
-                    userId: user.id,
-                    model,
-                    claimId: budgetClaim.claimId,
-                  },
-                );
-              }
-            }
+              },
+              onFinalizeFailureMessage: "Failed to finalize AI budget claim",
+              onEnqueueFailureMessage:
+                "Failed to enqueue AI budget finalize retry after stream finalization error",
+            });
           }
 
           try {
@@ -886,37 +775,17 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     if (budgetClaim) {
-      try {
-        await finalizeTeamAiBudgetClaim({
-          claimId: budgetClaim.claimId,
-          actualTokens: 0,
-        });
-      } catch (finalizeError) {
-        logger.error("Failed to release AI budget claim after create failure", finalizeError, {
+      await finalizeTeamAiBudgetClaimWithRetry({
+        claimId: budgetClaim.claimId,
+        actualTokens: 0,
+        context: {
           teamId: teamContext.teamId,
           userId: user.id,
           model,
-          claimId: budgetClaim.claimId,
-        });
-        try {
-          await enqueueAiBudgetFinalizeRetry({
-            claimId: budgetClaim.claimId,
-            actualTokens: 0,
-            error: finalizeError,
-          });
-        } catch (enqueueError) {
-          logger.error(
-            "Failed to enqueue AI budget finalize retry after create failure",
-            enqueueError,
-            {
-              teamId: teamContext.teamId,
-              userId: user.id,
-              model,
-              claimId: budgetClaim.claimId,
-            },
-          );
-        }
-      }
+        },
+        onFinalizeFailureMessage: "Failed to release AI budget claim after create failure",
+        onEnqueueFailureMessage: "Failed to enqueue AI budget finalize retry after create failure",
+      });
     }
 
     const openAiError = mapOpenAiError(error);

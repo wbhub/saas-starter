@@ -82,6 +82,121 @@ describe("team context cache", () => {
     expect(getTeamContextForUser).not.toHaveBeenCalled();
   });
 
+  it("fetches from data source on redis miss and writes through to redis cache", async () => {
+    const getTeamContextForUser = vi.fn().mockResolvedValue(TEST_TEAM_CONTEXT);
+    const redis = {
+      get: vi.fn().mockResolvedValue(null),
+      set: vi.fn().mockResolvedValue("OK"),
+      del: vi.fn(),
+    };
+
+    vi.doMock("@/lib/redis/client", () => ({
+      getRedisClient: () => redis,
+    }));
+    vi.doMock("@/lib/team-context", () => ({
+      getTeamContextForUser,
+    }));
+
+    const { getCachedTeamContextForUser } = await import("./team-context-cache");
+    const result = await getCachedTeamContextForUser({} as never, TEST_USER_ID);
+
+    expect(result).toEqual(TEST_TEAM_CONTEXT);
+    expect(getTeamContextForUser).toHaveBeenCalledTimes(1);
+    expect(redis.set).toHaveBeenCalledWith(TEST_CACHE_KEY, TEST_TEAM_CONTEXT, { ex: 30 });
+  });
+
+  it("parses JSON string values returned by redis", async () => {
+    const getTeamContextForUser = vi.fn();
+    const redis = {
+      get: vi.fn().mockResolvedValue(JSON.stringify(TEST_TEAM_CONTEXT)),
+      set: vi.fn(),
+      del: vi.fn(),
+    };
+
+    vi.doMock("@/lib/redis/client", () => ({
+      getRedisClient: () => redis,
+    }));
+    vi.doMock("@/lib/team-context", () => ({
+      getTeamContextForUser,
+    }));
+
+    const { getCachedTeamContextForUser } = await import("./team-context-cache");
+    const result = await getCachedTeamContextForUser({} as never, TEST_USER_ID);
+
+    expect(result).toEqual(TEST_TEAM_CONTEXT);
+    expect(getTeamContextForUser).not.toHaveBeenCalled();
+  });
+
+  it("falls back to in-memory and data fetch when redis read fails", async () => {
+    const getTeamContextForUser = vi.fn().mockResolvedValue(TEST_TEAM_CONTEXT);
+    const logger = {
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    };
+    const redis = {
+      get: vi.fn().mockRejectedValue(new Error("redis unavailable")),
+      set: vi.fn().mockResolvedValue("OK"),
+      del: vi.fn(),
+    };
+
+    vi.doMock("@/lib/logger", () => ({ logger }));
+    vi.doMock("@/lib/redis/client", () => ({
+      getRedisClient: () => redis,
+    }));
+    vi.doMock("@/lib/team-context", () => ({
+      getTeamContextForUser,
+    }));
+
+    const { getCachedTeamContextForUser } = await import("./team-context-cache");
+    const result = await getCachedTeamContextForUser({} as never, TEST_USER_ID);
+
+    expect(result).toEqual(TEST_TEAM_CONTEXT);
+    expect(getTeamContextForUser).toHaveBeenCalledTimes(1);
+    expect(logger.warn).toHaveBeenCalledWith(
+      "Failed to read team context cache from redis; using in-memory fallback.",
+      expect.objectContaining({
+        userId: TEST_USER_ID,
+        error: expect.any(Error),
+      }),
+    );
+  });
+
+  it("logs and continues when redis write fails", async () => {
+    const getTeamContextForUser = vi.fn().mockResolvedValue(TEST_TEAM_CONTEXT);
+    const logger = {
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    };
+    const redis = {
+      get: vi.fn().mockResolvedValue(null),
+      set: vi.fn().mockRejectedValue(new Error("set failed")),
+      del: vi.fn(),
+    };
+
+    vi.doMock("@/lib/logger", () => ({ logger }));
+    vi.doMock("@/lib/redis/client", () => ({
+      getRedisClient: () => redis,
+    }));
+    vi.doMock("@/lib/team-context", () => ({
+      getTeamContextForUser,
+    }));
+
+    const { getCachedTeamContextForUser } = await import("./team-context-cache");
+    await expect(getCachedTeamContextForUser({} as never, TEST_USER_ID)).resolves.toEqual(
+      TEST_TEAM_CONTEXT,
+    );
+
+    expect(logger.warn).toHaveBeenCalledWith(
+      "Failed to write team context cache to redis; continuing.",
+      expect.objectContaining({
+        userId: TEST_USER_ID,
+        error: expect.any(Error),
+      }),
+    );
+  });
+
   it("invalidates both fallback and redis cache", async () => {
     const getTeamContextForUser = vi.fn().mockResolvedValue(TEST_TEAM_CONTEXT);
     const redisStore = new Map<string, TeamContext | null>();
