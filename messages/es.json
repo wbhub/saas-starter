@@ -162,6 +162,7 @@
     "team": "Equipo",
     "switch": "Cambiar",
     "overview": "Resumen",
+    "ai": "Chat AI",
     "billing": "Facturación",
     "usage": "Uso",
     "settings": "Configuración",
@@ -185,10 +186,40 @@
     "currentPlanFree": "Plan actual: Gratis",
     "visitBillingUpgrade": "Visita facturación para mejorar cuando quieras.",
     "noActiveSubscription": "No hay suscripción activa. Visita facturación para iniciar un plan.",
+    "ai": "Chat AI",
     "billing": "Facturación",
     "teamNav": "Equipo",
     "usage": "Uso",
     "settings": "Configuración"
+  },
+  "DashboardAiPage": {
+    "header": {
+      "eyebrow": "AI",
+      "title": "Chat AI del equipo",
+      "description": "Chatea con tu modelo configurado usando los límites de uso y facturación del equipo."
+    }
+  },
+  "AiChatCard": {
+    "title": "Asistente",
+    "description": "Los mensajes se transmiten en tiempo real y el uso se registra automáticamente.",
+    "placeholder": "Pregunta lo que necesites sobre tu producto, docs o flujo de trabajo...",
+    "emptyState": "Empieza enviando un mensaje.",
+    "attachments": {
+      "label": "Adjuntos",
+      "selected": "{count} seleccionados"
+    },
+    "actions": {
+      "send": "Enviar",
+      "sending": "Enviando...",
+      "stop": "Detener"
+    },
+    "errors": {
+      "requestFailed": "La solicitud AI falló.",
+      "maxAttachments": "Se permite un máximo de {max} adjuntos por mensaje.",
+      "unsupportedType": "Tipo de adjunto no compatible: {mimeType}",
+      "fileTooLarge": "El adjunto es demasiado grande. Mantén archivos por debajo de ~180.000 caracteres codificados.",
+      "totalAttachmentsTooLarge": "El tamaño total de adjuntos es demasiado grande para un mensaje. Usa menos archivos o más pequeños."
+    }
   },
   "BillingActions": {
     "title": "Acciones de facturación",

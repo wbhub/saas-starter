@@ -21,6 +21,7 @@ UI routes:
 - Invite acceptance: `/invite/[token]`
 - Legal: `/privacy-policy`, `/terms-of-use`
 - Protected app: `/dashboard`
+  - `/dashboard/ai`
   - `/dashboard/billing`
   - `/dashboard/team`
   - `/dashboard/settings`
@@ -41,7 +42,7 @@ Backend routes:
 - Next.js 16 (App Router), React 19, TypeScript
 - Supabase (`@supabase/ssr`, `@supabase/supabase-js`)
 - Stripe (`stripe`, `@stripe/stripe-js`)
-- OpenAI (`openai`)
+- Vercel AI SDK (`ai`, `@ai-sdk/openai`, `@ai-sdk/react`)
 - Resend (`resend`)
 - Tailwind CSS 4
 - Internationalization: `next-intl` (locales: `en`, `es`; locale prefix disabled)
@@ -220,9 +221,14 @@ AI chat model (`POST /api/ai/chat`):
 - Unsupported attachment MIME types are rejected with `400`.
 - Modalities are policy-gated by `AI_ALLOWED_MODALITIES` with optional per-plan overrides.
 - Streaming response (`text/plain; charset=utf-8`) with a 4096-token output cap.
-- OpenAI call path:
-  - no attachments: Chat Completions API (streamed)
-  - with attachments: Responses API (streamed multimodal input)
+- Model calls are executed through the Vercel AI SDK (`streamText`) with the OpenAI provider.
+- Attachment inputs are normalized into AI SDK message parts (text/image/file) before model execution.
+- Dashboard includes an AI chat workspace at `/dashboard/ai` built with `@ai-sdk/react` (`useChat` + `TextStreamChatTransport`).
+- The dashboard AI workspace supports text messages and attachment upload (images and selected file types).
+- Client-side attachment checks mirror API constraints (per-message attachment count, MIME allowlist, and encoded size guard).
+- Client-side guards include per-file and total-attachment encoded-size limits to reduce `413` payload failures.
+- To keep request payloads stable across multi-turn chats, only the latest user message's attachments are sent on each request.
+- Client request shaping also aligns to API limits by sending only recent messages and bounding per-message content length.
 - Rate limits are applied per-user and per-team.
 - Budgeting can reserve/finalize tokens atomically via DB RPC.
 - Usage is persisted to `ai_usage`; audit events log `success`/`denied`/`failure`.

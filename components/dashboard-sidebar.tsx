@@ -30,6 +30,7 @@ export function DashboardSidebar({
   const pathname = usePathname();
   const navItems: Array<{ label: string; href: string }> = [
     { label: t("DashboardSidebar.overview"), href: "/dashboard" },
+    { label: t("DashboardSidebar.ai"), href: "/dashboard/ai" },
     { label: t("DashboardSidebar.billing"), href: "/dashboard/billing" },
     { label: t("DashboardSidebar.team"), href: "/dashboard/team" },
     { label: t("DashboardSidebar.usage"), href: "/dashboard/usage" },

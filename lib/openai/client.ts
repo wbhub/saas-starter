@@ -1,5 +1,5 @@
 import "server-only";
-import OpenAI from "openai";
+import { createOpenAI } from "@ai-sdk/openai";
 import { env } from "@/lib/env";
 
 const openAiApiKey = env.OPENAI_API_KEY;
@@ -7,7 +7,7 @@ const openAiApiKey = env.OPENAI_API_KEY;
 export const isOpenAiConfigured = Boolean(openAiApiKey);
 
 export const openai = openAiApiKey
-  ? new OpenAI({
+  ? createOpenAI({
       apiKey: openAiApiKey,
     })
   : null;

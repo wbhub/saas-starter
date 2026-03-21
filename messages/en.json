@@ -162,6 +162,7 @@
     "team": "Team",
     "switch": "Switch",
     "overview": "Overview",
+    "ai": "AI Chat",
     "billing": "Billing",
     "usage": "Usage",
     "settings": "Settings",
@@ -185,10 +186,40 @@
     "currentPlanFree": "Current plan: Free",
     "visitBillingUpgrade": "Visit billing to upgrade anytime.",
     "noActiveSubscription": "No active subscription. Visit billing to start a plan.",
+    "ai": "AI Chat",
     "billing": "Billing",
     "teamNav": "Team",
     "usage": "Usage",
     "settings": "Settings"
+  },
+  "DashboardAiPage": {
+    "header": {
+      "eyebrow": "AI",
+      "title": "Team AI chat",
+      "description": "Chat with your configured model using your team billing and usage limits."
+    }
+  },
+  "AiChatCard": {
+    "title": "Assistant",
+    "description": "Messages stream in real time and usage is tracked automatically.",
+    "placeholder": "Ask anything about your product, docs, or workflow...",
+    "emptyState": "Start by sending a message.",
+    "attachments": {
+      "label": "Attachments",
+      "selected": "{count} selected"
+    },
+    "actions": {
+      "send": "Send",
+      "sending": "Sending...",
+      "stop": "Stop"
+    },
+    "errors": {
+      "requestFailed": "AI request failed.",
+      "maxAttachments": "A maximum of {max} attachments is allowed per message.",
+      "unsupportedType": "Unsupported attachment type: {mimeType}",
+      "fileTooLarge": "Attachment is too large. Keep files under ~180,000 encoded characters.",
+      "totalAttachmentsTooLarge": "Total attachment size is too large for one message. Use fewer or smaller files."
+    }
   },
   "BillingActions": {
     "title": "Billing actions",
