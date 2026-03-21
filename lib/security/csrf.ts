@@ -87,10 +87,6 @@ type CsrfErrorMessages = {
 };
 
 export function verifyCsrfProtection(request: Request, messages?: CsrfErrorMessages) {
-  if (process.env.NODE_ENV === "test") {
-    return null;
-  }
-
   if (!isBrowserRequestFromAllowedOrigin(request)) {
     return NextResponse.json(
       { error: messages?.invalidOrigin ?? "Invalid request origin." },
@@ -116,6 +112,77 @@ export function verifyCsrfProtection(request: Request, messages?: CsrfErrorMessa
       { error: messages?.invalidToken ?? "Invalid CSRF token." },
       { status: 403 },
     );
+  }
+
+  return null;
+}
+
+type ServerActionCsrfError = {
+  status: "error";
+  message: string;
+};
+
+function getAllowedOriginsFromHeaders(requestHeaders: Headers) {
+  const origins = new Set<string>();
+  origins.add(toOrigin(getAppUrl()));
+
+  const forwardedHost = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
+  if (forwardedHost) {
+    const forwardedProto = requestHeaders.get("x-forwarded-proto");
+    const protocol = forwardedProto === "http" || forwardedProto === "https"
+      ? forwardedProto
+      : process.env.NODE_ENV === "production"
+        ? "https"
+        : "http";
+    origins.add(`${protocol}://${forwardedHost}`);
+  }
+
+  origins.delete("");
+  return origins;
+}
+
+function isServerActionRequestFromAllowedOrigin(requestHeaders: Headers) {
+  const origin = requestHeaders.get("origin");
+  if (!origin) {
+    return false;
+  }
+
+  return getAllowedOriginsFromHeaders(requestHeaders).has(origin);
+}
+
+export function verifyCsrfProtectionForServerAction(
+  requestHeaders: Headers,
+  formData?: FormData,
+  messages?: CsrfErrorMessages,
+): ServerActionCsrfError | null {
+  if (!isServerActionRequestFromAllowedOrigin(requestHeaders)) {
+    return {
+      status: "error",
+      message: messages?.invalidOrigin ?? "Invalid request origin.",
+    };
+  }
+
+  const formTokenInput = formData?.get(CSRF_COOKIE_NAME);
+  const formToken = typeof formTokenInput === "string" ? formTokenInput.trim() : "";
+  const headerToken = requestHeaders.get(CSRF_HEADER_NAME)?.trim() ?? "";
+  const submittedToken = headerToken || formToken;
+  const cookieToken = parseCookieValue(
+    requestHeaders.get("cookie"),
+    CSRF_COOKIE_NAME,
+  ).trim();
+
+  if (!ensureTokenShape(submittedToken) || !ensureTokenShape(cookieToken)) {
+    return {
+      status: "error",
+      message: messages?.missingToken ?? "Missing CSRF token.",
+    };
+  }
+
+  if (submittedToken !== cookieToken) {
+    return {
+      status: "error",
+      message: messages?.invalidToken ?? "Invalid CSRF token.",
+    };
   }
 
   return null;

@@ -78,12 +78,23 @@ function resolveMimeType(file: File) {
   return EXTENSION_MIME_MAP[extension] ?? "";
 }
 
-function resolveUserFacingErrorMessage(error: unknown, fallbackMessage: string) {
+function resolveUserFacingErrorMessage(
+  error: unknown,
+  fallbackMessage: string,
+  codeMessages?: Record<string, string>,
+) {
   if (error instanceof Error && typeof error.message === "string" && error.message.length > 0) {
     const trimmed = error.message.trim();
     if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
       try {
-        const parsed = JSON.parse(trimmed) as { error?: unknown };
+        const parsed = JSON.parse(trimmed) as { error?: unknown; code?: unknown };
+        if (
+          typeof parsed.code === "string" &&
+          parsed.code.length > 0 &&
+          codeMessages?.[parsed.code]
+        ) {
+          return codeMessages[parsed.code];
+        }
         if (typeof parsed.error === "string" && parsed.error.length > 0) {
           return parsed.error;
         }
@@ -245,6 +256,14 @@ export function AiChatCard() {
   const { messages, sendMessage, status, stop, error, clearError } = useChat({
     transport,
   });
+  const errorMessagesByCode = {
+    budget_exceeded: t("errors.budgetExceeded"),
+    modality_not_allowed: t("errors.modalityNotAllowed"),
+    plan_required: t("errors.planRequired"),
+    upstream_rate_limited: t("errors.upstreamRateLimited"),
+    upstream_bad_request: t("errors.upstreamBadRequest"),
+    upstream_error: t("errors.upstreamError"),
+  };
 
   const isSending = status === "submitted" || status === "streaming";
 
@@ -316,7 +335,9 @@ export function AiChatCard() {
     } catch (submitError) {
       setInput(draftInput);
       setPendingFiles(draftFiles);
-      setValidationMessage(resolveUserFacingErrorMessage(submitError, t("errors.requestFailed")));
+      setValidationMessage(
+        resolveUserFacingErrorMessage(submitError, t("errors.requestFailed"), errorMessagesByCode),
+      );
     }
   }
 
@@ -356,7 +377,7 @@ export function AiChatCard() {
 
       {error ? (
         <p className="mt-3 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200">
-          {resolveUserFacingErrorMessage(error, t("errors.requestFailed"))}
+          {resolveUserFacingErrorMessage(error, t("errors.requestFailed"), errorMessagesByCode)}
         </p>
       ) : null}
       {validationMessage ? (

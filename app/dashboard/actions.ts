@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getAppUrl } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
@@ -14,6 +14,7 @@ import {
   CSRF_COOKIE_NAME,
   createCsrfToken,
   getServerActionCsrfCookieOptions,
+  verifyCsrfProtectionForServerAction,
 } from "@/lib/security/csrf";
 import { isValidEmail } from "@/lib/validation";
 
@@ -167,14 +168,33 @@ async function rotateCsrfTokenForServerAction() {
   });
 }
 
-export async function logout() {
+async function verifyDashboardActionCsrf(formData?: FormData) {
+  const requestHeaders = await headers();
+  return verifyCsrfProtectionForServerAction(requestHeaders, formData, {
+    invalidOrigin: "Invalid request origin.",
+    missingToken: "Missing CSRF token.",
+    invalidToken: "Invalid CSRF token.",
+  });
+}
+
+export async function logout(formData: FormData) {
+  const csrfError = await verifyDashboardActionCsrf(formData);
+  if (csrfError) {
+    redirect("/dashboard");
+  }
+
   const supabase = await createClient();
   await supabase.auth.signOut();
   await rotateCsrfTokenForServerAction();
   redirect("/login");
 }
 
-export async function logoutAllSessions() {
+export async function logoutAllSessions(formData: FormData) {
+  const csrfError = await verifyDashboardActionCsrf(formData);
+  if (csrfError) {
+    redirect("/dashboard/settings");
+  }
+
   const supabase = await createClient();
   await supabase.auth.signOut({ scope: "global" });
   await rotateCsrfTokenForServerAction();
@@ -185,6 +205,11 @@ export async function updateDashboardSettings(
   _previousState: UpdateDashboardSettingsState,
   formData: FormData,
 ): Promise<UpdateDashboardSettingsState> {
+  const csrfError = await verifyDashboardActionCsrf(formData);
+  if (csrfError) {
+    return csrfError;
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -260,6 +285,11 @@ export async function requestEmailChange(
   _previousState: RequestEmailChangeState,
   formData: FormData,
 ): Promise<RequestEmailChangeState> {
+  const csrfError = await verifyDashboardActionCsrf(formData);
+  if (csrfError) {
+    return csrfError;
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -316,6 +346,11 @@ export async function updateNotificationPreferences(
   _previousState: UpdateNotificationPreferencesState,
   formData: FormData,
 ): Promise<UpdateNotificationPreferencesState> {
+  const csrfError = await verifyDashboardActionCsrf(formData);
+  if (csrfError) {
+    return csrfError;
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -361,6 +396,11 @@ export async function deleteAccount(
   _previousState: DeleteAccountState,
   formData: FormData,
 ): Promise<DeleteAccountState> {
+  const csrfError = await verifyDashboardActionCsrf(formData);
+  if (csrfError) {
+    return csrfError;
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -469,6 +509,11 @@ export async function switchActiveTeam(formData: FormData) {
     typeof redirectToInput === "string" && DASHBOARD_REDIRECT_RE.test(redirectToInput)
       ? redirectToInput
       : "/dashboard";
+
+  const csrfError = await verifyDashboardActionCsrf(formData);
+  if (csrfError) {
+    redirect(redirectTo);
+  }
 
   if (typeof requestedTeamId !== "string" || requestedTeamId.trim().length === 0) {
     redirect(redirectTo);

@@ -215,6 +215,12 @@
     },
     "errors": {
       "requestFailed": "AI request failed.",
+      "budgetExceeded": "Monthly AI token budget reached. Upgrade or wait for the next cycle.",
+      "modalityNotAllowed": "Your current AI plan does not allow this attachment type.",
+      "planRequired": "AI access requires an eligible paid plan.",
+      "upstreamRateLimited": "The AI provider is currently rate limited. Please retry shortly.",
+      "upstreamBadRequest": "This AI request could not be processed. Adjust your input and try again.",
+      "upstreamError": "AI assistant is currently unavailable.",
       "maxAttachments": "A maximum of {max} attachments is allowed per message.",
       "unsupportedType": "Unsupported attachment type: {mimeType}",
       "fileTooLarge": "Attachment is too large. Keep files under ~180,000 encoded characters.",
@@ -763,6 +769,11 @@
       "invalidPayload": "Invalid request payload.",
       "maxAttachments": "A maximum of {max} attachments is allowed per request.",
       "unsupportedAttachmentType": "Unsupported attachment type.",
+      "budgetExceeded": "Monthly AI token budget reached. Upgrade or wait for the next cycle.",
+      "modalityNotAllowed": "Your current AI plan does not allow this attachment type.",
+      "planRequired": "AI access requires an eligible paid plan.",
+      "upstreamRateLimited": "The AI provider is currently rate limited. Please retry shortly.",
+      "upstreamBadRequest": "This AI request could not be processed. Adjust your input and try again.",
       "unavailable": "AI assistant is currently unavailable."
     }
   },

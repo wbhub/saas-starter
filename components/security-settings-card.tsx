@@ -2,7 +2,11 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { logoutAllSessions } from "@/app/dashboard/actions";
 
-export function SecuritySettingsCard() {
+type SecuritySettingsCardProps = {
+  csrfToken: string;
+};
+
+export function SecuritySettingsCard({ csrfToken }: SecuritySettingsCardProps) {
   const t = useTranslations("SecuritySettingsCard");
 
   return (
@@ -16,6 +20,7 @@ export function SecuritySettingsCard() {
 
       <div className="mt-4 flex flex-wrap gap-2">
         <form action={logoutAllSessions}>
+          <input type="hidden" name="csrf_token" value={csrfToken} />
           <button
             type="submit"
             className="rounded-lg border app-border-subtle px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"

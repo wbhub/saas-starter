@@ -34,6 +34,8 @@ import { getCachedTeamContextForUser } from "@/lib/team-context-cache";
 
 const AI_COMPLETION_MAX_TOKENS = 4_096;
 const AI_UNAVAILABLE_STATUS = 503;
+const AI_FORBIDDEN_STATUS = 403;
+const AI_PAYMENT_REQUIRED_STATUS = 402;
 const MAX_ATTACHMENTS_PER_MESSAGE = 8;
 const MAX_ATTACHMENTS_PER_REQUEST = 16;
 const MULTIMODAL_MODEL_PREFIXES = ["gpt-4.1", "gpt-5"] as const;
@@ -101,6 +103,8 @@ type BudgetClaim = {
 
 type OpenAiErrorInfo = {
   auditReason: string;
+  code: "upstream_rate_limited" | "upstream_bad_request" | "upstream_error";
+  status: number;
 };
 
 type ChatMessage = z.infer<typeof messageSchema>;
@@ -117,6 +121,21 @@ type AttachmentCounts = {
   file: number;
   total: number;
 };
+
+function aiErrorResponse({
+  error,
+  code,
+  status,
+}: {
+  error: string;
+  code: string;
+  status: number;
+}) {
+  return NextResponse.json(
+    { error, code },
+    { status },
+  );
+}
 
 function estimatePromptTokens(messages: ChatMessage[]) {
   const totalChars = messages.reduce((sum, message) => sum + message.content.length, 0);
@@ -281,13 +300,6 @@ async function claimTeamAiBudget({
   tokenBudget: number;
   projectedTokens: number;
 }): Promise<BudgetClaim | null> {
-  if (process.env.NODE_ENV === "test") {
-    return {
-      claimId: "test-claim",
-      monthStart: getMonthStartIso(),
-    };
-  }
-
   const supabase = createAdminClient();
   const { data, error } = await supabase.rpc("claim_ai_token_budget", {
     p_team_id: teamId,
@@ -318,10 +330,6 @@ async function finalizeTeamAiBudgetClaim({
   claimId: string;
   actualTokens: number;
 }) {
-  if (process.env.NODE_ENV === "test") {
-    return;
-  }
-
   const supabase = createAdminClient();
   const { error } = await supabase.rpc("finalize_ai_token_budget_claim", {
     p_claim_id: claimId,
@@ -347,29 +355,39 @@ function mapOpenAiError(error: unknown): OpenAiErrorInfo {
   if (status === 429 || code === "rate_limit_exceeded") {
     return {
       auditReason: "openai_rate_limited",
+      code: "upstream_rate_limited",
+      status: 429,
     };
   }
 
   if (status === 400 || status === 422) {
     return {
       auditReason: "openai_bad_request",
+      code: "upstream_bad_request",
+      status: 400,
     };
   }
 
   if (status === 408 || status === 504 || name === "APIConnectionTimeoutError") {
     return {
       auditReason: "openai_timeout",
+      code: "upstream_error",
+      status: AI_UNAVAILABLE_STATUS,
     };
   }
 
   if (status !== undefined && status >= 500) {
     return {
       auditReason: "openai_upstream_error",
+      code: "upstream_error",
+      status: AI_UNAVAILABLE_STATUS,
     };
   }
 
   return {
     auditReason: "openai_create_failed",
+    code: "upstream_error",
+    status: AI_UNAVAILABLE_STATUS,
   };
 }
 
@@ -386,10 +404,6 @@ async function insertAiUsageRow({
   promptTokens: number;
   completionTokens: number;
 }) {
-  if (process.env.NODE_ENV === "test") {
-    return;
-  }
-
   const supabase = createAdminClient();
   const { error } = await supabase.from("ai_usage").insert({
     team_id: teamId,
@@ -407,6 +421,11 @@ async function insertAiUsageRow({
 export async function POST(request: Request) {
   const t = await getRouteTranslator("ApiAiChat", request);
   const aiUnavailableMessage = t("errors.unavailable");
+  const planRequiredMessage = t("errors.planRequired");
+  const budgetExceededMessage = t("errors.budgetExceeded");
+  const modalityNotAllowedMessage = t("errors.modalityNotAllowed");
+  const upstreamRateLimitedMessage = t("errors.upstreamRateLimited");
+  const upstreamBadRequestMessage = t("errors.upstreamBadRequest");
 
   const csrfError = verifyCsrfProtection(request, {
     invalidOrigin: t("errors.invalidOrigin"),
@@ -515,8 +534,8 @@ export async function POST(request: Request) {
         },
       });
       return NextResponse.json(
-        { error: aiUnavailableMessage },
-        { status: AI_UNAVAILABLE_STATUS },
+        { error: planRequiredMessage, code: "plan_required" },
+        { status: AI_FORBIDDEN_STATUS },
       );
     }
   }
@@ -545,7 +564,7 @@ export async function POST(request: Request) {
         accessMode: aiAccessMode,
       });
       return NextResponse.json(
-        { error: aiUnavailableMessage },
+        { error: aiUnavailableMessage, code: "upstream_error" },
         { status: AI_UNAVAILABLE_STATUS },
       );
     }
@@ -572,9 +591,10 @@ export async function POST(request: Request) {
     });
     return NextResponse.json(
       {
-        error: aiUnavailableMessage,
+        error: planRequiredMessage,
+        code: "plan_required",
       },
-      { status: AI_UNAVAILABLE_STATUS },
+      { status: AI_FORBIDDEN_STATUS },
     );
   }
 
@@ -594,7 +614,7 @@ export async function POST(request: Request) {
       },
     });
     return NextResponse.json(
-      { error: aiUnavailableMessage },
+      { error: aiUnavailableMessage, code: "upstream_error" },
       { status: AI_UNAVAILABLE_STATUS },
     );
   }
@@ -621,8 +641,8 @@ export async function POST(request: Request) {
       },
     });
     return NextResponse.json(
-      { error: aiUnavailableMessage },
-      { status: AI_UNAVAILABLE_STATUS },
+      { error: modalityNotAllowedMessage, code: "modality_not_allowed" },
+      { status: AI_FORBIDDEN_STATUS },
     );
   }
   if (!modelSupportsModalities(model, requestModalities)) {
@@ -641,8 +661,8 @@ export async function POST(request: Request) {
       },
     });
     return NextResponse.json(
-      { error: aiUnavailableMessage },
-      { status: AI_UNAVAILABLE_STATUS },
+      { error: modalityNotAllowedMessage, code: "modality_not_allowed" },
+      { status: AI_FORBIDDEN_STATUS },
     );
   }
   const monthlyTokenBudget = aiAccess.monthlyTokenBudget;
@@ -666,7 +686,7 @@ export async function POST(request: Request) {
         projectedRequestTokens,
       });
       return NextResponse.json(
-        { error: aiUnavailableMessage },
+        { error: aiUnavailableMessage, code: "upstream_error" },
         { status: AI_UNAVAILABLE_STATUS },
       );
     }
@@ -688,8 +708,8 @@ export async function POST(request: Request) {
         },
       });
       return NextResponse.json(
-        { error: aiUnavailableMessage },
-        { status: AI_UNAVAILABLE_STATUS },
+        { error: budgetExceededMessage, code: "budget_exceeded" },
+        { status: AI_PAYMENT_REQUIRED_STATUS },
       );
     }
   }
@@ -922,9 +942,15 @@ export async function POST(request: Request) {
         attachmentCounts,
       },
     });
-    return NextResponse.json(
-      { error: aiUnavailableMessage },
-      { status: AI_UNAVAILABLE_STATUS },
-    );
+    const upstreamMessage = openAiError.code === "upstream_rate_limited"
+      ? upstreamRateLimitedMessage
+      : openAiError.code === "upstream_bad_request"
+        ? upstreamBadRequestMessage
+        : aiUnavailableMessage;
+    return aiErrorResponse({
+      error: upstreamMessage,
+      code: openAiError.code,
+      status: openAiError.status,
+    });
   }
 }

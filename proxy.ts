@@ -1,4 +1,4 @@
-import { type NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import {
   CSRF_COOKIE_NAME,
   createCsrfToken,
@@ -105,17 +105,56 @@ function buildCspHeader(nonce: string) {
   return directives.filter(Boolean).join("; ");
 }
 
+function isProtectedDashboardPath(pathname: string) {
+  return pathname === "/dashboard" || pathname.startsWith("/dashboard/");
+}
+
+function getSafeNextPath(pathname: string, search: string) {
+  const next = `${pathname}${search}`;
+  if (!next.startsWith("/")) {
+    return "/dashboard";
+  }
+  if (/[\u0000-\u001F\u007F]/.test(next) || next.includes("\\")) {
+    return "/dashboard";
+  }
+  return next;
+}
+
 export async function proxy(request: NextRequest) {
   const nonce = generateCspNonce();
   const requestId = createRequestId();
+  const hasCsrfCookie = request.cookies.get(CSRF_COOKIE_NAME)?.value;
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
   requestHeaders.set(REQUEST_ID_HEADER, requestId);
 
-  const response = await updateSession(request, { requestHeaders });
+  const { response, user } = await updateSession(request, { requestHeaders });
+  if (!user && isProtectedDashboardPath(request.nextUrl.pathname)) {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/login";
+    loginUrl.search = "";
+    loginUrl.searchParams.set(
+      "next",
+      getSafeNextPath(request.nextUrl.pathname, request.nextUrl.search),
+    );
+    const redirectResponse = NextResponse.redirect(loginUrl);
+    for (const cookie of response.cookies.getAll()) {
+      redirectResponse.cookies.set(cookie);
+    }
+    if (!hasCsrfCookie) {
+      redirectResponse.cookies.set({
+        name: CSRF_COOKIE_NAME,
+        value: createCsrfToken(),
+        ...getCsrfCookieOptions(request.nextUrl.protocol === "https:"),
+      });
+    }
+    redirectResponse.headers.set("Content-Security-Policy", buildCspHeader(nonce));
+    redirectResponse.headers.set(REQUEST_ID_HEADER, requestId);
+    return redirectResponse;
+  }
+
   response.headers.set("Content-Security-Policy", buildCspHeader(nonce));
   response.headers.set(REQUEST_ID_HEADER, requestId);
-  const hasCsrfCookie = request.cookies.get(CSRF_COOKIE_NAME)?.value;
   if (!hasCsrfCookie) {
     response.cookies.set({
       name: CSRF_COOKIE_NAME,

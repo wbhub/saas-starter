@@ -215,6 +215,12 @@
     },
     "errors": {
       "requestFailed": "La solicitud AI falló.",
+      "budgetExceeded": "Se alcanzó el presupuesto mensual de tokens de AI. Mejora tu plan o espera al próximo ciclo.",
+      "modalityNotAllowed": "Tu plan actual de AI no permite este tipo de adjunto.",
+      "planRequired": "El acceso a AI requiere un plan de pago elegible.",
+      "upstreamRateLimited": "El proveedor de AI está limitado temporalmente. Inténtalo de nuevo en breve.",
+      "upstreamBadRequest": "La solicitud de AI no se pudo procesar. Ajusta tu entrada e inténtalo nuevamente.",
+      "upstreamError": "El asistente de AI no está disponible actualmente.",
       "maxAttachments": "Se permite un máximo de {max} adjuntos por mensaje.",
       "unsupportedType": "Tipo de adjunto no compatible: {mimeType}",
       "fileTooLarge": "El adjunto es demasiado grande. Mantén archivos por debajo de ~180.000 caracteres codificados.",
@@ -763,6 +769,11 @@
       "invalidPayload": "Cuerpo de solicitud inválido.",
       "maxAttachments": "Se permite un máximo de {max} adjuntos por solicitud.",
       "unsupportedAttachmentType": "Tipo de adjunto no compatible.",
+      "budgetExceeded": "Se alcanzó el presupuesto mensual de tokens de AI. Mejora tu plan o espera al próximo ciclo.",
+      "modalityNotAllowed": "Tu plan actual de AI no permite este tipo de adjunto.",
+      "planRequired": "El acceso a AI requiere un plan de pago elegible.",
+      "upstreamRateLimited": "El proveedor de AI está limitado temporalmente. Inténtalo de nuevo en breve.",
+      "upstreamBadRequest": "La solicitud de AI no se pudo procesar. Ajusta tu entrada e inténtalo nuevamente.",
       "unavailable": "El asistente de AI no está disponible actualmente."
     }
   },

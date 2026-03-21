@@ -95,7 +95,7 @@ function enforceQueueLimit() {
 }
 
 function scheduleFlush(delayMs = AUDIT_FLUSH_INTERVAL_MS) {
-  if (flushTimer || process.env.NODE_ENV === "test") {
+  if (flushTimer) {
     return;
   }
 
@@ -119,10 +119,6 @@ async function persistBatch(batch: AuditInsertRow[]) {
 }
 
 async function flushAuditQueue() {
-  if (process.env.NODE_ENV === "test") {
-    return;
-  }
-
   if (flushInFlight) {
     await flushInFlight;
     return;
@@ -185,9 +181,7 @@ function enqueueAuditEvent(event: AuditEvent) {
 }
 
 export function logAuditEvent(event: AuditEvent) {
-  if (process.env.NODE_ENV !== "test") {
-    enqueueAuditEvent(event);
-  }
+  enqueueAuditEvent(event);
 
   logger.info("audit_event", {
     audit: true,

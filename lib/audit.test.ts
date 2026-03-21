@@ -204,4 +204,31 @@ describe("audit batching", () => {
       expect.arrayContaining([expect.objectContaining({ action: "event-1" })]),
     );
   });
+
+  it("does not bypass flush logic when NODE_ENV is test", async () => {
+    vi.stubEnv("NODE_ENV", "test");
+    const insert = vi.fn().mockResolvedValue({ error: null });
+    vi.doMock("@/lib/supabase/admin", () => ({
+      createAdminClient: () => ({
+        from: vi.fn(() => ({
+          insert,
+        })),
+      }),
+    }));
+    vi.doMock("@/lib/logger", () => ({
+      logger: {
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+      },
+    }));
+
+    const { logAuditEvent, __resetAuditBufferForTests } = await import("./audit");
+    __resetAuditBufferForTests();
+
+    logAuditEvent({ action: "team.member.update", outcome: "success", teamId: "team-1" });
+    await vi.advanceTimersByTimeAsync(250);
+
+    expect(insert).toHaveBeenCalledTimes(1);
+  });
 });

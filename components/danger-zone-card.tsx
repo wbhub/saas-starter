@@ -26,9 +26,10 @@ function DeleteButton({ pendingLabel, idleLabel }: { pendingLabel: string; idleL
 
 type DangerZoneCardProps = {
   email: string | null;
+  csrfToken: string;
 };
 
-export function DangerZoneCard({ email }: DangerZoneCardProps) {
+export function DangerZoneCard({ email, csrfToken }: DangerZoneCardProps) {
   const t = useTranslations("DangerZoneCard");
   const [state, formAction] = useActionState(deleteAccount, initialState);
 
@@ -41,6 +42,7 @@ export function DangerZoneCard({ email }: DangerZoneCardProps) {
 
       <div className="mt-4">
         <form action={logoutAllSessions}>
+          <input type="hidden" name="csrf_token" value={csrfToken} />
           <button
             type="submit"
             className="rounded-lg border border-rose-300/80 px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-100 dark:border-rose-800 dark:text-rose-200 dark:hover:bg-rose-900/40"
@@ -51,6 +53,7 @@ export function DangerZoneCard({ email }: DangerZoneCardProps) {
       </div>
 
       <form action={formAction} className="mt-4 space-y-3">
+        <input type="hidden" name="csrf_token" value={csrfToken} />
         <label className="block">
           <span className="mb-1 block text-sm font-medium text-rose-800 dark:text-rose-100">
             {t("fields.confirmDelete")}

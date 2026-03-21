@@ -218,9 +218,10 @@ describe("POST /api/ai/chat access and gating", () => {
       }),
     );
 
-    expect(response.status).toBe(503);
+    expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({
-      error: "AI assistant is currently unavailable.",
+      error: "AI access requires an eligible paid plan.",
+      code: "plan_required",
     });
     const { streamText } = await import("ai");
     expect(streamText).not.toHaveBeenCalled();
@@ -279,9 +280,10 @@ describe("POST /api/ai/chat access and gating", () => {
       }),
     );
 
-    expect(response.status).toBe(503);
+    expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({
-      error: "AI assistant is currently unavailable.",
+      error: "AI access requires an eligible paid plan.",
+      code: "plan_required",
     });
     const { streamText } = await import("ai");
     expect(streamText).not.toHaveBeenCalled();
@@ -355,6 +357,7 @@ describe("POST /api/ai/chat access and gating", () => {
     expect(response.status).toBe(503);
     await expect(response.json()).resolves.toEqual({
       error: "AI assistant is currently unavailable.",
+      code: "upstream_error",
     });
     const { streamText } = await import("ai");
     expect(streamText).toHaveBeenCalledTimes(1);
@@ -421,9 +424,10 @@ describe("POST /api/ai/chat access and gating", () => {
       }),
     );
 
-    expect(response.status).toBe(503);
+    expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({
-      error: "AI assistant is currently unavailable.",
+      error: "AI access requires an eligible paid plan.",
+      code: "plan_required",
     });
     const { streamText } = await import("ai");
     expect(streamText).not.toHaveBeenCalled();
@@ -726,9 +730,14 @@ describe("POST /api/ai/chat access and gating", () => {
         .mockReturnValue(["trialing", "active", "past_due"]),
       getAiDefaultModel: vi.fn().mockReturnValue("gpt-4.1-mini"),
       getAiDefaultMonthlyTokenBudget: vi.fn().mockReturnValue(0),
-      getAiRuleForPlan: vi.fn(),
+      getAiRuleForPlan: vi.fn().mockReturnValue({
+        enabled: true,
+        model: "gpt-4.1-mini",
+        monthlyBudget: 0,
+        allowedModalities: ["text"],
+      }),
       getAiModelForPlan: vi.fn().mockReturnValue("gpt-4.1-mini"),
-      getAiMonthlyTokenBudgetForPlan: vi.fn().mockReturnValue(2_000_000),
+      getAiMonthlyTokenBudgetForPlan: vi.fn().mockReturnValue(0),
       getAiAllowedModalities: vi.fn().mockReturnValue(["text"]),
       getAiAllowedModalitiesForPlan: vi.fn().mockReturnValue(["text"]),
     }));
@@ -745,7 +754,10 @@ describe("POST /api/ai/chat access and gating", () => {
           in: vi.fn().mockReturnThis(),
           order: vi.fn().mockReturnThis(),
           limit: vi.fn().mockReturnThis(),
-          maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+          maybeSingle: vi.fn().mockResolvedValue({
+            data: { stripe_price_id: "price_growth", status: "active" },
+            error: null,
+          }),
         })),
       }),
     }));
@@ -786,9 +798,10 @@ describe("POST /api/ai/chat access and gating", () => {
       }),
     );
 
-    expect(response.status).toBe(503);
+    expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({
-      error: "AI assistant is currently unavailable.",
+      error: "Your current AI plan does not allow this attachment type.",
+      code: "modality_not_allowed",
     });
     const { logAuditEvent } = await import("@/lib/audit");
     expect(logAuditEvent).toHaveBeenCalledWith(
@@ -862,9 +875,10 @@ describe("POST /api/ai/chat access and gating", () => {
       }),
     );
 
-    expect(response.status).toBe(503);
+    expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({
-      error: "AI assistant is currently unavailable.",
+      error: "Your current AI plan does not allow this attachment type.",
+      code: "modality_not_allowed",
     });
     const { logAuditEvent } = await import("@/lib/audit");
     expect(logAuditEvent).toHaveBeenCalledWith(

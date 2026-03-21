@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { LIVE_SUBSCRIPTION_STATUSES, type SubscriptionStatus } from "@/lib/stripe/plans";
@@ -6,6 +7,7 @@ import type { TeamContext } from "@/lib/team-context";
 import { getCachedTeamContextForUser } from "@/lib/team-context-cache";
 import { getTeamMaxMembers } from "@/lib/team/limits";
 import { logger } from "@/lib/logger";
+import { CSRF_COOKIE_NAME } from "@/lib/security/csrf";
 import { createClient } from "@/lib/supabase/server";
 
 type ProfileRow = {
@@ -78,6 +80,8 @@ export type UsageMonthlyTotalsRow = {
 
 export const getDashboardBaseData = cache(async function getDashboardBaseData() {
   const supabase = await createClient();
+  const cookieStore = await cookies();
+  const csrfToken = cookieStore.get(CSRF_COOKIE_NAME)?.value ?? "";
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -185,6 +189,7 @@ export const getDashboardBaseData = cache(async function getDashboardBaseData() 
     teamMemberships,
     notificationPreferences,
     displayName,
+    csrfToken,
   };
 });
 
