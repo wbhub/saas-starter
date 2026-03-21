@@ -27,10 +27,23 @@ describe("lib/ai/config env parsing", () => {
   });
 
   it("falls back to paid mode when AI_ACCESS_MODE is invalid", async () => {
+    const warn = vi.fn();
+    vi.doMock("@/lib/logger", () => ({
+      logger: {
+        info: vi.fn(),
+        warn,
+        error: vi.fn(),
+      },
+    }));
     vi.stubEnv("AI_ACCESS_MODE", "everything");
 
     const config = await import("./config");
     expect(config.getAiAccessMode()).toBe("paid");
+    expect(warn).toHaveBeenCalledWith('Invalid AI_ACCESS_MODE "everything"; defaulting to "paid".', {
+      envKey: "AI_ACCESS_MODE",
+      invalidValue: "everything",
+      fallbackBehavior: "paid",
+    });
   });
 
   it("parses by_plan rules and default monthly budget values", async () => {

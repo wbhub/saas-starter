@@ -1,5 +1,6 @@
 import { env } from "@/lib/env";
 import { type EffectivePlanKey } from "@/lib/billing/effective-plan";
+import { logger } from "@/lib/logger";
 import {
   ALL_SUBSCRIPTION_STATUSES,
   PLAN_KEYS,
@@ -66,7 +67,11 @@ function parseJsonObjectEnv(rawValue: string | undefined, envKey: string) {
     }
     return parsed as Record<string, unknown>;
   } catch (error) {
-    console.warn(`Invalid ${envKey}; using defaults.`, error);
+    logger.warn(`Invalid ${envKey}; using defaults.`, {
+      envKey,
+      fallbackBehavior: "defaults",
+      error,
+    });
     return null;
   }
 }
@@ -86,7 +91,10 @@ function parseAllowedSubscriptionStatuses(
     );
 
   if (!parsed.length) {
-    console.warn("AI_ALLOWED_SUBSCRIPTION_STATUSES yielded no valid statuses; AI access is disabled.");
+    logger.warn("AI_ALLOWED_SUBSCRIPTION_STATUSES yielded no valid statuses; AI access is disabled.", {
+      envKey: "AI_ALLOWED_SUBSCRIPTION_STATUSES",
+      fallbackBehavior: "access_disabled",
+    });
     return [];
   }
 
@@ -100,7 +108,11 @@ function parseAiAccessMode(rawValue: string | undefined): AiAccessMode {
   if ((AI_ACCESS_MODES as readonly string[]).includes(rawValue)) {
     return rawValue as AiAccessMode;
   }
-  console.warn(`Invalid AI_ACCESS_MODE "${rawValue}"; defaulting to "paid".`);
+  logger.warn(`Invalid AI_ACCESS_MODE "${rawValue}"; defaulting to "paid".`, {
+    envKey: "AI_ACCESS_MODE",
+    invalidValue: rawValue,
+    fallbackBehavior: "paid",
+  });
   return "paid";
 }
 
@@ -110,7 +122,11 @@ function parseNonNegativeInteger(rawValue: string | undefined, envKey: string): 
   }
   const parsed = Number(rawValue);
   if (!Number.isFinite(parsed) || parsed < 0) {
-    console.warn(`Invalid ${envKey}; defaulting to 0.`);
+    logger.warn(`Invalid ${envKey}; defaulting to 0.`, {
+      envKey,
+      invalidValue: rawValue,
+      fallbackBehavior: 0,
+    });
     return 0;
   }
   return Math.floor(parsed);
@@ -130,7 +146,12 @@ function parsePlanModelMap(rawValue: string | undefined): AiPlanModelMap {
       continue;
     }
     if (typeof value !== "string") {
-      console.warn(`Invalid AI model mapping for plan "${planKey}"; disabling AI for this plan.`);
+      logger.warn(`Invalid AI model mapping for plan "${planKey}"; disabling AI for this plan.`, {
+        envKey: "AI_PLAN_MODEL_MAP_JSON",
+        planKey,
+        invalidValue: value,
+        fallbackBehavior: "plan_disabled",
+      });
       configured[planKey] = null;
       continue;
     }
@@ -185,7 +206,11 @@ function parseModalities(
   const unique = Array.from(new Set(parsed));
   if (!unique.length) {
     if (rawValue !== undefined && rawValue !== null && rawValue !== "") {
-      console.warn(`Invalid ${envKey}; defaulting to text-only modality.`);
+      logger.warn(`Invalid ${envKey}; defaulting to text-only modality.`, {
+        envKey,
+        invalidValue: rawValue,
+        fallbackBehavior: "text_only",
+      });
     }
     return [...fallback];
   }

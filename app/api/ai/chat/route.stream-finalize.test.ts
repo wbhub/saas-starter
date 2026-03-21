@@ -592,9 +592,10 @@ describe("POST /api/ai/chat stream finalization retry enqueue", () => {
         input: [
           {
             role: "user",
+            type: "message",
             content: [
               { type: "input_text", text: "hello" },
-              { type: "input_image", image_url: "https://example.com/image.png" },
+              { type: "input_image", image_url: "https://example.com/image.png", detail: "auto" },
             ],
           },
         ],
@@ -605,7 +606,7 @@ describe("POST /api/ai/chat stream finalization retry enqueue", () => {
       1,
       "claim_ai_token_budget",
       expect.objectContaining({
-        p_projected_tokens: 5306,
+        p_projected_tokens: 5006,
       }),
     );
     expect(rpc).toHaveBeenNthCalledWith(

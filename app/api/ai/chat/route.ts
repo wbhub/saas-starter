@@ -23,10 +23,14 @@ import { LIVE_SUBSCRIPTION_STATUSES, type SubscriptionStatus } from "@/lib/strip
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getCachedTeamContextForUser } from "@/lib/team-context-cache";
+import type OpenAI from "openai";
 
 const AI_COMPLETION_MAX_TOKENS = 4_096;
 const AI_UNAVAILABLE_MESSAGE = "AI assistant is currently unavailable.";
 const AI_UNAVAILABLE_STATUS = 503;
+const MAX_ATTACHMENTS_PER_MESSAGE = 8;
+const MAX_ATTACHMENTS_PER_REQUEST = 16;
+const MULTIMODAL_MODEL_PREFIXES = ["gpt-4.1", "gpt-5"] as const;
 const SUPPORTED_IMAGE_MIME_TYPES = new Set([
   "image/png",
   "image/jpeg",
@@ -35,12 +39,21 @@ const SUPPORTED_IMAGE_MIME_TYPES = new Set([
 ]);
 const SUPPORTED_FILE_MIME_TYPES = new Set(["application/pdf", "text/plain", "text/csv"]);
 
+function isHttpsUrl(value: string) {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 const attachmentSchema = z
   .object({
     type: z.enum(["image", "file"]),
     mimeType: z.string().trim().toLowerCase().min(1).max(255),
     name: z.string().trim().min(1).max(255).optional(),
-    url: z.string().trim().url().optional(),
+    url: z.string().trim().url().refine((value) => isHttpsUrl(value), "Attachment URL must use https.").optional(),
     data: z.string().trim().min(1).max(300_000).optional(),
     fileId: z.string().trim().min(1).max(255).optional(),
   })
@@ -54,11 +67,17 @@ const attachmentSchema = z
     }
   });
 
-const messageSchema = z.object({
-  role: z.enum(["user", "assistant"]),
+const userMessageSchema = z.object({
+  role: z.literal("user"),
   content: z.string().trim().min(1).max(8_000),
-  attachments: z.array(attachmentSchema).max(8).optional(),
+  attachments: z.array(attachmentSchema).max(MAX_ATTACHMENTS_PER_MESSAGE).optional(),
 });
+const assistantMessageSchema = z.object({
+  role: z.literal("assistant"),
+  content: z.string().trim().min(1).max(8_000),
+  attachments: z.never().optional(),
+});
+const messageSchema = z.discriminatedUnion("role", [userMessageSchema, assistantMessageSchema]);
 
 const chatPayloadSchema = z.object({
   messages: z.array(messageSchema).min(1).max(30),
@@ -87,6 +106,12 @@ type AttachmentValidationFailure = {
   mimeType: string;
 };
 
+type AttachmentCounts = {
+  image: number;
+  file: number;
+  total: number;
+};
+
 function estimatePromptTokens(messages: ChatMessage[]) {
   const totalChars = messages.reduce((sum, message) => sum + message.content.length, 0);
   const textEstimate = Math.ceil(totalChars / 3) + messages.length * 8;
@@ -96,7 +121,7 @@ function estimatePromptTokens(messages: ChatMessage[]) {
       sum +
       attachments.reduce((attachmentSum, attachment) => {
         if (attachment.type === "image") {
-          return attachmentSum + 1_200;
+          return attachmentSum + estimateImagePromptTokens(attachment);
         }
         if (attachment.data) {
           return attachmentSum + Math.ceil(attachment.data.length / 3);
@@ -108,6 +133,21 @@ function estimatePromptTokens(messages: ChatMessage[]) {
   return textEstimate + attachmentEstimate;
 }
 
+function estimateImagePromptTokens(attachment: ChatAttachment) {
+  if (attachment.data) {
+    const base64Payload = attachment.data.startsWith("data:")
+      ? (attachment.data.split(",", 2)[1] ?? "")
+      : attachment.data;
+    const approxBytes = Math.ceil((base64Payload.length * 3) / 4);
+    const estimateFromBytes = Math.ceil(approxBytes / 4);
+    return Math.min(Math.max(estimateFromBytes, 400), 3_200);
+  }
+  if (attachment.fileId) {
+    return 1_000;
+  }
+  return 900;
+}
+
 function getRequestModalities(messages: ChatMessage[]): AiModality[] {
   const modalities = new Set<AiModality>(["text"]);
   for (const message of messages) {
@@ -116,6 +156,26 @@ function getRequestModalities(messages: ChatMessage[]): AiModality[] {
     }
   }
   return (["text", "image", "file"] as const).filter((modality) => modalities.has(modality));
+}
+
+function getAttachmentCounts(messages: ChatMessage[]): AttachmentCounts {
+  const counts: AttachmentCounts = { image: 0, file: 0, total: 0 };
+  for (const message of messages) {
+    for (const attachment of message.attachments ?? []) {
+      counts[attachment.type] += 1;
+      counts.total += 1;
+    }
+  }
+  return counts;
+}
+
+function modelSupportsModalities(model: string, modalities: AiModality[]) {
+  const requiresMultimodal = modalities.includes("image") || modalities.includes("file");
+  if (!requiresMultimodal) {
+    return true;
+  }
+  const normalizedModel = model.toLowerCase();
+  return MULTIMODAL_MODEL_PREFIXES.some((prefix) => normalizedModel.startsWith(prefix));
 }
 
 function validateAttachmentTypes(messages: ChatMessage[]): AttachmentValidationFailure | null {
@@ -142,15 +202,15 @@ function validateAttachmentTypes(messages: ChatMessage[]): AttachmentValidationF
 
 function toImageSource(attachment: ChatAttachment) {
   if (attachment.fileId) {
-    return { type: "input_image", file_id: attachment.fileId } as const;
+    return { type: "input_image", file_id: attachment.fileId, detail: "auto" } as const;
   }
   if (attachment.url) {
-    return { type: "input_image", image_url: attachment.url } as const;
+    return { type: "input_image", image_url: attachment.url, detail: "auto" } as const;
   }
   const imageUrl = attachment.data?.startsWith("data:")
     ? attachment.data
     : `data:${attachment.mimeType};base64,${attachment.data ?? ""}`;
-  return { type: "input_image", image_url: imageUrl } as const;
+  return { type: "input_image", image_url: imageUrl, detail: "auto" } as const;
 }
 
 function toFileSource(attachment: ChatAttachment) {
@@ -168,15 +228,42 @@ function toFileSource(attachment: ChatAttachment) {
 }
 
 function toResponsesInput(messages: ChatMessage[]) {
-  return messages.map((message) => ({
+  const inputMessages: Exclude<ResponsesCreateArgs[0]["input"], string | undefined> = messages.map((message) => ({
+    type: "message" as const,
     role: message.role,
     content: [
-      { type: "input_text", text: message.content },
+      { type: "input_text" as const, text: message.content },
       ...(message.attachments ?? []).map((attachment) =>
         attachment.type === "image" ? toImageSource(attachment) : toFileSource(attachment),
       ),
     ],
   }));
+  return inputMessages;
+}
+
+type ResponsesCreateArgs = Parameters<OpenAI["responses"]["create"]>;
+
+function createResponsesStream({
+  client,
+  model,
+  messages,
+  signal,
+}: {
+  client: OpenAI;
+  model: string;
+  messages: ChatMessage[];
+  signal: AbortSignal;
+}) {
+  const params = {
+    model,
+    stream: true,
+    max_output_tokens: AI_COMPLETION_MAX_TOKENS,
+    input: toResponsesInput(messages),
+  } satisfies ResponsesCreateArgs[0];
+
+  const options = { signal } satisfies Exclude<ResponsesCreateArgs[1], undefined>;
+
+  return client.responses.create(params, options);
 }
 
 function getMonthStartIso(now = new Date()) {
@@ -377,6 +464,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request payload." }, { status: 400 });
   }
   const requestModalities = getRequestModalities(bodyParse.data.messages);
+  const attachmentCounts = getAttachmentCounts(bodyParse.data.messages);
+  if (attachmentCounts.total > MAX_ATTACHMENTS_PER_REQUEST) {
+    return NextResponse.json(
+      {
+        error: `A maximum of ${MAX_ATTACHMENTS_PER_REQUEST} attachments is allowed per request.`,
+      },
+      { status: 400 },
+    );
+  }
   const unsupportedAttachment = validateAttachmentTypes(bodyParse.data.messages);
   if (unsupportedAttachment) {
     return NextResponse.json(
@@ -404,6 +500,7 @@ export async function POST(request: Request) {
           reason: "ai_statuses_not_configured",
           accessMode: aiAccessMode,
           requestModalities,
+          attachmentCounts,
         },
       });
       return NextResponse.json(
@@ -459,6 +556,7 @@ export async function POST(request: Request) {
         effectivePlanKey,
         stripePriceId: subscriptionRow?.stripe_price_id ?? null,
         requestModalities,
+        attachmentCounts,
       },
     });
     return NextResponse.json(
@@ -481,6 +579,7 @@ export async function POST(request: Request) {
         accessMode: aiAccessMode,
         model: aiAccess.model,
         requestModalities,
+        attachmentCounts,
       },
     });
     return NextResponse.json(
@@ -507,6 +606,27 @@ export async function POST(request: Request) {
         requestModalities,
         allowedModalities: aiAccess.allowedModalities,
         blockedModality: disallowedModality,
+        attachmentCounts,
+      },
+    });
+    return NextResponse.json(
+      { error: AI_UNAVAILABLE_MESSAGE },
+      { status: AI_UNAVAILABLE_STATUS },
+    );
+  }
+  if (!modelSupportsModalities(model, requestModalities)) {
+    logAuditEvent({
+      action: "ai.chat.request",
+      outcome: "denied",
+      actorUserId: user.id,
+      teamId: teamContext.teamId,
+      metadata: {
+        reason: "model_modality_mismatch",
+        planKey: effectivePlanKey,
+        accessMode: aiAccessMode,
+        model,
+        requestModalities,
+        attachmentCounts,
       },
     });
     return NextResponse.json(
@@ -553,6 +673,7 @@ export async function POST(request: Request) {
           monthlyTokenBudget,
           projectedRequestTokens,
           requestModalities,
+          attachmentCounts,
         },
       });
       return NextResponse.json(
@@ -580,24 +701,12 @@ export async function POST(request: Request) {
 
     const hasAttachments = bodyParse.data.messages.some((message) => (message.attachments?.length ?? 0) > 0);
     const stream = (hasAttachments
-      ? await (
-          openai as unknown as {
-            responses: {
-              create: (
-                params: Record<string, unknown>,
-                options: { signal: AbortSignal },
-              ) => Promise<AsyncIterable<unknown>>;
-            };
-          }
-        ).responses.create(
-          {
-            model,
-            stream: true,
-            max_output_tokens: AI_COMPLETION_MAX_TOKENS,
-            input: toResponsesInput(bodyParse.data.messages),
-          },
-          { signal: upstreamAbortController.signal },
-        )
+      ? await createResponsesStream({
+          client: openai,
+          model,
+          messages: bodyParse.data.messages,
+          signal: upstreamAbortController.signal,
+        })
       : await openai.chat.completions.create(
           {
             model,
@@ -760,6 +869,7 @@ export async function POST(request: Request) {
                 model,
                 reason: "stream_failed",
                 requestModalities,
+                attachmentCounts,
               },
             });
             return;
@@ -779,6 +889,7 @@ export async function POST(request: Request) {
               completionTokens: resolvedUsage.completionTokens,
               usageFallbackApplied: resolvedUsage.usedFallback,
               requestModalities,
+              attachmentCounts,
             },
           });
         }
@@ -850,6 +961,7 @@ export async function POST(request: Request) {
         model,
         reason: openAiError.auditReason,
         requestModalities,
+        attachmentCounts,
       },
     });
     return NextResponse.json(
