@@ -146,4 +146,63 @@ describe("resolveAiAccess", () => {
       denialReason: "plan_not_allowed",
     });
   });
+
+  it("allows paid-mode access for configured paid plans", async () => {
+    process.env.AI_ACCESS_MODE = "paid";
+    process.env.AI_PLAN_MODEL_MAP_JSON = JSON.stringify({
+      starter: "gpt-5-mini",
+      growth: "gpt-5",
+      pro: "gpt-5",
+    });
+    process.env.AI_PLAN_MONTHLY_TOKEN_BUDGET_MAP_JSON = JSON.stringify({
+      starter: 2500,
+      growth: 9000,
+      pro: 25000,
+    });
+    process.env.AI_PLAN_MODALITIES_MAP_JSON = JSON.stringify({
+      starter: ["text", "image"],
+      growth: ["text", "image", "file"],
+      pro: ["text", "image", "file"],
+    });
+
+    const { resolveAiAccess } = await import("./access");
+    const result = resolveAiAccess({ effectivePlanKey: "growth" });
+
+    expect(result).toEqual({
+      allowed: true,
+      model: "gpt-5",
+      monthlyTokenBudget: 9000,
+      allowedModalities: ["text", "image", "file"],
+    });
+  });
+
+  it("denies paid-mode access when plan model is missing and includes plan modalities", async () => {
+    process.env.AI_ACCESS_MODE = "paid";
+    process.env.AI_PLAN_MODEL_MAP_JSON = JSON.stringify({
+      starter: "gpt-5-mini",
+      growth: null,
+      pro: "gpt-5",
+    });
+    process.env.AI_PLAN_MONTHLY_TOKEN_BUDGET_MAP_JSON = JSON.stringify({
+      starter: 2500,
+      growth: 9000,
+      pro: 25000,
+    });
+    process.env.AI_PLAN_MODALITIES_MAP_JSON = JSON.stringify({
+      starter: ["text", "image"],
+      growth: ["text", "file"],
+      pro: ["text", "image", "file"],
+    });
+
+    const { resolveAiAccess } = await import("./access");
+    const result = resolveAiAccess({ effectivePlanKey: "growth" });
+
+    expect(result).toEqual({
+      allowed: false,
+      model: null,
+      monthlyTokenBudget: 0,
+      allowedModalities: ["text", "file"],
+      denialReason: "plan_not_allowed",
+    });
+  });
 });
