@@ -14,7 +14,13 @@
     "spanish": "Español",
     "localeNames": {
       "en": "Inglés",
-      "es": "Español"
+      "es": "Español",
+      "fr": "Francés",
+      "zh": "Chino",
+      "ja": "Japonés",
+      "pt": "Portugués",
+      "de": "Alemán",
+      "ko": "Coreano"
     }
   },
   "SiteHeader": {

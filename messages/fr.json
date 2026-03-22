@@ -9,18 +9,18 @@
     "openGraphImageAlt": "SaaS Starter preview image"
   },
   "LocaleSwitcher": {
-    "label": "Language",
-    "english": "English",
-    "spanish": "Spanish",
+    "label": "Langue",
+    "english": "Anglais",
+    "spanish": "Espagnol",
     "localeNames": {
-      "en": "English",
-      "es": "Spanish",
-      "fr": "French",
-      "zh": "Chinese",
-      "ja": "Japanese",
-      "pt": "Portuguese",
-      "de": "German",
-      "ko": "Korean"
+      "en": "Anglais",
+      "es": "Espagnol",
+      "fr": "Français",
+      "zh": "Chinois",
+      "ja": "Japonais",
+      "pt": "Portugais",
+      "de": "Allemand",
+      "ko": "Coréen"
     }
   },
   "SiteHeader": {
