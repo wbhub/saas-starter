@@ -17,6 +17,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Playwright (and some tooling) use 127.0.0.1 while browsers may show localhost — allow both
+  // to fetch dev assets without cross-origin warnings. See next.config allowedDevOrigins docs.
+  allowedDevOrigins: ["127.0.0.1", "localhost"],
   turbopack: {
     root: path.resolve(__dirname),
   },

@@ -41,11 +41,18 @@ export default defineConfig({
       dependencies: ["setup"],
     },
   ],
-  webServer: hasExternalBaseUrl || isCI
-    ? undefined
-    : {
-        command: "npm run dev",
-        url: "http://127.0.0.1:3000",
-      reuseExistingServer: !isCI,
-      },
+  webServer:
+    hasExternalBaseUrl || isCI
+      ? undefined
+      : {
+          command: "npm run dev",
+          url: "http://127.0.0.1:3000",
+          // Turbopack + first compile can exceed the default 60s on cold machines.
+          timeout: 180_000,
+          // By default do not attach to whatever happens to be listening on :3000 (stuck/zombie
+          // processes caused "hung" Playwright runs). Opt in with PLAYWRIGHT_REUSE_DEV_SERVER=true
+          // when you already have a healthy `npm run dev` running.
+          reuseExistingServer:
+            !isCI && process.env.PLAYWRIGHT_REUSE_DEV_SERVER === "true",
+        },
 });

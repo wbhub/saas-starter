@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
+import type { TeamContext } from "@/lib/team-context";
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -7,6 +8,18 @@ function jsonResponse(body: unknown, status = 200) {
     headers: { "Content-Type": "application/json" },
   });
 }
+
+type MockParseResult =
+  | { success: true; data: Record<string, unknown> }
+  | { success: false; error: z.ZodError; tooLarge?: boolean };
+
+type LoadWithTeamRouteOptions = {
+  csrfError?: Response | null;
+  user?: { id: string } | null;
+  teamContext?: TeamContext | null;
+  parseResult?: MockParseResult;
+  checkRateLimitImpl?: ReturnType<typeof vi.fn>;
+};
 
 describe("withTeamRoute", () => {
   beforeEach(() => {
@@ -17,10 +30,10 @@ describe("withTeamRoute", () => {
   async function loadWithTeamRoute({
     csrfError = null,
     user = { id: "user_1" },
-    teamContext = { teamId: "team_1", teamName: "Acme", role: "owner" as const },
-    parseResult = { success: true as const, data: { name: "Project A" } },
+    teamContext = { teamId: "team_1", teamName: "Acme", role: "owner" },
+    parseResult = { success: true, data: { name: "Project A" } },
     checkRateLimitImpl = vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),
-  } = {}) {
+  }: LoadWithTeamRouteOptions = {}) {
     const parseJsonWithSchema = vi.fn().mockResolvedValue(parseResult);
 
     vi.doMock("@/lib/security/csrf", () => ({
