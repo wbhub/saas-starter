@@ -32,12 +32,6 @@ export const PLAN_KEYS = ["starter", "growth", "pro"] as const;
 export type PlanKey = (typeof PLAN_KEYS)[number];
 export type StripePriceIdEnvKey = `STRIPE_${Uppercase<PlanKey>}_PRICE_ID`;
 
-export const PLAN_LABELS: Record<PlanKey, string> = {
-  starter: "Starter",
-  growth: "Growth",
-  pro: "Pro",
-};
-
 export type PlanCatalogEntry = {
   key: PlanKey;
   name: string;
@@ -79,3 +73,7 @@ export const PLAN_CATALOG: PlanCatalogEntry[] = [
     description: "For businesses that need reliability at scale.",
   },
 ];
+
+export const PLAN_LABELS: Record<PlanKey, string> = Object.fromEntries(
+  PLAN_CATALOG.map((plan) => [plan.key, plan.name] as const),
+) as Record<PlanKey, string>;
