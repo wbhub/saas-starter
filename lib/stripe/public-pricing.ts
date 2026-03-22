@@ -9,6 +9,7 @@ type PublicPricingPlan = {
   name: string;
   description: string;
   priceLabel: string;
+  popular?: boolean;
 };
 
 function formatIntervalLabel(interval?: string | null, intervalCount?: number | null) {
@@ -45,6 +46,7 @@ export const getPublicPricingCatalog = cache(async (): Promise<PublicPricingPlan
       name: plan.name,
       description: plan.description,
       priceLabel: plan.priceLabel,
+      popular: plan.popular,
     }));
   }
 
@@ -94,6 +96,7 @@ export const getPublicPricingCatalog = cache(async (): Promise<PublicPricingPlan
       name: plan.name,
       description: plan.description,
       priceLabel: resolvedLabel ?? plan.priceLabel,
+      popular: plan.popular,
     };
   });
 });

@@ -77,7 +77,9 @@ cp .env.example .env.local
 4) Set up Stripe:
 
 - Create recurring prices for `Starter`, `Growth`, and `Pro`.
-- Put IDs in:
+- Put price IDs in env vars derived from `lib/stripe/plans.ts` `PLAN_KEYS`:
+  - `STRIPE_${PLAN_KEY_UPPER}_PRICE_ID`
+- Current keys require:
   - `STRIPE_STARTER_PRICE_ID`
   - `STRIPE_GROWTH_PRICE_ID`
   - `STRIPE_PRO_PRICE_ID`
@@ -117,9 +119,8 @@ Required:
 - `STRIPE_SECRET_KEY`
 - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
 - `STRIPE_WEBHOOK_SECRET`
-- `STRIPE_STARTER_PRICE_ID`
-- `STRIPE_GROWTH_PRICE_ID`
-- `STRIPE_PRO_PRICE_ID`
+- `STRIPE_${PLAN_KEY_UPPER}_PRICE_ID` for every key in `PLAN_KEYS` (`lib/stripe/plans.ts`)
+  - currently: `STRIPE_STARTER_PRICE_ID`, `STRIPE_GROWTH_PRICE_ID`, `STRIPE_PRO_PRICE_ID`
 - `RESEND_API_KEY`
 - `RESEND_FROM_EMAIL`
 - `RESEND_SUPPORT_EMAIL`
@@ -340,4 +341,4 @@ Important RPC functions used by app code:
 
 - Update branding and landing copy in `components/landing/`.
 - Update legal text in `app/privacy-policy/page.tsx` and `app/terms-of-use/page.tsx`.
-- Keep Stripe price IDs in sync with your Stripe products.
+- Keep Stripe price IDs in sync with your Stripe products using `STRIPE_${PLAN_KEY_UPPER}_PRICE_ID` for each entry in `PLAN_KEYS`.

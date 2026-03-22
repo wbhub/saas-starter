@@ -1,4 +1,5 @@
 import "server-only";
+import { readConfiguredPriceIdForPlan } from "@/lib/stripe/price-id-lookup";
 import { PLAN_CATALOG, type PlanKey } from "@/lib/stripe/plans";
 
 export type Plan = {
@@ -7,22 +8,18 @@ export type Plan = {
   priceLabel: string;
   amountMonthly: number;
   description: string;
+  popular?: boolean;
   priceId: string | null;
 };
 
-function readStripePriceId(key: "STRIPE_STARTER_PRICE_ID" | "STRIPE_GROWTH_PRICE_ID" | "STRIPE_PRO_PRICE_ID") {
-  return process.env[key]?.trim() || null;
+function readStripePriceId(planKey: PlanKey) {
+  return readConfiguredPriceIdForPlan(planKey);
 }
 
 export const plans: Plan[] = [
   ...PLAN_CATALOG.map((plan) => ({
     ...plan,
-    priceId:
-      plan.key === "starter"
-        ? readStripePriceId("STRIPE_STARTER_PRICE_ID")
-        : plan.key === "growth"
-          ? readStripePriceId("STRIPE_GROWTH_PRICE_ID")
-          : readStripePriceId("STRIPE_PRO_PRICE_ID"),
+    priceId: readStripePriceId(plan.key),
   })),
 ];
 

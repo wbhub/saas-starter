@@ -30,6 +30,7 @@ export const AI_ELIGIBLE_SUBSCRIPTION_STATUSES: readonly SubscriptionStatus[] = 
 
 export const PLAN_KEYS = ["starter", "growth", "pro"] as const;
 export type PlanKey = (typeof PLAN_KEYS)[number];
+export type StripePriceIdEnvKey = `STRIPE_${Uppercase<PlanKey>}_PRICE_ID`;
 
 export const PLAN_LABELS: Record<PlanKey, string> = {
   starter: "Starter",
@@ -43,7 +44,16 @@ export type PlanCatalogEntry = {
   priceLabel: string;
   amountMonthly: number;
   description: string;
+  popular?: boolean;
 };
+
+export function getStripePriceIdEnvKey(planKey: PlanKey): StripePriceIdEnvKey {
+  return `STRIPE_${planKey.toUpperCase()}_PRICE_ID` as StripePriceIdEnvKey;
+}
+
+export const STRIPE_PLAN_PRICE_ID_ENV_KEYS: readonly StripePriceIdEnvKey[] = PLAN_KEYS.map(
+  getStripePriceIdEnvKey,
+);
 
 export const PLAN_CATALOG: PlanCatalogEntry[] = [
   {
@@ -59,6 +69,7 @@ export const PLAN_CATALOG: PlanCatalogEntry[] = [
     priceLabel: "$50/mo",
     amountMonthly: 50,
     description: "For teams scaling activation and retention.",
+    popular: true,
   },
   {
     key: "pro",
