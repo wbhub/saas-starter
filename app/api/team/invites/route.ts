@@ -17,6 +17,7 @@ import { getResendClient, getResendFromEmail } from "@/lib/resend/server";
 import { logger } from "@/lib/logger";
 import { getTeamMaxMembers } from "@/lib/team/limits";
 import { getRouteTranslator } from "@/lib/i18n/locale";
+import { LIVE_SUBSCRIPTION_STATUSES } from "@/lib/stripe/plans";
 
 const invitePayloadSchema = z.object({
   email: z.string().trim(),
@@ -88,6 +89,35 @@ export async function POST(request: Request) {
         return NextResponse.json(
           { error: t("errors.alreadyInTeam") },
           { status: 409 },
+        );
+      }
+
+      const { data: liveSubscription, error: liveSubscriptionError } = await supabase
+        .from("subscriptions")
+        .select("stripe_subscription_id")
+        .eq("team_id", teamContext.teamId)
+        .in("status", LIVE_SUBSCRIPTION_STATUSES)
+        .order("current_period_end", { ascending: false })
+        .limit(1)
+        .maybeSingle<{ stripe_subscription_id: string | null }>();
+      if (liveSubscriptionError) {
+        logger.error(
+          "Failed to verify live subscription before invite creation",
+          liveSubscriptionError,
+          {
+            requestId,
+            teamId: teamContext.teamId,
+          },
+        );
+        return NextResponse.json(
+          { error: t("errors.unableToCreateInvite") },
+          { status: 500 },
+        );
+      }
+      if (!liveSubscription?.stripe_subscription_id) {
+        return NextResponse.json(
+          { error: t("errors.paidPlanRequired") },
+          { status: 402 },
         );
       }
 

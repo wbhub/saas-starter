@@ -170,7 +170,9 @@
   },
   "DashboardSidebar": {
     "appDashboard": "App Dashboard",
+    "soloWorkspace": "My workspace",
     "team": "Team",
+    "inviteTeammates": "Invite teammates",
     "switch": "Switch",
     "overview": "Overview",
     "ai": "AI Chat",
@@ -200,6 +202,7 @@
     "ai": "AI Chat",
     "billing": "Billing",
     "teamNav": "Team",
+    "inviteTeammates": "Invite teammates",
     "usage": "Usage",
     "settings": "Settings"
   },
@@ -277,11 +280,26 @@
       "unknown": "Unknown",
       "status": "Status",
       "seats": "Seats",
+      "perSeatCost": "Per-seat cost",
       "periodEnd": "Period end",
       "notAvailable": "N/A",
       "currentPlanFree": "Current plan: Free",
       "upgradeHint": "Upgrade below to unlock paid features.",
       "noSubscription": "No subscription yet. Choose a plan below to get started."
+    },
+    "freeMode": {
+      "title": "Unlock premium features",
+      "description": "Choose a paid plan to unlock advanced features. Team collaboration is included and seats are billed per teammate.",
+      "perSeat": "Each teammate costs {amount}.",
+      "collaborationIncluded": "Team collaboration included on all paid plans."
+    },
+    "paidSolo": {
+      "title": "Invite teammates when you are ready",
+      "description": "Collaboration is optional. Invite teammates anytime for {amount} per seat each month.",
+      "action": "Invite teammates"
+    },
+    "paidTeam": {
+      "breakdown": "{seats} seats x {seatCost} = {monthlyTotal}/mo"
     }
   },
   "DashboardSettingsPage": {
@@ -289,6 +307,11 @@
       "eyebrow": "Settings",
       "title": "Account preferences",
       "description": "Update your profile basics and review account-level preferences."
+    },
+    "inviteTeammates": {
+      "title": "Collaboration",
+      "description": "Invite teammates when you are ready. Each seat adds to your monthly bill.",
+      "action": "Invite teammates"
     }
   },
   "DashboardTeamPage": {
@@ -364,9 +387,15 @@
       "sendInvite": "Send invite"
     },
     "inviteForm": {
+      "teamNameLabel": "Team name",
+      "teamNamePlaceholder": "Acme Team",
+      "teamNameHint": "Set your team name before sending your first invite.",
       "emailLabel": "Invite email",
       "emailPlaceholder": "teammate@example.com",
       "roleLabel": "Role"
+    },
+    "pricing": {
+      "perSeat": "Each teammate costs {amount}."
     },
     "pending": {
       "title": "Pending invites",
@@ -391,6 +420,8 @@
     },
     "errors": {
       "sendInvite": "Failed to send invite.",
+      "teamNameRequired": "Enter a team name before sending your first invite.",
+      "updateTeamName": "Failed to save team name.",
       "removeMember": "Failed to remove member.",
       "updateRole": "Failed to update member role.",
       "revokeInvite": "Failed to revoke invite.",
@@ -587,6 +618,7 @@
       "invalidEmail": "Please provide a valid email.",
       "invalidRole": "Role must be admin or member.",
       "alreadyInTeam": "You are already part of this team.",
+      "paidPlanRequired": "Inviting teammates requires a paid plan. Visit billing to upgrade first.",
       "unableToCreateInvite": "Unable to create invite right now.",
       "teamMemberLimitReached": "Team member limit reached. Revoke pending invites or remove members first.",
       "pendingInviteExists": "A pending invite already exists for this email."

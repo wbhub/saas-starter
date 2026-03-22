@@ -273,7 +273,9 @@ describe("POST /api/stripe/checkout", () => {
       expect.objectContaining({
         customer: "cus_new",
         client_reference_id: "team_123",
-        line_items: [{ price: "price_starter", quantity: 3 }],
+        line_items: [{ price: "price_starter", quantity: 1 }],
+        success_url: "http://localhost:3000/dashboard/billing?checkout=success",
+        cancel_url: "http://localhost:3000/dashboard/billing?checkout=canceled",
       }),
       { idempotencyKey: "checkout:team_123:starter:client-key-1:session" },
     );

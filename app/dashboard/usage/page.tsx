@@ -5,6 +5,7 @@ import { TeamContextErrorCard } from "@/components/team-context-error-card";
 import { formatUtcDate } from "@/lib/date";
 import {
   getDashboardBaseData,
+  getDashboardBillingContext,
   getUsageMonthlyTotals,
 } from "@/lib/dashboard/server";
 
@@ -43,6 +44,12 @@ export default async function DashboardUsagePage() {
   }
 
   const usageRows = await getUsageMonthlyTotals(supabase, teamContext.teamId);
+  const billingContext = await getDashboardBillingContext(supabase, teamContext.teamId);
+  const teamUiMode = !billingContext.isPaidPlan
+    ? "free"
+    : billingContext.memberCount > 1
+      ? "paid_team"
+      : "paid_solo";
 
   return (
     <DashboardShell
@@ -50,6 +57,7 @@ export default async function DashboardUsagePage() {
       userEmail={user.email ?? null}
       teamName={teamContext.teamName}
       role={teamContext.role}
+      teamUiMode={teamUiMode}
       activeTeamId={teamContext.teamId}
       teamMemberships={teamMemberships}
       csrfToken={csrfToken}

@@ -111,22 +111,6 @@ async function claimTeamStripeCustomer(
   return mapping.stripe_customer_id;
 }
 
-async function getTeamSeatCount(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  teamId: string,
-) {
-  const { count, error } = await supabase
-    .from("team_memberships")
-    .select("id", { count: "exact", head: true })
-    .eq("team_id", teamId);
-
-  if (error) {
-    throw new Error(`Failed to load team seat count: ${error.message}`);
-  }
-
-  return Math.max(1, count ?? 1);
-}
-
 export async function POST(req: Request) {
   const t = await getRouteTranslator("ApiStripeCheckout", req);
 
@@ -268,7 +252,6 @@ export async function POST(req: Request) {
 
   try {
     const appUrl = getAppUrl();
-    const seatCount = await getTeamSeatCount(supabase, teamContext.teamId);
 
     if (customerId) {
       const isOwned = await isOwnedStripeCustomer(teamContext.teamId, customerId);
@@ -319,9 +302,9 @@ export async function POST(req: Request) {
         mode: "subscription",
         customer: customerId,
         client_reference_id: teamContext.teamId,
-        line_items: [{ price: plan.priceId, quantity: seatCount }],
-        success_url: `${appUrl}/dashboard?checkout=success`,
-        cancel_url: `${appUrl}/dashboard?checkout=canceled`,
+        line_items: [{ price: plan.priceId, quantity: 1 }],
+        success_url: `${appUrl}/dashboard/billing?checkout=success`,
+        cancel_url: `${appUrl}/dashboard/billing?checkout=canceled`,
         metadata: {
           supabase_team_id: teamContext.teamId,
           supabase_user_id: user.id,

@@ -16,8 +16,11 @@ test.describe("@smoke sidebar navigation state", () => {
     await expect(page).toHaveURL(/\/dashboard\/billing$/);
     await expect(page.getByRole("link", { name: "Billing" })).toHaveAttribute("aria-current", "page");
 
-    await page.getByRole("link", { name: "Team" }).click();
+    await page.getByRole("link", { name: /Team|Invite teammates/ }).click();
     await expect(page).toHaveURL(/\/dashboard\/team$/);
-    await expect(page.getByRole("link", { name: "Team" })).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("link", { name: /Team|Invite teammates/ })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
   });
 });

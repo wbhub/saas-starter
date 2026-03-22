@@ -2,6 +2,11 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { hasFeatureAccess } from "@/lib/billing/entitlements";
+import {
+  resolveEffectivePlanKey,
+  type EffectivePlanKey,
+} from "@/lib/billing/effective-plan";
 import { LIVE_SUBSCRIPTION_STATUSES, type SubscriptionStatus } from "@/lib/stripe/plans";
 import type { TeamContext } from "@/lib/team-context";
 import { getCachedTeamContextForUser } from "@/lib/team-context-cache";
@@ -70,6 +75,14 @@ export type SubscriptionRow = {
   seat_quantity: number;
   current_period_end: string | null;
   cancel_at_period_end: boolean;
+};
+
+export type DashboardBillingContext = {
+  subscription: SubscriptionRow | null;
+  effectivePlanKey: EffectivePlanKey | null;
+  memberCount: number;
+  isPaidPlan: boolean;
+  canInviteMembers: boolean;
 };
 
 export type UsageMonthlyTotalsRow = {
@@ -219,6 +232,54 @@ export async function getLiveSubscription(
     });
     return null;
   }
+}
+
+export async function getTeamMemberCount(
+  supabase: SupabaseClient,
+  teamId: string,
+) {
+  try {
+    const memberCountResult = await supabase
+      .from("team_memberships")
+      .select("id", { count: "exact", head: true })
+      .eq("team_id", teamId);
+    if (memberCountResult.error) {
+      logger.warn("Failed to load team member count; defaulting to one member.", {
+        teamId,
+        error: memberCountResult.error,
+      });
+      return 1;
+    }
+    return Math.max(1, memberCountResult.count ?? 1);
+  } catch (error) {
+    logger.warn("Failed to load team member count; defaulting to one member.", {
+      teamId,
+      error,
+    });
+    return 1;
+  }
+}
+
+export async function getDashboardBillingContext(
+  supabase: SupabaseClient,
+  teamId: string,
+): Promise<DashboardBillingContext> {
+  const [subscription, memberCount] = await Promise.all([
+    getLiveSubscription(supabase, teamId),
+    getTeamMemberCount(supabase, teamId),
+  ]);
+
+  const effectivePlanKey = resolveEffectivePlanKey(subscription);
+  const canInviteMembers = hasFeatureAccess(effectivePlanKey, "canInviteMembers");
+  const isPaidPlan = Boolean(effectivePlanKey && effectivePlanKey !== "free");
+
+  return {
+    subscription,
+    effectivePlanKey,
+    memberCount,
+    isPaidPlan,
+    canInviteMembers,
+  };
 }
 
 export async function getTeamMembersAndPendingInvites(

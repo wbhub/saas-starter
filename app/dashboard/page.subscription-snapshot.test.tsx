@@ -10,13 +10,23 @@ function clearPlanEnv() {
   delete process.env[GROWTH_PRICE_ID];
 }
 
-function mockDashboardDependencies(subscription: {
-  status: "active";
-  stripe_price_id: string;
-  seat_quantity: number;
-  current_period_end: string | null;
-  cancel_at_period_end: boolean;
-} | null) {
+function mockDashboardDependencies({
+  subscription,
+  effectivePlanKey,
+  isPaidPlan,
+  memberCount = 1,
+}: {
+  subscription: {
+    status: "active";
+    stripe_price_id: string;
+    seat_quantity: number;
+    current_period_end: string | null;
+    cancel_at_period_end: boolean;
+  } | null;
+  effectivePlanKey: "free" | "starter" | "growth" | "pro" | null;
+  isPaidPlan: boolean;
+  memberCount?: number;
+}) {
   vi.doMock("@/lib/dashboard/server", () => ({
     getDashboardBaseData: vi.fn().mockResolvedValue({
       supabase: {},
@@ -30,8 +40,15 @@ function mockDashboardDependencies(subscription: {
       teamContextLoadFailed: false,
       teamMemberships: [],
       displayName: "Owner",
+      csrfToken: "csrf_token",
     }),
-    getLiveSubscription: vi.fn().mockResolvedValue(subscription),
+    getDashboardBillingContext: vi.fn().mockResolvedValue({
+      subscription,
+      effectivePlanKey,
+      memberCount,
+      isPaidPlan,
+      canInviteMembers: isPaidPlan,
+    }),
   }));
   vi.doMock("next-intl/server", () => ({
     getTranslations: vi.fn().mockResolvedValue((key: string, values?: { name?: string }) => {
@@ -89,7 +106,11 @@ describe("Dashboard page subscription snapshot free plan behavior", () => {
 
   it("shows Free plan when enabled and no live paid subscription exists", async () => {
     process.env[FREE_PLAN_FLAG] = "true";
-    mockDashboardDependencies(null);
+    mockDashboardDependencies({
+      subscription: null,
+      effectivePlanKey: "free",
+      isPaidPlan: false,
+    });
 
     const DashboardPage = (await import("./page")).default;
     const html = renderToStaticMarkup(await DashboardPage());
@@ -101,7 +122,11 @@ describe("Dashboard page subscription snapshot free plan behavior", () => {
 
   it("preserves no-active-subscription messaging when free is disabled", async () => {
     process.env[FREE_PLAN_FLAG] = "false";
-    mockDashboardDependencies(null);
+    mockDashboardDependencies({
+      subscription: null,
+      effectivePlanKey: null,
+      isPaidPlan: false,
+    });
 
     const DashboardPage = (await import("./page")).default;
     const html = renderToStaticMarkup(await DashboardPage());
@@ -114,11 +139,16 @@ describe("Dashboard page subscription snapshot free plan behavior", () => {
     process.env[FREE_PLAN_FLAG] = "true";
     process.env[GROWTH_PRICE_ID] = "price_growth";
     mockDashboardDependencies({
-      status: "active",
-      stripe_price_id: "price_growth",
-      seat_quantity: 4,
-      current_period_end: null,
-      cancel_at_period_end: false,
+      subscription: {
+        status: "active",
+        stripe_price_id: "price_growth",
+        seat_quantity: 4,
+        current_period_end: null,
+        cancel_at_period_end: false,
+      },
+      effectivePlanKey: "growth",
+      isPaidPlan: true,
+      memberCount: 4,
     });
 
     const DashboardPage = (await import("./page")).default;

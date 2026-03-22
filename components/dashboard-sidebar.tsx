@@ -14,6 +14,7 @@ type DashboardSidebarProps = {
   userEmail: string | null;
   teamName: string | null;
   role: "owner" | "admin" | "member";
+  teamUiMode: "free" | "paid_solo" | "paid_team";
   activeTeamId: string;
   teamMemberships: DashboardTeamOption[];
   csrfToken: string;
@@ -24,6 +25,7 @@ export function DashboardSidebar({
   userEmail,
   teamName,
   role,
+  teamUiMode,
   activeTeamId,
   teamMemberships,
   csrfToken,
@@ -34,10 +36,18 @@ export function DashboardSidebar({
     { label: t("DashboardSidebar.overview"), href: "/dashboard" },
     { label: t("DashboardSidebar.ai"), href: "/dashboard/ai" },
     { label: t("DashboardSidebar.billing"), href: "/dashboard/billing" },
-    { label: t("DashboardSidebar.team"), href: "/dashboard/team" },
     { label: t("DashboardSidebar.usage"), href: "/dashboard/usage" },
     { label: t("DashboardSidebar.settings"), href: "/dashboard/settings" },
   ];
+  if (teamUiMode !== "free") {
+    navItems.splice(3, 0, {
+      label:
+        teamUiMode === "paid_solo"
+          ? t("DashboardSidebar.inviteTeammates")
+          : t("DashboardSidebar.team"),
+      href: "/dashboard/team",
+    });
+  }
 
   function isNavItemActive(href: string) {
     if (href === "/dashboard") {
@@ -54,7 +64,9 @@ export function DashboardSidebar({
             {t("DashboardSidebar.appDashboard")}
           </p>
           <p className="mt-1 text-base font-semibold text-slate-900 dark:text-slate-50">
-            {teamName ?? t("Common.myTeam")}
+            {teamUiMode === "free"
+              ? t("DashboardSidebar.soloWorkspace")
+              : (teamName ?? t("Common.myTeam"))}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -68,10 +80,12 @@ export function DashboardSidebar({
           {displayName}
         </p>
         <p className="truncate text-xs text-slate-600 dark:text-slate-300">{userEmail}</p>
-        <p className="mt-1 text-xs capitalize text-slate-600 dark:text-slate-300">{role}</p>
+        {teamUiMode !== "free" ? (
+          <p className="mt-1 text-xs capitalize text-slate-600 dark:text-slate-300">{role}</p>
+        ) : null}
       </div>
 
-      {teamMemberships.length > 1 ? (
+      {teamUiMode !== "free" && teamMemberships.length > 1 ? (
         <form action={switchActiveTeam} className="mt-5 space-y-2">
           <input type="hidden" name="csrf_token" value={csrfToken} />
           <input type="hidden" name="redirectTo" value={pathname} />

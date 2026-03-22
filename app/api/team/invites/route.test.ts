@@ -1,6 +1,25 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("POST /api/team/invites", () => {
+  function createSubscriptionsTable(hasLive = true) {
+    return {
+      select: vi.fn(() => ({
+        eq: vi.fn().mockReturnValue({
+          in: vi.fn().mockReturnValue({
+            order: vi.fn().mockReturnValue({
+              limit: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({
+                  data: hasLive ? { stripe_subscription_id: "sub_123" } : null,
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        }),
+      })),
+    };
+  }
+
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
@@ -84,6 +103,9 @@ describe("POST /api/team/invites", () => {
               insert,
             };
           }
+          if (table === "subscriptions") {
+            return createSubscriptionsTable(true);
+          }
           throw new Error(`Unexpected table: ${table}`);
         }),
       }),
@@ -140,6 +162,71 @@ describe("POST /api/team/invites", () => {
     expect(send).toHaveBeenCalledOnce();
   });
 
+  it("returns 402 when team does not have a paid subscription", async () => {
+    const countMembers = vi.fn().mockResolvedValue({ count: 1, error: null });
+    const countPendingInvites = vi.fn().mockResolvedValue({ count: 0, error: null });
+
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          getUser: async () => ({
+            data: { user: { id: "user_123", email: "owner@example.com" } },
+          }),
+        },
+        from: vi.fn((table: string) => {
+          if (table === "team_memberships") {
+            return {
+              select: vi.fn(() => ({
+                eq: countMembers,
+              })),
+            };
+          }
+          if (table === "team_invites") {
+            return {
+              select: vi.fn(() => ({
+                eq: vi.fn().mockReturnValue({
+                  is: vi.fn().mockReturnValue({
+                    gt: countPendingInvites,
+                  }),
+                }),
+              })),
+              delete: vi.fn(),
+              insert: vi.fn(),
+            };
+          }
+          if (table === "subscriptions") {
+            return createSubscriptionsTable(false);
+          }
+          throw new Error(`Unexpected table: ${table}`);
+        }),
+      }),
+    }));
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
+        teamId: "team_123",
+        teamName: "Acme Team",
+        role: "owner",
+      }),
+    }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/team/invites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: "new@example.com", role: "member" }),
+      }),
+    );
+
+    expect(response.status).toBe(402);
+    await expect(response.json()).resolves.toEqual({
+      error: "Inviting teammates requires a paid plan. Visit billing to upgrade first.",
+    });
+  });
+
   it("returns 409 when a pending invite already exists", async () => {
     const insert = vi.fn().mockResolvedValue({
       error: { code: "23505", message: "duplicate key value violates unique constraint" },
@@ -182,6 +269,9 @@ describe("POST /api/team/invites", () => {
               })),
               insert,
             };
+          }
+          if (table === "subscriptions") {
+            return createSubscriptionsTable(true);
           }
           throw new Error(`Unexpected table: ${table}`);
         }),
@@ -276,6 +366,9 @@ describe("POST /api/team/invites", () => {
               insert,
             };
           }
+          if (table === "subscriptions") {
+            return createSubscriptionsTable(true);
+          }
           throw new Error(`Unexpected table: ${table}`);
         }),
       }),
@@ -356,6 +449,9 @@ describe("POST /api/team/invites", () => {
               delete: vi.fn(),
               insert,
             };
+          }
+          if (table === "subscriptions") {
+            return createSubscriptionsTable(true);
           }
           throw new Error(`Unexpected table: ${table}`);
         }),
