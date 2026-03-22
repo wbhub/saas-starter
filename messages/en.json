@@ -3,6 +3,11 @@
     "brandName": "SaaS Starter",
     "myTeam": "My Team"
   },
+  "Metadata": {
+    "title": "SaaS Starter | Next.js, Supabase, Stripe",
+    "description": "Generic, production-ready SaaS starter with Next.js, Supabase auth, and Stripe subscriptions.",
+    "openGraphImageAlt": "SaaS Starter preview image"
+  },
   "LocaleSwitcher": {
     "label": "Language",
     "english": "English",
