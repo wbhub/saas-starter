@@ -1,17 +1,17 @@
 import { getLocale, getTranslations } from "next-intl/server";
+import Link from "next/link";
 import { BillingActions } from "@/components/billing-actions";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { NoTeamCard } from "@/components/no-team-card";
 import { SupportEmailCard } from "@/components/support-email-card";
 import { TeamContextErrorCard } from "@/components/team-context-error-card";
-import { resolveEffectivePlanKey } from "@/lib/billing/effective-plan";
 import { formatUtcDate } from "@/lib/date";
 import { canManageTeamBilling } from "@/lib/team-context";
 import {
   getDashboardBaseData,
-  getLiveSubscription,
+  getDashboardBillingContext,
 } from "@/lib/dashboard/server";
-import { PLAN_LABELS } from "@/lib/stripe/plans";
+import { PLAN_CATALOG, PLAN_LABELS, type PlanKey } from "@/lib/stripe/plans";
 
 export default async function DashboardBillingPage() {
   const t = await getTranslations("DashboardBillingPage");
@@ -43,10 +43,18 @@ export default async function DashboardBillingPage() {
     );
   }
 
-  const subscription = await getLiveSubscription(supabase, teamContext.teamId);
-  const effectivePlanKey = resolveEffectivePlanKey(subscription);
-  const currentPaidPlanKey =
-    effectivePlanKey && effectivePlanKey !== "free" ? effectivePlanKey : null;
+  const billingContext = await getDashboardBillingContext(supabase, teamContext.teamId);
+  const { subscription, effectivePlanKey, memberCount, isPaidPlan } = billingContext;
+  const teamUiMode = !isPaidPlan ? "free" : memberCount > 1 ? "paid_team" : "paid_solo";
+  const currentPaidPlanKey: PlanKey | null =
+    isPaidPlan && effectivePlanKey && effectivePlanKey !== "free"
+      ? effectivePlanKey
+      : null;
+  const currentPlan = currentPaidPlanKey
+    ? PLAN_CATALOG.find((plan) => plan.key === currentPaidPlanKey) ?? null
+    : null;
+  const estimatedMonthlySeatTotal =
+    subscription && currentPlan ? subscription.seat_quantity * currentPlan.amountMonthly : null;
   const hasSubscription = Boolean(subscription);
   const canManageBilling = canManageTeamBilling(teamContext.role);
 
@@ -56,6 +64,7 @@ export default async function DashboardBillingPage() {
       userEmail={user.email ?? null}
       teamName={teamContext.teamName}
       role={teamContext.role}
+      teamUiMode={teamUiMode}
       activeTeamId={teamContext.teamId}
       teamMemberships={teamMemberships}
       csrfToken={csrfToken}
@@ -70,48 +79,99 @@ export default async function DashboardBillingPage() {
         </p>
       </header>
 
-      <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
-          {t("currentSubscription.title")}
-        </h2>
-        {subscription ? (
-          <dl className="mt-4 space-y-2 text-sm">
-            <div className="flex items-center justify-between">
-              <dt className="text-slate-500 dark:text-slate-400">{t("currentSubscription.currentPlan")}</dt>
-              <dd className="font-medium text-slate-900 dark:text-slate-100">
-                {currentPaidPlanKey ? PLAN_LABELS[currentPaidPlanKey] : t("currentSubscription.unknown")}
-              </dd>
-            </div>
-            <div className="flex items-center justify-between">
-              <dt className="text-slate-500 dark:text-slate-400">{t("currentSubscription.status")}</dt>
-              <dd className="uppercase tracking-wide text-slate-800 dark:text-slate-100">
-                {subscription.status}
-              </dd>
-            </div>
-            <div className="flex items-center justify-between">
-              <dt className="text-slate-500 dark:text-slate-400">{t("currentSubscription.seats")}</dt>
-              <dd className="text-slate-800 dark:text-slate-100">{subscription.seat_quantity}</dd>
-            </div>
-            <div className="flex items-center justify-between">
-              <dt className="text-slate-500 dark:text-slate-400">{t("currentSubscription.periodEnd")}</dt>
-              <dd className="text-slate-800 dark:text-slate-100">
-                {subscription.current_period_end
-                  ? formatUtcDate(subscription.current_period_end, undefined, locale)
-                  : t("currentSubscription.notAvailable")}
-              </dd>
-            </div>
-          </dl>
-        ) : effectivePlanKey === "free" ? (
-          <div className="mt-4 rounded-lg app-surface-subtle p-4 text-sm text-slate-600 dark:text-slate-200">
-            <p className="font-medium text-slate-900 dark:text-slate-100">{t("currentSubscription.currentPlanFree")}</p>
-            <p className="mt-1">{t("currentSubscription.upgradeHint")}</p>
+      {!isPaidPlan ? (
+        <section className="space-y-4">
+          <div className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+              {t("freeMode.title")}
+            </h2>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+              {t("freeMode.description")}
+            </p>
           </div>
-        ) : (
-          <div className="mt-4 rounded-lg app-surface-subtle p-4 text-sm text-slate-600 dark:text-slate-200">
-            {t("currentSubscription.noSubscription")}
+          <div className="grid gap-4 md:grid-cols-3">
+            {PLAN_CATALOG.map((plan) => (
+              <article
+                key={plan.key}
+                className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm"
+              >
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                  {plan.name}
+                </p>
+                <p className="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-50">
+                  {plan.priceLabel}
+                </p>
+                <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                  {plan.description}
+                </p>
+                <p className="mt-3 text-sm text-slate-700 dark:text-slate-200">
+                  {t("freeMode.perSeat", { amount: plan.priceLabel })}
+                </p>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  {t("freeMode.collaborationIncluded")}
+                </p>
+              </article>
+            ))}
           </div>
-        )}
-      </section>
+        </section>
+      ) : (
+        <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+            {t("currentSubscription.title")}
+          </h2>
+          {subscription ? (
+            <dl className="mt-4 space-y-2 text-sm">
+              <div className="flex items-center justify-between">
+                <dt className="text-slate-500 dark:text-slate-400">{t("currentSubscription.currentPlan")}</dt>
+                <dd className="font-medium text-slate-900 dark:text-slate-100">
+                  {currentPaidPlanKey ? PLAN_LABELS[currentPaidPlanKey] : t("currentSubscription.unknown")}
+                </dd>
+              </div>
+              <div className="flex items-center justify-between">
+                <dt className="text-slate-500 dark:text-slate-400">{t("currentSubscription.status")}</dt>
+                <dd className="uppercase tracking-wide text-slate-800 dark:text-slate-100">
+                  {subscription.status}
+                </dd>
+              </div>
+              <div className="flex items-center justify-between">
+                <dt className="text-slate-500 dark:text-slate-400">{t("currentSubscription.seats")}</dt>
+                <dd className="text-slate-800 dark:text-slate-100">{subscription.seat_quantity}</dd>
+              </div>
+              {currentPlan ? (
+                <div className="flex items-center justify-between">
+                  <dt className="text-slate-500 dark:text-slate-400">{t("currentSubscription.perSeatCost")}</dt>
+                  <dd className="text-slate-800 dark:text-slate-100">{currentPlan.priceLabel}</dd>
+                </div>
+              ) : null}
+              <div className="flex items-center justify-between">
+                <dt className="text-slate-500 dark:text-slate-400">{t("currentSubscription.periodEnd")}</dt>
+                <dd className="text-slate-800 dark:text-slate-100">
+                  {subscription.current_period_end
+                    ? formatUtcDate(subscription.current_period_end, undefined, locale)
+                    : t("currentSubscription.notAvailable")}
+                </dd>
+              </div>
+            </dl>
+          ) : (
+            <div className="mt-4 rounded-lg app-surface-subtle p-4 text-sm text-slate-600 dark:text-slate-200">
+              {t("currentSubscription.noSubscription")}
+            </div>
+          )}
+          {teamUiMode === "paid_team" && currentPlan && estimatedMonthlySeatTotal !== null ? (
+            <p className="mt-4 rounded-lg app-surface-subtle px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
+              {t("paidTeam.breakdown", {
+                seats: String(subscription?.seat_quantity ?? memberCount),
+                seatCost: currentPlan.priceLabel,
+                monthlyTotal: new Intl.NumberFormat(locale, {
+                  style: "currency",
+                  currency: "USD",
+                  maximumFractionDigits: 0,
+                }).format(estimatedMonthlySeatTotal),
+              })}
+            </p>
+          ) : null}
+        </section>
+      )}
 
       <section>
         <BillingActions
@@ -120,6 +180,23 @@ export default async function DashboardBillingPage() {
           canManageBilling={canManageBilling}
         />
       </section>
+
+      {teamUiMode === "paid_solo" && currentPlan ? (
+        <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+            {t("paidSolo.title")}
+          </h2>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+            {t("paidSolo.description", { amount: currentPlan.priceLabel })}
+          </p>
+          <Link
+            href="/dashboard/team"
+            className="mt-4 inline-flex rounded-lg border app-border-subtle px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800"
+          >
+            {t("paidSolo.action")}
+          </Link>
+        </section>
+      ) : null}
 
       <section>
         <SupportEmailCard />

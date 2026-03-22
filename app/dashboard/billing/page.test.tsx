@@ -1,22 +1,22 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { ReactNode } from "react";
 
-const FREE_PLAN_FLAG = "APP_FREE_PLAN_ENABLED";
-const GROWTH_PRICE_ID = "STRIPE_GROWTH_PRICE_ID";
-
-function clearFreePlanEnv() {
-  delete process.env[FREE_PLAN_FLAG];
-  delete process.env[GROWTH_PRICE_ID];
-}
-
-function mockBillingPageDependencies(subscription: {
-  status: "active";
-  stripe_price_id: string;
-  seat_quantity: number;
-  current_period_end: string | null;
-  cancel_at_period_end: boolean;
-} | null) {
+function mockBillingPageDependencies(options: {
+  billingContext: {
+    subscription: {
+      status: "active";
+      stripe_price_id: string;
+      seat_quantity: number;
+      current_period_end: string | null;
+      cancel_at_period_end: boolean;
+    } | null;
+    effectivePlanKey: "free" | "starter" | "growth" | "pro" | null;
+    memberCount: number;
+    isPaidPlan: boolean;
+    canInviteMembers: boolean;
+  };
+}) {
   vi.doMock("next-intl/server", () => ({
     getTranslations: vi.fn(async (namespaceOrOptions?: string | { namespace?: string }) => {
       const namespace =
@@ -24,7 +24,10 @@ function mockBillingPageDependencies(subscription: {
           ? namespaceOrOptions
           : namespaceOrOptions?.namespace;
       if (namespace === "DashboardBillingPage") {
-        return (key: string) => {
+        return (key: string, values?: Record<string, string>) => {
+          if (key === "paidTeam.breakdown") {
+            return `${values?.seats ?? ""} seats x ${values?.seatCost ?? ""} = ${values?.monthlyTotal ?? ""}/mo`;
+          }
           const dictionary: Record<string, string> = {
             "header.eyebrow": "Billing",
             "header.title": "Manage your subscription",
@@ -34,11 +37,17 @@ function mockBillingPageDependencies(subscription: {
             "currentSubscription.unknown": "Unknown",
             "currentSubscription.status": "Status",
             "currentSubscription.seats": "Seats",
+            "currentSubscription.perSeatCost": "Per-seat cost",
             "currentSubscription.periodEnd": "Period end",
             "currentSubscription.notAvailable": "N/A",
-            "currentSubscription.currentPlanFree": "Current plan: Free",
-            "currentSubscription.upgradeHint": "Upgrade below to unlock paid features.",
-            "currentSubscription.noSubscription": "No subscription yet. Choose a plan below to get started.",
+            "currentSubscription.noSubscription": "No subscription yet.",
+            "freeMode.title": "Unlock premium features",
+            "freeMode.description": "Choose a paid plan to unlock advanced features.",
+            "freeMode.perSeat": `Each teammate costs ${values?.amount ?? ""}.`,
+            "freeMode.collaborationIncluded": "Team collaboration included on all paid plans.",
+            "paidSolo.title": "Invite teammates when you are ready",
+            "paidSolo.description": "Collaboration is optional.",
+            "paidSolo.action": "Invite teammates",
           };
           return dictionary[key] ?? key;
         };
@@ -56,8 +65,9 @@ function mockBillingPageDependencies(subscription: {
       teamContextLoadFailed: false,
       teamMemberships: [],
       displayName: "Owner",
+      csrfToken: "csrf_token",
     }),
-    getLiveSubscription: vi.fn().mockResolvedValue(subscription),
+    getDashboardBillingContext: vi.fn().mockResolvedValue(options.billingContext),
   }));
   vi.doMock("@/lib/team-context", () => ({
     canManageTeamBilling: vi.fn().mockReturnValue(true),
@@ -98,75 +108,77 @@ describe("Dashboard billing page free plan behavior", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
-    clearFreePlanEnv();
   });
 
-  afterEach(() => {
-    clearFreePlanEnv();
-  });
-
-  it("shows Free plan when enabled and no live paid subscription exists", async () => {
-    process.env[FREE_PLAN_FLAG] = "true";
-    mockBillingPageDependencies(null);
-
-    const BillingPage = (await import("./page")).default;
-    const html = renderToStaticMarkup(await BillingPage());
-
-    expect(html).toContain("Current plan: Free");
-    expect(html).toContain("Upgrade below to unlock paid features.");
-    expect(html).toContain('data-current-plan=""');
-    expect(html).toContain('data-has-subscription="false"');
-  });
-
-  it("preserves no-subscription behavior when free is disabled", async () => {
-    process.env[FREE_PLAN_FLAG] = "false";
-    mockBillingPageDependencies(null);
-
-    const BillingPage = (await import("./page")).default;
-    const html = renderToStaticMarkup(await BillingPage());
-
-    expect(html).toContain("No subscription yet. Choose a plan below to get started.");
-    expect(html).not.toContain("Current plan: Free");
-    expect(html).toContain('data-current-plan=""');
-    expect(html).toContain('data-has-subscription="false"');
-  });
-
-  it("still resolves paid subscriptions correctly", async () => {
-    process.env[FREE_PLAN_FLAG] = "true";
-    process.env[GROWTH_PRICE_ID] = "price_growth";
+  it("renders plan comparison cards for free mode", async () => {
     mockBillingPageDependencies({
-      status: "active",
-      stripe_price_id: "price_growth",
-      seat_quantity: 5,
-      current_period_end: null,
-      cancel_at_period_end: false,
+      billingContext: {
+        subscription: null,
+        effectivePlanKey: "free",
+        memberCount: 1,
+        isPaidPlan: false,
+        canInviteMembers: false,
+      },
     });
 
     const BillingPage = (await import("./page")).default;
     const html = renderToStaticMarkup(await BillingPage());
 
-    expect(html).toContain("Growth");
+    expect(html).toContain("Unlock premium features");
+    expect(html).toContain("Team collaboration included on all paid plans.");
+    expect(html).toContain("Starter");
+    expect(html).toContain('data-current-plan=""');
+    expect(html).toContain('data-has-subscription="false"');
+  });
+
+  it("renders invite nudge for paid solo teams", async () => {
+    mockBillingPageDependencies({
+      billingContext: {
+        subscription: {
+          status: "active",
+          stripe_price_id: "price_growth",
+          seat_quantity: 1,
+          current_period_end: null,
+          cancel_at_period_end: false,
+        },
+        effectivePlanKey: "growth",
+        memberCount: 1,
+        isPaidPlan: true,
+        canInviteMembers: true,
+      },
+    });
+
+    const BillingPage = (await import("./page")).default;
+    const html = renderToStaticMarkup(await BillingPage());
+
+    expect(html).toContain("Invite teammates when you are ready");
+    expect(html).toContain("Invite teammates");
     expect(html).toContain('data-current-plan="growth"');
     expect(html).toContain('data-has-subscription="true"');
   });
 
-  it("treats live subscription with unknown price as subscribed (not free)", async () => {
-    process.env[FREE_PLAN_FLAG] = "true";
-    process.env[GROWTH_PRICE_ID] = "price_growth";
+  it("renders seat breakdown for paid teams with multiple members", async () => {
     mockBillingPageDependencies({
-      status: "active",
-      stripe_price_id: "price_unknown",
-      seat_quantity: 2,
-      current_period_end: null,
-      cancel_at_period_end: false,
+      billingContext: {
+        subscription: {
+          status: "active",
+          stripe_price_id: "price_growth",
+          seat_quantity: 3,
+          current_period_end: null,
+          cancel_at_period_end: false,
+        },
+        effectivePlanKey: "growth",
+        memberCount: 3,
+        isPaidPlan: true,
+        canInviteMembers: true,
+      },
     });
 
     const BillingPage = (await import("./page")).default;
     const html = renderToStaticMarkup(await BillingPage());
 
-    expect(html).toContain("Unknown");
-    expect(html).not.toContain("Current plan: Free");
-    expect(html).toContain('data-current-plan=""');
+    expect(html).toContain("3 seats x $50/mo = $150/mo");
+    expect(html).toContain('data-current-plan="growth"');
     expect(html).toContain('data-has-subscription="true"');
   });
 });

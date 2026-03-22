@@ -1,15 +1,13 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { resolveEffectivePlanKey } from "@/lib/billing/effective-plan";
 import { NoTeamCard } from "@/components/no-team-card";
 import { TeamContextErrorCard } from "@/components/team-context-error-card";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { formatUtcDate } from "@/lib/date";
-import { PLAN_LABELS } from "@/lib/stripe/plans";
+import { PLAN_LABELS, type PlanKey } from "@/lib/stripe/plans";
 import {
   getDashboardBaseData,
-  getLiveSubscription,
-  type SubscriptionRow,
+  getDashboardBillingContext,
 } from "@/lib/dashboard/server";
 
 export default async function DashboardPage() {
@@ -41,14 +39,17 @@ export default async function DashboardPage() {
     );
   }
 
-  const subscription: SubscriptionRow | null = await getLiveSubscription(
-    supabase,
-    teamContext.teamId,
-  );
-
-  const effectivePlanKey = resolveEffectivePlanKey(subscription);
-  const currentPaidPlanKey =
-    effectivePlanKey && effectivePlanKey !== "free" ? effectivePlanKey : null;
+  const billingContext = await getDashboardBillingContext(supabase, teamContext.teamId);
+  const { subscription, effectivePlanKey, memberCount, isPaidPlan } = billingContext;
+  const currentPaidPlanKey: PlanKey | null =
+    isPaidPlan && effectivePlanKey && effectivePlanKey !== "free"
+      ? effectivePlanKey
+      : null;
+  const teamUiMode = !isPaidPlan ? "free" : memberCount > 1 ? "paid_team" : "paid_solo";
+  const teamNavLabel =
+    teamUiMode === "paid_solo"
+      ? t("DashboardPage.inviteTeammates")
+      : t("DashboardPage.teamNav");
 
   return (
     <DashboardShell
@@ -56,6 +57,7 @@ export default async function DashboardPage() {
       userEmail={user.email ?? null}
       teamName={teamContext.teamName}
       role={teamContext.role}
+      teamUiMode={teamUiMode}
       activeTeamId={teamContext.teamId}
       teamMemberships={teamMemberships}
       csrfToken={csrfToken}
@@ -82,16 +84,20 @@ export default async function DashboardPage() {
                 {user.id}
               </dd>
             </div>
-            <div className="flex items-center justify-between">
-              <dt className="text-slate-500 dark:text-slate-400">{t("DashboardPage.team")}</dt>
-              <dd className="max-w-[220px] truncate text-slate-800 dark:text-slate-100">
-                {teamContext.teamName ?? t("Common.myTeam")}
-              </dd>
-            </div>
-            <div className="flex items-center justify-between">
-              <dt className="text-slate-500 dark:text-slate-400">{t("DashboardPage.role")}</dt>
-              <dd className="text-slate-800 dark:text-slate-100 capitalize">{teamContext.role}</dd>
-            </div>
+            {teamUiMode !== "free" ? (
+              <>
+                <div className="flex items-center justify-between">
+                  <dt className="text-slate-500 dark:text-slate-400">{t("DashboardPage.team")}</dt>
+                  <dd className="max-w-[220px] truncate text-slate-800 dark:text-slate-100">
+                    {teamContext.teamName ?? t("Common.myTeam")}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between">
+                  <dt className="text-slate-500 dark:text-slate-400">{t("DashboardPage.role")}</dt>
+                  <dd className="text-slate-800 dark:text-slate-100 capitalize">{teamContext.role}</dd>
+                </div>
+              </>
+            ) : null}
             <div className="flex items-center justify-between">
               <dt className="text-slate-500 dark:text-slate-400">
                 {t("DashboardPage.memberSince")}
@@ -156,12 +162,14 @@ export default async function DashboardPage() {
         >
           {t("DashboardPage.billing")}
         </Link>
-        <Link
-          href="/dashboard/team"
-          className="rounded-xl border app-border-subtle app-surface p-4 text-sm text-slate-700 shadow-sm hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
-        >
-          {t("DashboardPage.teamNav")}
-        </Link>
+        {teamUiMode !== "free" ? (
+          <Link
+            href="/dashboard/team"
+            className="rounded-xl border app-border-subtle app-surface p-4 text-sm text-slate-700 shadow-sm hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            {teamNavLabel}
+          </Link>
+        ) : null}
         <Link
           href="/dashboard/usage"
           className="rounded-xl border app-border-subtle app-surface p-4 text-sm text-slate-700 shadow-sm hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"

@@ -39,6 +39,8 @@ export function TeamInviteCard({
   pendingInvites,
   currentUserId,
   currentUserRole,
+  requireTeamNameOnFirstInvite = false,
+  seatPriceLabel = null,
 }: {
   canInvite: boolean;
   teamName: string;
@@ -46,12 +48,15 @@ export function TeamInviteCard({
   pendingInvites: PendingInvite[];
   currentUserId: string;
   currentUserRole: "owner" | "admin" | "member";
+  requireTeamNameOnFirstInvite?: boolean;
+  seatPriceLabel?: string | null;
 }) {
   const t = useTranslations("TeamInviteCard");
   const locale = useLocale() as AppLocale;
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"member" | "admin">("member");
+  const [inviteTeamName, setInviteTeamName] = useState(teamName);
   const [submitting, setSubmitting] = useState(false);
   const [removingUserId, setRemovingUserId] = useState<string | null>(null);
   const [updatingRoleUserId, setUpdatingRoleUserId] = useState<string | null>(null);
@@ -75,6 +80,33 @@ export function TeamInviteCard({
     setFeedback(null);
 
     try {
+      const normalizedInviteTeamName = inviteTeamName.trim();
+      if (requireTeamNameOnFirstInvite && normalizedInviteTeamName.length < 2) {
+        throw new Error(t("errors.teamNameRequired"));
+      }
+
+      const shouldUpdateTeamName =
+        requireTeamNameOnFirstInvite &&
+        normalizedInviteTeamName.length >= 2 &&
+        normalizedInviteTeamName !== teamName.trim();
+
+      if (shouldUpdateTeamName) {
+        const teamNameResponse = await fetch("/api/team/settings", {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            ...getCsrfHeaders(),
+          },
+          body: JSON.stringify({ teamName: normalizedInviteTeamName }),
+        });
+        const teamNamePayload = (await teamNameResponse.json().catch(() => null)) as
+          | { error?: string }
+          | null;
+        if (!teamNameResponse.ok) {
+          throw new Error(teamNamePayload?.error ?? t("errors.updateTeamName"));
+        }
+      }
+
       const response = await fetch("/api/team/invites", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...getCsrfHeaders() },
@@ -240,6 +272,11 @@ export function TeamInviteCard({
       <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
         {t("description", { teamName })}
       </p>
+      {seatPriceLabel ? (
+        <p className="mt-2 rounded-lg app-surface-subtle px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
+          {t("pricing.perSeat", { amount: seatPriceLabel })}
+        </p>
+      ) : null}
 
       <div className="mt-4 space-y-2 text-sm">
         {members.map((member) => (
@@ -348,6 +385,28 @@ export function TeamInviteCard({
       </div>
 
       <form className="mt-5 space-y-3" onSubmit={handleSubmit}>
+        {requireTeamNameOnFirstInvite ? (
+          <label className="block">
+            <span className="mb-1 block text-sm font-medium text-slate-800 dark:text-slate-100">
+              {t("inviteForm.teamNameLabel")}
+            </span>
+            <input
+              type="text"
+              required
+              minLength={2}
+              maxLength={80}
+              disabled={!canInvite || submitting}
+              value={inviteTeamName}
+              onChange={(event) => setInviteTeamName(event.target.value)}
+              className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-sm text-slate-900 outline-none ring-[color:var(--ring)] placeholder:text-slate-500 focus:ring-2 disabled:opacity-60 dark:text-slate-50 dark:placeholder:text-slate-400"
+              placeholder={t("inviteForm.teamNamePlaceholder")}
+            />
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              {t("inviteForm.teamNameHint")}
+            </p>
+          </label>
+        ) : null}
+
         <label className="block">
           <span className="mb-1 block text-sm font-medium text-slate-800 dark:text-slate-100">
             {t("inviteForm.emailLabel")}

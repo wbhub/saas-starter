@@ -1,12 +1,12 @@
 {
   "Common": {
-    "brandName": "SaaS Starter",
-    "myTeam": "My Team"
+    "brandName": "SaaS 入门者",
+    "myTeam": "我的团队"
   },
   "Metadata": {
-    "title": "SaaS Starter | Next.js, Supabase, Stripe",
-    "description": "Generic, production-ready SaaS starter with Next.js, Supabase auth, and Stripe subscriptions.",
-    "openGraphImageAlt": "SaaS Starter preview image"
+    "title": "SaaS 入门 | Next.js、Supabase、Stripe",
+    "description": "通用、生产就绪的 SaaS 入门程序，具有 Next.js、Supabase auth 和 Stripe 订阅。",
+    "openGraphImageAlt": "SaaS 入门预览图像"
   },
   "LocaleSwitcher": {
     "label": "语言",
@@ -16,863 +16,895 @@
       "en": "英语",
       "es": "西班牙语",
       "fr": "法语",
-      "zh": "中文",
-      "ja": "日语",
+      "zh": "中国人",
+      "ja": "日本人",
       "pt": "葡萄牙语",
       "de": "德语",
-      "ko": "韩语"
+      "ko": "韩国人"
     }
   },
   "SiteHeader": {
-    "dashboard": "Dashboard",
-    "login": "Login",
-    "openApp": "Open App",
-    "startFree": "Start Free"
+    "dashboard": "仪表板",
+    "login": "登录",
+    "openApp": "打开应用程序",
+    "startFree": "免费开始"
   },
   "SiteFooter": {
-    "companyPlaceholder": "[Company Name]",
-    "privacyPolicy": "Privacy Policy",
-    "termsOfUse": "Terms of Use"
+    "companyPlaceholder": "[公司名称]",
+    "privacyPolicy": "隐私政策",
+    "termsOfUse": "使用条款"
   },
   "AuthPages": {
-    "backHome": "Back to home",
-    "backLogin": "Back to login"
+    "backHome": "回到家",
+    "backLogin": "返回登录"
   },
   "AuthForm": {
     "errors": {
-      "unableToLogIn": "Unable to log in.",
-      "unableToCreateAccount": "Unable to create account.",
-      "unexpected": "Unexpected error",
-      "unableSocialLogin": "Unable to continue with social login."
+      "unableToLogIn": "无法登录。",
+      "unableToCreateAccount": "无法创建帐户。",
+      "unexpected": "意外错误",
+      "unableSocialLogin": "无法继续社交登录。"
     },
     "messages": {
-      "accountCreated": "Account created. Check your inbox to verify email if confirmation is enabled."
+      "accountCreated": "帐户已创建。如果启用了确认，请检查您的收件箱以验证电子邮件。"
     },
     "title": {
-      "login": "Welcome back",
-      "signup": "Create your account"
+      "login": "欢迎回来",
+      "signup": "创建您的帐户"
     },
     "description": {
-      "login": "Sign in to manage your SaaS subscription.",
-      "signup": "Start with secure auth and billing-ready infrastructure."
+      "login": "登录以管理您的 SaaS 订阅。",
+      "signup": "从安全身份验证和计费就绪基础设施开始。"
     },
-    "socialAuthLabel": "Social authentication",
-    "pleaseWait": "Please wait...",
-    "continueWith": "Continue with {provider}",
-    "lastUsed": "Last used",
-    "orContinueWithEmail": "or continue with email",
-    "email": "Email",
-    "password": "Password",
-    "passwordHint": "Use 12-128 characters. Passphrases are welcome.",
+    "socialAuthLabel": "社会认证",
+    "pleaseWait": "请稍等...",
+    "continueWith": "继续 {provider}",
+    "lastUsed": "上次使用",
+    "orContinueWithEmail": "或继续使用电子邮件",
+    "email": "电子邮件",
+    "password": "密码",
+    "passwordHint": "使用 12-128 个字符。欢迎使用密码。",
     "submit": {
-      "login": "Log In",
-      "signup": "Create Account"
+      "login": "登录",
+      "signup": "创建账户"
     },
-    "needAccount": "Need an account?",
-    "signUp": "Sign up",
-    "forgotPassword": "Forgot password?",
-    "alreadyHaveAccount": "Already have an account?",
-    "logIn": "Log in"
+    "needAccount": "需要帐户吗？",
+    "signUp": "报名",
+    "forgotPassword": "忘记密码？",
+    "alreadyHaveAccount": "已经有帐户？",
+    "logIn": "登录"
   },
   "Landing": {
     "header": {
-      "dashboard": "Dashboard",
-      "login": "Login",
-      "openApp": "Open App",
-      "startFree": "Start Free"
+      "dashboard": "仪表板",
+      "login": "登录",
+      "openApp": "打开应用程序",
+      "startFree": "免费开始"
     },
     "hero": {
-      "badge": "Production-grade SaaS foundation",
-      "title": "Launch a production-ready SaaS in days, not months.",
-      "description": "Skip months of platform work. Auth, team access, seat-based billing, support email, and AI-ready APIs are already wired so you can focus on the product customers pay for.",
-      "goDashboard": "Go to dashboard",
-      "startFreeNow": "Start free now",
-      "viewPricing": "View pricing",
-      "feature1": "Supabase auth flows",
-      "feature2": "Team invites and roles",
-      "feature3": "Seat-based Stripe billing",
-      "feature4": "AI chat endpoint",
-      "feature5": "Resend support email",
-      "feature6": "CSRF + CSP + rate limits",
-      "shipNowTitle": "What you ship immediately",
-      "shipNowDescription": "App and API flows mapped to a real SaaS launch.",
-      "shipItem1": "Signup, login, forgot-password, reset-password, and protected dashboard routes",
-      "shipItem2": "Team onboarding with invites, acceptance, role management, and ownership transfer",
-      "shipItem3": "Seat-based Stripe checkout, billing portal, plan changes, and webhook syncing",
-      "shipItem4": "Support request API with Resend delivery and authenticated sender context",
-      "shipItem5": "Optional AI chat route with streaming responses, budgeting, and plan-aware access",
-      "shipItem6": "Security defaults including CSRF checks, CSP headers, request IDs, and rate limiting"
+      "badge": "生产级 SaaS 基础",
+      "title": "只需几天而不是几个月即可启动可投入生产的 SaaS。",
+      "description": "跳过数月的平台工作。身份验证、团队访问、基于席位的计费、支持电子邮件和 AI 就绪 API 均已连接，因此您可以专注于客户付费的产品。",
+      "goDashboard": "转到仪表板",
+      "startFreeNow": "立即免费开始",
+      "viewPricing": "查看定价",
+      "feature1": "Supabase 身份验证流程",
+      "feature2": "团队邀请和角色",
+      "feature3": "基于席位的 Stripe 计费",
+      "feature4": "AI聊天端点",
+      "feature5": "重新发送支持电子邮件",
+      "feature6": "CSRF + CSP + 速率限制",
+      "shipNowTitle": "您立即发货的物品",
+      "shipNowDescription": "应用程序和 API 流程映射到真正的 SaaS 启动。",
+      "shipItem1": "注册、登录、忘记密码、重置密码和受保护的仪表板路由",
+      "shipItem2": "团队入职，包括邀请、接受、角色管理和所有权转让",
+      "shipItem3": "基于座位的 Stripe 结帐、计费门户、计划更改和 Webhook 同步",
+      "shipItem4": "支持具有重新发送传递和经过身份验证的发件人上下文的请求 API",
+      "shipItem5": "可选的人工智能聊天路线，具有流式响应、预算和计划感知访问",
+      "shipItem6": "安全默认设置，包括 CSRF 检查、CSP 标头、请求 ID 和速率限制"
     },
     "gettingStarted": {
-      "title": "How to get up-and-running",
-      "description": "Follow the setup in the README to go from fresh clone to a working SaaS app with real auth and billing flows.",
-      "step1Title": "1. Clone & install",
-      "step1Text": "Install dependencies, copy `.env.example` to `.env.local`, and set your required values.",
-      "step2Title": "2. Configure providers",
-      "step2Text": "Apply `supabase/schema.sql`, add Stripe price IDs + webhook secret, and configure Resend.",
-      "step3Title": "3. Customize & launch",
-      "step3Text": "Update branding, pricing, and product logic, then deploy to Vercel with optional cron jobs."
+      "title": "如何启动并运行",
+      "description": "按照自述文件中的设置从新克隆到具有真实身份验证和计费流程的工作 SaaS 应用程序。",
+      "step1Title": "1.克隆并安装",
+      "step1Text": "安装依赖项，将 `.env.example` 复制到 `.env.local`，然后设置所需的值。",
+      "step2Title": "2. 配置提供商",
+      "step2Text": "应用“supabase/schema.sql”，添加 Stripe 价格 ID + webhook 密钥，并配置重新发送。",
+      "step3Title": "3. 定制和启动",
+      "step3Text": "更新品牌、定价和产品逻辑，然后使用可选的 cron 作业部署到 Vercel。"
     },
     "whyStarter": {
-      "label": "Why this starter",
-      "title": "Built for real SaaS operations, not just demos.",
-      "description": "The codebase includes production-minded patterns for teams, subscriptions, support, AI access controls, and operational cron endpoints.",
-      "stat1Label": "App routes included",
-      "stat1Value": "Public + Auth + Dashboard",
-      "stat2Label": "Core workflows prewired",
-      "stat2Value": "Auth + Teams + Billing",
-      "stat3Label": "Security baseline included",
-      "stat3Value": "CSRF + CSP + rate limiting"
+      "label": "为什么选择这个首发",
+      "title": "专为真正的 SaaS 操作而构建，而不仅仅是演示。",
+      "description": "该代码库包括团队、订阅、支持、AI 访问控制和操作 cron 端点的生产模式。",
+      "stat1Label": "包含应用程序路线",
+      "stat1Value": "公共+授权+仪表板",
+      "stat2Label": "预先连接的核心工作流程",
+      "stat2Value": "身份验证 + 团队 + 计费",
+      "stat3Label": "包括安全基线",
+      "stat3Value": "CSRF+CSP+限速"
     },
     "bestPractices": {
-      "title": "Built-in best practices",
-      "description": "Core paths are implemented with safety and maintainability in mind, so you can extend confidently.",
-      "securityDefaultsTitle": "Security defaults",
-      "securityDefaultsText": "CSRF protection, CSP, strict API headers, and request-aware middleware are included.",
-      "teamBillingTitle": "Team-based billing",
-      "teamBillingText": "Stripe subscriptions are team-scoped with seat reconciliation, portal access, and plan changes.",
-      "operationalTitle": "Operational endpoints",
-      "operationalText": "Cron routes reconcile seats and clean webhook data, with token-based authorization."
+      "title": "内置最佳实践",
+      "description": "核心路径的实施考虑到了安全性和可维护性，因此您可以放心地进行扩展。",
+      "securityDefaultsTitle": "安全默认设置",
+      "securityDefaultsText": "包括 CSRF 保护、CSP、严格的 API 标头和请求感知中间件。",
+      "teamBillingTitle": "基于团队的计费",
+      "teamBillingText": "Stripe 订阅是团队范围的，包括席位协调、门户访问和计划更改。",
+      "operationalTitle": "运营端点",
+      "operationalText": "Cron 路由通过基于令牌的授权来协调席位并清理 Webhook 数据。"
     },
     "stack": {
-      "title": "Inside the stack",
-      "description": "Next.js App Router with clear boundaries across UI routes, API handlers, and shared platform libraries.",
-      "authTitle": "Auth & user flows",
-      "authText": "Supabase SSR auth helpers, invite acceptance flow, team context, and account settings are already connected.",
-      "billingTitle": "Billing & Stripe",
-      "billingText": "Checkout, portal, and change-plan APIs are backed by webhook dedupe and subscription sync logic.",
-      "opsTitle": "AI, support, and observability",
-      "opsText": "AI chat, Resend support email, and optional Intercom + Sentry integrations are ready to configure."
+      "title": "堆栈内部",
+      "description": "Next.js App Router 在 UI 路由、API 处理程序和共享平台库之间具有清晰的界限。",
+      "authTitle": "身份验证和用户流程",
+      "authText": "Supabase SSR 身份验证助手、邀请接受流程、团队上下文和帐户设置已连接。",
+      "billingTitle": "计费和条带",
+      "billingText": "结帐、门户和更改计划 API 由 Webhook 重复数据删除和订阅同步逻辑支持。",
+      "opsTitle": "人工智能、支持和可观察性",
+      "opsText": "AI 聊天、重新发送支持电子邮件和可选的 Intercom + Sentry 集成已准备好进行配置。"
     },
     "pricing": {
-      "title": "Seat-based pricing from Stripe",
-      "description": "Configure Starter, Growth, and Pro price IDs once, and the landing page and billing flows stay in sync.",
-      "mostPopular": "Most popular",
-      "managePlan": "Manage Plan",
-      "choosePlan": "Choose {name}"
+      "title": "Stripe 的基于座位的定价",
+      "description": "配置 Starter、Growth 和 Pro 价格 ID 一次，登陆页面和计费流程即可保持同步。",
+      "mostPopular": "最受欢迎",
+      "managePlan": "管理计划",
+      "choosePlan": "选择 {name}"
     },
     "ctaFaq": {
-      "title": "Ready to ship your SaaS faster?",
-      "description": "Start with proven auth, team, billing, and API infrastructure, then build the product experience that makes your business unique.",
-      "openDashboard": "Open dashboard",
-      "createAccount": "Create your account",
-      "comparePlans": "Compare plans",
-      "faqTitle": "FAQ",
-      "q1": "What is included out of the box?",
-      "a1": "A production-oriented SaaS foundation with Supabase auth, team invites and roles, seat-based Stripe billing, dashboard routes, support email via Resend, and security middleware already wired in.",
-      "q2": "Do I need to build auth and billing myself?",
-      "a2": "No. Login, signup, password reset, protected routes, checkout, plan changes, billing portal, and webhook handling are already implemented so you can focus on product features.",
-      "q3": "How are teams and permissions handled?",
-      "a3": "Teams support invite flows and role-based access (`owner`, `admin`, `member`), with ownership transfer and guarded membership operations handled through API routes and database policies.",
-      "q4": "Is AI chat included?",
-      "a4": "Yes. `/api/ai/chat` is included with streaming responses, CSRF checks, rate limiting, and configurable access rules by paid status or plan when `OPENAI_API_KEY` is set."
+      "title": "准备好更快地交付您的 SaaS 了吗？",
+      "description": "从经过验证的身份验证、团队、计费和 API 基础设施开始，然后构建使您的业务独一无二的产品体验。",
+      "openDashboard": "打开仪表板",
+      "createAccount": "创建您的帐户",
+      "comparePlans": "比较计划",
+      "faqTitle": "常问问题",
+      "q1": "开箱即用包含什么？",
+      "a1": "面向生产的 SaaS 基础，具有 Supabase 身份验证、团队邀请和角色、基于席位的 Stripe 计费、仪表板路由、通过 Resend 的支持电子邮件以及已连接的安全中间件。",
+      "q2": "我需要自己构建身份验证和计费吗？",
+      "a2": "不需要。登录、注册、密码重置、受保护的路线、结帐、计划更改、计费门户和 Webhook 处理已经实现，因此您可以专注于产品功能。",
+      "q3": "团队和权限如何处理？",
+      "a3": "团队支持邀请流程和基于角色的访问（“所有者”、“管理员”、“成员”），并通过 API 路由和数据库策略处理所有权转移和受保护的成员资格操作。",
+      "q4": "包含AI聊天吗？",
+      "a4": "是的。设置“OPENAI_API_KEY”时，“/api/ai/chat”包含流响应、CSRF 检查、速率限制以及按付费状态或计划配置的访问规则。"
     }
   },
   "DashboardSidebar": {
-    "appDashboard": "App Dashboard",
-    "team": "Team",
-    "switch": "Switch",
-    "overview": "Overview",
-    "ai": "AI Chat",
-    "billing": "Billing",
-    "usage": "Usage",
-    "settings": "Settings",
-    "home": "Home",
-    "logout": "Logout"
+    "appDashboard": "应用程序仪表板",
+    "soloWorkspace": "我的工作区",
+    "team": "团队",
+    "inviteTeammates": "邀请队友",
+    "switch": "转变",
+    "overview": "概述",
+    "ai": "人工智能聊天",
+    "billing": "计费",
+    "usage": "用法",
+    "settings": "设置",
+    "home": "家",
+    "logout": "退出"
   },
   "DashboardPage": {
-    "overview": "Overview",
-    "welcome": "Welcome, {name}",
-    "navigate": "Navigate by section for billing, team management, usage, and settings.",
-    "account": "Account",
-    "userId": "User ID",
-    "team": "Team",
-    "role": "Role",
-    "memberSince": "Member since",
-    "subscriptionSnapshot": "Subscription snapshot",
-    "currentPlan": "Current plan",
-    "unknown": "Unknown",
-    "status": "Status",
-    "seats": "Seats",
-    "currentPlanFree": "Current plan: Free",
-    "visitBillingUpgrade": "Visit billing to upgrade anytime.",
-    "noActiveSubscription": "No active subscription. Visit billing to start a plan.",
-    "ai": "AI Chat",
-    "billing": "Billing",
-    "teamNav": "Team",
-    "usage": "Usage",
-    "settings": "Settings"
+    "overview": "概述",
+    "welcome": "欢迎，{name}",
+    "navigate": "按计费、团队管理、使用情况和设置部分导航。",
+    "account": "帐户",
+    "userId": "用户身份",
+    "team": "团队",
+    "role": "角色",
+    "memberSince": "会员自",
+    "subscriptionSnapshot": "订阅快照",
+    "currentPlan": "目前计划",
+    "unknown": "未知",
+    "status": "地位",
+    "seats": "座位数",
+    "currentPlanFree": "当前计划：免费",
+    "visitBillingUpgrade": "随时访问账单进行升级。",
+    "noActiveSubscription": "没有活跃的订阅。访问账单以开始计划。",
+    "ai": "人工智能聊天",
+    "billing": "计费",
+    "teamNav": "团队",
+    "inviteTeammates": "邀请队友",
+    "usage": "用法",
+    "settings": "设置"
   },
   "DashboardAiPage": {
     "header": {
-      "eyebrow": "AI",
-      "title": "Team AI chat",
-      "description": "Chat with your configured model using your team billing and usage limits."
+      "eyebrow": "人工智能",
+      "title": "团队AI聊天",
+      "description": "使用您的团队计费和使用限制与您配置的模型聊天。"
     }
   },
   "AiChatCard": {
-    "title": "Assistant",
-    "description": "Messages stream in real time and usage is tracked automatically.",
-    "placeholder": "Ask anything about your product, docs, or workflow...",
-    "emptyState": "Start by sending a message.",
+    "title": "助手",
+    "description": "消息实时传输并自动跟踪使用情况。",
+    "placeholder": "询问有关您的产品、文档或工作流程的任何信息...",
+    "emptyState": "首先发送消息。",
     "attachments": {
-      "label": "Attachments",
-      "selected": "{count} selected"
+      "label": "附件",
+      "selected": "已选择 {count}"
     },
     "actions": {
-      "send": "Send",
-      "sending": "Sending...",
-      "stop": "Stop"
+      "send": "发送",
+      "sending": "正在发送...",
+      "stop": "停止"
     },
     "errors": {
-      "requestFailed": "AI request failed.",
-      "budgetExceeded": "Monthly AI token budget reached. Upgrade or wait for the next cycle.",
-      "modalityNotAllowed": "Your current AI plan does not allow this attachment type.",
-      "planRequired": "AI access requires an eligible paid plan.",
-      "upstreamRateLimited": "The AI provider is currently rate limited. Please retry shortly.",
-      "upstreamBadRequest": "This AI request could not be processed. Adjust your input and try again.",
-      "upstreamError": "AI assistant is currently unavailable.",
-      "maxAttachments": "A maximum of {max} attachments is allowed per message.",
-      "unsupportedType": "Unsupported attachment type: {mimeType}",
-      "fileTooLarge": "Attachment is too large. Keep files under ~180,000 encoded characters.",
-      "totalAttachmentsTooLarge": "Total attachment size is too large for one message. Use fewer or smaller files."
+      "requestFailed": "AI请求失败。",
+      "budgetExceeded": "每月 AI 代币预算已达到。升级或者等待下一个周期。",
+      "modalityNotAllowed": "您当前的 AI 计划不允许此附件类型。",
+      "planRequired": "AI 访问需要符合条件的付费计划。",
+      "upstreamRateLimited": "AI 提供商目前受到费率限制。请稍后重试。",
+      "upstreamBadRequest": "无法处理此 AI 请求。调整您的输入并重试。",
+      "upstreamError": "AI助手目前不可用。",
+      "maxAttachments": "每条消息最多允许 {max} 个附件。",
+      "unsupportedType": "不受支持的附件类型：{mimeType}",
+      "fileTooLarge": "附件太大。将文件的编码字符数控制在约 180,000 个以内。",
+      "totalAttachmentsTooLarge": "对于一封邮件来说，附件总大小太大。使用更少或更小的文件。"
     }
   },
   "BillingActions": {
-    "title": "Billing actions",
+    "title": "计费操作",
     "description": {
-      "noPermission": "Only team owners and admins can manage billing.",
-      "hasSubscription": "Upgrade, downgrade, or open Stripe Billing Portal.",
-      "noSubscription": "Choose a plan to start your subscription."
+      "noPermission": "只有团队所有者和管理员可以管理计费。",
+      "hasSubscription": "升级、降级或打开 Stripe Billing Portal。",
+      "noSubscription": "选择一个计划来开始订阅。"
     },
     "actions": {
-      "opening": "Opening...",
-      "updating": "Updating...",
-      "manageBilling": "Manage billing",
-      "subscribe": "Subscribe {name}",
-      "switchTo": "Switch to {name}"
+      "opening": "开幕...",
+      "updating": "更新中...",
+      "manageBilling": "管理账单",
+      "subscribe": "订阅 {name}",
+      "switchTo": "切换到 {name}"
     },
     "messages": {
-      "syncPending": "Plan updated in Stripe. Sync in progress. Refreshing shortly...",
-      "planUpdated": "Plan updated. Refreshing billing details..."
+      "syncPending": "计划已在 Stripe 中更新。同步正在进行中。刷新不久...",
+      "planUpdated": "计划已更新。正在刷新帐单详细信息..."
     },
     "errors": {
-      "checkoutFailed": "Checkout failed",
-      "planChangeFailed": "Plan change failed",
-      "portalUnavailable": "Portal unavailable",
-      "missingCheckoutUrl": "Missing checkout URL",
-      "missingPortalUrl": "Missing portal URL",
-      "requestFailed": "Request failed"
+      "checkoutFailed": "结帐失败",
+      "planChangeFailed": "计划变更失败",
+      "portalUnavailable": "门户不可用",
+      "missingCheckoutUrl": "缺少结账网址",
+      "missingPortalUrl": "缺少门户 URL",
+      "requestFailed": "请求失败"
     }
   },
   "DashboardBillingPage": {
     "header": {
-      "eyebrow": "Billing",
-      "title": "Manage your subscription",
-      "description": "Update plans, open the Stripe portal, and review your subscription status."
+      "eyebrow": "计费",
+      "title": "管理您的订阅",
+      "description": "更新计划、打开 Stripe 门户并查看您的订阅状态。"
     },
     "currentSubscription": {
-      "title": "Current subscription",
-      "currentPlan": "Current plan",
-      "unknown": "Unknown",
-      "status": "Status",
-      "seats": "Seats",
-      "periodEnd": "Period end",
-      "notAvailable": "N/A",
-      "currentPlanFree": "Current plan: Free",
-      "upgradeHint": "Upgrade below to unlock paid features.",
-      "noSubscription": "No subscription yet. Choose a plan below to get started."
+      "title": "当前订阅",
+      "currentPlan": "目前计划",
+      "unknown": "未知",
+      "status": "地位",
+      "seats": "座位数",
+      "perSeatCost": "每席位成本",
+      "periodEnd": "期末",
+      "notAvailable": "不适用",
+      "currentPlanFree": "当前计划：免费",
+      "upgradeHint": "以下升级可解锁付费功能。",
+      "noSubscription": "还没有订阅。选择下面的计划即可开始。"
+    },
+    "freeMode": {
+      "title": "解锁高级功能",
+      "description": "选择付费计划以解锁高级功能。所有付费计划都包含团队协作，并按每位队友计费。",
+      "perSeat": "每位队友费用为 {amount}。",
+      "collaborationIncluded": "所有付费计划均包含团队协作。"
+    },
+    "paidSolo": {
+      "title": "准备好后再邀请队友",
+      "description": "协作是可选的。您可以随时邀请队友，每席每月 {amount}。",
+      "action": "邀请队友"
+    },
+    "paidTeam": {
+      "breakdown": "{seats} 个席位 x {seatCost} = {monthlyTotal}/月"
     }
   },
   "DashboardSettingsPage": {
     "header": {
-      "eyebrow": "Settings",
-      "title": "Account preferences",
-      "description": "Update your profile basics and review account-level preferences."
+      "eyebrow": "设置",
+      "title": "账户偏好",
+      "description": "更新您的个人资料基础知识并查看帐户级别的首选项。"
+    },
+    "inviteTeammates": {
+      "title": "协作",
+      "description": "准备好后可邀请队友。每个席位都会增加每月费用。",
+      "action": "邀请队友"
     }
   },
   "DashboardTeamPage": {
     "header": {
-      "eyebrow": "Team",
-      "title": "Team access and invites",
-      "description": "Manage members, roles, and invitation links for your workspace."
+      "eyebrow": "团队",
+      "title": "团队访问和邀请",
+      "description": "管理工作区的成员、角色和邀请链接。"
     }
   },
   "DashboardUsagePage": {
     "header": {
-      "eyebrow": "Usage",
-      "title": "AI usage and monthly totals",
-      "description": "Track recent token usage for your team."
+      "eyebrow": "用法",
+      "title": "AI 使用情况和每月总计",
+      "description": "跟踪您的团队最近的代币使用情况。"
     },
     "table": {
-      "title": "Last 6 months",
-      "noUsage": "No usage data yet.",
-      "month": "Month",
-      "usedTokens": "Used tokens",
-      "reservedTokens": "Reserved tokens"
+      "title": "过去 6 个月",
+      "noUsage": "尚无使用数据。",
+      "month": "月",
+      "usedTokens": "使用的代币",
+      "reservedTokens": "预留代币"
     }
   },
   "DashboardSettingsCard": {
-    "title": "Settings",
-    "description": "Update your basic account settings.",
+    "title": "设置",
+    "description": "更新您的基本帐户设置。",
     "actions": {
-      "saving": "Saving...",
-      "saveSettings": "Save settings"
+      "saving": "保存...",
+      "saveSettings": "保存设置"
     },
     "fields": {
-      "displayName": "Display name",
-      "displayNamePlaceholder": "Your name",
-      "email": "Email",
-      "emailHint": "Email is managed in your authentication provider."
+      "displayName": "显示名称",
+      "displayNamePlaceholder": "你的名字",
+      "email": "电子邮件",
+      "emailHint": "电子邮件由您的身份验证提供商管理。"
     },
     "upload": {
-      "profilePhoto": "Profile photo",
-      "profileAvatarAlt": "Profile avatar",
-      "noPhoto": "No photo",
-      "uploading": "Uploading...",
-      "uploadPhoto": "Upload photo",
-      "removePhoto": "Remove photo",
-      "ready": "Ready to upload {name}",
-      "success": "Photo uploaded. Click Save settings to persist.",
+      "profilePhoto": "个人资料照片",
+      "profileAvatarAlt": "个人资料头像",
+      "noPhoto": "没有照片",
+      "uploading": "正在上传...",
+      "uploadPhoto": "上传照片",
+      "removePhoto": "删除照片",
+      "ready": "准备上传 {name}",
+      "success": "照片已上传。单击保存设置以保留。",
       "errors": {
-        "selectImage": "Select an image before uploading.",
-        "imageOnly": "Only image files are supported.",
-        "maxSize": "Image must be 2MB or smaller.",
-        "failed": "Could not upload image. Please try again."
+        "selectImage": "上传前选择图像。",
+        "imageOnly": "仅支持图像文件。",
+        "maxSize": "图片必须为 2MB 或更小。",
+        "failed": "无法上传图像。请再试一次。"
       }
     }
   },
   "TeamInviteCard": {
-    "title": "Team members",
-    "description": "Manage who can access {teamName}.",
+    "title": "团队成员",
+    "description": "管理谁可以访问 {teamName}。",
     "roles": {
-      "owner": "Owner",
-      "admin": "Admin",
-      "member": "Member"
+      "owner": "所有者",
+      "admin": "行政",
+      "member": "成员"
     },
     "actions": {
-      "saving": "Saving...",
-      "makeMember": "Make member",
-      "makeAdmin": "Make admin",
-      "remove": "Remove",
-      "removing": "Removing...",
-      "resend": "Resend",
-      "resending": "Resending...",
-      "revoke": "Revoke",
-      "revoking": "Revoking...",
-      "sending": "Sending...",
-      "sendInvite": "Send invite"
+      "saving": "保存...",
+      "makeMember": "成为会员",
+      "makeAdmin": "设为管理员",
+      "remove": "消除",
+      "removing": "正在删除...",
+      "resend": "重新发送",
+      "resending": "重新发送...",
+      "revoke": "撤销",
+      "revoking": "撤销...",
+      "sending": "正在发送...",
+      "sendInvite": "发送邀请"
     },
     "inviteForm": {
-      "emailLabel": "Invite email",
+      "teamNameLabel": "团队名称",
+      "teamNamePlaceholder": "Acme 团队",
+      "teamNameHint": "发送第一封邀请前，请先设置团队名称。",
+      "emailLabel": "邀请邮件",
       "emailPlaceholder": "teammate@example.com",
-      "roleLabel": "Role"
+      "roleLabel": "角色"
+    },
+    "pricing": {
+      "perSeat": "每位队友费用为 {amount}。"
     },
     "pending": {
-      "title": "Pending invites",
-      "none": "No pending invites.",
-      "expires": "Expires {date}"
+      "title": "待处理的邀请",
+      "none": "没有待处理的邀请。",
+      "expires": "过期 {date}"
     },
     "permissions": {
-      "onlyOwnersAdmins": "Only owners and admins can invite teammates."
+      "onlyOwnersAdmins": "只有所有者和管理员才能邀请队友。"
     },
     "confirmations": {
-      "removeMember": "Remove this member from the team? They will immediately lose access.",
-      "revokeInvite": "Revoke this invite?"
+      "removeMember": "从团队中删除该成员吗？他们将立即失去访问权限。",
+      "revokeInvite": "撤销此邀请？"
     },
     "feedback": {
-      "inviteEmailSent": "Invite email sent.",
-      "inviteCreatedEmailFailed": "Invite created, but email delivery failed. Use resend later to retry.",
-      "memberRemoved": "Member removed.",
-      "roleUpdated": "Member role updated.",
-      "inviteRevoked": "Invite revoked.",
-      "inviteResent": "Invite resent.",
-      "inviteResentEmailFailed": "Invite token rotated, but email delivery failed."
+      "inviteEmailSent": "邀请电子邮件已发送。",
+      "inviteCreatedEmailFailed": "邀请已创建，但电子邮件发送失败。稍后使用重新发送来重试。",
+      "memberRemoved": "会员已删除。",
+      "roleUpdated": "会员角色已更新。",
+      "inviteRevoked": "邀请被撤销。",
+      "inviteResent": "重新邀请。",
+      "inviteResentEmailFailed": "邀请令牌轮换，但电子邮件发送失败。"
     },
     "errors": {
-      "sendInvite": "Failed to send invite.",
-      "removeMember": "Failed to remove member.",
-      "updateRole": "Failed to update member role.",
-      "revokeInvite": "Failed to revoke invite.",
-      "resendInvite": "Failed to resend invite."
+      "sendInvite": "发送邀请失败。",
+      "teamNameRequired": "发送第一封邀请前，请先输入团队名称。",
+      "updateTeamName": "保存团队名称失败。",
+      "removeMember": "删除成员失败。",
+      "updateRole": "无法更新成员角色。",
+      "revokeInvite": "撤销邀请失败。",
+      "resendInvite": "重新发送邀请失败。"
     }
   },
   "ForgotPasswordForm": {
-    "title": "Forgot your password?",
-    "description": "Enter your email and we will send a password reset link.",
-    "email": "Email",
-    "sending": "Sending...",
-    "sendResetLink": "Send reset link",
+    "title": "忘记密码了吗？",
+    "description": "输入您的电子邮件，我们将发送密码重置链接。",
+    "email": "电子邮件",
+    "sending": "正在发送...",
+    "sendResetLink": "发送重置链接",
     "messages": {
-      "resetLinkSentIfAccountExists": "If an account exists for that email, a reset link has been sent."
+      "resetLinkSentIfAccountExists": "如果该电子邮件的帐户存在，则重置链接已发送。"
     },
     "errors": {
-      "unableToSendResetLink": "Unable to send reset link.",
-      "unexpected": "Unexpected error"
+      "unableToSendResetLink": "无法发送重置链接。",
+      "unexpected": "意外错误"
     }
   },
   "ResetPasswordForm": {
-    "checking": "Verifying your reset link...",
-    "invalidTitle": "Reset link is invalid or expired",
-    "invalidDescription": "Request a new password reset email to continue.",
-    "requestNewLink": "Request a new link",
-    "title": "Set a new password",
-    "description": "Choose a strong password with at least 12 characters.",
-    "newPassword": "New password",
-    "confirmPassword": "Confirm password",
-    "passwordHint": "Use 12-128 characters. Passphrases are welcome.",
-    "saving": "Saving...",
-    "updatePassword": "Update password",
+    "checking": "正在验证您的重置链接...",
+    "invalidTitle": "重置链接无效或已过期",
+    "invalidDescription": "请求新的密码重置电子邮件以继续。",
+    "requestNewLink": "请求新链接",
+    "title": "设置新密码",
+    "description": "选择一个至少包含 12 个字符的强密码。",
+    "newPassword": "新密码",
+    "confirmPassword": "确认密码",
+    "passwordHint": "使用 12-128 个字符。欢迎使用密码。",
+    "saving": "保存...",
+    "updatePassword": "更新密码",
     "messages": {
-      "passwordUpdated": "Password updated. Redirecting to login..."
+      "passwordUpdated": "密码已更新。正在重定向至登录..."
     },
     "errors": {
-      "passwordsDoNotMatch": "Passwords do not match.",
-      "invalidOrExpired": "Reset link is invalid or expired. Please request a new link.",
-      "unableToUpdatePassword": "Unable to update password. Please try again.",
-      "unexpected": "Unexpected error"
+      "passwordsDoNotMatch": "密码不匹配。",
+      "invalidOrExpired": "重置链接无效或已过期。请请求新链接。",
+      "unableToUpdatePassword": "无法更新密码。请再试一次。",
+      "unexpected": "意外错误"
     }
   },
   "NoTeamCard": {
-    "title": "No team access found",
-    "description": "You do not currently belong to an active team. Recover a personal team to continue.",
+    "title": "未找到团队访问权限",
+    "description": "您目前不属于活跃团队。恢复个人团队继续。",
     "actions": {
-      "recovering": "Recovering...",
-      "recover": "Recover personal team"
+      "recovering": "正在恢复...",
+      "recover": "恢复个人团队"
     },
     "messages": {
-      "recovered": "Personal team recovered."
+      "recovered": "个人团队恢复。"
     },
     "errors": {
-      "recoverFailed": "Failed to recover team."
+      "recoverFailed": "无法恢复团队。"
     }
   },
   "TeamContextErrorCard": {
-    "title": "Could not load team access",
-    "description": "We hit a temporary issue loading your team context. Please refresh and try again."
+    "title": "无法加载团队访问权限",
+    "description": "我们在加载您的团队上下文时遇到了临时问题。请刷新并重试。"
   },
   "NotificationPreferencesCard": {
-    "title": "Notification preferences",
-    "description": "Choose which account emails you want to receive.",
+    "title": "通知首选项",
+    "description": "选择您想要接收的帐户电子邮件。",
     "actions": {
-      "saving": "Saving...",
-      "savePreferences": "Save preferences"
+      "saving": "保存...",
+      "savePreferences": "保存首选项"
     },
     "items": {
       "securityAlerts": {
-        "label": "Security alerts",
-        "description": "Sign-ins, password resets, and important account activity."
+        "label": "安全警报",
+        "description": "登录、密码重置和重要的帐户活动。"
       },
       "productUpdates": {
-        "label": "Product updates",
-        "description": "Feature announcements and release notes."
+        "label": "产品更新",
+        "description": "功能公告和发行说明。"
       },
       "marketingEmails": {
-        "label": "Marketing emails",
-        "description": "Tips, offers, and occasional product highlights."
+        "label": "营销电子邮件",
+        "description": "提示、优惠和偶尔的产品亮点。"
       }
     }
   },
   "EmailSettingsCard": {
-    "title": "Email address",
-    "description": "Request an email update. We will send confirmation instructions based on your auth security settings.",
+    "title": "电子邮件",
+    "description": "请求电子邮件更新。我们将根据您的身份验证安全设置发送确认说明。",
     "fields": {
-      "currentEmail": "Current email",
-      "newEmail": "New email",
-      "newEmailPlaceholder": "name@company.com"
+      "currentEmail": "当前电子邮件",
+      "newEmail": "新电子邮件",
+      "newEmailPlaceholder": "姓名@company.com"
     },
     "actions": {
-      "sending": "Sending...",
-      "requestEmailChange": "Request email change"
+      "sending": "正在发送...",
+      "requestEmailChange": "请求更改电子邮件"
     }
   },
   "DangerZoneCard": {
-    "title": "Danger Zone",
-    "description": "Deactivation signs you out of all sessions. Deletion permanently removes your account.",
+    "title": "危险区",
+    "description": "停用将使您退出所有会话。删除将永久删除您的帐户。",
     "fields": {
-      "confirmDelete": "Type DELETE to confirm",
-      "deleteToken": "DELETE",
-      "confirmEmail": "Confirm your email address",
-      "confirmEmailPlaceholder": "you@example.com",
-      "confirmPermanent": "I understand this action is permanent and cannot be undone."
+      "confirmDelete": "键入 DELETE 进行确认",
+      "deleteToken": "删除",
+      "confirmEmail": "确认您的电子邮件地址",
+      "confirmEmailPlaceholder": "你@example.com",
+      "confirmPermanent": "我了解此操作是永久性的且无法撤消。"
     },
     "actions": {
-      "deactivate": "Deactivate for now (sign out everywhere)",
-      "deleting": "Deleting...",
-      "deletePermanently": "Delete account permanently"
+      "deactivate": "暂时停用（到处注销）",
+      "deleting": "正在删除...",
+      "deletePermanently": "永久删除帐户"
     }
   },
   "SecuritySettingsCard": {
-    "title": "Session and security",
-    "description": "Manage account sessions and reset your password.",
+    "title": "会话和安全",
+    "description": "管理帐户会话并重置您的密码。",
     "actions": {
-      "signOutAll": "Sign out all sessions",
-      "resetPassword": "Reset password"
+      "signOutAll": "注销所有会话",
+      "resetPassword": "重置密码"
     }
   },
   "OrganizationSettingsCard": {
-    "title": "Organization settings",
-    "description": "Rename your workspace and transfer ownership when needed.",
+    "title": "组织设置",
+    "description": "重命名您的工作区并在需要时转移所有权。",
     "fields": {
-      "teamName": "Team name"
+      "teamName": "队名"
     },
     "ownership": {
-      "title": "Transfer ownership",
-      "newOwner": "New owner",
-      "selectTeammate": "Select teammate..."
+      "title": "转让所有权",
+      "newOwner": "新主人",
+      "selectTeammate": "选择队友..."
     },
     "actions": {
-      "saving": "Saving...",
-      "saveOrganization": "Save organization",
-      "transferring": "Transferring...",
-      "transferOwnership": "Transfer ownership"
+      "saving": "保存...",
+      "saveOrganization": "保存组织",
+      "transferring": "转移...",
+      "transferOwnership": "转让所有权"
     },
     "confirm": {
-      "transferOwnership": "Transfer ownership? You will become an admin after this action."
+      "transferOwnership": "转让所有权？执行此操作后，您将成为管理员。"
     },
     "feedback": {
-      "nameUpdated": "Organization name updated.",
-      "ownershipTransferred": "Ownership transferred."
+      "nameUpdated": "组织名称已更新。",
+      "ownershipTransferred": "所有权转让。"
     },
     "errors": {
-      "updateName": "Failed to update team name.",
-      "selectTeammate": "Select a teammate to transfer ownership.",
-      "transferOwnership": "Failed to transfer ownership."
+      "updateName": "无法更新团队名称。",
+      "selectTeammate": "选择一名队友来转让所有权。",
+      "transferOwnership": "未能转移所有权。"
     }
   },
   "SupportEmailCard": {
-    "title": "Email support (Resend)",
-    "description": "Send a message directly to your support inbox using Resend.",
+    "title": "电子邮件支持（重新发送）",
+    "description": "使用重新发送将消息直接发送到您的支持收件箱。",
     "fields": {
-      "subject": "Subject (optional)",
-      "subjectPlaceholder": "Billing question",
-      "message": "Message",
-      "messagePlaceholder": "Tell us what you need help with..."
+      "subject": "主题（可选）",
+      "subjectPlaceholder": "计费问题",
+      "message": "信息",
+      "messagePlaceholder": "告诉我们您需要什么帮助..."
     },
     "actions": {
-      "sending": "Sending...",
-      "sendSupportEmail": "Send support email"
+      "sending": "正在发送...",
+      "sendSupportEmail": "发送支持电子邮件"
     },
     "feedback": {
-      "sent": "Message sent. We will follow up shortly."
+      "sent": "消息已发送。我们将尽快跟进。"
     },
     "errors": {
-      "sendFailed": "Failed to send support email."
+      "sendFailed": "无法发送支持电子邮件。"
     }
   },
   "InviteAcceptCard": {
-    "title": "Team invite",
-    "description": "Accept this invite to join the shared workspace.",
-    "loginFirst": "Log in first, then return to this page to accept the invite.",
+    "title": "团队邀请",
+    "description": "接受此邀请加入共享工作区。",
+    "loginFirst": "首先登录，然后返回此页面接受邀请。",
     "actions": {
-      "accepting": "Accepting...",
-      "acceptInvite": "Accept invite"
+      "accepting": "接受...",
+      "acceptInvite": "接受邀请"
     },
     "messages": {
-      "joined": "Joined {teamName} successfully.",
-      "defaultTeamName": "team"
+      "joined": "成功加入 {teamName}。",
+      "defaultTeamName": "团队"
     },
     "errors": {
-      "unableToAccept": "Unable to accept invite."
+      "unableToAccept": "无法接受邀请。"
     }
   },
   "ApiTeamInvites": {
     "errors": {
-      "unauthorized": "Unauthorized",
-      "noTeamMembership": "No team membership found for this account.",
-      "payloadTooLarge": "Request payload is too large.",
-      "forbidden": "Only team owners and admins can send invites.",
-      "invalidPayload": "Invalid request payload.",
-      "rateLimited": "Too many invites sent. Please wait and try again.",
-      "invalidEmail": "Please provide a valid email.",
-      "invalidRole": "Role must be admin or member.",
-      "alreadyInTeam": "You are already part of this team.",
-      "unableToCreateInvite": "Unable to create invite right now.",
-      "teamMemberLimitReached": "Team member limit reached. Revoke pending invites or remove members first.",
-      "pendingInviteExists": "A pending invite already exists for this email."
+      "unauthorized": "未经授权",
+      "noTeamMembership": "找不到此帐户的团队成员资格。",
+      "payloadTooLarge": "请求负载太大。",
+      "forbidden": "只有团队所有者和管理员可以发送邀请。",
+      "invalidPayload": "请求负载无效。",
+      "rateLimited": "发送的邀请过多。请等待并重试。",
+      "invalidEmail": "请提供有效的电子邮件。",
+      "invalidRole": "角色必须是管理员或成员。",
+      "alreadyInTeam": "您已经是这个团队的一员了。",
+      "paidPlanRequired": "邀请队友需要付费计划。请先前往账单页面升级。",
+      "unableToCreateInvite": "目前无法创建邀请。",
+      "teamMemberLimitReached": "已达到团队成员限制。首先撤销待处理的邀请或删除成员。",
+      "pendingInviteExists": "此电子邮件已存在待处理的邀请。"
     },
     "email": {
-      "defaultTeamName": "a team",
-      "subject": "You're invited to join {teamName}",
-      "line1": "You've been invited to join {teamName} on SaaS Starter.",
-      "role": "Role: {role}",
-      "acceptInvite": "Accept invite: {inviteUrl}",
-      "expiresIn7Days": "This invite expires in 7 days."
+      "defaultTeamName": "一个团队",
+      "subject": "邀请您加入 {teamName}",
+      "line1": "您已受邀加入 SaaS Starter 上的 {teamName}。",
+      "role": "角色：{role}",
+      "acceptInvite": "接受邀请：{inviteUrl}",
+      "expiresIn7Days": "此邀请将在 7 天后过期。"
     }
   },
   "ApiTeamInviteResend": {
     "errors": {
-      "unauthorized": "Unauthorized",
-      "noTeamMembership": "No team membership found for this account.",
-      "payloadTooLarge": "Request payload is too large.",
-      "forbidden": "Only team owners and admins can resend invites.",
-      "rateLimited": "Too many invite management requests. Please try again shortly.",
-      "invalidInviteId": "Invalid invite id.",
-      "unableToResendInvite": "Unable to resend invite.",
-      "pendingInviteNotFound": "Pending invite not found."
+      "unauthorized": "未经授权",
+      "noTeamMembership": "找不到此帐户的团队成员资格。",
+      "payloadTooLarge": "请求负载太大。",
+      "forbidden": "只有团队所有者和管理员可以重新发送邀请。",
+      "rateLimited": "邀请管理请求过多。请稍后重试。",
+      "invalidInviteId": "邀请 ID 无效。",
+      "unableToResendInvite": "无法重新发送邀请。",
+      "pendingInviteNotFound": "未找到待处理的邀请。"
     },
     "email": {
-      "defaultTeamName": "a team",
-      "subject": "Reminder: join {teamName}",
-      "line1": "You were invited to join {teamName} on SaaS Starter.",
-      "role": "Role: {role}",
-      "acceptInvite": "Accept invite: {inviteUrl}",
-      "expiresIn7Days": "This invite expires in 7 days."
+      "defaultTeamName": "一个团队",
+      "subject": "提醒：加入 {teamName}",
+      "line1": "您已受邀加入 SaaS Starter 上的 {teamName}。",
+      "role": "角色：{role}",
+      "acceptInvite": "接受邀请：{inviteUrl}",
+      "expiresIn7Days": "此邀请将在 7 天后过期。"
     }
   },
   "ApiTeamInviteRevoke": {
     "errors": {
-      "unauthorized": "Unauthorized",
-      "noTeamMembership": "No team membership found for this account.",
-      "forbidden": "Only team owners and admins can revoke invites.",
-      "rateLimited": "Too many invite management requests. Please try again shortly.",
-      "invalidInviteId": "Invalid invite id.",
-      "unableToRevokeInvite": "Unable to revoke invite.",
-      "pendingInviteNotFound": "Pending invite not found."
+      "unauthorized": "未经授权",
+      "noTeamMembership": "找不到此帐户的团队成员资格。",
+      "forbidden": "只有团队所有者和管理员可以撤销邀请。",
+      "rateLimited": "邀请管理请求过多。请稍后重试。",
+      "invalidInviteId": "邀请 ID 无效。",
+      "unableToRevokeInvite": "无法撤销邀请。",
+      "pendingInviteNotFound": "未找到待处理的邀请。"
     }
   },
   "ApiTeamInviteAccept": {
     "defaults": {
-      "teamName": "Team"
+      "teamName": "团队"
     },
     "errors": {
-      "unauthorized": "Unauthorized",
-      "payloadTooLarge": "Request payload is too large.",
-      "invalidInviteToken": "Invalid invite token.",
-      "noEmailOnAccount": "No email found on this account.",
-      "rateLimited": "Too many invite acceptance attempts. Please try again shortly.",
-      "unableToAcceptInvite": "Unable to accept invite.",
-      "teamMemberLimitReached": "Team member limit reached. Ask an owner/admin to increase capacity first.",
-      "inviteNotFound": "Invite not found.",
-      "inviteAlreadyAccepted": "Invite has already been accepted.",
-      "inviteExpired": "Invite has expired.",
-      "inviteEmailMismatch": "This invite was sent to a different email address.",
-      "billingSyncFailedAfterAccept": "Invite accepted, but billing sync failed. Please retry shortly."
+      "unauthorized": "未经授权",
+      "payloadTooLarge": "请求负载太大。",
+      "invalidInviteToken": "邀请令牌无效。",
+      "noEmailOnAccount": "在此帐户中找不到电子邮件。",
+      "rateLimited": "邀请接受尝试过多。请稍后重试。",
+      "unableToAcceptInvite": "无法接受邀请。",
+      "teamMemberLimitReached": "已达到团队成员限制。首先要求所有者/管理员增加容量。",
+      "inviteNotFound": "未找到邀请。",
+      "inviteAlreadyAccepted": "邀请已被接受。",
+      "inviteExpired": "邀请已过期。",
+      "inviteEmailMismatch": "此邀请已发送至其他电子邮件地址。",
+      "billingSyncFailedAfterAccept": "邀请已接受，但帐单同步失败。请稍后重试。"
     }
   },
   "ApiSupport": {
     "errors": {
-      "unauthorized": "Unauthorized",
-      "rateLimited": "Too many requests. Please try again shortly.",
-      "payloadTooLarge": "Request payload is too large.",
-      "subjectTooLong": "Subject must be 120 characters or less.",
-      "messageTooShort": "Message must be at least 10 characters long.",
-      "messageTooLong": "Message must be 2000 characters or less.",
-      "invalidPayload": "Invalid support request payload.",
-      "unableToSend": "Unable to send support email right now. Please try again."
+      "unauthorized": "未经授权",
+      "rateLimited": "请求太多。请稍后重试。",
+      "payloadTooLarge": "请求负载太大。",
+      "subjectTooLong": "主题不得超过 120 个字符。",
+      "messageTooShort": "消息长度必须至少为 10 个字符。",
+      "messageTooLong": "消息不得超过 2000 个字符。",
+      "invalidPayload": "支持请求负载无效。",
+      "unableToSend": "目前无法发送支持电子邮件。请再试一次。"
     },
     "email": {
-      "unknownEmail": "Unknown email",
-      "subjectWithInput": "[Dashboard Support] {subject}",
-      "defaultSubject": "[Dashboard Support] New message",
-      "line1": "New support message from your SaaS Starter dashboard.",
-      "userId": "User ID: {userId}",
-      "email": "Email: {email}",
-      "messageLabel": "Message:"
+      "unknownEmail": "未知电子邮件",
+      "subjectWithInput": "[仪表板支持] {subject}",
+      "defaultSubject": "[仪表板支持] 新消息",
+      "line1": "来自 SaaS Starter 仪表板的新支持消息。",
+      "userId": "用户 ID：{userId}",
+      "email": "电子邮件： {email}",
+      "messageLabel": "信息："
     }
   },
   "ApiForgotPassword": {
     "messages": {
-      "genericSuccess": "If an account exists for that email, a reset link has been sent."
+      "genericSuccess": "如果该电子邮件的帐户存在，则重置链接已发送。"
     },
     "errors": {
-      "payloadTooLarge": "Request payload is too large."
+      "payloadTooLarge": "请求负载太大。"
     },
     "email": {
-      "subject": "Reset your password",
-      "line1": "We received a request to reset your password.",
-      "useLink": "Use this link to continue:",
-      "ignoreIfNotRequested": "If you did not request this, you can ignore this email."
+      "subject": "重置您的密码",
+      "line1": "我们收到了重置您密码的请求。",
+      "useLink": "使用此链接继续：",
+      "ignoreIfNotRequested": "如果您没有提出请求，您可以忽略这封电子邮件。"
     }
   },
   "ApiTeamMembers": {
     "errors": {
-      "unauthorized": "Unauthorized",
-      "noTeamMembership": "No team membership found for this account.",
-      "removeForbidden": "Only team owners and admins can remove members.",
-      "updateRoleForbidden": "Only team owners and admins can update member roles.",
-      "rateLimited": "Too many member management requests. Please try again shortly.",
-      "invalidMemberId": "Invalid member id.",
-      "selfRemovalNotSupported": "Self-removal is not supported from this action.",
-      "unableToRemoveMember": "Unable to remove member.",
-      "memberNotFound": "Member not found in this team.",
-      "adminRemoveLimit": "Admins can only remove members.",
-      "cannotRemoveLastOwner": "Cannot remove the last team owner.",
-      "billingSyncFailedAfterRemoval": "Member removed, but billing sync failed. Please retry shortly.",
-      "useOwnershipTransferForSelf": "Use ownership transfer to change your own owner role.",
-      "payloadTooLarge": "Request payload is too large.",
-      "invalidRolePayload": "Invalid role update payload.",
-      "unableToUpdateMemberRole": "Unable to update member role.",
-      "useOwnershipTransferForOwner": "Use ownership transfer to update owner role.",
-      "adminUpdateRoleLimit": "Admins can only update member roles."
+      "unauthorized": "未经授权",
+      "noTeamMembership": "找不到此帐户的团队成员资格。",
+      "removeForbidden": "只有团队所有者和管理员才能删除成员。",
+      "updateRoleForbidden": "只有团队所有者和管理员可以更新成员角色。",
+      "rateLimited": "会员管理请求过多。请稍后重试。",
+      "invalidMemberId": "会员 ID 无效。",
+      "selfRemovalNotSupported": "此操作不支持自行删除。",
+      "unableToRemoveMember": "无法删除成员。",
+      "memberNotFound": "在此团队中未找到成员。",
+      "adminRemoveLimit": "管理员只能删除成员。",
+      "cannotRemoveLastOwner": "无法删除最后一个团队所有者。",
+      "billingSyncFailedAfterRemoval": "会员已删除，但帐单同步失败。请稍后重试。",
+      "useOwnershipTransferForSelf": "使用所有权转让来更改您自己的所有者角色。",
+      "payloadTooLarge": "请求负载太大。",
+      "invalidRolePayload": "角色更新负载无效。",
+      "unableToUpdateMemberRole": "无法更新成员角色。",
+      "useOwnershipTransferForOwner": "使用所有权转移来更新所有者角色。",
+      "adminUpdateRoleLimit": "管理员只能更新成员角色。"
     }
   },
   "ApiTeamOwnershipTransfer": {
     "errors": {
-      "unauthorized": "Unauthorized",
-      "noTeamMembership": "No team membership found for this account.",
-      "forbidden": "Only owners can transfer ownership.",
-      "rateLimited": "Too many ownership transfer attempts. Please try again later.",
-      "payloadTooLarge": "Request payload is too large.",
-      "invalidPayload": "Invalid ownership transfer payload.",
-      "alreadyOwner": "You are already the owner.",
-      "unableToTransfer": "Unable to transfer ownership.",
-      "targetNotFound": "Target user is not a team member.",
-      "targetAlreadyOwner": "Target user is already an owner."
+      "unauthorized": "未经授权",
+      "noTeamMembership": "找不到此帐户的团队成员资格。",
+      "forbidden": "只有所有者才能转让所有权。",
+      "rateLimited": "所有权转移尝试过多。请稍后重试。",
+      "payloadTooLarge": "请求负载太大。",
+      "invalidPayload": "所有权转移有效负载无效。",
+      "alreadyOwner": "你已经是主人了。",
+      "unableToTransfer": "无法转让所有权。",
+      "targetNotFound": "目标用户不是团队成员。",
+      "targetAlreadyOwner": "目标用户已经是所有者。"
     }
   },
   "ApiTeamSettings": {
     "errors": {
-      "unauthorized": "Unauthorized",
-      "noTeamMembership": "No team membership found for this account.",
-      "forbidden": "Only team owners and admins can update organization settings.",
-      "rateLimited": "Too many settings updates. Please try again shortly.",
-      "payloadTooLarge": "Request payload is too large.",
-      "invalidPayload": "Invalid organization settings payload.",
-      "unableToUpdate": "Unable to update organization settings."
+      "unauthorized": "未经授权",
+      "noTeamMembership": "找不到此帐户的团队成员资格。",
+      "forbidden": "只有团队所有者和管理员可以更新组织设置。",
+      "rateLimited": "设置更新太多。请稍后重试。",
+      "payloadTooLarge": "请求负载太大。",
+      "invalidPayload": "组织设置有效负载无效。",
+      "unableToUpdate": "无法更新组织设置。"
     }
   },
   "ApiTeamRecoverPersonal": {
     "errors": {
-      "unauthorized": "Unauthorized",
-      "rateLimited": "Too many recovery requests. Please try again shortly.",
-      "noEmailOnAccount": "No email found on this account.",
-      "unableToRecover": "Unable to recover a team right now."
+      "unauthorized": "未经授权",
+      "rateLimited": "恢复请求太多。请稍后重试。",
+      "noEmailOnAccount": "在此帐户中找不到电子邮件。",
+      "unableToRecover": "现在无法恢复团队。"
     }
   },
   "ApiAuthLogin": {
     "errors": {
-      "invalidOrigin": "Invalid request origin.",
-      "missingCsrfToken": "Missing CSRF token.",
-      "invalidCsrfToken": "Invalid CSRF token.",
-      "invalidContentType": "Content-Type must be application/json.",
-      "payloadTooLarge": "Request payload is too large.",
-      "invalidCredentials": "Invalid email or password.",
-      "rateLimited": "Too many login attempts. Please try again later."
+      "invalidOrigin": "请求来源无效。",
+      "missingCsrfToken": "缺少 CSRF 令牌。",
+      "invalidCsrfToken": "CSRF 令牌无效。",
+      "invalidContentType": "Content-Type 必须是 application/json。",
+      "payloadTooLarge": "请求负载太大。",
+      "invalidCredentials": "电子邮件或密码无效。",
+      "rateLimited": "登录尝试次数过多。请稍后重试。"
     }
   },
   "ApiAuthSignup": {
     "messages": {
-      "accountCreated": "Account created. Check your inbox to verify email if confirmation is enabled."
+      "accountCreated": "帐户已创建。如果启用了确认，请检查您的收件箱以验证电子邮件。"
     },
     "errors": {
-      "invalidOrigin": "Invalid request origin.",
-      "missingCsrfToken": "Missing CSRF token.",
-      "invalidCsrfToken": "Invalid CSRF token.",
-      "invalidContentType": "Content-Type must be application/json.",
-      "payloadTooLarge": "Request payload is too large.",
-      "invalidEmailOrPassword": "Please provide a valid email and password.",
-      "passwordComplexity": "Password must be between 12 and 128 characters.",
-      "rateLimited": "Too many signup attempts. Please try again later.",
-      "unableToCreateAccount": "Unable to create your account."
+      "invalidOrigin": "请求来源无效。",
+      "missingCsrfToken": "缺少 CSRF 令牌。",
+      "invalidCsrfToken": "CSRF 令牌无效。",
+      "invalidContentType": "Content-Type 必须是 application/json。",
+      "payloadTooLarge": "请求负载太大。",
+      "invalidEmailOrPassword": "请提供有效的电子邮件和密码。",
+      "passwordComplexity": "密码必须介于 12 到 128 个字符之间。",
+      "rateLimited": "注册尝试次数过多。请稍后重试。",
+      "unableToCreateAccount": "无法创建您的帐户。"
     }
   },
   "ApiAiChat": {
     "errors": {
-      "invalidOrigin": "Invalid request origin.",
-      "missingCsrfToken": "Missing CSRF token.",
-      "invalidCsrfToken": "Invalid CSRF token.",
-      "invalidContentType": "Content-Type must be application/json.",
-      "unauthorized": "Unauthorized",
-      "noTeamMembership": "No team membership found for this account.",
-      "rateLimited": "Too many AI requests. Please wait and try again.",
-      "payloadTooLarge": "Request payload is too large.",
-      "invalidPayload": "Invalid request payload.",
-      "maxAttachments": "A maximum of {max} attachments is allowed per request.",
-      "unsupportedAttachmentType": "Unsupported attachment type.",
-      "budgetExceeded": "Monthly AI token budget reached. Upgrade or wait for the next cycle.",
-      "modalityNotAllowed": "Your current AI plan does not allow this attachment type.",
-      "planRequired": "AI access requires an eligible paid plan.",
-      "upstreamRateLimited": "The AI provider is currently rate limited. Please retry shortly.",
-      "upstreamBadRequest": "This AI request could not be processed. Adjust your input and try again.",
-      "unavailable": "AI assistant is currently unavailable."
+      "invalidOrigin": "请求来源无效。",
+      "missingCsrfToken": "缺少 CSRF 令牌。",
+      "invalidCsrfToken": "CSRF 令牌无效。",
+      "invalidContentType": "Content-Type 必须是 application/json。",
+      "unauthorized": "未经授权",
+      "noTeamMembership": "找不到此帐户的团队成员资格。",
+      "rateLimited": "AI 请求太多。请等待并重试。",
+      "payloadTooLarge": "请求负载太大。",
+      "invalidPayload": "请求负载无效。",
+      "maxAttachments": "每个请求最多允许 {max} 个附件。",
+      "unsupportedAttachmentType": "不受支持的附件类型。",
+      "budgetExceeded": "每月 AI 代币预算已达到。升级或者等待下一个周期。",
+      "modalityNotAllowed": "您当前的 AI 计划不允许此附件类型。",
+      "planRequired": "AI 访问需要符合条件的付费计划。",
+      "upstreamRateLimited": "AI 提供商目前受到费率限制。请稍后重试。",
+      "upstreamBadRequest": "无法处理此 AI 请求。调整您的输入并重试。",
+      "unavailable": "AI助手目前不可用。"
     }
   },
   "ApiStripeCheckout": {
     "errors": {
-      "invalidOrigin": "Invalid request origin.",
-      "missingCsrfToken": "Missing CSRF token.",
-      "invalidCsrfToken": "Invalid CSRF token.",
-      "invalidContentType": "Content-Type must be application/json.",
-      "billingNotConfigured": "Billing is not configured for this deployment.",
-      "unauthorized": "Unauthorized",
-      "noTeamMembership": "No team membership found for this account.",
-      "forbidden": "Only team owners and admins can manage billing.",
-      "rateLimited": "Too many requests. Please wait and try again.",
-      "payloadTooLarge": "Request payload is too large.",
-      "invalidPayload": "Invalid request payload",
-      "invalidPlan": "Invalid plan selected",
-      "billingPlansNotConfigured": "Billing plans are not fully configured for this deployment.",
-      "checkoutInProgress": "Checkout is already in progress. Please wait and try again.",
-      "couldNotVerifySubscription": "Could not verify current subscription state.",
-      "activeSubscriptionExists": "You already have an active subscription.",
-      "couldNotLoadStripeCustomer": "Could not load Stripe customer record.",
-      "unableToStartCheckout": "Unable to start checkout right now. Please try again."
+      "invalidOrigin": "请求来源无效。",
+      "missingCsrfToken": "缺少 CSRF 令牌。",
+      "invalidCsrfToken": "CSRF 令牌无效。",
+      "invalidContentType": "Content-Type 必须是 application/json。",
+      "billingNotConfigured": "未为此部署配置计费。",
+      "unauthorized": "未经授权",
+      "noTeamMembership": "找不到此帐户的团队成员资格。",
+      "forbidden": "只有团队所有者和管理员可以管理计费。",
+      "rateLimited": "请求太多。请等待并重试。",
+      "payloadTooLarge": "请求负载太大。",
+      "invalidPayload": "请求负载无效",
+      "invalidPlan": "选择的计划无效",
+      "billingPlansNotConfigured": "尚未为此部署完全配置计费计划。",
+      "checkoutInProgress": "结帐已在进行中。请等待并重试。",
+      "couldNotVerifySubscription": "无法验证当前订阅状态。",
+      "activeSubscriptionExists": "您已经有一个有效的订阅。",
+      "couldNotLoadStripeCustomer": "无法加载 Stripe 客户记录。",
+      "unableToStartCheckout": "现在无法开始结帐。请再试一次。"
     }
   },
   "ApiStripeChangePlan": {
     "errors": {
-      "invalidOrigin": "Invalid request origin.",
-      "missingCsrfToken": "Missing CSRF token.",
-      "invalidCsrfToken": "Invalid CSRF token.",
-      "invalidContentType": "Content-Type must be application/json.",
-      "billingNotConfigured": "Billing is not configured for this deployment.",
-      "unauthorized": "Unauthorized",
-      "noTeamMembership": "No team membership found for this account.",
-      "forbidden": "Only team owners and admins can manage billing.",
-      "rateLimited": "Too many requests. Please wait and try again.",
-      "payloadTooLarge": "Request payload is too large.",
-      "invalidPayload": "Invalid request payload",
-      "invalidTargetPlan": "Invalid target plan",
-      "billingPlansNotConfigured": "Billing plans are not fully configured for this deployment.",
-      "couldNotLoadSubscription": "Could not load current subscription state.",
-      "noActiveSubscription": "No active subscription found. Start a new checkout first.",
-      "billingIdentityMismatch": "Billing identity mismatch detected. Start a new checkout to re-link your account.",
-      "subscriptionItemNotFound": "Subscription item not found.",
-      "alreadyOnPlan": "Your subscription is already on this plan.",
-      "postChangeSyncFailed": "Plan changed, but local billing sync failed. Please retry shortly.",
-      "unableToChangePlan": "Unable to change your plan right now. Please try again."
+      "invalidOrigin": "请求来源无效。",
+      "missingCsrfToken": "缺少 CSRF 令牌。",
+      "invalidCsrfToken": "CSRF 令牌无效。",
+      "invalidContentType": "Content-Type 必须是 application/json。",
+      "billingNotConfigured": "未为此部署配置计费。",
+      "unauthorized": "未经授权",
+      "noTeamMembership": "找不到此帐户的团队成员资格。",
+      "forbidden": "只有团队所有者和管理员可以管理计费。",
+      "rateLimited": "请求太多。请等待并重试。",
+      "payloadTooLarge": "请求负载太大。",
+      "invalidPayload": "请求负载无效",
+      "invalidTargetPlan": "目标计划无效",
+      "billingPlansNotConfigured": "尚未为此部署完全配置计费计划。",
+      "couldNotLoadSubscription": "无法加载当前订阅状态。",
+      "noActiveSubscription": "未找到有效订阅。首先开始新的结账。",
+      "billingIdentityMismatch": "检测到帐单身份不匹配。开始新的结帐以重新链接您的帐户。",
+      "subscriptionItemNotFound": "未找到订阅项目。",
+      "alreadyOnPlan": "您的订阅已在此计划中。",
+      "postChangeSyncFailed": "计划已更改，但本地账单同步失败。请稍后重试。",
+      "unableToChangePlan": "现在无法更改您的计划。请再试一次。"
     }
   },
   "ApiStripePortal": {
     "errors": {
-      "invalidOrigin": "Invalid request origin.",
-      "missingCsrfToken": "Missing CSRF token.",
-      "invalidCsrfToken": "Invalid CSRF token.",
-      "invalidContentType": "Content-Type must be application/json.",
-      "billingNotConfigured": "Billing is not configured for this deployment.",
-      "unauthorized": "Unauthorized",
-      "noTeamMembership": "No team membership found for this account.",
-      "forbidden": "Only team owners and admins can manage billing.",
-      "rateLimited": "Too many requests. Please wait and try again.",
-      "couldNotLoadStripeCustomer": "Could not load Stripe customer record.",
-      "noCustomerRecord": "No customer record found for this account.",
-      "billingIdentityMismatch": "Billing identity mismatch detected. Start a new checkout to re-link your account.",
-      "unableToOpenPortal": "Unable to open billing portal right now. Please try again."
+      "invalidOrigin": "请求来源无效。",
+      "missingCsrfToken": "缺少 CSRF 令牌。",
+      "invalidCsrfToken": "CSRF 令牌无效。",
+      "invalidContentType": "Content-Type 必须是 application/json。",
+      "billingNotConfigured": "未为此部署配置计费。",
+      "unauthorized": "未经授权",
+      "noTeamMembership": "找不到此帐户的团队成员资格。",
+      "forbidden": "只有团队所有者和管理员可以管理计费。",
+      "rateLimited": "请求太多。请等待并重试。",
+      "couldNotLoadStripeCustomer": "无法加载 Stripe 客户记录。",
+      "noCustomerRecord": "找不到该帐户的客户记录。",
+      "billingIdentityMismatch": "检测到帐单身份不匹配。开始新的结帐以重新链接您的帐户。",
+      "unableToOpenPortal": "目前无法打开结算门户。请再试一次。"
     }
   },
   "ApiStripeWebhook": {
     "errors": {
-      "invalidContentType": "Content-Type must be application/json.",
-      "webhooksNotConfigured": "Billing webhooks are not configured for this deployment.",
-      "missingSignature": "Missing Stripe signature",
-      "signatureVerificationFailed": "Webhook signature verification failed.",
-      "webhookHandlingFailed": "Webhook handling failed."
+      "invalidContentType": "Content-Type 必须是 application/json。",
+      "webhooksNotConfigured": "未为此部署配置计费 Webhook。",
+      "missingSignature": "缺少条纹签名",
+      "signatureVerificationFailed": "Webhook 签名验证失败。",
+      "webhookHandlingFailed": "Webhook 处理失败。"
     }
   },
   "ApiCronReconcileSeatQuantities": {
     "errors": {
-      "cronNotConfigured": "Cron is not configured.",
-      "unauthorized": "Unauthorized.",
-      "rateLimited": "Too many requests.",
-      "partialFailure": "Cron run completed with one or more internal job failures."
+      "cronNotConfigured": "未配置 Cron。",
+      "unauthorized": "未经授权。",
+      "rateLimited": "请求太多。",
+      "partialFailure": "Cron 运行已完成，但出现一个或多个内部作业失败。"
     }
   },
   "ApiCronPruneStripeWebhookEvents": {
     "errors": {
-      "cronNotConfigured": "Cron is not configured.",
-      "unauthorized": "Unauthorized.",
-      "rateLimited": "Too many requests."
+      "cronNotConfigured": "未配置 Cron。",
+      "unauthorized": "未经授权。",
+      "rateLimited": "请求太多。"
     }
   }
 }

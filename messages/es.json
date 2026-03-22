@@ -170,7 +170,9 @@
   },
   "DashboardSidebar": {
     "appDashboard": "Panel de la app",
+    "soloWorkspace": "Mi espacio",
     "team": "Equipo",
+    "inviteTeammates": "Invitar compañeros",
     "switch": "Cambiar",
     "overview": "Resumen",
     "ai": "Chat AI",
@@ -200,6 +202,7 @@
     "ai": "Chat AI",
     "billing": "Facturación",
     "teamNav": "Equipo",
+    "inviteTeammates": "Invitar compañeros",
     "usage": "Uso",
     "settings": "Configuración"
   },
@@ -277,11 +280,26 @@
       "unknown": "Desconocido",
       "status": "Estado",
       "seats": "Asientos",
+      "perSeatCost": "Costo por asiento",
       "periodEnd": "Fin del período",
       "notAvailable": "N/D",
       "currentPlanFree": "Plan actual: Gratis",
       "upgradeHint": "Mejora abajo para desbloquear funciones de pago.",
       "noSubscription": "Sin suscripción por ahora. Elige un plan abajo para empezar."
+    },
+    "freeMode": {
+      "title": "Desbloquea funciones premium",
+      "description": "Elige un plan de pago para desbloquear funciones avanzadas. La colaboración en equipo está incluida y los asientos se cobran por compañero.",
+      "perSeat": "Cada compañero cuesta {amount}.",
+      "collaborationIncluded": "La colaboración en equipo está incluida en todos los planes de pago."
+    },
+    "paidSolo": {
+      "title": "Invita compañeros cuando estés listo",
+      "description": "La colaboración es opcional. Invita compañeros en cualquier momento por {amount} por asiento al mes.",
+      "action": "Invitar compañeros"
+    },
+    "paidTeam": {
+      "breakdown": "{seats} asientos x {seatCost} = {monthlyTotal}/mes"
     }
   },
   "DashboardSettingsPage": {
@@ -289,6 +307,11 @@
       "eyebrow": "Configuración",
       "title": "Preferencias de la cuenta",
       "description": "Actualiza tu perfil básico y revisa preferencias a nivel de cuenta."
+    },
+    "inviteTeammates": {
+      "title": "Colaboración",
+      "description": "Invita compañeros cuando estés listo. Cada asiento aumenta tu factura mensual.",
+      "action": "Invitar compañeros"
     }
   },
   "DashboardTeamPage": {
@@ -364,9 +387,15 @@
       "sendInvite": "Enviar invitación"
     },
     "inviteForm": {
+      "teamNameLabel": "Nombre del equipo",
+      "teamNamePlaceholder": "Equipo Acme",
+      "teamNameHint": "Define el nombre del equipo antes de enviar tu primera invitación.",
       "emailLabel": "Email de invitación",
       "emailPlaceholder": "compañero@ejemplo.com",
       "roleLabel": "Rol"
+    },
+    "pricing": {
+      "perSeat": "Cada compañero cuesta {amount}."
     },
     "pending": {
       "title": "Invitaciones pendientes",
@@ -391,6 +420,8 @@
     },
     "errors": {
       "sendInvite": "No se pudo enviar la invitación.",
+      "teamNameRequired": "Ingresa un nombre de equipo antes de enviar tu primera invitación.",
+      "updateTeamName": "No se pudo guardar el nombre del equipo.",
       "removeMember": "No se pudo eliminar al miembro.",
       "updateRole": "No se pudo actualizar el rol del miembro.",
       "revokeInvite": "No se pudo revocar la invitación.",
@@ -587,6 +618,7 @@
       "invalidEmail": "Ingresa un email válido.",
       "invalidRole": "El rol debe ser admin o member.",
       "alreadyInTeam": "Ya formas parte de este equipo.",
+      "paidPlanRequired": "Invitar compañeros requiere un plan de pago. Ve a facturación para actualizar primero.",
       "unableToCreateInvite": "No se puede crear la invitación ahora mismo.",
       "teamMemberLimitReached": "Se alcanzó el límite de miembros del equipo. Revoca invitaciones pendientes o elimina miembros primero.",
       "pendingInviteExists": "Ya existe una invitación pendiente para este email."
