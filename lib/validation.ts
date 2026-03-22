@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { resolvePlanKeyByPriceId } from "@/lib/stripe/price-id-lookup";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -74,16 +75,7 @@ export function parsePlanKey(body: unknown) {
       return null;
     }
 
-    if (process.env.STRIPE_STARTER_PRICE_ID?.trim() === priceId) {
-      return "starter";
-    }
-    if (process.env.STRIPE_GROWTH_PRICE_ID?.trim() === priceId) {
-      return "growth";
-    }
-    if (process.env.STRIPE_PRO_PRICE_ID?.trim() === priceId) {
-      return "pro";
-    }
-    return null;
+    return resolvePlanKeyByPriceId(priceId);
   }
 
   const planKey = maybePlanKey.trim();

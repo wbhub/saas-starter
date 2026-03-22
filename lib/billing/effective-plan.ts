@@ -1,4 +1,5 @@
 import { env } from "@/lib/env";
+import { resolvePlanKeyByPriceId } from "@/lib/stripe/price-id-lookup";
 import { LIVE_SUBSCRIPTION_STATUSES, type PlanKey, type SubscriptionStatus } from "@/lib/stripe/plans";
 
 export type EffectivePlanKey = "free" | PlanKey;
@@ -15,29 +16,11 @@ function isLiveSubscriptionStatus(status: SubscriptionStatus | null | undefined)
   return LIVE_SUBSCRIPTION_STATUSES.includes(status);
 }
 
-function resolvePaidPlanKeyByPriceId(priceId: string | null | undefined): PlanKey | null {
-  if (!priceId) {
-    return null;
-  }
-
-  if (process.env.STRIPE_STARTER_PRICE_ID?.trim() === priceId) {
-    return "starter";
-  }
-  if (process.env.STRIPE_GROWTH_PRICE_ID?.trim() === priceId) {
-    return "growth";
-  }
-  if (process.env.STRIPE_PRO_PRICE_ID?.trim() === priceId) {
-    return "pro";
-  }
-
-  return null;
-}
-
 export function resolveEffectivePlanKey(
   subscription: SubscriptionPlanInput | null | undefined,
 ): EffectivePlanKey | null {
   if (isLiveSubscriptionStatus(subscription?.status)) {
-    const paidPlanKey = resolvePaidPlanKeyByPriceId(subscription?.stripe_price_id);
+    const paidPlanKey = resolvePlanKeyByPriceId(subscription?.stripe_price_id);
     if (paidPlanKey) {
       return paidPlanKey;
     }

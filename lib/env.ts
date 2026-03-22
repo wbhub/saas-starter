@@ -1,4 +1,11 @@
-type ServerEnvKey =
+import {
+  STRIPE_PLAN_PRICE_ID_ENV_KEYS,
+  getStripePriceIdEnvKey,
+  type PlanKey,
+  type StripePriceIdEnvKey,
+} from "@/lib/stripe/plans";
+
+type StaticServerEnvKey =
   | "NEXT_PUBLIC_APP_URL"
   | "NEXT_PUBLIC_SUPABASE_URL"
   | "NEXT_PUBLIC_SUPABASE_ANON_KEY"
@@ -6,12 +13,11 @@ type ServerEnvKey =
   | "STRIPE_SECRET_KEY"
   | "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY"
   | "STRIPE_WEBHOOK_SECRET"
-  | "STRIPE_STARTER_PRICE_ID"
-  | "STRIPE_GROWTH_PRICE_ID"
-  | "STRIPE_PRO_PRICE_ID"
   | "RESEND_API_KEY"
   | "RESEND_FROM_EMAIL"
   | "RESEND_SUPPORT_EMAIL";
+
+type ServerEnvKey = StaticServerEnvKey | StripePriceIdEnvKey;
 
 type OptionalEnvKey =
   | "OPENAI_API_KEY"
@@ -89,7 +95,7 @@ export function getAppUrl() {
   }
 }
 
-export const env = {
+const envBase = {
   get NEXT_PUBLIC_APP_URL() {
     return ensureEnv("NEXT_PUBLIC_APP_URL");
   },
@@ -144,14 +150,8 @@ export const env = {
   get STRIPE_WEBHOOK_SECRET() {
     return ensureEnv("STRIPE_WEBHOOK_SECRET");
   },
-  get STRIPE_STARTER_PRICE_ID() {
-    return ensureEnv("STRIPE_STARTER_PRICE_ID");
-  },
-  get STRIPE_GROWTH_PRICE_ID() {
-    return ensureEnv("STRIPE_GROWTH_PRICE_ID");
-  },
-  get STRIPE_PRO_PRICE_ID() {
-    return ensureEnv("STRIPE_PRO_PRICE_ID");
+  getStripePriceId(planKey: PlanKey) {
+    return ensureEnv(getStripePriceIdEnvKey(planKey));
   },
   get RESEND_API_KEY() {
     return ensureEnv("RESEND_API_KEY");
@@ -191,14 +191,32 @@ export const env = {
   },
 };
 
+const stripePriceEnvGetterDescriptors = Object.fromEntries(
+  STRIPE_PLAN_PRICE_ID_ENV_KEYS.map((key) => [
+    key,
+    {
+      get() {
+        return ensureEnv(key);
+      },
+      enumerable: true,
+    } satisfies PropertyDescriptor,
+  ]),
+) as Record<StripePriceIdEnvKey, PropertyDescriptor>;
+
+export const env = Object.defineProperties(envBase, stripePriceEnvGetterDescriptors) as typeof envBase & {
+  readonly [K in StripePriceIdEnvKey]: string;
+};
+
+const requiredStripePriceIdGetters: Record<StripePriceIdEnvKey, true> = Object.fromEntries(
+  STRIPE_PLAN_PRICE_ID_ENV_KEYS.map((key) => [key, true]),
+) as Record<StripePriceIdEnvKey, true>;
+
 const REQUIRED_ENV_GETTERS: Readonly<Record<HardRequiredEnvKey, true>> = {
   SUPABASE_SERVICE_ROLE_KEY: true,
   STRIPE_SECRET_KEY: true,
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: true,
   STRIPE_WEBHOOK_SECRET: true,
-  STRIPE_STARTER_PRICE_ID: true,
-  STRIPE_GROWTH_PRICE_ID: true,
-  STRIPE_PRO_PRICE_ID: true,
+  ...requiredStripePriceIdGetters,
   RESEND_API_KEY: true,
   RESEND_FROM_EMAIL: true,
   RESEND_SUPPORT_EMAIL: true,

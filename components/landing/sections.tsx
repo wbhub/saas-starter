@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import {
   ArrowRight,
   BadgeCheck,
@@ -17,6 +17,7 @@ import { LocaleSwitcher } from "@/components/locale-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SHOW_LOCALE_SWITCHER } from "@/lib/i18n/config";
 import { getPublicPricingCatalog } from "@/lib/stripe/public-pricing";
+import { PLAN_CATALOG } from "@/lib/stripe/plans";
 
 export function LandingHeader() {
   const t = useTranslations();
@@ -302,6 +303,9 @@ export function StackSection() {
 export async function PricingSection() {
   const t = await getTranslations("Landing.pricing");
   const pricingCatalog = await getPublicPricingCatalog();
+  const pricingGridStyle = {
+    "--pricing-plan-count": String(Math.max(PLAN_CATALOG.length, 1)),
+  } as CSSProperties;
 
   return (
     <section id="pricing" className="space-y-8">
@@ -309,20 +313,23 @@ export async function PricingSection() {
         <h2 className="text-3xl font-semibold">{t("title")}</h2>
         <p className="app-muted mt-3">{t("description")}</p>
       </div>
-      <div className="grid gap-4 md:grid-cols-3">
-        {pricingCatalog.map((tier, idx) => (
+      <div
+        className="grid gap-4 md:[grid-template-columns:repeat(var(--pricing-plan-count),minmax(0,1fr))]"
+        style={pricingGridStyle}
+      >
+        {pricingCatalog.map((tier) => (
           <article
-            key={tier.name}
+            key={tier.key}
             className={`rounded-2xl border app-surface p-6 ${
-              idx === 1
+              tier.popular
                 ? "border-indigo-400/70 shadow-lg shadow-indigo-500/10"
                 : "app-border-subtle"
             }`}
           >
             <p
-              aria-hidden={idx !== 1}
+              aria-hidden={!tier.popular}
               className={`mb-3 inline-flex items-center rounded-full bg-indigo-500/10 px-3 py-1 text-xs font-medium text-indigo-600 dark:text-indigo-300 ${
-                idx === 1 ? "" : "invisible"
+                tier.popular ? "" : "invisible"
               }`}
             >
               {t("mostPopular")}
