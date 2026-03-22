@@ -25,10 +25,37 @@ function toOrigin(value: string) {
   }
 }
 
+function addLocalDevAliasOrigins(origins: Set<string>, origin: string) {
+  if (process.env.NODE_ENV === "production" || !origin) {
+    return;
+  }
+  try {
+    const parsed = new URL(origin);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return;
+    }
+    // Preserve explicit ports; omit port segment when URL uses the default for the scheme
+    // (e.g. http://localhost:3000 ↔ http://127.0.0.1:3000, not a bogus :80 for dev).
+    const portPart = parsed.port ? `:${parsed.port}` : "";
+    if (parsed.hostname === "localhost") {
+      origins.add(`${parsed.protocol}//127.0.0.1${portPart}`);
+    }
+    if (parsed.hostname === "127.0.0.1") {
+      origins.add(`${parsed.protocol}//localhost${portPart}`);
+    }
+  } catch {
+    // ignore
+  }
+}
+
 function getAllowedOrigins(request: Request) {
   const origins = new Set<string>();
-  origins.add(toOrigin(request.url));
-  origins.add(toOrigin(getAppUrl()));
+  const requestOrigin = toOrigin(request.url);
+  const appOrigin = toOrigin(getAppUrl());
+  origins.add(requestOrigin);
+  origins.add(appOrigin);
+  addLocalDevAliasOrigins(origins, requestOrigin);
+  addLocalDevAliasOrigins(origins, appOrigin);
   origins.delete("");
   return origins;
 }

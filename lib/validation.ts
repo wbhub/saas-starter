@@ -61,8 +61,28 @@ export function parsePlanKey(body: unknown) {
     return null;
   }
 
-  const maybePlanKey = (body as Record<string, unknown>).planKey;
+  const payload = body as Record<string, unknown>;
+  const maybePlanKey = payload.planKey;
   if (typeof maybePlanKey !== "string") {
+    const maybePriceId = payload.priceId;
+    if (typeof maybePriceId !== "string") {
+      return null;
+    }
+
+    const priceId = maybePriceId.trim();
+    if (!priceId) {
+      return null;
+    }
+
+    if (process.env.STRIPE_STARTER_PRICE_ID?.trim() === priceId) {
+      return "starter";
+    }
+    if (process.env.STRIPE_GROWTH_PRICE_ID?.trim() === priceId) {
+      return "growth";
+    }
+    if (process.env.STRIPE_PRO_PRICE_ID?.trim() === priceId) {
+      return "pro";
+    }
     return null;
   }
 

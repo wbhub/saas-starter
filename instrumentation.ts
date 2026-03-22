@@ -5,7 +5,9 @@ import { validateRequiredEnvAtBoot } from "./lib/env";
 const SENTRY_ENABLED = Boolean(process.env.NEXT_PUBLIC_SENTRY_DSN);
 
 export async function register() {
-  if (process.env.NEXT_RUNTIME !== "edge") {
+  // In development, missing optional third-party keys (Resend, Stripe, etc.) should not
+  // prevent `next dev` from starting; routes that need them will error at call sites.
+  if (process.env.NEXT_RUNTIME !== "edge" && process.env.NODE_ENV === "production") {
     validateRequiredEnvAtBoot();
   }
 

@@ -310,6 +310,14 @@ Important RPC functions used by app code:
 - Playwright smoke runs when required E2E secrets are configured.
 - If those secrets are missing, CI skips Playwright and still runs Vitest.
 
+### Playwright locally
+
+- Smoke: `npm run test:e2e:smoke` (starts its own `npm run dev` unless you override below).
+- **Do not** pass `--project=smoke` to `npm run test:e2e` — that script is wired to `--project=full` only. Use `test:e2e:smoke` for smoke.
+- `PLAYWRIGHT_BASE_URL` — if set, Playwright will **not** start a dev server (use when the app is already running).
+- `PLAYWRIGHT_REUSE_DEV_SERVER=true` — reuse an existing dev server on port 3000 instead of spawning one (default is **off** so a stuck/zombie process on `:3000` does not hang the runner).
+- `E2E_LIVE_SIGNUP=true` — enables the optional Playwright test that performs a **real** Supabase signup and expects a redirect to `/dashboard` (requires valid Supabase env). Default smoke signup uses a mocked API response so CI/local runs without a real backend still pass.
+
 ## Deploy (Vercel)
 
 1. Import the repo into Vercel.
