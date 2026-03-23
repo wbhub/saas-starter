@@ -11,13 +11,39 @@ A straightforward Next.js SaaS starter with:
 
 ## Tech Stack
 
-- Next.js 16, React 19, TypeScript
+- Next.js 16, React 19, TypeScript, Tailwind CSS 4
 - Supabase
-- Stripe (optional)
-- Vercel AI SDK + provider adapters (`@ai-sdk/openai`, `@ai-sdk/anthropic`, `@ai-sdk/google`) (optional)
 - Resend
-- Tailwind CSS 4
-- `next-intl` with locales: `en`, `es`, `fr`, `pt`, `zh`
+- Stripe (optional)
+- Vercel AI SDK (optional)
+- Intercom (optional)
+- Redis (optional)
+- Sentry (optional)
+
+## Fast Path (Local Dev)
+
+If you just want to boot the app quickly:
+
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Copy environment template:
+
+```bash
+cp .env.example .env.local
+```
+
+3. Set required env vars (see `Required Environment Variables` below).
+4. Start the app:
+
+```bash
+npm run dev
+```
+
+Open `http://localhost:3000`.
 
 ## Prerequisites
 
@@ -31,16 +57,34 @@ Optional (only if you enable these features):
 
 - Stripe account + Stripe CLI (billing)
 - AI provider API key (AI chat)
+- Intercom workspace/app (in-app messenger)
 - Upstash Redis account (shared rate limiting/cache across instances)
 - Sentry account (error monitoring)
 
-## What You Get
+## Required Environment Variables
 
-- Public/auth pages: `/`, `/login`, `/signup`, `/forgot-password`, `/reset-password`
-- App pages: `/dashboard`, `/dashboard/team`, `/dashboard/settings`, `/dashboard/usage`
-- Optional pages: `/dashboard/billing`, `/dashboard/ai`
-- Team invite flow: `/invite/[token]`
-- API routes for auth, teams, billing, AI, support email, and cron tasks
+These are required at boot:
+
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `RESEND_API_KEY`
+- `RESEND_FROM_EMAIL`
+- `RESEND_SUPPORT_EMAIL`
+
+These have local fallbacks, but should still be set correctly:
+
+- `NEXT_PUBLIC_APP_URL`
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+Use `.env.example` as the source of truth for all available variables.
+
+## Enable by Feature (Optional)
+
+- Billing: Stripe (`BILLING_PROVIDER=stripe` + Stripe env vars)
+- AI chat: Vercel AI SDK (`AI_PROVIDER` + provider keys)
+- In-app messenger: Intercom (`NEXT_PUBLIC_INTERCOM_APP_ID`, `INTERCOM_IDENTITY_SECRET`)
+- Multi-instance rate limiting/cache: Redis via Upstash (`UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`)
+- Error monitoring: Sentry (`NEXT_PUBLIC_SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_ENVIRONMENT`, `SENTRY_ENVIRONMENT`)
 
 ## Quick Start
 
@@ -65,8 +109,7 @@ cp .env.example .env.local
 - Site URL: `http://localhost:3000`
 - Redirect URL: `http://localhost:3000/auth/callback`
 
-5. Fill `.env.local` (see required variables below).
-
+5. Fill `.env.local` (see required variables above).
 6. Start the app:
 
 ```bash
@@ -75,22 +118,13 @@ npm run dev
 
 Open `http://localhost:3000`.
 
-## Required Environment Variables
+## What You Get
 
-These are required at boot:
-
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `RESEND_API_KEY`
-- `RESEND_FROM_EMAIL`
-- `RESEND_SUPPORT_EMAIL`
-
-These have local fallbacks, but should still be set correctly:
-
-- `NEXT_PUBLIC_APP_URL`
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-
-Use `.env.example` as the source of truth for all available variables.
+- Public/auth pages: `/`, `/login`, `/signup`, `/forgot-password`, `/reset-password`
+- App pages: `/dashboard`, `/dashboard/team`, `/dashboard/settings`, `/dashboard/usage`
+- Optional pages: `/dashboard/billing`, `/dashboard/ai`
+- Team invite flow: `/invite/[token]`
+- API routes for auth, teams, billing, AI, support email, and cron tasks
 
 ## Optional Setup
 
@@ -115,7 +149,7 @@ Local webhook testing:
 stripe listen --forward-to localhost:3000/api/stripe/webhook
 ```
 
-### AI Chat
+### Vercel AI SDK (AI Chat)
 
 If you want `/dashboard/ai` and `/api/ai/chat`:
 
@@ -131,11 +165,17 @@ If you want `/dashboard/ai` and `/api/ai/chat`:
 - (Recommended) Set `AI_MODEL_MODALITIES_MAP_JSON` so model capability checks are explicit per provider/model
 - Configure AI policy vars in `.env.example` (`AI_ACCESS_MODE`, plan/model/budget settings)
 
-### Other Integrations
+### Intercom
 
-- Upstash Redis (`UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`) for multi-instance rate limiting and team-context caching
-- Intercom (`NEXT_PUBLIC_INTERCOM_APP_ID`, `INTERCOM_IDENTITY_SECRET`) for messenger boot + identity verification
-- Sentry (`NEXT_PUBLIC_SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_ENVIRONMENT`, `SENTRY_ENVIRONMENT`) for frontend/server error reporting
+- Set `NEXT_PUBLIC_INTERCOM_APP_ID` and `INTERCOM_IDENTITY_SECRET` for messenger boot + identity verification
+
+### Redis (Upstash)
+
+- Set `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` for multi-instance rate limiting and team-context caching
+
+### Sentry
+
+- Set `NEXT_PUBLIC_SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_ENVIRONMENT`, and `SENTRY_ENVIRONMENT` for frontend/server error reporting
 
 ## Scripts
 
