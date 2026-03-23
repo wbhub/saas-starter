@@ -6,7 +6,7 @@ import { type AiModality } from "@/lib/ai/config";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 
-const AI_PROVIDERS = ["openai", "openai-compatible", "anthropic", "google"] as const;
+const AI_PROVIDERS = ["openai", "anthropic", "google"] as const;
 type AiProvider = (typeof AI_PROVIDERS)[number];
 const KNOWN_TEXT_ONLY_MODEL_PREFIXES = ["gpt-3.5"] as const;
 const ALL_MODALITIES = ["text", "image", "file"] as const satisfies readonly AiModality[];
@@ -22,10 +22,6 @@ const DEFAULT_MODEL_MODALITIES_BY_PROVIDER: Record<AiProvider, readonly ModelMod
     { key: "gpt-4.1*", modalities: ["text", "image", "file"] },
     { key: "gpt-4o*", modalities: ["text", "image", "file"] },
     { key: "gpt-5*", modalities: ["text", "image", "file"] },
-  ],
-  "openai-compatible": [
-    { key: "gpt-3.5*", modalities: ["text"] },
-    { key: "*", modalities: ["text", "image", "file"] },
   ],
   anthropic: [
     { key: "claude*", modalities: ["text", "image", "file"] },
@@ -130,24 +126,10 @@ const providerApiKey = (() => {
   }
   return (env.OPENAI_API_KEY || "").trim();
 })();
-const providerBaseUrl = (env.AI_PROVIDER_BASE_URL || "").trim();
-
-const missingCompatibleBaseUrl = provider === "openai-compatible" && !providerBaseUrl;
-
-if (missingCompatibleBaseUrl) {
-  logger.warn(
-    'AI provider is set to "openai-compatible" but AI_PROVIDER_BASE_URL is missing; AI provider is disabled.',
-    {
-      envKey: "AI_PROVIDER_BASE_URL",
-      provider,
-      fallbackBehavior: "provider_disabled",
-    },
-  );
-}
 
 export const aiProviderName = provider;
 export const supportsOpenAiFileIds = provider === "openai";
-export const isAiProviderConfigured = Boolean(providerApiKey) && !missingCompatibleBaseUrl;
+export const isAiProviderConfigured = Boolean(providerApiKey);
 const customModelModalityMap = parseModelModalityMap(env.AI_MODEL_MODALITIES_MAP_JSON);
 
 const aiProviderClient = (() => {
@@ -162,7 +144,6 @@ const aiProviderClient = (() => {
   }
   return createOpenAI({
     apiKey: providerApiKey,
-    ...(providerBaseUrl ? { baseURL: providerBaseUrl } : {}),
   });
 })();
 
