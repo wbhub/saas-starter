@@ -1,13 +1,15 @@
 # SaaS Starter
 
-A straightforward Next.js SaaS starter with:
+A production-ready Next.js SaaS foundation built to help you launch faster:
 
-- Supabase auth + database
-- Team accounts (`owner`, `admin`, `member`)
-- Optional Stripe billing (seat-based)
-- Optional AI chat (provider-agnostic via Vercel AI SDK)
-- Resend email (support + password reset)
-- Security defaults (CSRF, rate limiting, secure headers)
+- Full authentication flows and protected app routes out of the box
+- Team-based SaaS model with role-based access (`owner`, `admin`, `member`)
+- Monetization-ready billing with optional seat-based Stripe subscriptions
+- Built-in support workflows (support email + password reset via Resend)
+- Optional AI features with provider-agnostic chat via Vercel AI SDK
+- Internationalization-ready UX with locale routing and message catalogs
+- System-aware theming with light and dark mode support
+- Security-first defaults (CSRF protection, rate limiting, secure headers, CSP)
 
 ## Tech Stack
 
@@ -19,31 +21,6 @@ A straightforward Next.js SaaS starter with:
 - Intercom (optional)
 - Redis (optional)
 - Sentry (optional)
-
-## Fast Path (Local Dev)
-
-If you just want to boot the app quickly:
-
-1. Install dependencies:
-
-```bash
-npm install
-```
-
-2. Copy environment template:
-
-```bash
-cp .env.example .env.local
-```
-
-3. Set required env vars (see `Required Environment Variables` below).
-4. Start the app:
-
-```bash
-npm run dev
-```
-
-Open `http://localhost:3000`.
 
 ## Prerequisites
 
@@ -120,11 +97,13 @@ Open `http://localhost:3000`.
 
 ## What You Get
 
-- Public/auth pages: `/`, `/login`, `/signup`, `/forgot-password`, `/reset-password`
+- Public/auth pages: `/`, `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/privacy-policy`, `/terms-of-use`
 - App pages: `/dashboard`, `/dashboard/team`, `/dashboard/settings`, `/dashboard/usage`
 - Optional pages: `/dashboard/billing`, `/dashboard/ai`
 - Team invite flow: `/invite/[token]`
 - API routes for auth, teams, billing, AI, support email, and cron tasks
+- Built-in localization (default + additional locales) via `next-intl`
+- Theme toggle with system, light, and dark modes
 
 ## Optional Setup
 
@@ -203,3 +182,4 @@ If you want `/dashboard/ai` and `/api/ai/chat`:
 - Landing/branding: `components/landing/`
 - Legal pages: `app/privacy-policy/page.tsx`, `app/terms-of-use/page.tsx`
 - Locales/messages: `i18n/routing.ts`, `messages/*.json`
+- Theme behavior: `components/theme-provider.tsx`, `components/theme-toggle.tsx`
