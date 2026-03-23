@@ -4,7 +4,11 @@ import { getAppUrl } from "@/lib/env";
 import { jsonError, jsonSuccess } from "@/lib/http/api-json";
 import { withTeamRoute } from "@/lib/http/team-route";
 import { logger } from "@/lib/logger";
-import { getResendClient, getResendFromEmail } from "@/lib/resend/server";
+import {
+  getResendClientIfConfigured,
+  getResendFromEmailIfConfigured,
+  isResendCustomEmailConfigured,
+} from "@/lib/resend/server";
 import { createRawInviteToken, getInviteExpiryIso, hashInviteToken } from "@/lib/team-invites";
 import { getRouteTranslator } from "@/lib/i18n/locale";
 
@@ -94,29 +98,52 @@ export async function POST(request: Request, context: ResendInviteRouteContext) 
 
       const inviteUrl = `${getAppUrl()}/invite/${token}`;
       let emailSent = false;
-      try {
-        const resend = getResendClient();
-        await resend.emails.send({
-          from: getResendFromEmail(),
-          to: invite.email,
-          subject: t("email.subject", { teamName: teamContext.teamName ?? t("email.defaultTeamName") }),
-          text: [
-            t("email.line1", { teamName: teamContext.teamName ?? t("email.defaultTeamName") }),
-            "",
-            t("email.role", { role: invite.role }),
-            t("email.acceptInvite", { inviteUrl }),
-            "",
-            t("email.expiresIn7Days"),
-          ].join("\n"),
-          replyTo: user.email ?? undefined,
-        });
-        emailSent = true;
-      } catch (error) {
-        logger.error("Failed to send resend invite email", error, {
+
+      if (!isResendCustomEmailConfigured()) {
+        logger.warn("Team invite resend email delivery disabled because Resend is not fully configured", {
           requestId,
           teamId: teamContext.teamId,
           inviteId,
         });
+      } else {
+        try {
+          const resend = getResendClientIfConfigured();
+          const fromEmail = getResendFromEmailIfConfigured();
+          if (!resend || !fromEmail) {
+            logger.warn(
+              "Team invite resend email delivery skipped because Resend became unavailable mid-request",
+              {
+                requestId,
+                teamId: teamContext.teamId,
+                inviteId,
+              },
+            );
+          } else {
+            await resend.emails.send({
+              from: fromEmail,
+              to: invite.email,
+              subject: t("email.subject", {
+                teamName: teamContext.teamName ?? t("email.defaultTeamName"),
+              }),
+              text: [
+                t("email.line1", { teamName: teamContext.teamName ?? t("email.defaultTeamName") }),
+                "",
+                t("email.role", { role: invite.role }),
+                t("email.acceptInvite", { inviteUrl }),
+                "",
+                t("email.expiresIn7Days"),
+              ].join("\n"),
+              replyTo: user.email ?? undefined,
+            });
+            emailSent = true;
+          }
+        } catch (error) {
+          logger.error("Failed to send resend invite email", error, {
+            requestId,
+            teamId: teamContext.teamId,
+            inviteId,
+          });
+        }
       }
 
       logAuditEvent({

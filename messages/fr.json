@@ -730,6 +730,7 @@
       "messageTooShort": "Le message doit comporter au moins 10 caractères.",
       "messageTooLong": "Le message doit comporter 2 000 caractères ou moins.",
       "invalidPayload": "Charge utile de demande d'assistance non valide.",
+      "featureDisabled": "L'e-mail d'assistance est actuellement indisponible pour ce déploiement.",
       "unableToSend": "Impossible d'envoyer un e-mail d'assistance pour le moment. Veuillez réessayer."
     },
     "email": {

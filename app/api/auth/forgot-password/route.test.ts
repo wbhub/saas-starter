@@ -33,8 +33,9 @@ describe("POST /api/auth/forgot-password", () => {
       createAdminClient: vi.fn(),
     }));
     vi.doMock("@/lib/resend/server", () => ({
-      getResendClient: vi.fn(),
-      getResendFromEmail: vi.fn(),
+      isResendCustomEmailConfigured: () => true,
+      getResendClientIfConfigured: vi.fn(),
+      getResendFromEmailIfConfigured: vi.fn(),
     }));
     vi.doMock("@/lib/env", () => ({
       env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
@@ -86,8 +87,9 @@ describe("POST /api/auth/forgot-password", () => {
       }),
     }));
     vi.doMock("@/lib/resend/server", () => ({
-      getResendClient: () => ({ emails: { send } }),
-      getResendFromEmail: () => "noreply@example.com",
+      isResendCustomEmailConfigured: () => true,
+      getResendClientIfConfigured: () => ({ emails: { send } }),
+      getResendFromEmailIfConfigured: () => "noreply@example.com",
     }));
     vi.doMock("@/lib/env", () => ({
       env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
@@ -148,8 +150,9 @@ describe("POST /api/auth/forgot-password", () => {
       }),
     }));
     vi.doMock("@/lib/resend/server", () => ({
-      getResendClient: vi.fn(),
-      getResendFromEmail: vi.fn(),
+      isResendCustomEmailConfigured: () => true,
+      getResendClientIfConfigured: vi.fn(),
+      getResendFromEmailIfConfigured: vi.fn(),
     }));
     vi.doMock("@/lib/env", () => ({
       env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
@@ -205,8 +208,9 @@ describe("POST /api/auth/forgot-password", () => {
       }),
     }));
     vi.doMock("@/lib/resend/server", () => ({
-      getResendClient: vi.fn(),
-      getResendFromEmail: vi.fn(),
+      isResendCustomEmailConfigured: () => true,
+      getResendClientIfConfigured: vi.fn(),
+      getResendFromEmailIfConfigured: vi.fn(),
     }));
     vi.doMock("@/lib/env", () => ({
       env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
@@ -236,6 +240,61 @@ describe("POST /api/auth/forgot-password", () => {
     });
 
     consoleError.mockRestore();
+  });
+
+  it("falls back to Supabase-managed reset email when Resend is not configured", async () => {
+    const checkRateLimit = vi
+      .fn()
+      .mockResolvedValueOnce({ allowed: true, retryAfterSeconds: 0 })
+      .mockResolvedValueOnce({ allowed: true, retryAfterSeconds: 0 });
+    const generateLink = vi.fn();
+    const resetPasswordForEmail = vi.fn().mockResolvedValue({ data: {}, error: null });
+
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit,
+    }));
+    vi.doMock("@/lib/http/client-ip", () => ({
+      getClientRateLimitIdentifier: () => ({ keyType: "ip", value: "198.51.100.1" }),
+    }));
+    vi.doMock("@/lib/supabase/admin", () => ({
+      createAdminClient: () => ({
+        auth: {
+          admin: {
+            generateLink,
+          },
+          resetPasswordForEmail,
+        },
+      }),
+    }));
+    vi.doMock("@/lib/resend/server", () => ({
+      isResendCustomEmailConfigured: () => false,
+      getResendClientIfConfigured: vi.fn(),
+      getResendFromEmailIfConfigured: vi.fn(),
+    }));
+    vi.doMock("@/lib/env", () => ({
+      env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
+      getAppUrl: () => "http://localhost:3000",
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: "test@example.com" }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      message: "If an account exists for that email, a reset link has been sent.",
+    });
+    await vi.waitFor(() => {
+      expect(resetPasswordForEmail).toHaveBeenCalledWith("test@example.com", {
+        redirectTo: "http://localhost:3000/auth/callback?next=/reset-password",
+      });
+      expect(generateLink).not.toHaveBeenCalled();
+    });
   });
 });
 

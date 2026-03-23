@@ -2,9 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const CORE_ENV_KEYS = [
   "SUPABASE_SERVICE_ROLE_KEY",
-  "RESEND_API_KEY",
-  "RESEND_FROM_EMAIL",
-  "RESEND_SUPPORT_EMAIL",
 ] as const;
 
 const STRIPE_ENV_KEYS = [
@@ -18,9 +15,6 @@ const STRIPE_ENV_KEYS = [
 
 function seedCoreRequiredEnv() {
   process.env.SUPABASE_SERVICE_ROLE_KEY = "service_role";
-  process.env.RESEND_API_KEY = "re_test";
-  process.env.RESEND_FROM_EMAIL = "Test <test@example.com>";
-  process.env.RESEND_SUPPORT_EMAIL = "support@example.com";
 }
 
 function clearEnv() {
@@ -42,6 +36,16 @@ describe("validateRequiredEnvAtBoot", () => {
 
   it("allows free-only mode without Stripe keys", async () => {
     process.env.APP_FREE_PLAN_ENABLED = "true";
+
+    const { validateRequiredEnvAtBoot } = await import("./env");
+    expect(() => validateRequiredEnvAtBoot()).not.toThrow();
+  });
+
+  it("does not require Resend env vars at boot", async () => {
+    process.env.APP_FREE_PLAN_ENABLED = "true";
+    delete process.env.RESEND_API_KEY;
+    delete process.env.RESEND_FROM_EMAIL;
+    delete process.env.RESEND_SUPPORT_EMAIL;
 
     const { validateRequiredEnvAtBoot } = await import("./env");
     expect(() => validateRequiredEnvAtBoot()).not.toThrow();

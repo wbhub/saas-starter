@@ -2,10 +2,10 @@
 
 A production-ready Next.js SaaS foundation built to help you launch faster:
 
-- Full authentication flows and protected app routes out of the box
+- Full authentication flows (email/password + social SSO) and protected app routes out of the box
 - Team-based SaaS model with role-based access (`owner`, `admin`, `member`)
 - Monetization-ready billing with optional seat-based Stripe subscriptions
-- Built-in support workflows (support email + password reset via Resend)
+- Built-in support workflows (optional Resend for support + custom transactional email)
 - Optional AI features with provider-agnostic chat via Vercel AI SDK
 - Internationalization-ready UX with locale routing and message catalogs
 - System-aware theming with light and dark mode support
@@ -15,7 +15,7 @@ A production-ready Next.js SaaS foundation built to help you launch faster:
 
 - Next.js 16, React 19, TypeScript, Tailwind CSS 4
 - Supabase
-- Resend
+- Resend (optional)
 - Stripe (optional)
 - Vercel AI SDK (optional)
 - Intercom (optional)
@@ -28,7 +28,6 @@ Required:
 
 - Node.js 20+ and npm
 - A Supabase project
-- A Resend account (for support + password reset email)
 
 Optional (only if you enable these features):
 
@@ -43,9 +42,6 @@ Optional (only if you enable these features):
 These are required at boot:
 
 - `SUPABASE_SERVICE_ROLE_KEY`
-- `RESEND_API_KEY`
-- `RESEND_FROM_EMAIL`
-- `RESEND_SUPPORT_EMAIL`
 
 These have local fallbacks, but should still be set correctly:
 
@@ -58,10 +54,21 @@ Use `.env.example` as the source of truth for all available variables.
 ## Enable by Feature (Optional)
 
 - Billing: Stripe (`BILLING_PROVIDER=stripe` + Stripe env vars)
+- Transactional email via Resend (`RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `RESEND_SUPPORT_EMAIL`)
 - AI chat: Vercel AI SDK (`AI_PROVIDER` + provider keys)
 - In-app messenger: Intercom (`NEXT_PUBLIC_INTERCOM_APP_ID`, `INTERCOM_IDENTITY_SECRET`)
 - Multi-instance rate limiting/cache: Redis via Upstash (`UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`)
 - Error monitoring: Sentry (`NEXT_PUBLIC_SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_ENVIRONMENT`, `SENTRY_ENVIRONMENT`)
+
+## Email Delivery Behavior Matrix
+
+| Flow | Resend configured | Resend missing |
+| --- | --- | --- |
+| Forgot password (`/api/auth/forgot-password`) | Uses Supabase recovery link generation + custom email via Resend | Returns the same generic success response and falls back to Supabase-managed reset email delivery |
+| Signup confirmation (`/api/auth/signup`) | Supabase-managed confirmation flow (unchanged) | Supabase-managed confirmation flow (unchanged) |
+| Support email (`/api/resend/support`) | Sends to `RESEND_SUPPORT_EMAIL` via Resend | Returns feature-disabled response (`503`) without crashing |
+| Team invite create (`/api/team/invites`) | Creates invite + attempts Resend delivery (`emailSent: true` on success) | Creates invite, does not crash, and returns `{ ok: true, emailSent: false }` |
+| Team invite resend (`/api/team/invites/[inviteId]/resend`) | Rotates token + attempts Resend delivery (`emailSent: true` on success) | Rotates token, does not crash, and returns `{ ok: true, emailSent: false }` |
 
 ## Quick Start
 

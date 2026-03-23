@@ -730,6 +730,7 @@
       "messageTooShort": "Message must be at least 10 characters long.",
       "messageTooLong": "Message must be 2000 characters or less.",
       "invalidPayload": "Invalid support request payload.",
+      "featureDisabled": "Support email is currently unavailable for this deployment.",
       "unableToSend": "Unable to send support email right now. Please try again."
     },
     "email": {
