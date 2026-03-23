@@ -4,7 +4,7 @@ import { NoTeamCard } from "@/components/no-team-card";
 import { TeamContextErrorCard } from "@/components/team-context-error-card";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { formatUtcDate } from "@/lib/date";
-import { PLAN_LABELS, type PlanKey } from "@/lib/stripe/plans";
+import { type PlanKey } from "@/lib/stripe/plans";
 import {
   getDashboardAiUiGate,
   getDashboardBaseData,
@@ -13,6 +13,7 @@ import {
 
 export default async function DashboardPage() {
   const t = await getTranslations();
+  const tPlans = await getTranslations("Landing.pricing");
   const {
     supabase,
     user,
@@ -125,7 +126,9 @@ export default async function DashboardPage() {
                   {t("DashboardPage.currentPlan")}
                 </dt>
                 <dd className="font-medium text-slate-900 dark:text-slate-100">
-                  {currentPaidPlanKey ? PLAN_LABELS[currentPaidPlanKey] : t("DashboardPage.unknown")}
+                  {currentPaidPlanKey
+                    ? tPlans(`plans.${currentPaidPlanKey}.name`)
+                    : t("DashboardPage.unknown")}
                 </dd>
               </div>
               <div className="flex items-center justify-between">

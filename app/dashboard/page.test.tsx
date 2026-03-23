@@ -15,7 +15,19 @@ describe("Dashboard page billing selection", () => {
       }),
     }));
     vi.doMock("next-intl/server", () => ({
-      getTranslations: vi.fn().mockResolvedValue((key: string) => key),
+      getTranslations: vi.fn(async (namespace?: string) => {
+        if (namespace === "Landing.pricing") {
+          return (key: string) => {
+            const planNames: Record<string, string> = {
+              "plans.starter.name": "Starter",
+              "plans.growth.name": "Growth",
+              "plans.pro.name": "Pro",
+            };
+            return planNames[key] ?? key;
+          };
+        }
+        return (key: string) => key;
+      }),
     }));
   });
 

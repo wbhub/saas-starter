@@ -148,7 +148,28 @@
       "description": "配置 Starter、Growth 和 Pro 价格 ID 一次，登陆页面和计费流程即可保持同步。",
       "mostPopular": "最受欢迎",
       "managePlan": "管理计划",
-      "choosePlan": "选择 {name}"
+      "choosePlan": "选择 {name}",
+      "priceSuffix": {
+        "month": "/月",
+        "year": "/年",
+        "week": "/周",
+        "day": "/天",
+        "other": "/{interval}"
+      },
+      "plans": {
+        "starter": {
+          "name": "入门版",
+          "description": "适合验证新产品的创业者。"
+        },
+        "growth": {
+          "name": "成长版",
+          "description": "适合扩大激活与留存的团队。"
+        },
+        "pro": {
+          "name": "专业版",
+          "description": "适合需要大规模可靠性的企业。"
+        }
+      }
     },
     "ctaFaq": {
       "title": "准备好更快地交付您的 SaaS 了吗？",

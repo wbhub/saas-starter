@@ -24,6 +24,20 @@ function mockBillingPageDependencies(options: {
         typeof namespaceOrOptions === "string"
           ? namespaceOrOptions
           : namespaceOrOptions?.namespace;
+      if (namespace === "Landing.pricing") {
+        return (key: string) => {
+          const dictionary: Record<string, string> = {
+            "priceSuffix.month": "/mo",
+            "plans.starter.name": "Starter",
+            "plans.growth.name": "Growth",
+            "plans.pro.name": "Pro",
+            "plans.starter.description": "Perfect for founders validating a new product.",
+            "plans.growth.description": "For teams scaling activation and retention.",
+            "plans.pro.description": "For businesses that need reliability at scale.",
+          };
+          return dictionary[key] ?? key;
+        };
+      }
       if (namespace === "DashboardBillingPage") {
         return (key: string, values?: Record<string, string>) => {
           if (key === "paidTeam.breakdown") {
