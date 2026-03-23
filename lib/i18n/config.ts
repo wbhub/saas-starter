@@ -1,1 +1,1 @@
-export const SHOW_LOCALE_SWITCHER = false;
+export const SHOW_LOCALE_SWITCHER = true;

@@ -45,7 +45,7 @@ Backend routes:
 - Vercel AI SDK (`ai`, `@ai-sdk/openai`, `@ai-sdk/react`)
 - Resend (`resend`)
 - Tailwind CSS 4
-- Internationalization: `next-intl` (locales: `en`, `es`, `fr`, `zh`, `pt`, `ko`; locale prefix disabled)
+- Internationalization: `next-intl` (locales: `en`, `es`, `fr`, `pt`, `zh`; locale prefix disabled)
 - Vitest, Playwright, ESLint
 - Optional observability/runtime: Sentry, Upstash Redis
 
@@ -184,11 +184,11 @@ Optional:
 
 ## Internationalization
 
-- `next-intl` is configured with locales `en`, `es`, `fr`, `zh`, `pt`, and `ko`.
+- `next-intl` is configured with locales `en`, `es`, `fr`, `pt`, and `zh` (order matches the in-app language menu).
 - Locale source of truth is `i18n/routing.ts` (`routing.locales` + `routing.defaultLocale`).
 - `localePrefix` is set to `never` (no locale segment in URLs).
 - Automatic locale detection is enabled (Accept-Language/cookie/request locale).
-- `lib/i18n/config.ts` currently has `SHOW_LOCALE_SWITCHER=false` by default.
+- `lib/i18n/config.ts` sets `SHOW_LOCALE_SWITCHER` (toggle the locale control in headers/sidebar).
 
 ## API Response Format
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, ChevronDown, Languages } from "lucide-react";
+import { Check, Languages } from "lucide-react";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
@@ -12,10 +12,9 @@ const LOCALE_COOKIE = "NEXT_LOCALE";
 
 type LocaleSwitcherProps = {
   className?: string;
-  compact?: boolean;
 };
 
-export function LocaleSwitcher({ className, compact = false }: LocaleSwitcherProps) {
+export function LocaleSwitcher({ className }: LocaleSwitcherProps) {
   const locale = useLocale() as AppLocale;
   const router = useRouter();
   const t = useTranslations("LocaleSwitcher");
@@ -63,27 +62,14 @@ export function LocaleSwitcher({ className, compact = false }: LocaleSwitcherPro
     >
       <button
         type="button"
-        aria-label={t("label")}
+        aria-label={`${t("label")}: ${currentLabel}`}
+        title={currentLabel}
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
-        className={cn(
-          "inline-flex items-center gap-2 rounded-lg border app-border-subtle app-surface-subtle text-[color:var(--foreground)] transition-colors hover:bg-[color:var(--surface)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring)]",
-          compact ? "h-9 px-2.5 text-xs" : "h-10 px-3 text-sm",
-        )}
+        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border app-border-subtle app-surface text-[color:var(--foreground)] shadow-sm transition-colors hover:bg-[color:var(--surface-subtle)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring)]"
       >
-        <Languages className={compact ? "h-3.5 w-3.5" : "h-4 w-4"} />
-        <span className={cn("font-medium", compact ? "sr-only" : "")}>{currentLabel}</span>
-        <span className={cn("font-semibold tracking-wide", compact ? "" : "text-xs")}>
-          {locale.toUpperCase()}
-        </span>
-        <ChevronDown
-          className={cn(
-            "text-[color:var(--muted-foreground)] transition-transform",
-            compact ? "h-3.5 w-3.5" : "h-4 w-4",
-            open ? "rotate-180" : "",
-          )}
-        />
+        <Languages className="h-4 w-4" />
       </button>
 
       {open ? (
