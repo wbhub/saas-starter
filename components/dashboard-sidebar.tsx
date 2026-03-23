@@ -74,7 +74,7 @@ export function DashboardSidebar({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {SHOW_LOCALE_SWITCHER ? <LocaleSwitcher compact /> : null}
+          {SHOW_LOCALE_SWITCHER ? <LocaleSwitcher /> : null}
           <ThemeToggle />
         </div>
       </div>
