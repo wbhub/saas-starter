@@ -107,7 +107,7 @@ describe("POST /api/team/invites/accept", () => {
     });
   });
 
-  it("returns 500 when invite is accepted but seat sync fails", async () => {
+  it("returns 200 when invite is accepted but seat sync fails", async () => {
     const rpc = vi.fn().mockResolvedValue({
       data: [{ ok: true, error_code: null, team_id: "team_123", team_name: "Acme Team" }],
       error: null,
@@ -188,9 +188,10 @@ describe("POST /api/team/invites/accept", () => {
       }),
     );
 
-    expect(response.status).toBe(500);
+    expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
-      error: "Invite accepted, but billing sync failed. Please retry shortly.",
+      ok: true,
+      warning: "Invite accepted, but billing sync failed. Please retry shortly.",
       inviteAccepted: true,
       teamName: "Acme Team",
     });

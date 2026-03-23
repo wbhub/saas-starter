@@ -4,6 +4,7 @@ import { parse as parseCookieHeader } from "cookie";
 import { getAppUrl } from "@/lib/env";
 
 export const CSRF_COOKIE_NAME = "csrf_token";
+export const CSRF_CLIENT_COOKIE_NAME = "csrf_token_client";
 export const CSRF_HEADER_NAME = "x-csrf-token";
 export const CSRF_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 14;
 
@@ -87,6 +88,7 @@ function isHttpsUrl(url: string) {
 
 export function getCsrfCookieOptions(secure: boolean) {
   return {
+    httpOnly: true,
     sameSite: "strict" as const,
     secure,
     path: "/",
@@ -94,12 +96,31 @@ export function getCsrfCookieOptions(secure: boolean) {
   };
 }
 
-export function rotateCsrfTokenOnResponse(response: NextResponse, request: Request) {
+export function getClientReadableCsrfCookieOptions(secure: boolean) {
+  return {
+    httpOnly: false,
+    sameSite: "strict" as const,
+    secure,
+    path: "/",
+    maxAge: CSRF_COOKIE_MAX_AGE_SECONDS,
+  };
+}
+
+function setCsrfCookies(response: NextResponse, token: string, secure: boolean) {
   response.cookies.set({
     name: CSRF_COOKIE_NAME,
-    value: createCsrfToken(),
-    ...getCsrfCookieOptions(isHttpsUrl(request.url)),
+    value: token,
+    ...getCsrfCookieOptions(secure),
   });
+  response.cookies.set({
+    name: CSRF_CLIENT_COOKIE_NAME,
+    value: token,
+    ...getClientReadableCsrfCookieOptions(secure),
+  });
+}
+
+export function rotateCsrfTokenOnResponse(response: NextResponse, request: Request) {
+  setCsrfCookies(response, createCsrfToken(), isHttpsUrl(request.url));
   return response;
 }
 

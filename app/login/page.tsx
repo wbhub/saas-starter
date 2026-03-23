@@ -18,7 +18,15 @@ function getSafeNextPath(nextValue: string | string[] | undefined) {
     return "/dashboard";
   }
 
-  if (/[\u0000-\u001F\u007F]/.test(next) || next.includes("\\")) {
+  if (/[\u0000-\u001F\u007F]/.test(next) || next.includes("\\") || next.startsWith("//")) {
+    return "/dashboard";
+  }
+  try {
+    const decoded = decodeURIComponent(next);
+    if (decoded.includes("\\") || decoded.startsWith("//") || decoded.startsWith("/\\")) {
+      return "/dashboard";
+    }
+  } catch {
     return "/dashboard";
   }
 

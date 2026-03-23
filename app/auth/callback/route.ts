@@ -17,7 +17,15 @@ function getSafeNextPath(next: string | null) {
   }
 
   // Prevent header injection and malformed redirect values.
-  if (/[\u0000-\u001F\u007F]/.test(next) || next.includes("\\")) {
+  if (/[\u0000-\u001F\u007F]/.test(next) || next.includes("\\") || next.startsWith("//")) {
+    return "/dashboard";
+  }
+  try {
+    const decoded = decodeURIComponent(next);
+    if (decoded.includes("\\") || decoded.startsWith("//") || decoded.startsWith("/\\")) {
+      return "/dashboard";
+    }
+  } catch {
     return "/dashboard";
   }
 

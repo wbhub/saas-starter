@@ -236,6 +236,37 @@ describe("GET /auth/callback", () => {
     expect(response.headers.get("location")).toBe("https://app.example.com/dashboard");
   });
 
+  it("falls back to dashboard for double-encoded protocol-relative next", async () => {
+    vi.doMock("@/lib/env", () => ({
+      env: { NEXT_PUBLIC_APP_URL: "https://app.example.com" },
+      getAppUrl: () => "https://app.example.com",
+    }));
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          exchangeCodeForSession: async () => ({
+            data: { session: { user: { id: "user_123" } } },
+            error: null,
+          }),
+        },
+      }),
+    }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),
+    }));
+    vi.doMock("@/lib/http/client-ip", () => ({
+      getClientIp: vi.fn().mockReturnValue("198.51.100.1"),
+    }));
+
+    const { GET } = await import("./route");
+    const response = await GET(
+      makeRequest("https://app.example.com/auth/callback?code=test&next=%252F%252Fevil.example"),
+    );
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe("https://app.example.com/dashboard");
+  });
+
   it("uses 10 requests per minute callback rate limit", async () => {
     const checkRateLimit = vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 });
 

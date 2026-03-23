@@ -230,11 +230,12 @@ export async function POST(request: Request) {
     });
     return json(
       {
-        error: t("errors.billingSyncFailedAfterAccept"),
+        ok: true,
+        warning: t("errors.billingSyncFailedAfterAccept"),
         inviteAccepted: true,
         teamName: rpcRow.team_name ?? t("defaults.teamName"),
       },
-      { status: 500 },
+      { status: 200 },
     );
   }
 

@@ -1,7 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import {
+  CSRF_CLIENT_COOKIE_NAME,
   CSRF_COOKIE_NAME,
   createCsrfToken,
+  getClientReadableCsrfCookieOptions,
   getCsrfCookieOptions,
 } from "@/lib/security/csrf";
 import { createRequestId, REQUEST_ID_HEADER } from "@/lib/http/request-id";
@@ -114,7 +116,15 @@ function getSafeNextPath(pathname: string, search: string) {
   if (!next.startsWith("/")) {
     return "/dashboard";
   }
-  if (/[\u0000-\u001F\u007F]/.test(next) || next.includes("\\")) {
+  if (/[\u0000-\u001F\u007F]/.test(next) || next.includes("\\") || next.startsWith("//")) {
+    return "/dashboard";
+  }
+  try {
+    const decoded = decodeURIComponent(next);
+    if (decoded.includes("\\") || decoded.startsWith("//") || decoded.startsWith("/\\")) {
+      return "/dashboard";
+    }
+  } catch {
     return "/dashboard";
   }
   return next;
@@ -142,10 +152,16 @@ export async function proxy(request: NextRequest) {
       redirectResponse.cookies.set(cookie);
     }
     if (!hasCsrfCookie) {
+      const token = createCsrfToken();
       redirectResponse.cookies.set({
         name: CSRF_COOKIE_NAME,
-        value: createCsrfToken(),
+        value: token,
         ...getCsrfCookieOptions(request.nextUrl.protocol === "https:"),
+      });
+      redirectResponse.cookies.set({
+        name: CSRF_CLIENT_COOKIE_NAME,
+        value: token,
+        ...getClientReadableCsrfCookieOptions(request.nextUrl.protocol === "https:"),
       });
     }
     redirectResponse.headers.set("Content-Security-Policy", buildCspHeader(nonce));
@@ -156,10 +172,16 @@ export async function proxy(request: NextRequest) {
   response.headers.set("Content-Security-Policy", buildCspHeader(nonce));
   response.headers.set(REQUEST_ID_HEADER, requestId);
   if (!hasCsrfCookie) {
+    const token = createCsrfToken();
     response.cookies.set({
       name: CSRF_COOKIE_NAME,
-      value: createCsrfToken(),
+      value: token,
       ...getCsrfCookieOptions(request.nextUrl.protocol === "https:"),
+    });
+    response.cookies.set({
+      name: CSRF_CLIENT_COOKIE_NAME,
+      value: token,
+      ...getClientReadableCsrfCookieOptions(request.nextUrl.protocol === "https:"),
     });
   }
 

@@ -207,7 +207,7 @@ describe("POST /api/stripe/change-plan", () => {
     expect(syncSubscription).toHaveBeenCalledOnce();
   });
 
-  it("returns 500 when Stripe plan updates but local sync fails", async () => {
+  it("returns 200 when Stripe plan updates but local sync fails", async () => {
     const maybeSingle = vi.fn().mockResolvedValue({
       data: { stripe_subscription_id: "sub_123", status: "active" },
       error: null,
@@ -304,9 +304,10 @@ describe("POST /api/stripe/change-plan", () => {
       }),
     );
 
-    expect(response.status).toBe(500);
+    expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
-      error: "Plan changed, but local billing sync failed. Please retry shortly.",
+      ok: true,
+      warning: "Plan changed, but local billing sync failed. Please retry shortly.",
       planChanged: true,
     });
     expect(update).toHaveBeenCalledOnce();
