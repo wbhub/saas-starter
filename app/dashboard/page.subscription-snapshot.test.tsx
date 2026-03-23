@@ -60,20 +60,32 @@ function mockDashboardDependencies({
     }),
   }));
   vi.doMock("next-intl/server", () => ({
-    getTranslations: vi.fn().mockResolvedValue((key: string, values?: { name?: string }) => {
-      if (key === "DashboardPage.currentPlanFree") {
-        return "Current plan: Free";
+    getTranslations: vi.fn(async (namespace?: string) => {
+      if (namespace === "Landing.pricing") {
+        return (key: string) => {
+          const planNames: Record<string, string> = {
+            "plans.starter.name": "Starter",
+            "plans.growth.name": "Growth",
+            "plans.pro.name": "Pro",
+          };
+          return planNames[key] ?? key;
+        };
       }
-      if (key === "DashboardPage.visitBillingUpgrade") {
-        return "Visit billing to upgrade anytime.";
-      }
-      if (key === "DashboardPage.noActiveSubscription") {
-        return "No active subscription. Visit billing to start a plan.";
-      }
-      if (key === "DashboardPage.welcome") {
-        return `Welcome back, ${values?.name ?? "there"}.`;
-      }
-      return key;
+      return (key: string, values?: { name?: string }) => {
+        if (key === "DashboardPage.currentPlanFree") {
+          return "Current plan: Free";
+        }
+        if (key === "DashboardPage.visitBillingUpgrade") {
+          return "Visit billing to upgrade anytime.";
+        }
+        if (key === "DashboardPage.noActiveSubscription") {
+          return "No active subscription. Visit billing to start a plan.";
+        }
+        if (key === "DashboardPage.welcome") {
+          return `Welcome back, ${values?.name ?? "there"}.`;
+        }
+        return key;
+      };
     }),
   }));
   vi.doMock("next/link", () => ({

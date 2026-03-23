@@ -148,7 +148,28 @@
       "description": "Configura una vez los IDs de precios Starter, Growth y Pro para mantener sincronizados landing y facturación.",
       "mostPopular": "Más popular",
       "managePlan": "Gestionar plan",
-      "choosePlan": "Elegir {name}"
+      "choosePlan": "Elegir {name}",
+      "priceSuffix": {
+        "month": "/mes",
+        "year": "/año",
+        "week": "/sem.",
+        "day": "/día",
+        "other": "/{interval}"
+      },
+      "plans": {
+        "starter": {
+          "name": "Starter",
+          "description": "Perfecto para fundadores que validan un nuevo producto."
+        },
+        "growth": {
+          "name": "Crecimiento",
+          "description": "Para equipos que escalan la activación y la retención."
+        },
+        "pro": {
+          "name": "Pro",
+          "description": "Para empresas que necesitan fiabilidad a escala."
+        }
+      }
     },
     "ctaFaq": {
       "title": "¿Listo para enviar tu SaaS más rápido?",

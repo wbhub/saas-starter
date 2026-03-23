@@ -7,7 +7,7 @@ import {
   SYNC_PENDING_RELOAD_DELAY_MS,
 } from "@/lib/constants/billing";
 import { getCsrfHeaders } from "@/lib/http/csrf";
-import { PLAN_KEYS, PLAN_LABELS, type PlanKey } from "@/lib/stripe/plans";
+import { PLAN_KEYS, type PlanKey } from "@/lib/stripe/plans";
 
 type Props = {
   billingEnabled: boolean;
@@ -98,6 +98,7 @@ export function BillingActions({
   canManageBilling,
 }: Props) {
   const t = useTranslations("BillingActions");
+  const tPlans = useTranslations("Landing.pricing");
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -210,7 +211,7 @@ export function BillingActions({
               >
                 {loadingAction === `checkout-${key}`
                   ? t("actions.opening")
-                  : t("actions.subscribe", { name: PLAN_LABELS[key] })}
+                  : t("actions.subscribe", { name: tPlans(`plans.${key}.name`) })}
               </button>
             ))
           : availablePlanKeys.map((key) => (
@@ -222,7 +223,7 @@ export function BillingActions({
               >
                 {loadingAction === `change-${key}`
                   ? t("actions.updating")
-                  : t("actions.switchTo", { name: PLAN_LABELS[key] })}
+                  : t("actions.switchTo", { name: tPlans(`plans.${key}.name`) })}
               </button>
             ))}
 

@@ -6,17 +6,22 @@ import { NoTeamCard } from "@/components/no-team-card";
 import { SupportEmailCard } from "@/components/support-email-card";
 import { TeamContextErrorCard } from "@/components/team-context-error-card";
 import { formatUtcDate } from "@/lib/date";
+import { formatStaticUsdMonthlyLabel } from "@/lib/stripe/plan-price-display";
 import { canManageTeamBilling } from "@/lib/team-context";
 import {
   getDashboardAiUiGate,
   getDashboardBaseData,
   getDashboardBillingContext,
 } from "@/lib/dashboard/server";
-import { PLAN_CATALOG, PLAN_LABELS, type PlanKey } from "@/lib/stripe/plans";
+import { PLAN_CATALOG, type PlanKey } from "@/lib/stripe/plans";
 
 export default async function DashboardBillingPage() {
   const t = await getTranslations("DashboardBillingPage");
+  const tPlanCopy = await getTranslations("Landing.pricing");
   const locale = await getLocale();
+  const priceSuffixMonth = tPlanCopy("priceSuffix.month");
+  const catalogSeatPrice = (amountMonthly: number) =>
+    formatStaticUsdMonthlyLabel(amountMonthly, locale, priceSuffixMonth);
   const {
     supabase,
     user,
@@ -111,16 +116,16 @@ export default async function DashboardBillingPage() {
                 className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm"
               >
                 <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                  {plan.name}
+                  {tPlanCopy(`plans.${plan.key}.name`)}
                 </p>
                 <p className="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-50">
-                  {plan.priceLabel}
+                  {catalogSeatPrice(plan.amountMonthly)}
                 </p>
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                  {plan.description}
+                  {tPlanCopy(`plans.${plan.key}.description`)}
                 </p>
                 <p className="mt-3 text-sm text-slate-700 dark:text-slate-200">
-                  {t("freeMode.perSeat", { amount: plan.priceLabel })}
+                  {t("freeMode.perSeat", { amount: catalogSeatPrice(plan.amountMonthly) })}
                 </p>
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                   {t("freeMode.collaborationIncluded")}
@@ -139,7 +144,9 @@ export default async function DashboardBillingPage() {
               <div className="flex items-center justify-between">
                 <dt className="text-slate-500 dark:text-slate-400">{t("currentSubscription.currentPlan")}</dt>
                 <dd className="font-medium text-slate-900 dark:text-slate-100">
-                  {currentPaidPlanKey ? PLAN_LABELS[currentPaidPlanKey] : t("currentSubscription.unknown")}
+                  {currentPaidPlanKey
+                    ? tPlanCopy(`plans.${currentPaidPlanKey}.name`)
+                    : t("currentSubscription.unknown")}
                 </dd>
               </div>
               <div className="flex items-center justify-between">
@@ -155,7 +162,9 @@ export default async function DashboardBillingPage() {
               {currentPlan ? (
                 <div className="flex items-center justify-between">
                   <dt className="text-slate-500 dark:text-slate-400">{t("currentSubscription.perSeatCost")}</dt>
-                  <dd className="text-slate-800 dark:text-slate-100">{currentPlan.priceLabel}</dd>
+                  <dd className="text-slate-800 dark:text-slate-100">
+                    {catalogSeatPrice(currentPlan.amountMonthly)}
+                  </dd>
                 </div>
               ) : null}
               <div className="flex items-center justify-between">
@@ -176,7 +185,7 @@ export default async function DashboardBillingPage() {
             <p className="mt-4 rounded-lg app-surface-subtle px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
               {t("paidTeam.breakdown", {
                 seats: String(subscription?.seat_quantity ?? memberCount),
-                seatCost: currentPlan.priceLabel,
+                seatCost: catalogSeatPrice(currentPlan.amountMonthly),
                 monthlyTotal: new Intl.NumberFormat(locale, {
                   style: "currency",
                   currency: "USD",
@@ -203,7 +212,7 @@ export default async function DashboardBillingPage() {
             {t("paidSolo.title")}
           </h2>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-            {t("paidSolo.description", { amount: currentPlan.priceLabel })}
+            {t("paidSolo.description", { amount: catalogSeatPrice(currentPlan.amountMonthly) })}
           </p>
           <Link
             href="/dashboard/team"

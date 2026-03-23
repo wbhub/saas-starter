@@ -148,7 +148,28 @@
       "description": "Configure Starter, Growth, and Pro price IDs once, and the landing page and billing flows stay in sync.",
       "mostPopular": "Most popular",
       "managePlan": "Manage Plan",
-      "choosePlan": "Choose {name}"
+      "choosePlan": "Choose {name}",
+      "priceSuffix": {
+        "month": "/mo",
+        "year": "/yr",
+        "week": "/wk",
+        "day": "/day",
+        "other": "/{interval}"
+      },
+      "plans": {
+        "starter": {
+          "name": "Starter",
+          "description": "Perfect for founders validating a new product."
+        },
+        "growth": {
+          "name": "Growth",
+          "description": "For teams scaling activation and retention."
+        },
+        "pro": {
+          "name": "Pro",
+          "description": "For businesses that need reliability at scale."
+        }
+      }
     },
     "ctaFaq": {
       "title": "Ready to ship your SaaS faster?",

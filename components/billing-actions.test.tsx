@@ -3,7 +3,15 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { BillingActions } from "./billing-actions";
 
 vi.mock("next-intl", () => ({
-  useTranslations: () => (key: string, values?: Record<string, string>) => {
+  useTranslations: (namespace?: string) => (key: string, values?: Record<string, string>) => {
+    if (namespace === "Landing.pricing") {
+      const names: Record<string, string> = {
+        "plans.starter.name": "Starter",
+        "plans.growth.name": "Growth",
+        "plans.pro.name": "Pro",
+      };
+      return names[key] ?? key;
+    }
     if (key === "actions.manageBilling") return "Manage billing";
     if (key === "actions.subscribe") return `Subscribe ${values?.name ?? ""}`.trim();
     if (key === "actions.switchTo") return `Switch to ${values?.name ?? ""}`.trim();

@@ -334,16 +334,16 @@ export async function PricingSection() {
             >
               {t("mostPopular")}
             </p>
-            <h3 className="text-lg font-semibold">{tier.name}</h3>
+            <h3 className="text-lg font-semibold">{t(`plans.${tier.key}.name`)}</h3>
             <p className="mt-2 text-3xl font-semibold text-indigo-600 dark:text-indigo-300">
               {tier.priceLabel}
             </p>
-            <p className="app-muted mt-3 text-sm">{tier.description}</p>
+            <p className="app-muted mt-3 text-sm">{t(`plans.${tier.key}.description`)}</p>
             <AuthAwareLink
               loggedInHref="/dashboard"
               loggedOutHref="/signup"
               loggedInLabel={t("managePlan")}
-              loggedOutLabel={t("choosePlan", { name: tier.name })}
+              loggedOutLabel={t("choosePlan", { name: t(`plans.${tier.key}.name`) })}
               className="mt-6 inline-block rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400"
             />
           </article>

@@ -148,7 +148,28 @@
       "description": "Configurez les identifiants de prix Starter, Growth et Pro une fois, et la page de destination et les flux de facturation restent synchronisés.",
       "mostPopular": "Le plus populaire",
       "managePlan": "Gérer le forfait",
-      "choosePlan": "Choisissez {name}"
+      "choosePlan": "Choisissez {name}",
+      "priceSuffix": {
+        "month": "/mois",
+        "year": "/an",
+        "week": "/sem.",
+        "day": "/jour",
+        "other": "/{interval}"
+      },
+      "plans": {
+        "starter": {
+          "name": "Starter",
+          "description": "Parfait pour les fondateurs qui valident un nouveau produit."
+        },
+        "growth": {
+          "name": "Croissance",
+          "description": "Pour les équipes qui développent l’activation et la rétention."
+        },
+        "pro": {
+          "name": "Pro",
+          "description": "Pour les entreprises qui ont besoin de fiabilité à grande échelle."
+        }
+      }
     },
     "ctaFaq": {
       "title": "Prêt à expédier votre SaaS plus rapidement ?",
