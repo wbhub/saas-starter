@@ -219,8 +219,11 @@ export async function POST(request: Request) {
 
       const inviteUrl = `${getAppUrl()}/invite/${token}`;
       let emailSent = false;
+      let emailFailureReason: "resend_not_configured" | "resend_unavailable" | "resend_send_failed" | null =
+        null;
 
       if (!isResendCustomEmailConfigured()) {
+        emailFailureReason = "resend_not_configured";
         logger.warn("Team invite email delivery disabled because Resend is not fully configured", {
           requestId,
           teamId: teamContext.teamId,
@@ -230,6 +233,7 @@ export async function POST(request: Request) {
           const resend = getResendClientIfConfigured();
           const fromEmail = getResendFromEmailIfConfigured();
           if (!resend || !fromEmail) {
+            emailFailureReason = "resend_unavailable";
             logger.warn(
               "Team invite email delivery skipped because Resend became unavailable mid-request",
               {
@@ -255,8 +259,10 @@ export async function POST(request: Request) {
               replyTo: user.email ?? undefined,
             });
             emailSent = true;
+            emailFailureReason = null;
           }
         } catch (error) {
+          emailFailureReason = "resend_send_failed";
           logger.error("Failed to send team invite email", error, {
             requestId,
             teamId: teamContext.teamId,
@@ -269,7 +275,7 @@ export async function POST(request: Request) {
         outcome: "success",
         actorUserId: user.id,
         teamId: teamContext.teamId,
-        metadata: { email, role, emailSent },
+        metadata: { email, role, emailSent, emailFailureReason: emailFailureReason ?? undefined },
       });
 
       return jsonSuccess({ emailSent });

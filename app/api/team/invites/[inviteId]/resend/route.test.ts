@@ -88,6 +88,10 @@ describe("POST /api/team/invites/[inviteId]/resend", () => {
       expect.objectContaining({
         action: "team.invite.resend",
         outcome: "failure",
+        metadata: expect.objectContaining({
+          emailSent: false,
+          emailFailureReason: "resend_send_failed",
+        }),
       }),
     );
   });
@@ -170,6 +174,10 @@ describe("POST /api/team/invites/[inviteId]/resend", () => {
       expect.objectContaining({
         action: "team.invite.resend",
         outcome: "failure",
+        metadata: expect.objectContaining({
+          emailSent: false,
+          emailFailureReason: "resend_not_configured",
+        }),
       }),
     );
   });

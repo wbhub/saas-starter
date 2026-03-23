@@ -62,6 +62,7 @@ describe("POST /api/team/invites", () => {
   });
 
   it("creates invite and sends email for owners/admins", async () => {
+    const logAuditEvent = vi.fn();
     const insert = vi.fn().mockResolvedValue({ error: null });
     const cleanupDelete = vi.fn().mockResolvedValue({ error: null });
     const send = vi.fn().mockResolvedValue({});
@@ -137,6 +138,9 @@ describe("POST /api/team/invites", () => {
       getResendClientIfConfigured: () => ({ emails: { send } }),
       getResendFromEmailIfConfigured: () => "SaaS Starter <onboarding@example.com>",
     }));
+    vi.doMock("@/lib/audit", () => ({
+      logAuditEvent,
+    }));
 
     const { POST } = await import("./route");
     const response = await POST(
@@ -162,9 +166,20 @@ describe("POST /api/team/invites", () => {
     );
     expect(cleanupDelete).toHaveBeenCalledOnce();
     expect(send).toHaveBeenCalledOnce();
+    expect(logAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "team.invite.create",
+        outcome: "success",
+        metadata: expect.objectContaining({
+          emailSent: true,
+          emailFailureReason: undefined,
+        }),
+      }),
+    );
   });
 
   it("creates invite and returns emailSent false when Resend is not configured", async () => {
+    const logAuditEvent = vi.fn();
     const insert = vi.fn().mockResolvedValue({ error: null });
     const cleanupDelete = vi.fn().mockResolvedValue({ error: null });
     const countMembers = vi.fn().mockResolvedValue({ count: 3, error: null });
@@ -239,6 +254,9 @@ describe("POST /api/team/invites", () => {
       getResendClientIfConfigured: vi.fn(),
       getResendFromEmailIfConfigured: vi.fn(),
     }));
+    vi.doMock("@/lib/audit", () => ({
+      logAuditEvent,
+    }));
 
     const { POST } = await import("./route");
     const response = await POST(
@@ -256,6 +274,16 @@ describe("POST /api/team/invites", () => {
     });
     expect(insert).toHaveBeenCalledOnce();
     expect(cleanupDelete).toHaveBeenCalledOnce();
+    expect(logAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "team.invite.create",
+        outcome: "success",
+        metadata: expect.objectContaining({
+          emailSent: false,
+          emailFailureReason: "resend_not_configured",
+        }),
+      }),
+    );
   });
 
   it("returns 402 when team does not have a paid subscription", async () => {
