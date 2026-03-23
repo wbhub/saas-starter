@@ -4,6 +4,27 @@ describe("reconcileTeamSeatQuantities", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    vi.doMock("@/lib/billing/capabilities", () => ({
+      isBillingEnabled: () => true,
+    }));
+  });
+
+  it("returns no-op summary when billing is disabled", async () => {
+    vi.doMock("@/lib/billing/capabilities", () => ({
+      isBillingEnabled: () => false,
+    }));
+
+    const { reconcileTeamSeatQuantities } = await import("./seat-reconcile");
+    const result = await reconcileTeamSeatQuantities();
+
+    expect(result).toEqual({
+      scannedTeams: 0,
+      synced: 0,
+      failed: 0,
+      queuedRetries: 0,
+      discoveredFromStripe: 0,
+      stripePagesScanned: 0,
+    });
   });
 
   it("paginates database teams and includes Stripe discovery", async () => {

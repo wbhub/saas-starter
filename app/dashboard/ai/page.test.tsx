@@ -55,6 +55,7 @@ function mockAiPageDependencies({
       csrfToken: "csrf_token",
     }),
     getDashboardBillingContext: vi.fn().mockResolvedValue({
+      billingEnabled: true,
       subscription: null,
       effectivePlanKey: "free",
       memberCount: 1,

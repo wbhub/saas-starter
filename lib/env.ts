@@ -4,6 +4,7 @@ import {
   type PlanKey,
   type StripePriceIdEnvKey,
 } from "@/lib/stripe/plans";
+import { isBillingEnabled, isFreePlanEnabled } from "@/lib/billing/capabilities";
 
 type StaticServerEnvKey =
   | "NEXT_PUBLIC_APP_URL"
@@ -31,6 +32,7 @@ type OptionalEnvKey =
   | "AI_PLAN_MONTHLY_TOKEN_BUDGET_MAP_JSON"
   | "AI_PLAN_MODALITIES_MAP_JSON"
   | "APP_FREE_PLAN_ENABLED"
+  | "BILLING_PROVIDER"
   | "CRON_SECRET"
   | "INTERCOM_IDENTITY_SECRET"
   | "NEXT_PUBLIC_INTERCOM_APP_ID"
@@ -139,7 +141,10 @@ const envBase = {
     return optionalEnv("AI_PLAN_MODALITIES_MAP_JSON");
   },
   get APP_FREE_PLAN_ENABLED() {
-    return optionalEnv("APP_FREE_PLAN_ENABLED") === "true";
+    return isFreePlanEnabled();
+  },
+  get BILLING_PROVIDER() {
+    return optionalEnv("BILLING_PROVIDER");
   },
   get STRIPE_SECRET_KEY() {
     return ensureEnv("STRIPE_SECRET_KEY");
@@ -211,20 +216,62 @@ const requiredStripePriceIdGetters: Record<StripePriceIdEnvKey, true> = Object.f
   STRIPE_PLAN_PRICE_ID_ENV_KEYS.map((key) => [key, true]),
 ) as Record<StripePriceIdEnvKey, true>;
 
-const REQUIRED_ENV_GETTERS: Readonly<Record<HardRequiredEnvKey, true>> = {
+const CORE_REQUIRED_ENV_GETTERS: Readonly<Record<Exclude<HardRequiredEnvKey, "STRIPE_SECRET_KEY" | "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY" | "STRIPE_WEBHOOK_SECRET" | StripePriceIdEnvKey>, true>> = {
   SUPABASE_SERVICE_ROLE_KEY: true,
-  STRIPE_SECRET_KEY: true,
-  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: true,
-  STRIPE_WEBHOOK_SECRET: true,
-  ...requiredStripePriceIdGetters,
   RESEND_API_KEY: true,
   RESEND_FROM_EMAIL: true,
   RESEND_SUPPORT_EMAIL: true,
 };
 
+const BILLING_REQUIRED_ENV_GETTERS: Readonly<
+  Record<
+    "STRIPE_SECRET_KEY" | "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY" | "STRIPE_WEBHOOK_SECRET" | StripePriceIdEnvKey,
+    true
+  >
+> = {
+  STRIPE_SECRET_KEY: true,
+  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: true,
+  STRIPE_WEBHOOK_SECRET: true,
+  ...requiredStripePriceIdGetters,
+};
+
+const BILLING_REQUIRED_ENV_KEYS = Object.keys(BILLING_REQUIRED_ENV_GETTERS) as Array<
+  "STRIPE_SECRET_KEY" | "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY" | "STRIPE_WEBHOOK_SECRET" | StripePriceIdEnvKey
+>;
+
+function hasValue(key: string) {
+  return (process.env[key]?.trim() || "").length > 0;
+}
+
 export function validateRequiredEnvAtBoot() {
-  for (const key of Object.keys(REQUIRED_ENV_GETTERS) as HardRequiredEnvKey[]) {
+  for (const key of Object.keys(CORE_REQUIRED_ENV_GETTERS) as HardRequiredEnvKey[]) {
     // Access each required env getter to fail fast on startup misconfiguration.
+    void env[key];
+  }
+
+  if (!isBillingEnabled()) {
+    if (hasValue("STRIPE_SECRET_KEY")) {
+      throw new Error(
+        "Invalid billing configuration: STRIPE_SECRET_KEY is set but BILLING_PROVIDER is not 'stripe'.",
+      );
+    }
+    if (!isFreePlanEnabled()) {
+      throw new Error(
+        "Invalid billing configuration: either set APP_FREE_PLAN_ENABLED=true or configure Stripe billing.",
+      );
+    }
+    return;
+  }
+
+  const missingBillingKeys = BILLING_REQUIRED_ENV_KEYS.filter((key) => !hasValue(key));
+  if (missingBillingKeys.length > 0) {
+    throw new Error(
+      `Missing required Stripe billing environment variables: ${missingBillingKeys.join(", ")}`,
+    );
+  }
+
+  for (const key of BILLING_REQUIRED_ENV_KEYS as HardRequiredEnvKey[]) {
+    // Access billing env getters after preflight to keep behavior consistent.
     void env[key];
   }
 }

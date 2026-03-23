@@ -61,6 +61,9 @@ describe("POST /api/stripe/webhook", () => {
     vi.resetModules();
     vi.clearAllMocks();
     process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
+    vi.doMock("@/lib/billing/capabilities", () => ({
+      isBillingEnabled: () => true,
+    }));
   });
 
   afterEach(() => {
@@ -100,6 +103,54 @@ describe("POST /api/stripe/webhook", () => {
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
       error: "Missing Stripe signature",
+    });
+  });
+
+  it("returns 503 when billing is disabled", async () => {
+    vi.doUnmock("@/lib/billing/capabilities");
+    vi.doMock("next/headers", () => ({
+      headers: async () => new Headers(),
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/stripe/webhook", {
+        method: "POST",
+      }),
+    );
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      error: "Billing webhooks are not configured for this deployment.",
+    });
+  });
+
+  it("returns 503 when webhook secret is missing", async () => {
+    delete process.env.STRIPE_WEBHOOK_SECRET;
+    vi.doMock("next/headers", () => ({
+      headers: async () =>
+        new Headers({
+          "stripe-signature": "t=1,v1=test",
+        }),
+    }));
+    vi.doMock("@/lib/stripe/server", () => ({
+      getStripeServerClient: () => ({
+        webhooks: { constructEvent: vi.fn() },
+      }),
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/stripe/webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      }),
+    );
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      error: "Billing webhooks are not configured for this deployment.",
     });
   });
 

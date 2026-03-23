@@ -7,6 +7,30 @@ describe("POST /api/stripe/checkout", () => {
     vi.doMock("@/lib/security/csrf", () => ({
       verifyCsrfProtection: vi.fn().mockReturnValue(null),
     }));
+    vi.doMock("@/lib/billing/capabilities", () => ({
+      isBillingEnabled: () => true,
+    }));
+  });
+
+  it("returns 503 when billing is disabled", async () => {
+    vi.doMock("@/lib/billing/capabilities", () => ({
+      isBillingEnabled: () => false,
+    }));
+    vi.doMock("@/lib/stripe/config", () => ({
+      getPlanByKey: vi.fn(),
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/stripe/checkout", {
+        method: "POST",
+      }),
+    );
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      error: "Billing is not configured for this deployment.",
+    });
   });
 
   it("returns 409 when a live subscription already exists", async () => {

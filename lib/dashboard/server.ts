@@ -9,6 +9,7 @@ import {
   type AiAccessMode,
 } from "@/lib/ai/config";
 import { hasFeatureAccess } from "@/lib/billing/entitlements";
+import { isBillingEnabled } from "@/lib/billing/capabilities";
 import {
   resolveEffectivePlanKey,
   type EffectivePlanKey,
@@ -85,6 +86,7 @@ export type SubscriptionRow = {
 };
 
 export type DashboardBillingContext = {
+  billingEnabled: boolean;
   subscription: SubscriptionRow | null;
   effectivePlanKey: EffectivePlanKey | null;
   memberCount: number;
@@ -285,6 +287,7 @@ export async function getDashboardBillingContext(
   supabase: SupabaseClient,
   teamId: string,
 ): Promise<DashboardBillingContext> {
+  const billingEnabled = isBillingEnabled();
   const [subscription, memberCount] = await Promise.all([
     getLiveSubscription(supabase, teamId),
     getTeamMemberCount(supabase, teamId),
@@ -295,6 +298,7 @@ export async function getDashboardBillingContext(
   const isPaidPlan = Boolean(effectivePlanKey && effectivePlanKey !== "free");
 
   return {
+    billingEnabled,
     subscription,
     effectivePlanKey,
     memberCount,

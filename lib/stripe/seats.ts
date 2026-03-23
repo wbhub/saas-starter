@@ -4,6 +4,7 @@ import { LIVE_SUBSCRIPTION_STATUSES } from "@/lib/stripe/plans";
 import { syncSubscription } from "@/lib/stripe/sync";
 import { logger } from "@/lib/logger";
 import { env } from "@/lib/env";
+import { isBillingEnabled } from "@/lib/billing/capabilities";
 
 type LiveSubscriptionRow = {
   stripe_subscription_id: string;
@@ -59,9 +60,12 @@ export async function syncTeamSeatQuantity(
   teamId: string,
   options?: { idempotencyKey?: string },
 ) {
+  if (!isBillingEnabled()) {
+    return { updated: false as const, reason: "billing_disabled" as const };
+  }
   const stripe = getStripeServerClient();
   if (!stripe) {
-    throw new Error("Stripe is not configured.");
+    return { updated: false as const, reason: "billing_disabled" as const };
   }
 
   const liveSubscriptionId = await getLiveSubscriptionId(teamId);

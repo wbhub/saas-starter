@@ -259,7 +259,8 @@
     "description": {
       "noPermission": "Only team owners and admins can manage billing.",
       "hasSubscription": "Upgrade, downgrade, or open Stripe Billing Portal.",
-      "noSubscription": "Choose a plan to start your subscription."
+      "noSubscription": "Choose a plan to start your subscription.",
+      "billingDisabled": "Billing is disabled for this deployment. Configure Stripe to enable paid plans."
     },
     "actions": {
       "opening": "Opening...",
@@ -270,7 +271,8 @@
     },
     "messages": {
       "syncPending": "Plan updated in Stripe. Sync in progress. Refreshing shortly...",
-      "planUpdated": "Plan updated. Refreshing billing details..."
+      "planUpdated": "Plan updated. Refreshing billing details...",
+      "billingDisabled": "Stripe billing is currently disabled."
     },
     "errors": {
       "checkoutFailed": "Checkout failed",
@@ -305,6 +307,10 @@
       "description": "Choose a paid plan to unlock advanced features. Team collaboration is included and seats are billed per teammate.",
       "perSeat": "Each teammate costs {amount}.",
       "collaborationIncluded": "Team collaboration included on all paid plans."
+    },
+    "billingDisabled": {
+      "title": "Billing is disabled",
+      "description": "This deployment is running in free-only mode. Add Stripe environment variables to enable paid subscriptions later."
     },
     "paidSolo": {
       "title": "Invite teammates when you are ready",

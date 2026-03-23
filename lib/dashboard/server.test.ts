@@ -193,7 +193,7 @@ describe("getDashboardAiUiGate", () => {
     expect(gate).toEqual({
       isVisibleInUi: false,
       reason: "plan_not_allowed",
-      effectivePlanKey: null,
+      effectivePlanKey: "free",
       accessMode: "paid",
     });
     expect(inFn).toHaveBeenCalled();
@@ -222,7 +222,7 @@ describe("getDashboardAiUiGate", () => {
     expect(gate).toEqual({
       isVisibleInUi: true,
       reason: "enabled",
-      effectivePlanKey: null,
+      effectivePlanKey: "free",
       accessMode: "all",
     });
   });

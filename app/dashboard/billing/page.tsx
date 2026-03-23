@@ -48,7 +48,7 @@ export default async function DashboardBillingPage() {
     getDashboardBillingContext(supabase, teamContext.teamId),
     getDashboardAiUiGate(supabase, teamContext.teamId),
   ]);
-  const { subscription, effectivePlanKey, memberCount, isPaidPlan } = billingContext;
+  const { billingEnabled, subscription, effectivePlanKey, memberCount, isPaidPlan } = billingContext;
   const teamUiMode = !isPaidPlan ? "free" : memberCount > 1 ? "paid_team" : "paid_solo";
   const currentPaidPlanKey: PlanKey | null =
     isPaidPlan && effectivePlanKey && effectivePlanKey !== "free"
@@ -86,6 +86,16 @@ export default async function DashboardBillingPage() {
 
       {!isPaidPlan ? (
         <section className="space-y-4">
+          {!billingEnabled ? (
+            <div className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+                {t("billingDisabled.title")}
+              </h2>
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                {t("billingDisabled.description")}
+              </p>
+            </div>
+          ) : null}
           <div className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
             <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
               {t("freeMode.title")}
@@ -180,6 +190,7 @@ export default async function DashboardBillingPage() {
 
       <section>
         <BillingActions
+          billingEnabled={billingEnabled}
           currentPlanKey={currentPaidPlanKey}
           hasSubscription={hasSubscription}
           canManageBilling={canManageBilling}

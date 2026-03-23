@@ -3,6 +3,7 @@ import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { createClient } from "@/lib/supabase/server";
 import { getStripeServerClient } from "@/lib/stripe/server";
 import { getAppUrl } from "@/lib/env";
+import { isBillingEnabled } from "@/lib/billing/capabilities";
 import { requireJsonContentType } from "@/lib/http/content-type";
 import { getRouteTranslator } from "@/lib/i18n/locale";
 import { checkRateLimit } from "@/lib/security/rate-limit";
@@ -30,6 +31,13 @@ async function isOwnedStripeCustomer(teamId: string, customerId: string) {
 
 export async function POST(request: Request) {
   const t = await getRouteTranslator("ApiStripePortal", request);
+
+  if (!isBillingEnabled()) {
+    return NextResponse.json(
+      { error: t("errors.billingNotConfigured") },
+      { status: 503 },
+    );
+  }
 
   const stripe = getStripeServerClient();
   if (!stripe) {

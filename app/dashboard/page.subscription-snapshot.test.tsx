@@ -45,6 +45,7 @@ function mockDashboardDependencies({
       csrfToken: "csrf_token",
     }),
     getDashboardBillingContext: vi.fn().mockResolvedValue({
+      billingEnabled: true,
       subscription,
       effectivePlanKey,
       memberCount,

@@ -259,7 +259,8 @@
     "description": {
       "noPermission": "只有团队所有者和管理员可以管理计费。",
       "hasSubscription": "升级、降级或打开 Stripe Billing Portal。",
-      "noSubscription": "选择一个计划来开始订阅。"
+      "noSubscription": "选择一个计划来开始订阅。",
+      "billingDisabled": "此部署未启用计费。配置 Stripe 后即可启用付费计划。"
     },
     "actions": {
       "opening": "开幕...",
@@ -270,7 +271,8 @@
     },
     "messages": {
       "syncPending": "计划已在 Stripe 中更新。同步正在进行中。刷新不久...",
-      "planUpdated": "计划已更新。正在刷新帐单详细信息..."
+      "planUpdated": "计划已更新。正在刷新帐单详细信息...",
+      "billingDisabled": "Stripe 计费当前已禁用。"
     },
     "errors": {
       "checkoutFailed": "结帐失败",
@@ -305,6 +307,10 @@
       "description": "选择付费计划以解锁高级功能。所有付费计划都包含团队协作，并按每位队友计费。",
       "perSeat": "每位队友费用为 {amount}。",
       "collaborationIncluded": "所有付费计划均包含团队协作。"
+    },
+    "billingDisabled": {
+      "title": "计费已禁用",
+      "description": "此部署当前以仅免费模式运行。稍后添加 Stripe 环境变量即可启用付费订阅。"
     },
     "paidSolo": {
       "title": "准备好后再邀请队友",

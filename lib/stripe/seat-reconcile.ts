@@ -9,6 +9,7 @@ import {
 import { logger } from "@/lib/logger";
 import { getStripeServerClient } from "@/lib/stripe/server";
 import { resolveTeamIdFromStripeCustomer } from "@/lib/stripe/sync";
+import { isBillingEnabled } from "@/lib/billing/capabilities";
 
 type TeamSubscriptionRow = {
   team_id: string;
@@ -149,6 +150,17 @@ async function collectTeamIdsFromStripe(
 }
 
 export async function reconcileTeamSeatQuantities(options: ReconcileOptions = {}) {
+  if (!isBillingEnabled()) {
+    return {
+      scannedTeams: 0,
+      synced: 0,
+      failed: 0,
+      queuedRetries: 0,
+      discoveredFromStripe: 0,
+      stripePagesScanned: 0,
+    };
+  }
+
   const batchSize = Math.max(1, options.batchSize ?? 500);
   const includeStripeDiscovery = options.includeStripeDiscovery ?? true;
   const stripePageLimit = Math.max(1, options.stripePageLimit ?? 20);

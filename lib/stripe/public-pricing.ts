@@ -12,6 +12,8 @@ type PublicPricingPlan = {
   popular?: boolean;
 };
 
+let warnedStripePricingDisabled = false;
+
 function formatIntervalLabel(interval?: string | null, intervalCount?: number | null) {
   if (!interval) return "";
   if (!intervalCount || intervalCount === 1) {
@@ -40,7 +42,10 @@ function formatPriceLabel(price: {
 export const getPublicPricingCatalog = cache(async (): Promise<PublicPricingPlan[]> => {
   const stripe = getStripeServerClient();
   if (!stripe) {
-    logger.warn("Stripe is not configured; using static pricing labels.");
+    if (!warnedStripePricingDisabled) {
+      warnedStripePricingDisabled = true;
+      logger.warn("Stripe is not configured; using static pricing labels.");
+    }
     return plans.map((plan) => ({
       key: plan.key,
       name: plan.name,

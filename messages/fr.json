@@ -259,7 +259,8 @@
     "description": {
       "noPermission": "Seuls les propriétaires et administrateurs d’équipe peuvent gérer la facturation.",
       "hasSubscription": "Mettez à niveau, rétrogradez ou ouvrez le portail de facturation Stripe.",
-      "noSubscription": "Choisissez un forfait pour démarrer votre abonnement."
+      "noSubscription": "Choisissez un forfait pour démarrer votre abonnement.",
+      "billingDisabled": "La facturation est désactivée pour ce déploiement. Configurez Stripe pour activer les forfaits payants."
     },
     "actions": {
       "opening": "Ouverture...",
@@ -270,7 +271,8 @@
     },
     "messages": {
       "syncPending": "Plan mis à jour dans Stripe. Synchronisation en cours. Rafraîchissement sous peu...",
-      "planUpdated": "Plan mis à jour. Actualisation des détails de facturation..."
+      "planUpdated": "Plan mis à jour. Actualisation des détails de facturation...",
+      "billingDisabled": "La facturation Stripe est actuellement désactivée."
     },
     "errors": {
       "checkoutFailed": "Échec du paiement",
@@ -305,6 +307,10 @@
       "description": "Choisissez un forfait payant pour débloquer des fonctionnalités avancées. La collaboration d'équipe est incluse et les sièges sont facturés par coéquipier.",
       "perSeat": "Chaque coéquipier coûte {amount}.",
       "collaborationIncluded": "La collaboration d'équipe est incluse dans tous les forfaits payants."
+    },
+    "billingDisabled": {
+      "title": "Facturation désactivée",
+      "description": "Ce déploiement fonctionne en mode gratuit uniquement. Ajoutez les variables d'environnement Stripe pour activer les abonnements payants plus tard."
     },
     "paidSolo": {
       "title": "Invitez des coéquipiers quand vous êtes prêt",
