@@ -17,12 +17,13 @@ describe("POST /api/team/ownership/transfer", () => {
         },
       }),
     }));
-    vi.doMock("@/lib/team-context", () => ({
-      getTeamContextForUser: vi.fn().mockResolvedValue({
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
         teamId: "team_123",
         teamName: "Acme",
         role: "admin",
       }),
+      invalidateCachedTeamContextForUser: vi.fn(),
     }));
     vi.doMock("@/lib/security/rate-limit", () => ({
       checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),
@@ -44,6 +45,7 @@ describe("POST /api/team/ownership/transfer", () => {
 
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({
+      ok: false,
       error: "Only owners can transfer ownership.",
     });
   });
@@ -63,12 +65,13 @@ describe("POST /api/team/ownership/transfer", () => {
         },
       }),
     }));
-    vi.doMock("@/lib/team-context", () => ({
-      getTeamContextForUser: vi.fn().mockResolvedValue({
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
         teamId: "team_123",
         teamName: "Acme",
         role: "owner",
       }),
+      invalidateCachedTeamContextForUser: vi.fn(),
     }));
     vi.doMock("@/lib/security/rate-limit", () => ({
       checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),

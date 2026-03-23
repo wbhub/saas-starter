@@ -274,6 +274,7 @@ describe("POST /api/team/invites/accept", () => {
 
     expect(response.status).toBe(409);
     await expect(response.json()).resolves.toEqual({
+      ok: false,
       error: "Team member limit reached. Ask an owner/admin to increase capacity first.",
     });
     expect(rpc).not.toHaveBeenCalled();

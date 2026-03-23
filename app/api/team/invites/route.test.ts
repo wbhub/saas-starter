@@ -56,6 +56,7 @@ describe("POST /api/team/invites", () => {
 
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({
+      ok: false,
       error: "Only team owners and admins can send invites.",
     });
   });
@@ -223,6 +224,7 @@ describe("POST /api/team/invites", () => {
 
     expect(response.status).toBe(402);
     await expect(response.json()).resolves.toEqual({
+      ok: false,
       error: "Inviting teammates requires a paid plan. Visit billing to upgrade first.",
     });
   });
@@ -314,6 +316,7 @@ describe("POST /api/team/invites", () => {
 
     expect(response.status).toBe(409);
     await expect(response.json()).resolves.toEqual({
+      ok: false,
       error: "A pending invite already exists for this email.",
     });
   });
@@ -494,6 +497,7 @@ describe("POST /api/team/invites", () => {
 
     expect(response.status).toBe(409);
     await expect(response.json()).resolves.toEqual({
+      ok: false,
       error: "Team member limit reached. Revoke pending invites or remove members first.",
     });
     expect(insert).not.toHaveBeenCalled();

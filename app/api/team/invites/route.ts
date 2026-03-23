@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
 import { logAuditEvent } from "@/lib/audit";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
+import { jsonError, jsonSuccess } from "@/lib/http/api-json";
 import { withTeamRoute } from "@/lib/http/team-route";
 import { z } from "@/lib/http/request-validation";
 import type { createClient } from "@/lib/supabase/server";
@@ -78,18 +78,15 @@ export async function POST(request: Request) {
       const role = body.role;
 
       if (!isValidEmail(email)) {
-        return NextResponse.json({ error: t("errors.invalidEmail") }, { status: 400 });
+        return jsonError(t("errors.invalidEmail"), 400);
       }
 
       if (!isInviteRole(role)) {
-        return NextResponse.json({ error: t("errors.invalidRole") }, { status: 400 });
+        return jsonError(t("errors.invalidRole"), 400);
       }
 
       if (user.email && normalizeEmail(user.email) === email) {
-        return NextResponse.json(
-          { error: t("errors.alreadyInTeam") },
-          { status: 409 },
-        );
+        return jsonError(t("errors.alreadyInTeam"), 409);
       }
 
       const { data: liveSubscription, error: liveSubscriptionError } = await supabase
@@ -109,16 +106,10 @@ export async function POST(request: Request) {
             teamId: teamContext.teamId,
           },
         );
-        return NextResponse.json(
-          { error: t("errors.unableToCreateInvite") },
-          { status: 500 },
-        );
+        return jsonError(t("errors.unableToCreateInvite"), 500);
       }
       if (!liveSubscription?.stripe_subscription_id) {
-        return NextResponse.json(
-          { error: t("errors.paidPlanRequired") },
-          { status: 402 },
-        );
+        return jsonError(t("errors.paidPlanRequired"), 402);
       }
 
       const teamMaxMembers = getTeamMaxMembers();
@@ -144,19 +135,13 @@ export async function POST(request: Request) {
             teamId: teamContext.teamId,
           },
         );
-        return NextResponse.json(
-          { error: t("errors.unableToCreateInvite") },
-          { status: 500 },
-        );
+        return jsonError(t("errors.unableToCreateInvite"), 500);
       }
 
       const projectedTeamSize =
         (memberCountResult.count ?? 0) + (pendingInviteCountResult.count ?? 0);
       if (projectedTeamSize >= teamMaxMembers) {
-        return NextResponse.json(
-          { error: t("errors.teamMemberLimitReached") },
-          { status: 409 },
-        );
+        return jsonError(t("errors.teamMemberLimitReached"), 409);
       }
 
       const token = createRawInviteToken();
@@ -212,10 +197,7 @@ export async function POST(request: Request) {
             teamId: teamContext.teamId,
             metadata: { reason: "duplicate_pending_invite", email },
           });
-          return NextResponse.json(
-            { error: t("errors.pendingInviteExists") },
-            { status: 409 },
-          );
+          return jsonError(t("errors.pendingInviteExists"), 409);
         }
         logger.error("Failed to create team invite", insertError, {
           requestId,
@@ -228,10 +210,7 @@ export async function POST(request: Request) {
           teamId: teamContext.teamId,
           metadata: { reason: "insert_error", email },
         });
-        return NextResponse.json(
-          { error: t("errors.unableToCreateInvite") },
-          { status: 500 },
-        );
+        return jsonError(t("errors.unableToCreateInvite"), 500);
       }
 
       const inviteUrl = `${getAppUrl()}/invite/${token}`;
@@ -269,10 +248,7 @@ export async function POST(request: Request) {
         metadata: { email, role, emailSent },
       });
 
-      return NextResponse.json({
-        ok: true,
-        emailSent,
-      });
+      return jsonSuccess({ emailSent });
     },
   });
 }

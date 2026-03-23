@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
 import { logAuditEvent } from "@/lib/audit";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
+import { jsonError, jsonErrorFromResponse, jsonSuccess } from "@/lib/http/api-json";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
@@ -26,12 +26,12 @@ export async function PATCH(request: Request) {
   const t = await getRouteTranslator("ApiTeamSettings", request);
   const csrfError = verifyCsrfProtection(request);
   if (csrfError) {
-    return csrfError;
+    return jsonErrorFromResponse(csrfError, "Invalid request origin.");
   }
 
   const contentTypeError = requireJsonContentType(request);
   if (contentTypeError) {
-    return contentTypeError;
+    return jsonErrorFromResponse(contentTypeError, "Content-Type must be application/json.");
   }
 
   const supabase = await createClient();
@@ -39,22 +39,16 @@ export async function PATCH(request: Request) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.json({ error: t("errors.unauthorized") }, { status: 401 });
+    return jsonError(t("errors.unauthorized"), 401);
   }
 
   const teamContext = await getCachedTeamContextForUser(supabase, user.id);
   if (!teamContext) {
-    return NextResponse.json(
-      { error: t("errors.noTeamMembership") },
-      { status: 403 },
-    );
+    return jsonError(t("errors.noTeamMembership"), 403);
   }
 
   if (teamContext.role !== "owner" && teamContext.role !== "admin") {
-    return NextResponse.json(
-      { error: t("errors.forbidden") },
-      { status: 403 },
-    );
+    return jsonError(t("errors.forbidden"), 403);
   }
 
   const rateLimit = await checkRateLimit({
@@ -62,21 +56,17 @@ export async function PATCH(request: Request) {
     ...RATE_LIMITS.teamSettingsUpdateByActor,
   });
   if (!rateLimit.allowed) {
-    return NextResponse.json(
-      { error: t("errors.rateLimited") },
-      {
-        status: 429,
-        headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
-      },
-    );
+    return jsonError(t("errors.rateLimited"), 429, {
+      headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
+    });
   }
 
   const parseResult = await parseJsonWithSchema(request, teamSettingsSchema);
   if (!parseResult.success) {
     if (parseResult.tooLarge) {
-      return NextResponse.json({ error: t("errors.payloadTooLarge") }, { status: 413 });
+      return jsonError(t("errors.payloadTooLarge"), 413);
     }
-    return NextResponse.json({ error: t("errors.invalidPayload") }, { status: 400 });
+    return jsonError(t("errors.invalidPayload"), 400);
   }
 
   const { teamName } = parseResult.data;
@@ -94,7 +84,7 @@ export async function PATCH(request: Request) {
       teamId: teamContext.teamId,
       metadata: { reason: "update_error" },
     });
-    return NextResponse.json({ error: t("errors.unableToUpdate") }, { status: 500 });
+    return jsonError(t("errors.unableToUpdate"), 500);
   }
 
   const admin = createAdminClient();
@@ -128,5 +118,5 @@ export async function PATCH(request: Request) {
     teamId: teamContext.teamId,
     metadata: { teamName },
   });
-  return NextResponse.json({ ok: true });
+  return jsonSuccess();
 }

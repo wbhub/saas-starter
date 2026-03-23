@@ -19,3 +19,16 @@ export function jsonSuccess<T extends Record<string, unknown>>(
 export function jsonError(error: string, status: number, init?: ResponseInit) {
   return NextResponse.json({ ok: false as const, error }, { ...init, status });
 }
+
+export async function jsonErrorFromResponse(response: Response, fallbackError: string) {
+  try {
+    const payload = (await response.clone().json()) as { error?: unknown };
+    if (typeof payload.error === "string" && payload.error.trim().length > 0) {
+      return jsonError(payload.error, response.status, { headers: response.headers });
+    }
+  } catch {
+    // Ignore parse failures and fallback to provided default message.
+  }
+
+  return jsonError(fallbackError, response.status, { headers: response.headers });
+}

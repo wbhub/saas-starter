@@ -1,4 +1,5 @@
 import { type ZodType } from "zod";
+import { jsonErrorFromResponse } from "@/lib/http/api-json";
 import { requireJsonContentType } from "@/lib/http/content-type";
 import { getOrCreateRequestId, jsonWithRequestId, withRequestId } from "@/lib/http/request-id";
 import { parseJsonWithSchema } from "@/lib/http/request-validation";
@@ -67,16 +68,21 @@ export async function withTeamRoute<TBody = undefined>({
     body: unknown,
     init?: ResponseInit,
   ) => jsonWithRequestId(requestId, body, init);
+  const jsonErr = (error: string, status: number, init?: ResponseInit) =>
+    jsonWithRequestId(requestId, { ok: false as const, error }, { ...init, status });
 
   const csrfError = verifyCsrfProtection(request);
   if (csrfError) {
-    return withRequestId(csrfError, requestId);
+    return withRequestId(await jsonErrorFromResponse(csrfError, "Invalid request origin."), requestId);
   }
 
   if (requireJsonBody || schema) {
     const contentTypeError = requireJsonContentType(request);
     if (contentTypeError) {
-      return withRequestId(contentTypeError, requestId);
+      return withRequestId(
+        await jsonErrorFromResponse(contentTypeError, "Content-Type must be application/json."),
+        requestId,
+      );
     }
   }
 
@@ -86,22 +92,16 @@ export async function withTeamRoute<TBody = undefined>({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return json({ error: unauthorizedMessage ?? "Unauthorized" }, { status: 401 });
+    return jsonErr(unauthorizedMessage ?? "Unauthorized", 401);
   }
 
   const teamContext = await getCachedTeamContextForUser(supabase, user.id);
   if (!teamContext) {
-    return json(
-      { error: missingTeamMembershipMessage ?? "No team membership found for this account." },
-      { status: 403 },
-    );
+    return jsonErr(missingTeamMembershipMessage ?? "No team membership found for this account.", 403);
   }
 
   if (allowedRoles && !allowedRoles.includes(teamContext.role)) {
-    return json(
-      { error: forbiddenMessage ?? "You do not have permission to perform this action." },
-      { status: 403 },
-    );
+    return jsonErr(forbiddenMessage ?? "You do not have permission to perform this action.", 403);
   }
 
   if (rateLimits) {
@@ -117,7 +117,7 @@ export async function withTeamRoute<TBody = undefined>({
       if (deniedIndex >= 0) {
         const retryAfterSeconds = Math.max(...results.map((result) => result.retryAfterSeconds));
         return json(
-          { error: descriptors[deniedIndex]?.message ?? tooManyRequestsMessage },
+          { ok: false as const, error: descriptors[deniedIndex]?.message ?? tooManyRequestsMessage },
           {
             status: 429,
             headers: { "Retry-After": String(retryAfterSeconds) },
@@ -132,10 +132,10 @@ export async function withTeamRoute<TBody = undefined>({
     const bodyParse = await parseJsonWithSchema(request, schema);
     if (!bodyParse.success) {
       if (bodyParse.tooLarge) {
-        return json({ error: payloadTooLargeMessage }, { status: 413 });
+        return jsonErr(payloadTooLargeMessage, 413);
       }
       onInvalidPayload?.({ userId: user.id, teamId: teamContext.teamId });
-      return json({ error: invalidPayloadMessage }, { status: 400 });
+      return jsonErr(invalidPayloadMessage, 400);
     }
     body = bodyParse.data;
   }
