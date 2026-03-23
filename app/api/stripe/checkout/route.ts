@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getPlanByKey } from "@/lib/stripe/config";
 import { getStripeServerClient } from "@/lib/stripe/server";
 import { getAppUrl } from "@/lib/env";
+import { isBillingEnabled } from "@/lib/billing/capabilities";
 import { requireJsonContentType } from "@/lib/http/content-type";
 import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
 import { getRouteTranslator } from "@/lib/i18n/locale";
@@ -113,6 +114,13 @@ async function claimTeamStripeCustomer(
 
 export async function POST(req: Request) {
   const t = await getRouteTranslator("ApiStripeCheckout", req);
+
+  if (!isBillingEnabled()) {
+    return NextResponse.json(
+      { error: t("errors.billingNotConfigured") },
+      { status: 503 },
+    );
+  }
 
   const stripe = getStripeServerClient();
   if (!stripe) {

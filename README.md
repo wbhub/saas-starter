@@ -1,6 +1,6 @@
 # SaaS Starter
 
-Production-oriented Next.js SaaS starter with Supabase auth, Stripe billing, team access controls, AI chat, support email, and security defaults.
+Production-oriented Next.js SaaS starter with Supabase auth, optional Stripe billing, team access controls, AI chat, support email, and security defaults.
 
 ## In Plain English
 
@@ -8,7 +8,7 @@ This project gives you a working SaaS app foundation so you can focus on your pr
 
 - People can sign up, log in, reset passwords, and manage account settings.
 - Teams can invite members and assign roles (`owner`, `admin`, `member`).
-- Billing is handled through Stripe with seat-based subscriptions (`Starter`, `Growth`, `Pro`).
+- Billing can run in free-only mode by default, with optional Stripe seat-based subscriptions (`Starter`, `Growth`, `Pro`).
 - An optional AI chat endpoint can be enabled and gated by plan/rules.
 - A support form sends emails through Resend.
 - Security basics (CSRF, CSP, rate limiting, secure headers) are already wired in.
@@ -74,8 +74,9 @@ cp .env.example .env.local
   - Enable provider(s) in Supabase.
   - Set `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true` and/or `NEXT_PUBLIC_AUTH_MICROSOFT_ENABLED=true`.
 
-4) Set up Stripe:
+4) Optional: set up Stripe billing now (you can also do this later):
 
+- Set `BILLING_PROVIDER=stripe`.
 - Create recurring prices for `Starter`, `Growth`, and `Pro`.
 - Put price IDs in env vars derived from `lib/stripe/plans.ts` `PLAN_KEYS`:
   - `STRIPE_${PLAN_KEY_UPPER}_PRICE_ID`
@@ -90,7 +91,7 @@ cp .env.example .env.local
 - Add `RESEND_FROM_EMAIL`
 - Add `RESEND_SUPPORT_EMAIL`
 
-6) Run Stripe webhook forwarding for local testing:
+6) If Stripe billing is enabled, run Stripe webhook forwarding for local testing:
 
 ```bash
 stripe listen --forward-to localhost:3000/api/stripe/webhook
@@ -116,11 +117,6 @@ Required:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
-- `STRIPE_SECRET_KEY`
-- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
-- `STRIPE_WEBHOOK_SECRET`
-- `STRIPE_${PLAN_KEY_UPPER}_PRICE_ID` for every key in `PLAN_KEYS` (`lib/stripe/plans.ts`)
-  - currently: `STRIPE_STARTER_PRICE_ID`, `STRIPE_GROWTH_PRICE_ID`, `STRIPE_PRO_PRICE_ID`
 - `RESEND_API_KEY`
 - `RESEND_FROM_EMAIL`
 - `RESEND_SUPPORT_EMAIL`
@@ -139,7 +135,8 @@ Optional:
 - `AI_PLAN_MODEL_MAP_JSON` (used by `AI_ACCESS_MODE=paid`)
 - `AI_PLAN_MONTHLY_TOKEN_BUDGET_MAP_JSON` (used by `AI_ACCESS_MODE=paid`)
 - `AI_PLAN_MODALITIES_MAP_JSON` (used by `AI_ACCESS_MODE=paid`; per-plan modality override map)
-- `APP_FREE_PLAN_ENABLED` (if `true`, teams without a live paid subscription resolve to `free`)
+- `APP_FREE_PLAN_ENABLED` (defaults to `true`; when `true`, teams without a live paid subscription resolve to `free`)
+- `BILLING_PROVIDER` (`none` default, or `stripe` to enable Stripe billing)
 
 ### Auth
 
@@ -156,6 +153,12 @@ Optional:
 
 ### Stripe and Team Limits
 
+- Stripe billing env vars are required only when `BILLING_PROVIDER=stripe`:
+  - `STRIPE_SECRET_KEY`
+  - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+  - `STRIPE_WEBHOOK_SECRET`
+  - `STRIPE_${PLAN_KEY_UPPER}_PRICE_ID` for every key in `PLAN_KEYS` (`lib/stripe/plans.ts`)
+    - currently: `STRIPE_STARTER_PRICE_ID`, `STRIPE_GROWTH_PRICE_ID`, `STRIPE_PRO_PRICE_ID`
 - `STRIPE_SEAT_PRORATION_BEHAVIOR` (`create_prorations` or `none`)
 - `TEAM_MAX_MEMBERS` (default `100`)
 
@@ -200,9 +203,11 @@ Team and auth model:
 Billing model:
 
 - Team-scoped subscriptions (not user-scoped).
+- Free-only mode is enabled by default when `BILLING_PROVIDER=none` and `APP_FREE_PLAN_ENABLED=true`.
 - Seat quantity is reconciled against team membership counts.
 - Landing page pricing attempts to pull live Stripe prices for configured price IDs.
 - Webhook events are deduplicated and stored in `stripe_webhook_events`.
+- When `BILLING_PROVIDER=none`, `/api/stripe/*` endpoints return `503` by design.
 
 AI chat model (`POST /api/ai/chat`):
 
@@ -324,7 +329,7 @@ Important RPC functions used by app code:
 1. Import the repo into Vercel.
 2. Set required environment variables.
 3. Configure Supabase Auth Site URL and callback URL for production.
-4. Configure Stripe webhook to `/api/stripe/webhook` with `STRIPE_WEBHOOK_SECRET`.
+4. If Stripe billing is enabled, configure Stripe webhook to `/api/stripe/webhook` with `STRIPE_WEBHOOK_SECRET`.
 5. (Optional) Configure scheduled calls to both cron endpoints with `CRON_SECRET`.
 6. Deploy.
 
@@ -332,7 +337,7 @@ Important RPC functions used by app code:
 
 - `supabase/schema.sql` has been applied.
 - All required env vars are set.
-- Stripe price IDs and webhook secret are correct.
+- If Stripe billing is enabled: Stripe price IDs and webhook secret are correct.
 - Resend sender is verified.
 - Optional integrations (Intercom, Sentry, AI) are configured only if needed.
 - `TRUST_PROXY_HEADERS` is enabled only in trusted proxy infrastructure.

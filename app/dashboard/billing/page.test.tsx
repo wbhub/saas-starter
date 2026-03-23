@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 function mockBillingPageDependencies(options: {
   billingContext: {
+    billingEnabled?: boolean;
     subscription: {
       status: "active";
       stripe_price_id: string;
@@ -92,10 +93,12 @@ function mockBillingPageDependencies(options: {
   }));
   vi.doMock("@/components/billing-actions", () => ({
     BillingActions: ({
+      billingEnabled,
       currentPlanKey,
       hasSubscription,
       canManageBilling,
     }: {
+      billingEnabled: boolean;
       currentPlanKey: string | null;
       hasSubscription: boolean;
       canManageBilling: boolean;
@@ -105,6 +108,7 @@ function mockBillingPageDependencies(options: {
         data-current-plan={currentPlanKey ?? ""}
         data-has-subscription={String(hasSubscription)}
         data-can-manage={String(canManageBilling)}
+        data-billing-enabled={String(billingEnabled)}
       />
     ),
   }));
@@ -119,6 +123,7 @@ describe("Dashboard billing page free plan behavior", () => {
   it("renders plan comparison cards for free mode", async () => {
     mockBillingPageDependencies({
       billingContext: {
+        billingEnabled: true,
         subscription: null,
         effectivePlanKey: "free",
         memberCount: 1,
@@ -140,6 +145,7 @@ describe("Dashboard billing page free plan behavior", () => {
   it("renders invite nudge for paid solo teams", async () => {
     mockBillingPageDependencies({
       billingContext: {
+        billingEnabled: true,
         subscription: {
           status: "active",
           stripe_price_id: "price_growth",
@@ -166,6 +172,7 @@ describe("Dashboard billing page free plan behavior", () => {
   it("renders seat breakdown for paid teams with multiple members", async () => {
     mockBillingPageDependencies({
       billingContext: {
+        billingEnabled: true,
         subscription: {
           status: "active",
           stripe_price_id: "price_growth",
@@ -186,5 +193,24 @@ describe("Dashboard billing page free plan behavior", () => {
     expect(html).toContain("3 seats x $50/mo = $150/mo");
     expect(html).toContain('data-current-plan="growth"');
     expect(html).toContain('data-has-subscription="true"');
+  });
+
+  it("renders explicit billing-disabled state", async () => {
+    mockBillingPageDependencies({
+      billingContext: {
+        billingEnabled: false,
+        subscription: null,
+        effectivePlanKey: "free",
+        memberCount: 1,
+        isPaidPlan: false,
+        canInviteMembers: false,
+      },
+    });
+
+    const BillingPage = (await import("./page")).default;
+    const html = renderToStaticMarkup(await BillingPage());
+
+    expect(html).toContain("billingDisabled.title");
+    expect(html).toContain('data-billing-enabled="false"');
   });
 });

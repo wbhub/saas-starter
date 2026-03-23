@@ -19,6 +19,7 @@ describe("BillingActions", () => {
   it("hides Manage billing for roles that cannot manage billing", () => {
     const html = renderToStaticMarkup(
       <BillingActions
+        billingEnabled={true}
         currentPlanKey="starter"
         hasSubscription={true}
         canManageBilling={false}
@@ -31,6 +32,7 @@ describe("BillingActions", () => {
   it("shows Manage billing when role can manage and subscription exists", () => {
     const html = renderToStaticMarkup(
       <BillingActions
+        billingEnabled={true}
         currentPlanKey="starter"
         hasSubscription={true}
         canManageBilling={true}
@@ -43,6 +45,7 @@ describe("BillingActions", () => {
   it("hides Manage billing when there is no subscription", () => {
     const html = renderToStaticMarkup(
       <BillingActions
+        billingEnabled={true}
         currentPlanKey={null}
         hasSubscription={false}
         canManageBilling={true}
@@ -50,5 +53,20 @@ describe("BillingActions", () => {
     );
 
     expect(html).not.toContain("Manage billing");
+  });
+
+  it("hides billing actions when billing is disabled", () => {
+    const html = renderToStaticMarkup(
+      <BillingActions
+        billingEnabled={false}
+        currentPlanKey={null}
+        hasSubscription={false}
+        canManageBilling={true}
+      />,
+    );
+
+    expect(html).not.toContain("Manage billing");
+    expect(html).toContain("description.billingDisabled");
+    expect(html).toContain("messages.billingDisabled");
   });
 });

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getPlanByKey } from "@/lib/stripe/config";
 import { getStripeServerClient } from "@/lib/stripe/server";
 import { syncSubscription } from "@/lib/stripe/sync";
+import { isBillingEnabled } from "@/lib/billing/capabilities";
 import { requireJsonContentType } from "@/lib/http/content-type";
 import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
 import { getRouteTranslator } from "@/lib/i18n/locale";
@@ -62,6 +63,13 @@ async function isLocalSubscriptionSynced(
 
 export async function POST(req: Request) {
   const t = await getRouteTranslator("ApiStripeChangePlan", req);
+
+  if (!isBillingEnabled()) {
+    return NextResponse.json(
+      { error: t("errors.billingNotConfigured") },
+      { status: 503 },
+    );
+  }
 
   const stripe = getStripeServerClient();
   if (!stripe) {

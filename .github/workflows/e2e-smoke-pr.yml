@@ -5,6 +5,57 @@ on:
   workflow_dispatch:
 
 jobs:
+  billing-config-matrix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - billing_mode: free_only
+            BILLING_PROVIDER: none
+            APP_FREE_PLAN_ENABLED: "true"
+            STRIPE_SECRET_KEY: ""
+            NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ""
+            STRIPE_WEBHOOK_SECRET: ""
+            STRIPE_STARTER_PRICE_ID: ""
+            STRIPE_GROWTH_PRICE_ID: ""
+            STRIPE_PRO_PRICE_ID: ""
+          - billing_mode: stripe_enabled
+            BILLING_PROVIDER: stripe
+            APP_FREE_PLAN_ENABLED: "false"
+            STRIPE_SECRET_KEY: sk_test_ci
+            NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_ci
+            STRIPE_WEBHOOK_SECRET: whsec_ci
+            STRIPE_STARTER_PRICE_ID: price_starter_ci
+            STRIPE_GROWTH_PRICE_ID: price_growth_ci
+            STRIPE_PRO_PRICE_ID: price_pro_ci
+    env:
+      CI: "true"
+      BILLING_PROVIDER: ${{ matrix.BILLING_PROVIDER }}
+      APP_FREE_PLAN_ENABLED: ${{ matrix.APP_FREE_PLAN_ENABLED }}
+      STRIPE_SECRET_KEY: ${{ matrix.STRIPE_SECRET_KEY }}
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ matrix.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
+      STRIPE_WEBHOOK_SECRET: ${{ matrix.STRIPE_WEBHOOK_SECRET }}
+      STRIPE_STARTER_PRICE_ID: ${{ matrix.STRIPE_STARTER_PRICE_ID }}
+      STRIPE_GROWTH_PRICE_ID: ${{ matrix.STRIPE_GROWTH_PRICE_ID }}
+      STRIPE_PRO_PRICE_ID: ${{ matrix.STRIPE_PRO_PRICE_ID }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run billing runtime matrix tests
+        run: npm run test -- lib/env.test.ts lib/billing/capabilities.test.ts lib/billing/free-only-runtime.test.ts
+
   smoke:
     runs-on: ubuntu-latest
     timeout-minutes: 25

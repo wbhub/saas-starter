@@ -259,7 +259,8 @@
     "description": {
       "noPermission": "Somente proprietários e administradores de equipes podem gerenciar o faturamento.",
       "hasSubscription": "Atualize, faça downgrade ou abra o Stripe Billing Portal.",
-      "noSubscription": "Escolha um plano para iniciar sua assinatura."
+      "noSubscription": "Escolha um plano para iniciar sua assinatura.",
+      "billingDisabled": "O faturamento está desativado nesta implantação. Configure o Stripe para habilitar planos pagos."
     },
     "actions": {
       "opening": "Abertura...",
@@ -270,7 +271,8 @@
     },
     "messages": {
       "syncPending": "Plano atualizado no Stripe. Sincronização em andamento. Atualizando em breve...",
-      "planUpdated": "Plano atualizado. Atualizando detalhes de faturamento..."
+      "planUpdated": "Plano atualizado. Atualizando detalhes de faturamento...",
+      "billingDisabled": "O faturamento do Stripe está desativado no momento."
     },
     "errors": {
       "checkoutFailed": "Falha na finalização da compra",
@@ -305,6 +307,10 @@
       "description": "Escolha um plano pago para desbloquear recursos avançados. A colaboração em equipe está incluída e os assentos são cobrados por colega.",
       "perSeat": "Cada colega custa {amount}.",
       "collaborationIncluded": "Colaboração em equipe incluída em todos os planos pagos."
+    },
+    "billingDisabled": {
+      "title": "Faturamento desativado",
+      "description": "Esta implantação está em modo gratuito. Adicione variáveis de ambiente do Stripe para habilitar assinaturas pagas depois."
     },
     "paidSolo": {
       "title": "Convide colegas quando estiver pronto",

@@ -68,6 +68,9 @@ describe("syncTeamSeatQuantity", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    vi.doMock("@/lib/billing/capabilities", () => ({
+      isBillingEnabled: () => true,
+    }));
   });
 
   it("syncs subscription metadata when quantity is already in sync", async () => {
@@ -332,8 +335,11 @@ describe("syncTeamSeatQuantity", () => {
     );
   });
 
-  it("throws when stripe is not configured", async () => {
+  it("returns billing_disabled when billing is disabled", async () => {
     const supabaseMock = createSupabaseMock({ seatCounts: [1] });
+    vi.doMock("@/lib/billing/capabilities", () => ({
+      isBillingEnabled: () => false,
+    }));
     vi.doMock("@/lib/stripe/server", () => ({
       getStripeServerClient: () => null,
     }));
@@ -353,7 +359,10 @@ describe("syncTeamSeatQuantity", () => {
     }));
 
     const { syncTeamSeatQuantity } = await import("./seats");
-    await expect(syncTeamSeatQuantity("team_123")).rejects.toThrow("Stripe is not configured.");
+    await expect(syncTeamSeatQuantity("team_123")).resolves.toEqual({
+      updated: false,
+      reason: "billing_disabled",
+    });
   });
 
   it("throws when stripe retrieve fails", async () => {

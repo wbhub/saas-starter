@@ -259,7 +259,8 @@
     "description": {
       "noPermission": "Solo los propietarios y administradores del equipo pueden gestionar la facturación.",
       "hasSubscription": "Mejora, baja de plan o abre el portal de facturación de Stripe.",
-      "noSubscription": "Elige un plan para iniciar tu suscripción."
+      "noSubscription": "Elige un plan para iniciar tu suscripción.",
+      "billingDisabled": "La facturación está deshabilitada en este despliegue. Configura Stripe para habilitar planes de pago."
     },
     "actions": {
       "opening": "Abriendo...",
@@ -270,7 +271,8 @@
     },
     "messages": {
       "syncPending": "Plan actualizado en Stripe. Sincronización en progreso. Actualizando en breve...",
-      "planUpdated": "Plan actualizado. Actualizando detalles de facturación..."
+      "planUpdated": "Plan actualizado. Actualizando detalles de facturación...",
+      "billingDisabled": "La facturación con Stripe está deshabilitada actualmente."
     },
     "errors": {
       "checkoutFailed": "Falló el checkout",
@@ -305,6 +307,10 @@
       "description": "Elige un plan de pago para desbloquear funciones avanzadas. La colaboración en equipo está incluida y los asientos se cobran por compañero.",
       "perSeat": "Cada compañero cuesta {amount}.",
       "collaborationIncluded": "La colaboración en equipo está incluida en todos los planes de pago."
+    },
+    "billingDisabled": {
+      "title": "La facturación está deshabilitada",
+      "description": "Este despliegue está ejecutándose en modo solo-gratis. Agrega variables de entorno de Stripe para habilitar suscripciones de pago más adelante."
     },
     "paidSolo": {
       "title": "Invita compañeros cuando estés listo",

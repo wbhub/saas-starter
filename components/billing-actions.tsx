@@ -10,6 +10,7 @@ import { getCsrfHeaders } from "@/lib/http/csrf";
 import { PLAN_KEYS, PLAN_LABELS, type PlanKey } from "@/lib/stripe/plans";
 
 type Props = {
+  billingEnabled: boolean;
   currentPlanKey: PlanKey | null;
   hasSubscription: boolean;
   canManageBilling: boolean;
@@ -90,7 +91,12 @@ function createIdempotencyToken(action: "checkout" | "change-plan", planKey: Pla
   return token;
 }
 
-export function BillingActions({ currentPlanKey, hasSubscription, canManageBilling }: Props) {
+export function BillingActions({
+  billingEnabled,
+  currentPlanKey,
+  hasSubscription,
+  canManageBilling,
+}: Props) {
   const t = useTranslations("BillingActions");
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -184,7 +190,9 @@ export function BillingActions({ currentPlanKey, hasSubscription, canManageBilli
         {t("title")}
       </h3>
       <p className="text-sm text-slate-600 dark:text-slate-300">
-        {!canManageBilling
+        {!billingEnabled
+          ? t("description.billingDisabled")
+          : !canManageBilling
           ? t("description.noPermission")
           : hasSubscription
             ? t("description.hasSubscription")
@@ -192,7 +200,7 @@ export function BillingActions({ currentPlanKey, hasSubscription, canManageBilli
       </p>
 
       <div className="flex flex-wrap gap-2">
-        {!canManageBilling ? null : !hasSubscription
+        {!billingEnabled || !canManageBilling ? null : !hasSubscription
           ? PLAN_KEYS.map((key) => (
               <button
                 key={key}
@@ -218,7 +226,7 @@ export function BillingActions({ currentPlanKey, hasSubscription, canManageBilli
               </button>
             ))}
 
-        {canManageBilling && hasSubscription ? (
+        {billingEnabled && canManageBilling && hasSubscription ? (
           <button
             onClick={openPortal}
             disabled={loadingAction !== null}
@@ -232,6 +240,11 @@ export function BillingActions({ currentPlanKey, hasSubscription, canManageBilli
       {message ? (
         <p className="rounded-lg app-surface-subtle px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
           {message}
+        </p>
+      ) : null}
+      {!billingEnabled ? (
+        <p className="rounded-lg app-surface-subtle px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
+          {t("messages.billingDisabled")}
         </p>
       ) : null}
     </div>

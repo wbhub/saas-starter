@@ -32,6 +32,13 @@ describe("resolveEffectivePlanKey", () => {
     expect(result).toBe("free");
   });
 
+  it("defaults to free when free plan env var is unset", async () => {
+    const { resolveEffectivePlanKey } = await import("./effective-plan");
+    const result = resolveEffectivePlanKey(null);
+
+    expect(result).toBe("free");
+  });
+
   it("returns null when no live paid subscription exists and free is disabled", async () => {
     process.env[FREE_PLAN_FLAG] = "false";
 

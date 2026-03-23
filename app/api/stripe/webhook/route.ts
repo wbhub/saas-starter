@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getStripeServerClient } from "@/lib/stripe/server";
+import { isBillingEnabled } from "@/lib/billing/capabilities";
 import {
   syncSubscription,
   upsertStripeCustomer,
@@ -77,6 +78,13 @@ async function resolveTeamIdFromSessionReference(referenceId: string) {
 
 export async function POST(req: Request) {
   const t = await getRouteTranslator("ApiStripeWebhook", req);
+
+  if (!isBillingEnabled()) {
+    return NextResponse.json(
+      { error: t("errors.webhooksNotConfigured") },
+      { status: 503 },
+    );
+  }
 
   const stripe = getStripeServerClient();
   if (!stripe) {
