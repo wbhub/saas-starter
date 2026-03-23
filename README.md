@@ -28,6 +28,7 @@ Required:
 
 - Node.js 20+ and npm
 - A Supabase project
+- A Resend account/API key
 
 Optional (only if you enable these features):
 
@@ -39,11 +40,17 @@ Optional (only if you enable these features):
 
 ## Required Environment Variables
 
-These are required at boot:
+Boot required:
 
 - `SUPABASE_SERVICE_ROLE_KEY`
 
-These have local fallbacks, but should still be set correctly:
+Resend (set these correctly; email flows still degrade gracefully if misconfigured):
+
+- `RESEND_API_KEY`
+- `RESEND_FROM_EMAIL`
+- `RESEND_SUPPORT_EMAIL`
+
+Local fallbacks (still set these correctly in production):
 
 - `NEXT_PUBLIC_APP_URL`
 - `NEXT_PUBLIC_SUPABASE_URL`
@@ -54,21 +61,10 @@ Use `.env.example` as the source of truth for all available variables.
 ## Enable by Feature (Optional)
 
 - Billing: Stripe (`BILLING_PROVIDER=stripe` + Stripe env vars)
-- Transactional email via Resend (`RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `RESEND_SUPPORT_EMAIL`)
 - AI chat: Vercel AI SDK (`AI_PROVIDER` + provider keys)
 - In-app messenger: Intercom (`NEXT_PUBLIC_INTERCOM_APP_ID`, `INTERCOM_IDENTITY_SECRET`)
 - Multi-instance rate limiting/cache: Redis via Upstash (`UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`)
 - Error monitoring: Sentry (`NEXT_PUBLIC_SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_ENVIRONMENT`, `SENTRY_ENVIRONMENT`)
-
-## Email Delivery Behavior Matrix
-
-| Flow | Resend configured | Resend missing |
-| --- | --- | --- |
-| Forgot password (`/api/auth/forgot-password`) | Uses Supabase recovery link generation + custom email via Resend | Returns the same generic success response and falls back to Supabase-managed reset email delivery |
-| Signup confirmation (`/api/auth/signup`) | Supabase-managed confirmation flow (unchanged) | Supabase-managed confirmation flow (unchanged) |
-| Support email (`/api/resend/support`) | Sends to `RESEND_SUPPORT_EMAIL` via Resend | Returns feature-disabled response (`503`) without crashing |
-| Team invite create (`/api/team/invites`) | Creates invite + attempts Resend delivery (`emailSent: true` on success) | Creates invite, does not crash, and returns `{ ok: true, emailSent: false }` |
-| Team invite resend (`/api/team/invites/[inviteId]/resend`) | Rotates token + attempts Resend delivery (`emailSent: true` on success) | Rotates token, does not crash, and returns `{ ok: true, emailSent: false }` |
 
 ## Quick Start
 
