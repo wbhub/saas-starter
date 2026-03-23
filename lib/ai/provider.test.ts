@@ -36,14 +36,12 @@ describe("lib/ai/provider", () => {
     expect(provider.isAiProviderConfigured).toBe(true);
   });
 
-  it("disables openai-compatible provider without base URL", async () => {
-    vi.stubEnv("AI_PROVIDER", "openai-compatible");
-    vi.stubEnv("AI_PROVIDER_API_KEY", "sk-any");
-    vi.stubEnv("AI_PROVIDER_BASE_URL", "");
+  it("uses Google fallback key when AI_PROVIDER=google", async () => {
+    vi.stubEnv("AI_PROVIDER", "google");
+    vi.stubEnv("GOOGLE_GENERATIVE_AI_API_KEY", "google-key");
     const provider = await import("./provider");
-    expect(provider.aiProviderName).toBe("openai-compatible");
-    expect(provider.isAiProviderConfigured).toBe(false);
-    expect(provider.getAiLanguageModel("gpt-4.1-mini")).toBeNull();
+    expect(provider.aiProviderName).toBe("google");
+    expect(provider.isAiProviderConfigured).toBe(true);
   });
 
   it("blocks known text-only model prefixes for multimodal requests", async () => {

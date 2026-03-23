@@ -26,7 +26,6 @@ type OptionalEnvKey =
   | "GOOGLE_GENERATIVE_AI_API_KEY"
   | "AI_PROVIDER"
   | "AI_PROVIDER_API_KEY"
-  | "AI_PROVIDER_BASE_URL"
   | "AI_ACCESS_MODE"
   | "AI_DEFAULT_MODEL"
   | "AI_DEFAULT_MONTHLY_TOKEN_BUDGET"
@@ -130,9 +129,6 @@ const envBase = {
   },
   get AI_PROVIDER_API_KEY() {
     return optionalEnv("AI_PROVIDER_API_KEY");
-  },
-  get AI_PROVIDER_BASE_URL() {
-    return optionalEnv("AI_PROVIDER_BASE_URL");
   },
   get AI_ACCESS_MODE() {
     return optionalEnv("AI_ACCESS_MODE");

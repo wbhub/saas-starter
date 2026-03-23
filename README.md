@@ -154,9 +154,8 @@ stripe listen --forward-to localhost:3000/api/stripe/webhook
 If you want `/dashboard/ai` and `/api/ai/chat`:
 
 - Set provider env vars:
-  - `AI_PROVIDER` (`openai`, `openai-compatible`, `anthropic`, or `google`)
+  - `AI_PROVIDER` (`openai`, `anthropic`, or `google`)
   - `AI_PROVIDER_API_KEY` (or provider fallback key)
-  - `AI_PROVIDER_BASE_URL` (required for `openai-compatible`)
 - Fallback provider keys:
   - OpenAI: `OPENAI_API_KEY`
   - Anthropic: `ANTHROPIC_API_KEY`
