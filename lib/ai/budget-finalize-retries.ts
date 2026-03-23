@@ -1,5 +1,7 @@
 import { logger } from "@/lib/logger";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isTriggerConfigured } from "@/lib/trigger/config";
+import { triggerAiBudgetFinalizeRetriesTask } from "@/lib/trigger/dispatch";
 
 const MAX_ERROR_TEXT_LENGTH = 1_000;
 const DEFAULT_BACKGROUND_RETRY_DRAIN_LIMIT = 25;
@@ -33,10 +35,12 @@ export async function enqueueAiBudgetFinalizeRetry({
   claimId,
   actualTokens,
   error,
+  triggerDrain = true,
 }: {
   claimId: string;
   actualTokens: number;
   error: unknown;
+  triggerDrain?: boolean;
 }) {
   const { error: rpcError } = await createAdminClient().rpc(
     "enqueue_ai_budget_finalize_retry",
@@ -51,6 +55,16 @@ export async function enqueueAiBudgetFinalizeRetry({
     throw new Error(
       `Failed to enqueue AI budget finalize retry transactionally: ${rpcError.message}`,
     );
+  }
+
+  if (triggerDrain && isTriggerConfigured()) {
+    const triggered = await triggerAiBudgetFinalizeRetriesTask();
+    if (!triggered) {
+      logger.warn(
+        "Failed to enqueue Trigger AI budget finalize retry task after retry queue insert",
+        { claimId },
+      );
+    }
   }
 }
 
@@ -107,6 +121,7 @@ export async function processDueAiBudgetFinalizeRetries(limit = 100) {
           claimId: row.claim_id,
           actualTokens: row.actual_tokens,
           error: finalizeError,
+          triggerDrain: false,
         });
       } catch (enqueueError) {
         logger.error("Failed to re-enqueue AI budget finalize retry", enqueueError, {
@@ -136,6 +151,15 @@ export async function maybeProcessAiBudgetFinalizeRetries({
     return { ran: false as const };
   }
   lastBackgroundRetryDrainAt = now;
+
+  if (isTriggerConfigured()) {
+    const triggered = await triggerAiBudgetFinalizeRetriesTask({ limit });
+    if (triggered) {
+      return { ran: true as const, queued: true as const };
+    }
+
+    logger.warn("Falling back to inline AI budget finalize retry drain after Trigger enqueue failure");
+  }
 
   try {
     const summary = await processDueAiBudgetFinalizeRetries(limit);

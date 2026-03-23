@@ -9,6 +9,11 @@ import { processDueAiBudgetFinalizeRetries } from "@/lib/ai/budget-finalize-retr
 import { reconcileTeamSeatQuantities } from "@/lib/stripe/seat-reconcile";
 import { logger } from "@/lib/logger";
 import { getRouteTranslator } from "@/lib/i18n/locale";
+import { isTriggerConfigured } from "@/lib/trigger/config";
+import {
+  triggerAiBudgetFinalizeRetriesTask,
+  triggerReconcileSeatQuantitiesTask,
+} from "@/lib/trigger/dispatch";
 
 function bearerToken(request: Request) {
   const auth = request.headers.get("authorization");
@@ -49,6 +54,28 @@ export async function GET(request: Request) {
     });
   }
 
+  let reconcileQueuedInTrigger = false;
+  let aiRetriesQueuedInTrigger = false;
+  if (isTriggerConfigured()) {
+    const [reconcileTask, aiTask] = await Promise.all([
+      triggerReconcileSeatQuantitiesTask(),
+      triggerAiBudgetFinalizeRetriesTask(),
+    ]);
+    reconcileQueuedInTrigger = Boolean(reconcileTask);
+    aiRetriesQueuedInTrigger = Boolean(aiTask);
+
+    if (reconcileQueuedInTrigger && aiRetriesQueuedInTrigger) {
+      return jsonSuccess({
+        queued: true,
+        mode: "trigger",
+      });
+    }
+
+    logger.warn(
+      "Falling back to inline cron reconcile-seat-quantities processing after Trigger enqueue failure",
+    );
+  }
+
   let summary = {
     scannedTeams: 0,
     synced: 0,
@@ -58,11 +85,13 @@ export async function GET(request: Request) {
     stripePagesScanned: 0,
   };
   let seatReconcileFailed = false;
-  try {
-    summary = await reconcileTeamSeatQuantities();
-  } catch (error) {
-    seatReconcileFailed = true;
-    logger.error("Failed to reconcile team seat quantities during cron run", error);
+  if (!reconcileQueuedInTrigger) {
+    try {
+      summary = await reconcileTeamSeatQuantities();
+    } catch (error) {
+      seatReconcileFailed = true;
+      logger.error("Failed to reconcile team seat quantities during cron run", error);
+    }
   }
 
   let aiBudgetFinalizeRetries = {
@@ -73,11 +102,13 @@ export async function GET(request: Request) {
   };
   let aiBudgetFinalizeRetriesFailed = false;
 
-  try {
-    aiBudgetFinalizeRetries = await processDueAiBudgetFinalizeRetries();
-  } catch (error) {
-    aiBudgetFinalizeRetriesFailed = true;
-    logger.error("Failed to process AI budget finalize retry queue during cron run", error);
+  if (!aiRetriesQueuedInTrigger) {
+    try {
+      aiBudgetFinalizeRetries = await processDueAiBudgetFinalizeRetries();
+    } catch (error) {
+      aiBudgetFinalizeRetriesFailed = true;
+      logger.error("Failed to process AI budget finalize retry queue during cron run", error);
+    }
   }
 
   const responsePayload = {
@@ -86,6 +117,14 @@ export async function GET(request: Request) {
     aiBudgetFinalizeRetries,
     aiBudgetFinalizeRetriesFailed,
   };
+  if (reconcileQueuedInTrigger || aiRetriesQueuedInTrigger) {
+    Object.assign(responsePayload, {
+      queuedInTrigger: {
+        seatReconcile: reconcileQueuedInTrigger,
+        aiBudgetFinalizeRetries: aiRetriesQueuedInTrigger,
+      },
+    });
+  }
 
   if (seatReconcileFailed || aiBudgetFinalizeRetriesFailed) {
     return NextResponse.json(

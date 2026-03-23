@@ -5,6 +5,7 @@ import {
   getResendClientIfConfigured,
   getResendFromEmailIfConfigured,
   isResendCustomEmailConfigured,
+  sendResendEmail,
 } from "@/lib/resend/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getClientRateLimitIdentifier } from "@/lib/http/client-ip";
@@ -16,6 +17,8 @@ import { isValidEmail } from "@/lib/validation";
 import { logger } from "@/lib/logger";
 import { getLocaleTranslator, resolveRequestLocale } from "@/lib/i18n/locale";
 import { type AppLocale } from "@/i18n/routing";
+import { isTriggerConfigured } from "@/lib/trigger/config";
+import { triggerSendEmailTask } from "@/lib/trigger/dispatch";
 const forgotPasswordPayloadSchema = z.object({
   email: z.string().trim().toLowerCase(),
 });
@@ -104,7 +107,7 @@ async function sendPasswordResetEmailInBackground(email: string, locale: AppLoca
         return;
       }
 
-      await resend.emails.send({
+      const emailPayload = {
         from: fromEmail,
         to: email,
         subject: t("email.subject"),
@@ -116,7 +119,20 @@ async function sendPasswordResetEmailInBackground(email: string, locale: AppLoca
           "",
           t("email.ignoreIfNotRequested"),
         ].join("\n"),
-      });
+      };
+
+      if (isTriggerConfigured()) {
+        const triggered = await triggerSendEmailTask(emailPayload);
+        if (triggered) {
+          return;
+        }
+
+        logger.warn(
+          "Forgot-password: Trigger enqueue failed, falling back to inline Resend send",
+        );
+      }
+
+      await sendResendEmail(emailPayload);
     } catch (sendError) {
       logger.error("Failed to send password reset email", sendError);
     }

@@ -46,7 +46,9 @@ type OptionalEnvKey =
   | "STRIPE_SEAT_PRORATION_BEHAVIOR"
   | "TEAM_MAX_MEMBERS"
   | "UPSTASH_REDIS_REST_URL"
-  | "UPSTASH_REDIS_REST_TOKEN";
+  | "UPSTASH_REDIS_REST_TOKEN"
+  | "TRIGGER_SECRET_KEY"
+  | "TRIGGER_PROJECT_REF";
 
 const warnedMissingEnv = new Set<string>();
 const SOFT_REQUIRED_KEYS = [
@@ -213,6 +215,12 @@ const envBase = {
   },
   get UPSTASH_REDIS_REST_TOKEN() {
     return optionalEnv("UPSTASH_REDIS_REST_TOKEN");
+  },
+  get TRIGGER_SECRET_KEY() {
+    return optionalEnv("TRIGGER_SECRET_KEY");
+  },
+  get TRIGGER_PROJECT_REF() {
+    return optionalEnv("TRIGGER_PROJECT_REF");
   },
 };
 

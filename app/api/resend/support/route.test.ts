@@ -24,6 +24,7 @@ describe("POST /api/resend/support", () => {
       getResendClientIfConfigured: vi.fn(),
       getResendFromEmailIfConfigured: vi.fn(),
       getResendSupportEmailIfConfigured: vi.fn(),
+      sendResendEmail: vi.fn(),
     }));
 
     const { POST } = await import("./route");
@@ -63,6 +64,7 @@ describe("POST /api/resend/support", () => {
       getResendClientIfConfigured: vi.fn(),
       getResendFromEmailIfConfigured: vi.fn(),
       getResendSupportEmailIfConfigured: vi.fn(),
+      sendResendEmail: vi.fn(),
     }));
 
     const { POST } = await import("./route");
@@ -107,6 +109,7 @@ describe("POST /api/resend/support", () => {
       getResendClientIfConfigured: vi.fn(),
       getResendFromEmailIfConfigured: vi.fn(),
       getResendSupportEmailIfConfigured: vi.fn(),
+      sendResendEmail: vi.fn(),
     }));
 
     const { POST } = await import("./route");
@@ -150,6 +153,7 @@ describe("POST /api/resend/support", () => {
       getResendClientIfConfigured: vi.fn(),
       getResendFromEmailIfConfigured: vi.fn(),
       getResendSupportEmailIfConfigured: vi.fn(),
+      sendResendEmail: vi.fn(),
     }));
 
     const { POST } = await import("./route");
@@ -193,6 +197,7 @@ describe("POST /api/resend/support", () => {
       getResendClientIfConfigured: vi.fn(),
       getResendFromEmailIfConfigured: vi.fn(),
       getResendSupportEmailIfConfigured: vi.fn(),
+      sendResendEmail: vi.fn(),
     }));
 
     const { POST } = await import("./route");

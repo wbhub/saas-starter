@@ -6,6 +6,9 @@ import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { getClientRateLimitIdentifier } from "@/lib/http/client-ip";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { getRouteTranslator } from "@/lib/i18n/locale";
+import { isTriggerConfigured } from "@/lib/trigger/config";
+import { triggerPruneStripeWebhookEventsTask } from "@/lib/trigger/dispatch";
+import { logger } from "@/lib/logger";
 
 function bearerToken(request: Request) {
   const auth = request.headers.get("authorization");
@@ -50,6 +53,17 @@ export async function GET(request: Request) {
     return jsonError(t("errors.rateLimited"), 429, {
       headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
     });
+  }
+
+  if (isTriggerConfigured()) {
+    const triggered = await triggerPruneStripeWebhookEventsTask();
+    if (triggered) {
+      return jsonSuccess({
+        queued: true,
+        mode: "trigger",
+      });
+    }
+    logger.warn("Falling back to inline cron prune after Trigger enqueue failure");
   }
 
   await pruneStripeWebhookEventRows();

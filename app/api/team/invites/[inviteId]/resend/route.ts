@@ -8,9 +8,12 @@ import {
   getResendClientIfConfigured,
   getResendFromEmailIfConfigured,
   isResendCustomEmailConfigured,
+  sendResendEmail,
 } from "@/lib/resend/server";
 import { createRawInviteToken, getInviteExpiryIso, hashInviteToken } from "@/lib/team-invites";
 import { getRouteTranslator } from "@/lib/i18n/locale";
+import { isTriggerConfigured } from "@/lib/trigger/config";
+import { triggerSendEmailTask } from "@/lib/trigger/dispatch";
 
 type ResendInviteRouteContext = {
   params: Promise<{ inviteId: string }>;
@@ -123,7 +126,7 @@ export async function POST(request: Request, context: ResendInviteRouteContext) 
               },
             );
           } else {
-            await resend.emails.send({
+            const emailPayload = {
               from: fromEmail,
               to: invite.email,
               subject: t("email.subject", {
@@ -138,7 +141,25 @@ export async function POST(request: Request, context: ResendInviteRouteContext) 
                 t("email.expiresIn7Days"),
               ].join("\n"),
               replyTo: user.email ?? undefined,
-            });
+            };
+
+            if (isTriggerConfigured()) {
+              const triggered = await triggerSendEmailTask(emailPayload);
+              if (!triggered) {
+                logger.warn(
+                  "Team invite resend Trigger enqueue failed, falling back to inline Resend send",
+                  {
+                    requestId,
+                    teamId: teamContext.teamId,
+                    inviteId,
+                  },
+                );
+                await sendResendEmail(emailPayload);
+              }
+            } else {
+              await sendResendEmail(emailPayload);
+            }
+
             emailSent = true;
             emailFailureReason = null;
           }

@@ -17,11 +17,14 @@ import {
   getResendClientIfConfigured,
   getResendFromEmailIfConfigured,
   isResendCustomEmailConfigured,
+  sendResendEmail,
 } from "@/lib/resend/server";
 import { logger } from "@/lib/logger";
 import { getTeamMaxMembers } from "@/lib/team/limits";
 import { getRouteTranslator } from "@/lib/i18n/locale";
 import { LIVE_SUBSCRIPTION_STATUSES } from "@/lib/stripe/plans";
+import { isTriggerConfigured } from "@/lib/trigger/config";
+import { triggerSendEmailTask } from "@/lib/trigger/dispatch";
 
 const invitePayloadSchema = z.object({
   email: z.string().trim(),
@@ -242,7 +245,7 @@ export async function POST(request: Request) {
               },
             );
           } else {
-            await resend.emails.send({
+            const emailPayload = {
               from: fromEmail,
               to: email,
               subject: t("email.subject", {
@@ -257,7 +260,21 @@ export async function POST(request: Request) {
                 t("email.expiresIn7Days"),
               ].join("\n"),
               replyTo: user.email ?? undefined,
-            });
+            };
+
+            if (isTriggerConfigured()) {
+              const triggered = await triggerSendEmailTask(emailPayload);
+              if (!triggered) {
+                logger.warn("Team invite Trigger enqueue failed, falling back to inline Resend send", {
+                  requestId,
+                  teamId: teamContext.teamId,
+                });
+                await sendResendEmail(emailPayload);
+              }
+            } else {
+              await sendResendEmail(emailPayload);
+            }
+
             emailSent = true;
             emailFailureReason = null;
           }
