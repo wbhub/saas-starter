@@ -208,9 +208,22 @@
   },
   "DashboardAiPage": {
     "header": {
-      "eyebrow": "IA",
-      "title": "Bate-papo da equipe AI",
-      "description": "Converse com seu modelo configurado usando o faturamento da equipe e os limites de uso."
+      "eyebrow": "AI",
+      "title": "Team AI chat",
+      "description": "Chat with your configured model using your team billing and usage limits."
+    },
+    "unavailable": {
+      "title": "AI chat is unavailable",
+      "description": "This workspace cannot use AI chat right now.",
+      "reason": {
+        "planRequired": "AI access requires an eligible paid plan.",
+        "notConfigured": "AI is not configured for this app yet.",
+        "teamMissing": "AI requires an active team workspace.",
+        "accessMisconfigured": "AI access settings are currently misconfigured."
+      },
+      "actions": {
+        "goToBilling": "Go to billing"
+      }
     }
   },
   "AiChatCard": {

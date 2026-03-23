@@ -2,11 +2,18 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { resolveAiAccess } from "@/lib/ai/access";
+import {
+  getAiAccessMode,
+  getAiAllowedSubscriptionStatuses,
+  type AiAccessMode,
+} from "@/lib/ai/config";
 import { hasFeatureAccess } from "@/lib/billing/entitlements";
 import {
   resolveEffectivePlanKey,
   type EffectivePlanKey,
 } from "@/lib/billing/effective-plan";
+import { isOpenAiConfigured } from "@/lib/openai/client";
 import { LIVE_SUBSCRIPTION_STATUSES, type SubscriptionStatus } from "@/lib/stripe/plans";
 import type { TeamContext } from "@/lib/team-context";
 import { getCachedTeamContextForUser } from "@/lib/team-context-cache";
@@ -83,6 +90,20 @@ export type DashboardBillingContext = {
   memberCount: number;
   isPaidPlan: boolean;
   canInviteMembers: boolean;
+};
+
+export type DashboardAiUiGateReason =
+  | "enabled"
+  | "ai_not_configured"
+  | "plan_not_allowed"
+  | "access_mode_invalid"
+  | "team_context_missing";
+
+export type DashboardAiUiGate = {
+  isVisibleInUi: boolean;
+  reason: DashboardAiUiGateReason;
+  effectivePlanKey: EffectivePlanKey | null;
+  accessMode: AiAccessMode;
 };
 
 export type UsageMonthlyTotalsRow = {
@@ -280,6 +301,112 @@ export async function getDashboardBillingContext(
     isPaidPlan,
     canInviteMembers,
   };
+}
+
+export async function getDashboardAiUiGate(
+  supabase: SupabaseClient,
+  teamId: string | null,
+): Promise<DashboardAiUiGate> {
+  const accessMode = getAiAccessMode();
+  if (!teamId) {
+    return {
+      isVisibleInUi: false,
+      reason: "team_context_missing",
+      effectivePlanKey: null,
+      accessMode,
+    };
+  }
+
+  if (!isOpenAiConfigured) {
+    return {
+      isVisibleInUi: false,
+      reason: "ai_not_configured",
+      effectivePlanKey: null,
+      accessMode,
+    };
+  }
+
+  try {
+    let subscriptionRow: { stripe_price_id: string | null; status: SubscriptionStatus | null } | null =
+      null;
+    if (accessMode === "paid") {
+      const allowedStatuses = getAiAllowedSubscriptionStatuses();
+      if (!allowedStatuses.length) {
+        return {
+          isVisibleInUi: false,
+          reason: "access_mode_invalid",
+          effectivePlanKey: null,
+          accessMode,
+        };
+      }
+    }
+
+    if (accessMode !== "all") {
+      let subscriptionQuery = supabase
+        .from("subscriptions")
+        .select("stripe_price_id,status")
+        .eq("team_id", teamId)
+        .in("status", LIVE_SUBSCRIPTION_STATUSES);
+
+      if (accessMode === "paid") {
+        subscriptionQuery = subscriptionQuery.in("status", getAiAllowedSubscriptionStatuses());
+      }
+
+      const subscriptionResult = await subscriptionQuery
+        .order("current_period_end", { ascending: false })
+        .limit(1)
+        .maybeSingle<{ stripe_price_id: string | null; status: SubscriptionStatus | null }>();
+
+      if (subscriptionResult.error) {
+        logger.warn("Failed to resolve AI UI gate subscription context; defaulting to hidden AI UI.", {
+          teamId,
+          accessMode,
+          error: subscriptionResult.error,
+        });
+        return {
+          isVisibleInUi: false,
+          reason: "access_mode_invalid",
+          effectivePlanKey: null,
+          accessMode,
+        };
+      }
+
+      subscriptionRow = subscriptionResult.data;
+    }
+
+    const effectivePlanKey = resolveEffectivePlanKey(subscriptionRow);
+    const aiAccess = resolveAiAccess({ effectivePlanKey });
+    if (!aiAccess.allowed || !aiAccess.model) {
+      return {
+        isVisibleInUi: false,
+        reason:
+          aiAccess.denialReason === "default_model_missing" || aiAccess.denialReason === "plan_model_missing"
+            ? "access_mode_invalid"
+            : "plan_not_allowed",
+        effectivePlanKey,
+        accessMode,
+      };
+    }
+
+    return {
+      isVisibleInUi: true,
+      reason: "enabled",
+      effectivePlanKey,
+      accessMode,
+    };
+  } catch (error) {
+    logger.warn("Failed to resolve AI UI gate; defaulting to hidden AI UI.", {
+      teamId,
+      accessMode,
+      error,
+    });
+    return {
+      isVisibleInUi: false,
+      reason: "access_mode_invalid",
+      effectivePlanKey: null,
+      accessMode,
+    };
+  }
 }
 
 export async function getTeamMembersAndPendingInvites(

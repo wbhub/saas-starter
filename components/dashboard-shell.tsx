@@ -9,6 +9,7 @@ type DashboardShellProps = {
   teamName: string | null;
   role: TeamRole;
   teamUiMode: "free" | "paid_solo" | "paid_team";
+  showAiNav: boolean;
   activeTeamId: string;
   teamMemberships: DashboardTeamOption[];
   csrfToken: string;
@@ -21,6 +22,7 @@ export function DashboardShell({
   teamName,
   role,
   teamUiMode,
+  showAiNav,
   activeTeamId,
   teamMemberships,
   csrfToken,
@@ -36,6 +38,7 @@ export function DashboardShell({
             teamName={teamName}
             role={role}
             teamUiMode={teamUiMode}
+            showAiNav={showAiNav}
             activeTeamId={activeTeamId}
             teamMemberships={teamMemberships}
             csrfToken={csrfToken}

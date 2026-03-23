@@ -8,6 +8,7 @@ import { TeamContextErrorCard } from "@/components/team-context-error-card";
 import { formatUtcDate } from "@/lib/date";
 import { canManageTeamBilling } from "@/lib/team-context";
 import {
+  getDashboardAiUiGate,
   getDashboardBaseData,
   getDashboardBillingContext,
 } from "@/lib/dashboard/server";
@@ -43,7 +44,10 @@ export default async function DashboardBillingPage() {
     );
   }
 
-  const billingContext = await getDashboardBillingContext(supabase, teamContext.teamId);
+  const [billingContext, aiUiGate] = await Promise.all([
+    getDashboardBillingContext(supabase, teamContext.teamId),
+    getDashboardAiUiGate(supabase, teamContext.teamId),
+  ]);
   const { subscription, effectivePlanKey, memberCount, isPaidPlan } = billingContext;
   const teamUiMode = !isPaidPlan ? "free" : memberCount > 1 ? "paid_team" : "paid_solo";
   const currentPaidPlanKey: PlanKey | null =
@@ -65,6 +69,7 @@ export default async function DashboardBillingPage() {
       teamName={teamContext.teamName}
       role={teamContext.role}
       teamUiMode={teamUiMode}
+      showAiNav={aiUiGate.isVisibleInUi}
       activeTeamId={teamContext.teamId}
       teamMemberships={teamMemberships}
       csrfToken={csrfToken}

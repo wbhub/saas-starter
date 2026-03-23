@@ -68,6 +68,12 @@ function mockBillingPageDependencies(options: {
       csrfToken: "csrf_token",
     }),
     getDashboardBillingContext: vi.fn().mockResolvedValue(options.billingContext),
+    getDashboardAiUiGate: vi.fn().mockResolvedValue({
+      isVisibleInUi: true,
+      reason: "enabled",
+      effectivePlanKey: options.billingContext.effectivePlanKey,
+      accessMode: "all",
+    }),
   }));
   vi.doMock("@/lib/team-context", () => ({
     canManageTeamBilling: vi.fn().mockReturnValue(true),
