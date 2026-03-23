@@ -185,7 +185,7 @@
       "q3": "Comment les équipes et les autorisations sont-elles gérées ?",
       "a3": "Les équipes prennent en charge les flux d'invitations et l'accès basé sur les rôles (`propriétaire`, `admin`, `membre`), avec des opérations de transfert de propriété et d'adhésion protégée gérées via des routes API et des politiques de base de données.",
       "q4": "Le chat IA est-il inclus ?",
-      "a4": "Oui. `/api/ai/chat` est inclus avec les réponses en streaming, les contrôles CSRF, la limitation de débit et les règles d'accès configurables par statut ou plan payant lorsque `OPENAI_API_KEY` est défini."
+      "a4": "Oui. `/api/ai/chat` est inclus avec les réponses en streaming, les contrôles CSRF, la limitation de débit et les règles d'accès configurables par statut ou plan payant lorsqu'une clé de fournisseur IA est définie (`AI_PROVIDER_API_KEY` ou `OPENAI_API_KEY`)."
     }
   },
   "DashboardSidebar": {

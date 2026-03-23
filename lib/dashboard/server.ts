@@ -14,7 +14,7 @@ import {
   resolveEffectivePlanKey,
   type EffectivePlanKey,
 } from "@/lib/billing/effective-plan";
-import { isOpenAiConfigured } from "@/lib/openai/client";
+import { isAiProviderConfigured } from "@/lib/ai/provider";
 import { LIVE_SUBSCRIPTION_STATUSES, type SubscriptionStatus } from "@/lib/stripe/plans";
 import type { TeamContext } from "@/lib/team-context";
 import { getCachedTeamContextForUser } from "@/lib/team-context-cache";
@@ -321,7 +321,7 @@ export async function getDashboardAiUiGate(
     };
   }
 
-  if (!isOpenAiConfigured) {
+  if (!isAiProviderConfigured) {
     return {
       isVisibleInUi: false,
       reason: "ai_not_configured",

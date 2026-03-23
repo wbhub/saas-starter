@@ -185,7 +185,7 @@
       "q3": "Como as equipes e as permissões são tratadas?",
       "a3": "As equipes oferecem suporte a fluxos de convites e acesso baseado em função (`proprietário`, `admin`, `membro`), com transferência de propriedade e operações de associação protegidas tratadas por meio de rotas de API e políticas de banco de dados.",
       "q4": "O bate-papo com IA está incluído?",
-      "a4": "Sim. `/api/ai/chat` está incluído nas respostas de streaming, verificações de CSRF, limitação de taxa e regras de acesso configuráveis ​​por status ou plano pago quando `OPENAI_API_KEY` está definido."
+      "a4": "Sim. `/api/ai/chat` está incluído nas respostas de streaming, verificações de CSRF, limitação de taxa e regras de acesso configuráveis por status ou plano pago quando uma chave de provedor de IA está definida (`AI_PROVIDER_API_KEY` ou `OPENAI_API_KEY`)."
     }
   },
   "DashboardSidebar": {
