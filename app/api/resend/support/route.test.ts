@@ -20,9 +20,10 @@ describe("POST /api/resend/support", () => {
       getClientRateLimitIdentifier: vi.fn(),
     }));
     vi.doMock("@/lib/resend/server", () => ({
-      getResendClient: vi.fn(),
-      getResendFromEmail: vi.fn(),
-      getResendSupportEmail: vi.fn(),
+      isResendSupportEmailConfigured: vi.fn(),
+      getResendClientIfConfigured: vi.fn(),
+      getResendFromEmailIfConfigured: vi.fn(),
+      getResendSupportEmailIfConfigured: vi.fn(),
     }));
 
     const { POST } = await import("./route");
@@ -58,9 +59,10 @@ describe("POST /api/resend/support", () => {
       getClientRateLimitIdentifier: () => ({ keyType: "ip", value: "198.51.100.1" }),
     }));
     vi.doMock("@/lib/resend/server", () => ({
-      getResendClient: vi.fn(),
-      getResendFromEmail: vi.fn(),
-      getResendSupportEmail: vi.fn(),
+      isResendSupportEmailConfigured: vi.fn(),
+      getResendClientIfConfigured: vi.fn(),
+      getResendFromEmailIfConfigured: vi.fn(),
+      getResendSupportEmailIfConfigured: vi.fn(),
     }));
 
     const { POST } = await import("./route");
@@ -101,9 +103,10 @@ describe("POST /api/resend/support", () => {
       getClientRateLimitIdentifier: () => ({ keyType: "ip", value: "198.51.100.1" }),
     }));
     vi.doMock("@/lib/resend/server", () => ({
-      getResendClient: vi.fn(),
-      getResendFromEmail: vi.fn(),
-      getResendSupportEmail: vi.fn(),
+      isResendSupportEmailConfigured: vi.fn(),
+      getResendClientIfConfigured: vi.fn(),
+      getResendFromEmailIfConfigured: vi.fn(),
+      getResendSupportEmailIfConfigured: vi.fn(),
     }));
 
     const { POST } = await import("./route");
@@ -143,9 +146,10 @@ describe("POST /api/resend/support", () => {
       getClientRateLimitIdentifier: () => ({ keyType: "ip", value: "198.51.100.1" }),
     }));
     vi.doMock("@/lib/resend/server", () => ({
-      getResendClient: vi.fn(),
-      getResendFromEmail: vi.fn(),
-      getResendSupportEmail: vi.fn(),
+      isResendSupportEmailConfigured: vi.fn(),
+      getResendClientIfConfigured: vi.fn(),
+      getResendFromEmailIfConfigured: vi.fn(),
+      getResendSupportEmailIfConfigured: vi.fn(),
     }));
 
     const { POST } = await import("./route");
@@ -163,6 +167,49 @@ describe("POST /api/resend/support", () => {
     expect(response.status).toBe(413);
     await expect(response.json()).resolves.toEqual({
       error: "Request payload is too large.",
+    });
+  });
+
+  it("returns 503 when support email is disabled because Resend is unconfigured", async () => {
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          getUser: async () => ({
+            data: {
+              user: { id: "user_123", email: "user@example.com" },
+            },
+          }),
+        },
+      }),
+    }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: async () => ({ allowed: true, retryAfterSeconds: 0 }),
+    }));
+    vi.doMock("@/lib/http/client-ip", () => ({
+      getClientRateLimitIdentifier: () => ({ keyType: "ip", value: "198.51.100.1" }),
+    }));
+    vi.doMock("@/lib/resend/server", () => ({
+      isResendSupportEmailConfigured: () => false,
+      getResendClientIfConfigured: vi.fn(),
+      getResendFromEmailIfConfigured: vi.fn(),
+      getResendSupportEmailIfConfigured: vi.fn(),
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/resend/support", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subject: "Need help",
+          message: "This is a valid support request message.",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      error: "Support email is currently unavailable for this deployment.",
     });
   });
 });

@@ -1,7 +1,11 @@
 import { NextResponse, after } from "next/server";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { getAppUrl } from "@/lib/env";
-import { getResendClient, getResendFromEmail } from "@/lib/resend/server";
+import {
+  getResendClientIfConfigured,
+  getResendFromEmailIfConfigured,
+  isResendCustomEmailConfigured,
+} from "@/lib/resend/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getClientRateLimitIdentifier } from "@/lib/http/client-ip";
 import { requireJsonContentType } from "@/lib/http/content-type";
@@ -40,11 +44,27 @@ async function sendPasswordResetEmailInBackground(email: string, locale: AppLoca
   try {
     const t = await getLocaleTranslator("ApiForgotPassword", locale);
     const supabaseAdmin = createAdminClient();
+    const redirectTo = `${getAppUrl()}/auth/callback?next=/reset-password`;
+
+    if (!isResendCustomEmailConfigured()) {
+      logger.warn("Forgot-password: Resend is not configured, falling back to Supabase-managed email");
+      const { error } = await supabaseAdmin.auth.resetPasswordForEmail(email, { redirectTo });
+      if (error) {
+        logger.error(
+          isProviderOutageError(error)
+            ? "Forgot-password: Supabase-managed reset email failed (provider outage)"
+            : "Forgot-password: failed to send Supabase-managed reset email",
+          error,
+        );
+      }
+      return;
+    }
+
     const { data, error } = await supabaseAdmin.auth.admin.generateLink({
       type: "recovery",
       email,
       options: {
-        redirectTo: `${getAppUrl()}/auth/callback?next=/reset-password`,
+        redirectTo,
       },
     });
 
@@ -64,8 +84,25 @@ async function sendPasswordResetEmailInBackground(email: string, locale: AppLoca
     }
 
     try {
-      const resend = getResendClient();
-      const fromEmail = getResendFromEmail();
+      const resend = getResendClientIfConfigured();
+      const fromEmail = getResendFromEmailIfConfigured();
+      if (!resend || !fromEmail) {
+        logger.warn(
+          "Forgot-password: Resend became unavailable during send, falling back to Supabase-managed email",
+        );
+        const { error: fallbackError } = await supabaseAdmin.auth.resetPasswordForEmail(email, {
+          redirectTo,
+        });
+        if (fallbackError) {
+          logger.error(
+            isProviderOutageError(fallbackError)
+              ? "Forgot-password: Supabase-managed reset email failed after Resend fallback (provider outage)"
+              : "Forgot-password: failed Supabase-managed fallback after Resend became unavailable",
+            fallbackError,
+          );
+        }
+        return;
+      }
 
       await resend.emails.send({
         from: fromEmail,

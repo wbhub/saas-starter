@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { createClient } from "@/lib/supabase/server";
 import {
-  getResendClient,
-  getResendFromEmail,
-  getResendSupportEmail,
+  getResendClientIfConfigured,
+  getResendFromEmailIfConfigured,
+  getResendSupportEmailIfConfigured,
+  isResendSupportEmailConfigured,
 } from "@/lib/resend/server";
 import { getClientRateLimitIdentifier } from "@/lib/http/client-ip";
 import { requireJsonContentType } from "@/lib/http/content-type";
@@ -107,10 +108,29 @@ export async function POST(request: Request) {
   }
   const { subject, message } = bodyParse.data;
 
+  if (!isResendSupportEmailConfigured()) {
+    logger.warn("Support email is disabled because Resend is not fully configured", {
+      userId: user.id,
+    });
+    return NextResponse.json(
+      { error: t("errors.featureDisabled") },
+      { status: 503 },
+    );
+  }
+
   try {
-    const resend = getResendClient();
-    const fromEmail = getResendFromEmail();
-    const supportEmail = getResendSupportEmail();
+    const resend = getResendClientIfConfigured();
+    const fromEmail = getResendFromEmailIfConfigured();
+    const supportEmail = getResendSupportEmailIfConfigured();
+    if (!resend || !fromEmail || !supportEmail) {
+      logger.warn("Support email send skipped because Resend became unavailable mid-request", {
+        userId: user.id,
+      });
+      return NextResponse.json(
+        { error: t("errors.featureDisabled") },
+        { status: 503 },
+      );
+    }
     const submittedBy = user.email ?? t("email.unknownEmail");
     const renderedSubject =
       subject.length > 0

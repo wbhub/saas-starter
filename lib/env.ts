@@ -236,11 +236,22 @@ const requiredStripePriceIdGetters: Record<StripePriceIdEnvKey, true> = Object.f
   STRIPE_PLAN_PRICE_ID_ENV_KEYS.map((key) => [key, true]),
 ) as Record<StripePriceIdEnvKey, true>;
 
-const CORE_REQUIRED_ENV_GETTERS: Readonly<Record<Exclude<HardRequiredEnvKey, "STRIPE_SECRET_KEY" | "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY" | "STRIPE_WEBHOOK_SECRET" | StripePriceIdEnvKey>, true>> = {
+const CORE_REQUIRED_ENV_GETTERS: Readonly<
+  Record<
+    Exclude<
+      HardRequiredEnvKey,
+      | "STRIPE_SECRET_KEY"
+      | "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY"
+      | "STRIPE_WEBHOOK_SECRET"
+      | StripePriceIdEnvKey
+      | "RESEND_API_KEY"
+      | "RESEND_FROM_EMAIL"
+      | "RESEND_SUPPORT_EMAIL"
+    >,
+    true
+  >
+> = {
   SUPABASE_SERVICE_ROLE_KEY: true,
-  RESEND_API_KEY: true,
-  RESEND_FROM_EMAIL: true,
-  RESEND_SUPPORT_EMAIL: true,
 };
 
 const BILLING_REQUIRED_ENV_GETTERS: Readonly<
@@ -264,7 +275,9 @@ function hasValue(key: string) {
 }
 
 export function validateRequiredEnvAtBoot() {
-  for (const key of Object.keys(CORE_REQUIRED_ENV_GETTERS) as HardRequiredEnvKey[]) {
+  for (const key of Object.keys(CORE_REQUIRED_ENV_GETTERS) as Array<
+    keyof typeof CORE_REQUIRED_ENV_GETTERS
+  >) {
     // Access each required env getter to fail fast on startup misconfiguration.
     void env[key];
   }

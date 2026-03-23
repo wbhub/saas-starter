@@ -730,6 +730,7 @@
       "messageTooShort": "El mensaje debe tener al menos 10 caracteres.",
       "messageTooLong": "El mensaje debe tener 2000 caracteres o menos.",
       "invalidPayload": "Cuerpo de solicitud de soporte inválido.",
+      "featureDisabled": "El correo de soporte no está disponible en este despliegue.",
       "unableToSend": "No se puede enviar el email de soporte ahora mismo. Inténtalo de nuevo."
     },
     "email": {
