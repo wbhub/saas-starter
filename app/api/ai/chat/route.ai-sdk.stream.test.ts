@@ -110,9 +110,12 @@ describe("POST /api/ai/chat AI SDK streaming", () => {
       getAiAllowedModalities: vi.fn().mockReturnValue(["text", "image", "file"]),
       getAiAllowedModalitiesForPlan: vi.fn().mockReturnValue(["text", "image", "file"]),
     }));
-    vi.doMock("@/lib/openai/client", () => ({
-      isOpenAiConfigured: true,
-      openai: vi.fn().mockReturnValue("openai-model"),
+    vi.doMock("@/lib/ai/provider", () => ({
+      aiProviderName: "openai",
+      isAiProviderConfigured: true,
+      supportsOpenAiFileIds: true,
+      providerSupportsModalities: vi.fn().mockReturnValue(true),
+      getAiLanguageModel: vi.fn().mockReturnValue("provider-model"),
     }));
     vi.doMock("@/lib/audit", () => ({
       logAuditEvent: vi.fn(),

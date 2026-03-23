@@ -4,8 +4,8 @@ describe("Dashboard page billing selection", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
-    vi.doMock("@/lib/openai/client", () => ({
-      isOpenAiConfigured: false,
+    vi.doMock("@/lib/ai/provider", () => ({
+      isAiProviderConfigured: false,
     }));
     vi.doMock("next/headers", () => ({
       cookies: async () => ({

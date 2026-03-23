@@ -185,7 +185,7 @@
       "q3": "¿Cómo se manejan equipos y permisos?",
       "a3": "Los equipos soportan invitaciones y acceso por roles (`owner`, `admin`, `member`), con transferencia de propiedad y operaciones de membresía protegidas por rutas API y políticas de base de datos.",
       "q4": "¿Incluye chat AI?",
-      "a4": "Sí. Incluye `/api/ai/chat` con respuestas en streaming, chequeos CSRF, rate limiting y reglas de acceso configurables por plan cuando `OPENAI_API_KEY` está definido."
+      "a4": "Sí. Incluye `/api/ai/chat` con respuestas en streaming, chequeos CSRF, rate limiting y reglas de acceso configurables por plan cuando hay una clave de proveedor AI definida (`AI_PROVIDER_API_KEY` o `OPENAI_API_KEY`)."
     }
   },
   "DashboardSidebar": {

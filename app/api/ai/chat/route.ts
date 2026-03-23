@@ -29,7 +29,13 @@ import { requireJsonContentType } from "@/lib/http/content-type";
 import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
 import { getRouteTranslator } from "@/lib/i18n/locale";
 import { logger } from "@/lib/logger";
-import { isOpenAiConfigured, openai } from "@/lib/openai/client";
+import {
+  aiProviderName,
+  getAiLanguageModel,
+  isAiProviderConfigured,
+  providerSupportsModalities,
+  supportsOpenAiFileIds,
+} from "@/lib/ai/provider";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { LIVE_SUBSCRIPTION_STATUSES, type SubscriptionStatus } from "@/lib/stripe/plans";
@@ -43,7 +49,6 @@ const AI_FORBIDDEN_STATUS = 403;
 const AI_PAYMENT_REQUIRED_STATUS = 402;
 const MAX_ATTACHMENTS_PER_MESSAGE = 8;
 const MAX_ATTACHMENTS_PER_REQUEST = 16;
-const MULTIMODAL_MODEL_PREFIXES = ["gpt-4.1", "gpt-5"] as const;
 const SUPPORTED_IMAGE_MIME_TYPES = new Set([
   "image/png",
   "image/jpeg",
@@ -103,7 +108,7 @@ type UsageTotals = {
   completionTokens: number;
 };
 
-type OpenAiErrorInfo = {
+type UpstreamErrorInfo = {
   auditReason: string;
   code: "upstream_rate_limited" | "upstream_bad_request" | "upstream_error";
   status: number;
@@ -112,9 +117,10 @@ type OpenAiErrorInfo = {
 type ChatMessage = z.infer<typeof messageSchema>;
 
 type AttachmentValidationFailure = {
-  reason: "unsupported_file_type";
+  reason: "unsupported_file_type" | "unsupported_attachment_source";
   fileType: "image" | "file";
   mimeType: string;
+  source?: "fileId";
 };
 
 type AttachmentCounts = {
@@ -159,18 +165,17 @@ function getAttachmentCounts(messages: ChatMessage[]): AttachmentCounts {
   return counts;
 }
 
-function modelSupportsModalities(model: string, modalities: AiModality[]) {
-  const requiresMultimodal = modalities.includes("image") || modalities.includes("file");
-  if (!requiresMultimodal) {
-    return true;
-  }
-  const normalizedModel = model.toLowerCase();
-  return MULTIMODAL_MODEL_PREFIXES.some((prefix) => normalizedModel.startsWith(prefix));
-}
-
 function validateAttachmentTypes(messages: ChatMessage[]): AttachmentValidationFailure | null {
   for (const message of messages) {
     for (const attachment of message.attachments ?? []) {
+      if (attachment.fileId && !supportsOpenAiFileIds) {
+        return {
+          reason: "unsupported_attachment_source",
+          fileType: attachment.type,
+          mimeType: attachment.mimeType,
+          source: "fileId",
+        };
+      }
       if (attachment.type === "image" && !SUPPORTED_IMAGE_MIME_TYPES.has(attachment.mimeType)) {
         return {
           reason: "unsupported_file_type",
@@ -210,7 +215,7 @@ function toUserMessageContent(message: ChatMessage): UserContent {
 
   const content: Array<Record<string, unknown>> = [{ type: "text", text: message.content }];
   for (const attachment of attachments) {
-    const providerOptions = attachment.fileId
+    const providerOptions = attachment.fileId && supportsOpenAiFileIds
       ? {
           openai: {
             fileId: attachment.fileId,
@@ -252,7 +257,7 @@ function toModelMessages(messages: ChatMessage[]): ModelMessage[] {
   });
 }
 
-function mapOpenAiError(error: unknown): OpenAiErrorInfo {
+function mapUpstreamError(error: unknown): UpstreamErrorInfo {
   const maybeError = error as {
     status?: number;
     code?: string;
@@ -265,7 +270,7 @@ function mapOpenAiError(error: unknown): OpenAiErrorInfo {
 
   if (status === 429 || code === "rate_limit_exceeded") {
     return {
-      auditReason: "openai_rate_limited",
+      auditReason: "provider_rate_limited",
       code: "upstream_rate_limited",
       status: 429,
     };
@@ -273,7 +278,7 @@ function mapOpenAiError(error: unknown): OpenAiErrorInfo {
 
   if (status === 400 || status === 422) {
     return {
-      auditReason: "openai_bad_request",
+      auditReason: "provider_bad_request",
       code: "upstream_bad_request",
       status: 400,
     };
@@ -281,7 +286,7 @@ function mapOpenAiError(error: unknown): OpenAiErrorInfo {
 
   if (status === 408 || status === 504 || name === "APIConnectionTimeoutError") {
     return {
-      auditReason: "openai_timeout",
+      auditReason: "provider_timeout",
       code: "upstream_error",
       status: AI_UNAVAILABLE_STATUS,
     };
@@ -289,14 +294,14 @@ function mapOpenAiError(error: unknown): OpenAiErrorInfo {
 
   if (status !== undefined && status >= 500) {
     return {
-      auditReason: "openai_upstream_error",
+      auditReason: "provider_upstream_error",
       code: "upstream_error",
       status: AI_UNAVAILABLE_STATUS,
     };
   }
 
   return {
-    auditReason: "openai_create_failed",
+    auditReason: "provider_create_failed",
     code: "upstream_error",
     status: AI_UNAVAILABLE_STATUS,
   };
@@ -416,6 +421,9 @@ export async function POST(request: Request) {
   }
   const unsupportedAttachment = validateAttachmentTypes(bodyParse.data.messages);
   if (unsupportedAttachment) {
+    if (unsupportedAttachment.reason === "unsupported_attachment_source") {
+      return NextResponse.json({ error: t("errors.invalidPayload") }, { status: 400 });
+    }
     return NextResponse.json(
       {
         error: t("errors.unsupportedAttachmentType"),
@@ -509,17 +517,18 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!isOpenAiConfigured || !openai) {
+  if (!isAiProviderConfigured) {
     logAuditEvent({
       action: "ai.chat.request",
       outcome: "denied",
       actorUserId: user.id,
       teamId: teamContext.teamId,
       metadata: {
-        reason: "ai_not_configured",
+        reason: "ai_provider_not_configured",
         planKey: effectivePlanKey,
         accessMode: aiAccessMode,
         model: aiAccess.model,
+        provider: aiProviderName,
         requestModalities,
         attachmentCounts,
       },
@@ -556,7 +565,7 @@ export async function POST(request: Request) {
       { status: AI_FORBIDDEN_STATUS },
     );
   }
-  if (!modelSupportsModalities(model, requestModalities)) {
+  if (!providerSupportsModalities(model, requestModalities)) {
     logAuditEvent({
       action: "ai.chat.request",
       outcome: "denied",
@@ -641,8 +650,16 @@ export async function POST(request: Request) {
       { once: true },
     );
 
+    const languageModel = getAiLanguageModel(model);
+    if (!languageModel) {
+      return aiErrorResponse({
+        error: aiUnavailableMessage,
+        code: "upstream_error",
+        status: AI_UNAVAILABLE_STATUS,
+      });
+    }
     const aiResult = streamText({
-      model: openai(model),
+      model: languageModel,
       messages: toModelMessages(bodyParse.data.messages),
       abortSignal: upstreamAbortController.signal,
       maxOutputTokens: AI_COMPLETION_MAX_TOKENS,
@@ -790,14 +807,15 @@ export async function POST(request: Request) {
       });
     }
 
-    const openAiError = mapOpenAiError(error);
+    const upstreamError = mapUpstreamError(error);
     logger.error("Failed to create AI chat completion stream", error, {
       teamId: teamContext.teamId,
       userId: user.id,
       model,
-      openaiStatus: (error as { status?: number } | null)?.status,
-      openaiCode: (error as { code?: string } | null)?.code,
-      openaiType: (error as { type?: string } | null)?.type,
+      aiProvider: aiProviderName,
+      providerStatus: (error as { status?: number } | null)?.status,
+      providerCode: (error as { code?: string } | null)?.code,
+      providerType: (error as { type?: string } | null)?.type,
     });
     logAuditEvent({
       action: "ai.chat.request",
@@ -808,20 +826,20 @@ export async function POST(request: Request) {
         planKey: effectivePlanKey,
         accessMode: aiAccessMode,
         model,
-        reason: openAiError.auditReason,
+        reason: upstreamError.auditReason,
         requestModalities,
         attachmentCounts,
       },
     });
-    const upstreamMessage = openAiError.code === "upstream_rate_limited"
+    const upstreamMessage = upstreamError.code === "upstream_rate_limited"
       ? upstreamRateLimitedMessage
-      : openAiError.code === "upstream_bad_request"
+      : upstreamError.code === "upstream_bad_request"
         ? upstreamBadRequestMessage
         : aiUnavailableMessage;
     return aiErrorResponse({
       error: upstreamMessage,
-      code: openAiError.code,
-      status: openAiError.status,
+      code: upstreamError.code,
+      status: upstreamError.status,
     });
   }
 }

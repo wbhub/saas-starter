@@ -4,8 +4,8 @@ describe("getDashboardBaseData", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
-    vi.doMock("@/lib/openai/client", () => ({
-      isOpenAiConfigured: false,
+    vi.doMock("@/lib/ai/provider", () => ({
+      isAiProviderConfigured: false,
     }));
     vi.doMock("next/headers", () => ({
       cookies: async () => ({
@@ -126,8 +126,8 @@ describe("getDashboardAiUiGate", () => {
   });
 
   it("hides AI UI when OpenAI is not configured", async () => {
-    vi.doMock("@/lib/openai/client", () => ({
-      isOpenAiConfigured: false,
+    vi.doMock("@/lib/ai/provider", () => ({
+      isAiProviderConfigured: false,
     }));
     vi.doMock("@/lib/ai/config", () => ({
       getAiAccessMode: vi.fn().mockReturnValue("all"),
@@ -170,8 +170,8 @@ describe("getDashboardAiUiGate", () => {
       })),
     };
 
-    vi.doMock("@/lib/openai/client", () => ({
-      isOpenAiConfigured: true,
+    vi.doMock("@/lib/ai/provider", () => ({
+      isAiProviderConfigured: true,
     }));
     vi.doMock("@/lib/ai/config", () => ({
       getAiAccessMode: vi.fn().mockReturnValue("paid"),
@@ -200,8 +200,8 @@ describe("getDashboardAiUiGate", () => {
   });
 
   it("shows AI UI when policy allows access", async () => {
-    vi.doMock("@/lib/openai/client", () => ({
-      isOpenAiConfigured: true,
+    vi.doMock("@/lib/ai/provider", () => ({
+      isAiProviderConfigured: true,
     }));
     vi.doMock("@/lib/ai/config", () => ({
       getAiAccessMode: vi.fn().mockReturnValue("all"),

@@ -22,10 +22,16 @@ type ServerEnvKey = StaticServerEnvKey | StripePriceIdEnvKey;
 
 type OptionalEnvKey =
   | "OPENAI_API_KEY"
+  | "ANTHROPIC_API_KEY"
+  | "GOOGLE_GENERATIVE_AI_API_KEY"
+  | "AI_PROVIDER"
+  | "AI_PROVIDER_API_KEY"
+  | "AI_PROVIDER_BASE_URL"
   | "AI_ACCESS_MODE"
   | "AI_DEFAULT_MODEL"
   | "AI_DEFAULT_MONTHLY_TOKEN_BUDGET"
   | "AI_ALLOWED_MODALITIES"
+  | "AI_MODEL_MODALITIES_MAP_JSON"
   | "AI_PLAN_RULES_JSON"
   | "AI_ALLOWED_SUBSCRIPTION_STATUSES"
   | "AI_PLAN_MODEL_MAP_JSON"
@@ -113,6 +119,21 @@ const envBase = {
   get OPENAI_API_KEY() {
     return optionalEnv("OPENAI_API_KEY");
   },
+  get ANTHROPIC_API_KEY() {
+    return optionalEnv("ANTHROPIC_API_KEY");
+  },
+  get GOOGLE_GENERATIVE_AI_API_KEY() {
+    return optionalEnv("GOOGLE_GENERATIVE_AI_API_KEY");
+  },
+  get AI_PROVIDER() {
+    return optionalEnv("AI_PROVIDER");
+  },
+  get AI_PROVIDER_API_KEY() {
+    return optionalEnv("AI_PROVIDER_API_KEY");
+  },
+  get AI_PROVIDER_BASE_URL() {
+    return optionalEnv("AI_PROVIDER_BASE_URL");
+  },
   get AI_ACCESS_MODE() {
     return optionalEnv("AI_ACCESS_MODE");
   },
@@ -124,6 +145,9 @@ const envBase = {
   },
   get AI_ALLOWED_MODALITIES() {
     return optionalEnv("AI_ALLOWED_MODALITIES");
+  },
+  get AI_MODEL_MODALITIES_MAP_JSON() {
+    return optionalEnv("AI_MODEL_MODALITIES_MAP_JSON");
   },
   get AI_PLAN_RULES_JSON() {
     return optionalEnv("AI_PLAN_RULES_JSON");

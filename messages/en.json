@@ -185,7 +185,7 @@
       "q3": "How are teams and permissions handled?",
       "a3": "Teams support invite flows and role-based access (`owner`, `admin`, `member`), with ownership transfer and guarded membership operations handled through API routes and database policies.",
       "q4": "Is AI chat included?",
-      "a4": "Yes. `/api/ai/chat` is included with streaming responses, CSRF checks, rate limiting, and configurable access rules by paid status or plan when `OPENAI_API_KEY` is set."
+      "a4": "Yes. `/api/ai/chat` is included with streaming responses, CSRF checks, rate limiting, and configurable access rules by paid status or plan when an AI provider key is set (`AI_PROVIDER_API_KEY` or `OPENAI_API_KEY`)."
     }
   },
   "DashboardSidebar": {

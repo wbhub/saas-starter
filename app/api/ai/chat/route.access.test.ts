@@ -46,9 +46,14 @@ describe("POST /api/ai/chat access and gating", () => {
       getAiAllowedModalities: vi.fn().mockReturnValue(["text", "image", "file"]),
       getAiAllowedModalitiesForPlan: vi.fn().mockReturnValue(["text", "image", "file"]),
     }));
-    vi.doMock("@/lib/openai/client", () => ({
-      isOpenAiConfigured: true,
-      openai: vi.fn().mockReturnValue("openai-model"),
+    vi.doMock("@/lib/ai/provider", () => ({
+      aiProviderName: "openai",
+      isAiProviderConfigured: true,
+      supportsOpenAiFileIds: true,
+      providerSupportsModalities: vi
+        .fn()
+        .mockImplementation((model: string) => !model.startsWith("gpt-3.5")),
+      getAiLanguageModel: vi.fn().mockReturnValue("provider-model"),
     }));
     vi.doMock("ai", () => ({
       streamText: vi.fn(() => {
