@@ -15,8 +15,17 @@ describe("proxy auth guard", () => {
     }));
     vi.doMock("@/lib/security/csrf", () => ({
       CSRF_COOKIE_NAME: "csrf_token",
+      CSRF_CLIENT_COOKIE_NAME: "csrf_token_client",
       createCsrfToken: () => "csrf-token-value",
       getCsrfCookieOptions: () => ({
+        httpOnly: true,
+        sameSite: "strict",
+        secure: true,
+        path: "/",
+        maxAge: 60,
+      }),
+      getClientReadableCsrfCookieOptions: () => ({
+        httpOnly: false,
         sameSite: "strict",
         secure: true,
         path: "/",
@@ -41,6 +50,24 @@ describe("proxy auth guard", () => {
       "https://app.example.com/login?next=%2Fdashboard%2Fsettings%3Ftab%3Dbilling",
     );
     expect(response.cookies.get("csrf_token")?.value).toBe("csrf-token-value");
+    expect(response.cookies.get("csrf_token_client")?.value).toBe("csrf-token-value");
+  });
+
+  it("falls back to /dashboard when encoded backslash appears in next path", async () => {
+    vi.doMock("@/lib/supabase/middleware", () => ({
+      updateSession: vi.fn().mockResolvedValue({
+        response: NextResponse.next(),
+        user: null,
+      }),
+    }));
+
+    const { proxy } = await import("./proxy");
+    const response = await proxy(makeRequest("https://app.example.com/dashboard/%5Cevil?tab=billing"));
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe(
+      "https://app.example.com/login?next=%2Fdashboard",
+    );
   });
 
   it("allows authenticated dashboard requests", async () => {

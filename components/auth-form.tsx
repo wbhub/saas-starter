@@ -256,7 +256,7 @@ export function AuthForm({
           <input
             type="password"
             required
-            minLength={isLogin ? 8 : 12}
+            minLength={12}
             autoComplete={isLogin ? "current-password" : "new-password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}

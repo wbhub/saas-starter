@@ -1,4 +1,4 @@
-import { CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from "@/lib/security/csrf";
+import { CSRF_CLIENT_COOKIE_NAME, CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from "@/lib/security/csrf";
 
 function readCookie(name: string) {
   if (typeof document === "undefined") {
@@ -23,7 +23,7 @@ function readCookie(name: string) {
 }
 
 export function getCsrfHeaders(): Record<string, string> {
-  const token = readCookie(CSRF_COOKIE_NAME);
+  const token = readCookie(CSRF_CLIENT_COOKIE_NAME) || readCookie(CSRF_COOKIE_NAME);
   if (!token) {
     return {};
   }

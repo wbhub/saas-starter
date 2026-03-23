@@ -159,7 +159,7 @@ describe("DELETE /api/team/members/[userId]", () => {
     });
   });
 
-  it("returns 500 when member removal succeeds but seat sync fails", async () => {
+  it("returns 200 when member removal succeeds but seat sync fails", async () => {
     const membershipsMaybeSingle = vi.fn().mockResolvedValue({
       data: { user_id: "22222222-2222-4222-8222-222222222222", role: "member" },
       error: null,
@@ -227,9 +227,10 @@ describe("DELETE /api/team/members/[userId]", () => {
       },
     );
 
-    expect(response.status).toBe(500);
+    expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
-      error: "Member removed, but billing sync failed. Please retry shortly.",
+      ok: true,
+      warning: "Member removed, but billing sync failed. Please retry shortly.",
       memberRemoved: true,
     });
   });

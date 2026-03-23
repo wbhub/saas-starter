@@ -208,10 +208,11 @@ export async function DELETE(request: Request, context: TeamMembersRouteContext)
     });
     return NextResponse.json(
       {
-        error: t("errors.billingSyncFailedAfterRemoval"),
+        ok: true,
+        warning: t("errors.billingSyncFailedAfterRemoval"),
         memberRemoved: true,
       },
-      { status: 500 },
+      { status: 200 },
     );
   }
 

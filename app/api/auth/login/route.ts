@@ -7,7 +7,7 @@ import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
 import { getRouteTranslator } from "@/lib/i18n/locale";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { rotateCsrfTokenOnResponse, verifyCsrfProtection } from "@/lib/security/csrf";
-import { isValidEmail } from "@/lib/validation";
+import { isValidEmail, validatePasswordComplexity } from "@/lib/validation";
 const loginPayloadSchema = z.object({
   email: z.string().trim().toLowerCase(),
   password: z.string(),
@@ -73,7 +73,8 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!isValidEmail(email) || password.length < 8 || password.length > 128) {
+  const passwordValidation = validatePasswordComplexity(password);
+  if (!isValidEmail(email) || !passwordValidation.valid) {
     return NextResponse.json({ error: t("errors.invalidCredentials") }, { status: 400 });
   }
 

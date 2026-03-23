@@ -11,8 +11,10 @@ import { enqueueSeatSyncRetry } from "@/lib/stripe/seat-sync-retries";
 import { logger } from "@/lib/logger";
 import { invalidateCachedTeamContextForUser } from "@/lib/team-context-cache";
 import {
+  CSRF_CLIENT_COOKIE_NAME,
   CSRF_COOKIE_NAME,
   createCsrfToken,
+  getClientReadableCsrfCookieOptions,
   getServerActionCsrfCookieOptions,
   verifyCsrfProtectionForServerAction,
 } from "@/lib/security/csrf";
@@ -161,10 +163,16 @@ async function syncTeamSeatsAfterAccountDeletion(teamIds: string[], deletedUserI
 
 async function rotateCsrfTokenForServerAction() {
   const cookieStore = await cookies();
+  const token = createCsrfToken();
   cookieStore.set({
     name: CSRF_COOKIE_NAME,
-    value: createCsrfToken(),
+    value: token,
     ...getServerActionCsrfCookieOptions(),
+  });
+  cookieStore.set({
+    name: CSRF_CLIENT_COOKIE_NAME,
+    value: token,
+    ...getClientReadableCsrfCookieOptions(process.env.NODE_ENV === "production"),
   });
 }
 

@@ -262,10 +262,11 @@ export async function POST(req: Request) {
       });
       return NextResponse.json(
         {
-          error: t("errors.postChangeSyncFailed"),
+          ok: true,
+          warning: t("errors.postChangeSyncFailed"),
           planChanged: true,
         },
-        { status: 500 },
+        { status: 200 },
       );
     }
   } catch (error) {
