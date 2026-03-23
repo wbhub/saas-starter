@@ -4,6 +4,9 @@ describe("getDashboardBaseData", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    vi.doMock("@/lib/openai/client", () => ({
+      isOpenAiConfigured: false,
+    }));
     vi.doMock("next/headers", () => ({
       cookies: async () => ({
         get: vi.fn().mockReturnValue({
@@ -113,5 +116,114 @@ describe("getDashboardBaseData", () => {
     expect(createClient).toHaveBeenCalledTimes(1);
     expect(getUser).toHaveBeenCalledTimes(1);
     expect(getCachedTeamContextForUser).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("getDashboardAiUiGate", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+  });
+
+  it("hides AI UI when OpenAI is not configured", async () => {
+    vi.doMock("@/lib/openai/client", () => ({
+      isOpenAiConfigured: false,
+    }));
+    vi.doMock("@/lib/ai/config", () => ({
+      getAiAccessMode: vi.fn().mockReturnValue("all"),
+      getAiAllowedSubscriptionStatuses: vi.fn().mockReturnValue(["active"]),
+    }));
+    vi.doMock("@/lib/ai/access", () => ({
+      resolveAiAccess: vi.fn().mockReturnValue({
+        allowed: true,
+        model: "gpt-4.1-mini",
+        monthlyTokenBudget: 0,
+        allowedModalities: ["text"],
+      }),
+    }));
+
+    const { getDashboardAiUiGate } = await import("./server");
+    const gate = await getDashboardAiUiGate({} as never, "team_123");
+
+    expect(gate).toEqual({
+      isVisibleInUi: false,
+      reason: "ai_not_configured",
+      effectivePlanKey: null,
+      accessMode: "all",
+    });
+  });
+
+  it("hides AI UI when team plan is ineligible", async () => {
+    const maybeSingle = vi.fn().mockResolvedValue({
+      data: null,
+      error: null,
+    });
+    const inFn = vi.fn().mockReturnThis();
+    const supabase = {
+      from: vi.fn(() => ({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        in: inFn,
+        order: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockReturnThis(),
+        maybeSingle,
+      })),
+    };
+
+    vi.doMock("@/lib/openai/client", () => ({
+      isOpenAiConfigured: true,
+    }));
+    vi.doMock("@/lib/ai/config", () => ({
+      getAiAccessMode: vi.fn().mockReturnValue("paid"),
+      getAiAllowedSubscriptionStatuses: vi.fn().mockReturnValue(["active"]),
+    }));
+    vi.doMock("@/lib/ai/access", () => ({
+      resolveAiAccess: vi.fn().mockReturnValue({
+        allowed: false,
+        model: null,
+        monthlyTokenBudget: 0,
+        allowedModalities: ["text"],
+        denialReason: "plan_not_allowed",
+      }),
+    }));
+
+    const { getDashboardAiUiGate } = await import("./server");
+    const gate = await getDashboardAiUiGate(supabase as never, "team_123");
+
+    expect(gate).toEqual({
+      isVisibleInUi: false,
+      reason: "plan_not_allowed",
+      effectivePlanKey: null,
+      accessMode: "paid",
+    });
+    expect(inFn).toHaveBeenCalled();
+  });
+
+  it("shows AI UI when policy allows access", async () => {
+    vi.doMock("@/lib/openai/client", () => ({
+      isOpenAiConfigured: true,
+    }));
+    vi.doMock("@/lib/ai/config", () => ({
+      getAiAccessMode: vi.fn().mockReturnValue("all"),
+      getAiAllowedSubscriptionStatuses: vi.fn().mockReturnValue(["active"]),
+    }));
+    vi.doMock("@/lib/ai/access", () => ({
+      resolveAiAccess: vi.fn().mockReturnValue({
+        allowed: true,
+        model: "gpt-4.1-mini",
+        monthlyTokenBudget: 0,
+        allowedModalities: ["text"],
+      }),
+    }));
+
+    const { getDashboardAiUiGate } = await import("./server");
+    const gate = await getDashboardAiUiGate({} as never, "team_123");
+
+    expect(gate).toEqual({
+      isVisibleInUi: true,
+      reason: "enabled",
+      effectivePlanKey: null,
+      accessMode: "all",
+    });
   });
 });

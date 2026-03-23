@@ -10,6 +10,7 @@ import { OrganizationSettingsCard } from "@/components/organization-settings-car
 import { SecuritySettingsCard } from "@/components/security-settings-card";
 import { TeamContextErrorCard } from "@/components/team-context-error-card";
 import {
+  getDashboardAiUiGate,
   getDashboardBaseData,
   getDashboardBillingContext,
   getTeamMembers,
@@ -46,7 +47,10 @@ export default async function DashboardSettingsPage() {
     );
   }
 
-  const billingContext = await getDashboardBillingContext(supabase, teamContext.teamId);
+  const [billingContext, aiUiGate] = await Promise.all([
+    getDashboardBillingContext(supabase, teamContext.teamId),
+    getDashboardAiUiGate(supabase, teamContext.teamId),
+  ]);
   const teamUiMode = !billingContext.isPaidPlan
     ? "free"
     : billingContext.memberCount > 1
@@ -63,6 +67,7 @@ export default async function DashboardSettingsPage() {
       teamName={teamContext.teamName}
       role={teamContext.role}
       teamUiMode={teamUiMode}
+      showAiNav={aiUiGate.isVisibleInUi}
       activeTeamId={teamContext.teamId}
       teamMemberships={teamMemberships}
       csrfToken={csrfToken}

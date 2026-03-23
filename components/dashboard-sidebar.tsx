@@ -15,6 +15,7 @@ type DashboardSidebarProps = {
   teamName: string | null;
   role: "owner" | "admin" | "member";
   teamUiMode: "free" | "paid_solo" | "paid_team";
+  showAiNav: boolean;
   activeTeamId: string;
   teamMemberships: DashboardTeamOption[];
   csrfToken: string;
@@ -26,19 +27,22 @@ export function DashboardSidebar({
   teamName,
   role,
   teamUiMode,
+  showAiNav,
   activeTeamId,
   teamMemberships,
   csrfToken,
 }: DashboardSidebarProps) {
   const t = useTranslations();
   const pathname = usePathname();
-  const navItems: Array<{ label: string; href: string }> = [
-    { label: t("DashboardSidebar.overview"), href: "/dashboard" },
-    { label: t("DashboardSidebar.ai"), href: "/dashboard/ai" },
+  const navItems: Array<{ label: string; href: string }> = [{ label: t("DashboardSidebar.overview"), href: "/dashboard" }];
+  if (showAiNav) {
+    navItems.push({ label: t("DashboardSidebar.ai"), href: "/dashboard/ai" });
+  }
+  navItems.push(
     { label: t("DashboardSidebar.billing"), href: "/dashboard/billing" },
     { label: t("DashboardSidebar.usage"), href: "/dashboard/usage" },
     { label: t("DashboardSidebar.settings"), href: "/dashboard/settings" },
-  ];
+  );
   if (teamUiMode !== "free") {
     navItems.splice(3, 0, {
       label:

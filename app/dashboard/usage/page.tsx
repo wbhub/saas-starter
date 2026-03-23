@@ -4,6 +4,7 @@ import { NoTeamCard } from "@/components/no-team-card";
 import { TeamContextErrorCard } from "@/components/team-context-error-card";
 import { formatUtcDate } from "@/lib/date";
 import {
+  getDashboardAiUiGate,
   getDashboardBaseData,
   getDashboardBillingContext,
   getUsageMonthlyTotals,
@@ -43,8 +44,11 @@ export default async function DashboardUsagePage() {
     );
   }
 
-  const usageRows = await getUsageMonthlyTotals(supabase, teamContext.teamId);
-  const billingContext = await getDashboardBillingContext(supabase, teamContext.teamId);
+  const [usageRows, billingContext, aiUiGate] = await Promise.all([
+    getUsageMonthlyTotals(supabase, teamContext.teamId),
+    getDashboardBillingContext(supabase, teamContext.teamId),
+    getDashboardAiUiGate(supabase, teamContext.teamId),
+  ]);
   const teamUiMode = !billingContext.isPaidPlan
     ? "free"
     : billingContext.memberCount > 1
@@ -58,6 +62,7 @@ export default async function DashboardUsagePage() {
       teamName={teamContext.teamName}
       role={teamContext.role}
       teamUiMode={teamUiMode}
+      showAiNav={aiUiGate.isVisibleInUi}
       activeTeamId={teamContext.teamId}
       teamMemberships={teamMemberships}
       csrfToken={csrfToken}

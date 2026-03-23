@@ -6,6 +6,7 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { formatUtcDate } from "@/lib/date";
 import { PLAN_LABELS, type PlanKey } from "@/lib/stripe/plans";
 import {
+  getDashboardAiUiGate,
   getDashboardBaseData,
   getDashboardBillingContext,
 } from "@/lib/dashboard/server";
@@ -39,7 +40,10 @@ export default async function DashboardPage() {
     );
   }
 
-  const billingContext = await getDashboardBillingContext(supabase, teamContext.teamId);
+  const [billingContext, aiUiGate] = await Promise.all([
+    getDashboardBillingContext(supabase, teamContext.teamId),
+    getDashboardAiUiGate(supabase, teamContext.teamId),
+  ]);
   const { subscription, effectivePlanKey, memberCount, isPaidPlan } = billingContext;
   const currentPaidPlanKey: PlanKey | null =
     isPaidPlan && effectivePlanKey && effectivePlanKey !== "free"
@@ -58,6 +62,7 @@ export default async function DashboardPage() {
       teamName={teamContext.teamName}
       role={teamContext.role}
       teamUiMode={teamUiMode}
+      showAiNav={aiUiGate.isVisibleInUi}
       activeTeamId={teamContext.teamId}
       teamMemberships={teamMemberships}
       csrfToken={csrfToken}
@@ -150,12 +155,14 @@ export default async function DashboardPage() {
       </section>
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <Link
-          href="/dashboard/ai"
-          className="rounded-xl border app-border-subtle app-surface p-4 text-sm text-slate-700 shadow-sm hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
-        >
-          {t("DashboardPage.ai")}
-        </Link>
+        {aiUiGate.isVisibleInUi ? (
+          <Link
+            href="/dashboard/ai"
+            className="rounded-xl border app-border-subtle app-surface p-4 text-sm text-slate-700 shadow-sm hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            {t("DashboardPage.ai")}
+          </Link>
+        ) : null}
         <Link
           href="/dashboard/billing"
           className="rounded-xl border app-border-subtle app-surface p-4 text-sm text-slate-700 shadow-sm hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"

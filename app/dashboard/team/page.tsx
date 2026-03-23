@@ -5,6 +5,7 @@ import { NoTeamCard } from "@/components/no-team-card";
 import { TeamContextErrorCard } from "@/components/team-context-error-card";
 import { TeamInviteCard } from "@/components/team-invite-card";
 import {
+  getDashboardAiUiGate,
   getDashboardBaseData,
   getDashboardBillingContext,
   getTeamMembersAndPendingInvites,
@@ -45,6 +46,7 @@ export default async function DashboardTeamPage() {
   if (!billingContext.isPaidPlan) {
     redirect("/dashboard/billing");
   }
+  const aiUiGate = await getDashboardAiUiGate(supabase, teamContext.teamId);
   const teamUiMode = !billingContext.isPaidPlan
     ? "free"
     : billingContext.memberCount > 1
@@ -65,6 +67,7 @@ export default async function DashboardTeamPage() {
       teamName={teamContext.teamName}
       role={teamContext.role}
       teamUiMode={teamUiMode}
+      showAiNav={aiUiGate.isVisibleInUi}
       activeTeamId={teamContext.teamId}
       teamMemberships={teamMemberships}
       csrfToken={csrfToken}

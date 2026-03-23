@@ -15,6 +15,7 @@ function mockDashboardDependencies({
   effectivePlanKey,
   isPaidPlan,
   memberCount = 1,
+  showAiNav = true,
 }: {
   subscription: {
     status: "active";
@@ -26,6 +27,7 @@ function mockDashboardDependencies({
   effectivePlanKey: "free" | "starter" | "growth" | "pro" | null;
   isPaidPlan: boolean;
   memberCount?: number;
+  showAiNav?: boolean;
 }) {
   vi.doMock("@/lib/dashboard/server", () => ({
     getDashboardBaseData: vi.fn().mockResolvedValue({
@@ -48,6 +50,12 @@ function mockDashboardDependencies({
       memberCount,
       isPaidPlan,
       canInviteMembers: isPaidPlan,
+    }),
+    getDashboardAiUiGate: vi.fn().mockResolvedValue({
+      isVisibleInUi: showAiNav,
+      reason: showAiNav ? "enabled" : "plan_not_allowed",
+      effectivePlanKey,
+      accessMode: "all",
     }),
   }));
   vi.doMock("next-intl/server", () => ({
@@ -156,5 +164,33 @@ describe("Dashboard page subscription snapshot free plan behavior", () => {
 
     expect(html).toContain("Growth");
     expect(html).not.toContain("Current plan: Free");
+  });
+
+  it("shows AI quick link when AI UI is visible", async () => {
+    mockDashboardDependencies({
+      subscription: null,
+      effectivePlanKey: "free",
+      isPaidPlan: false,
+      showAiNav: true,
+    });
+
+    const DashboardPage = (await import("./page")).default;
+    const html = renderToStaticMarkup(await DashboardPage());
+
+    expect(html).toContain('href="/dashboard/ai"');
+  });
+
+  it("hides AI quick link when AI UI is gated off", async () => {
+    mockDashboardDependencies({
+      subscription: null,
+      effectivePlanKey: "free",
+      isPaidPlan: false,
+      showAiNav: false,
+    });
+
+    const DashboardPage = (await import("./page")).default;
+    const html = renderToStaticMarkup(await DashboardPage());
+
+    expect(html).not.toContain('href="/dashboard/ai"');
   });
 });
