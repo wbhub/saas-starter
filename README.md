@@ -5,7 +5,7 @@ A production-ready Next.js SaaS foundation built to help you launch faster:
 - Full authentication flows (email/password + social SSO) and protected app routes out of the box
 - Team-based SaaS model with role-based access (`owner`, `admin`, `member`)
 - Monetization-ready billing with optional seat-based Stripe subscriptions
-- Built-in support workflows (optional Resend for support + custom transactional email)
+- Built-in support workflows (Resend required for support + custom transactional email)
 - Optional AI features with provider-agnostic chat via Vercel AI SDK
 - Internationalization-ready UX with locale routing and message catalogs
 - System-aware theming with light and dark mode support
@@ -15,8 +15,8 @@ A production-ready Next.js SaaS foundation built to help you launch faster:
 
 - Next.js 16, React 19, TypeScript, Tailwind CSS 4
 - Supabase
-- Resend (optional)
-- Stripe (optional)
+- Resend (Required for full email features)
+- Stripe (Recommended)
 - Vercel AI SDK (optional)
 - Intercom (optional)
 - Redis (optional)
