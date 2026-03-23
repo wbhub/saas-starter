@@ -40,6 +40,7 @@ describe("PATCH /api/team/settings", () => {
 
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({
+      ok: false,
       error: "Only team owners and admins can update organization settings.",
     });
   });

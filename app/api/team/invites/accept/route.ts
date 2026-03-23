@@ -3,6 +3,7 @@ import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireJsonContentType } from "@/lib/http/content-type";
+import { jsonErrorFromResponse } from "@/lib/http/api-json";
 import { getClientRateLimitIdentifier } from "@/lib/http/client-ip";
 import {
   getOrCreateRequestId,
@@ -37,19 +38,27 @@ type InviteTeamLookupRow = {
 export async function POST(request: Request) {
   const t = await getRouteTranslator("ApiTeamInviteAccept", request);
   const requestId = getOrCreateRequestId(request);
-  const json = (
-    body: unknown,
+  const jsonSuccess = (
+    body: Record<string, unknown> = {},
     init?: ResponseInit,
-  ) => jsonWithRequestId(requestId, body, init);
+  ) => jsonWithRequestId(requestId, { ok: true as const, ...body }, init);
+  const jsonError = (error: string, status: number, init?: ResponseInit) =>
+    jsonWithRequestId(requestId, { ok: false as const, error }, { ...init, status });
 
   const csrfError = verifyCsrfProtection(request);
   if (csrfError) {
-    return withRequestId(csrfError, requestId);
+    return withRequestId(
+      await jsonErrorFromResponse(csrfError, "Invalid request origin."),
+      requestId,
+    );
   }
 
   const contentTypeError = requireJsonContentType(request);
   if (contentTypeError) {
-    return withRequestId(contentTypeError, requestId);
+    return withRequestId(
+      await jsonErrorFromResponse(contentTypeError, "Content-Type must be application/json."),
+      requestId,
+    );
   }
 
   const supabase = await createClient();
@@ -58,24 +67,21 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return json({ error: t("errors.unauthorized") }, { status: 401 });
+    return jsonError(t("errors.unauthorized"), 401);
   }
 
   const bodyParse = await parseJsonWithSchema(request, acceptInvitePayloadSchema);
   if (!bodyParse.success) {
     if (bodyParse.tooLarge) {
-      return json({ error: t("errors.payloadTooLarge") }, { status: 413 });
+      return jsonError(t("errors.payloadTooLarge"), 413);
     }
-    return json({ error: t("errors.invalidInviteToken") }, { status: 400 });
+    return jsonError(t("errors.invalidInviteToken"), 400);
   }
   const { token } = bodyParse.data;
 
   const userEmail = user.email?.trim().toLowerCase();
   if (!userEmail) {
-    return json(
-      { error: t("errors.noEmailOnAccount") },
-      { status: 400 },
-    );
+    return jsonError(t("errors.noEmailOnAccount"), 400);
   }
 
   const tokenHash = hashInviteToken(token);
@@ -96,13 +102,9 @@ export async function POST(request: Request) {
       userRateLimit.retryAfterSeconds,
       clientRateLimit.retryAfterSeconds,
     );
-    return json(
-      { error: t("errors.rateLimited") },
-      {
-        status: 429,
-        headers: { "Retry-After": String(retryAfterSeconds) },
-      },
-    );
+    return jsonError(t("errors.rateLimited"), 429, {
+      headers: { "Retry-After": String(retryAfterSeconds) },
+    });
   }
 
   const admin = createAdminClient();
@@ -121,7 +123,7 @@ export async function POST(request: Request) {
       requestId,
       userId: user.id,
     });
-    return json({ error: t("errors.unableToAcceptInvite") }, { status: 500 });
+    return jsonError(t("errors.unableToAcceptInvite"), 500);
   }
   if (inviteLookupResult.data?.team_id) {
     const teamId = inviteLookupResult.data.team_id;
@@ -135,13 +137,10 @@ export async function POST(request: Request) {
         teamId,
         userId: user.id,
       });
-      return json({ error: t("errors.unableToAcceptInvite") }, { status: 500 });
+      return jsonError(t("errors.unableToAcceptInvite"), 500);
     }
     if ((memberCount ?? 0) >= teamMaxMembers) {
-      return json(
-        { error: t("errors.teamMemberLimitReached") },
-        { status: 409 },
-      );
+      return jsonError(t("errors.teamMemberLimitReached"), 409);
     }
   }
 
@@ -159,7 +158,7 @@ export async function POST(request: Request) {
       actorUserId: user.id,
       metadata: { reason: "rpc_error" },
     });
-    return json({ error: t("errors.unableToAcceptInvite") }, { status: 500 });
+    return jsonError(t("errors.unableToAcceptInvite"), 500);
   }
 
   const rpcRow = (Array.isArray(data) ? data[0] : data) as AcceptInviteRpcResult | null;
@@ -172,21 +171,18 @@ export async function POST(request: Request) {
         actorUserId: user.id,
         metadata: { reason: code },
       });
-      return json({ error: t("errors.inviteNotFound") }, { status: 404 });
+      return jsonError(t("errors.inviteNotFound"), 404);
     }
     if (code === "already_accepted") {
-      return json({ error: t("errors.inviteAlreadyAccepted") }, { status: 409 });
+      return jsonError(t("errors.inviteAlreadyAccepted"), 409);
     }
     if (code === "expired") {
-      return json({ error: t("errors.inviteExpired") }, { status: 410 });
+      return jsonError(t("errors.inviteExpired"), 410);
     }
     if (code === "email_mismatch") {
-      return json(
-        { error: t("errors.inviteEmailMismatch") },
-        { status: 403 },
-      );
+      return jsonError(t("errors.inviteEmailMismatch"), 403);
     }
-    return json({ error: t("errors.unableToAcceptInvite") }, { status: 500 });
+    return jsonError(t("errors.unableToAcceptInvite"), 500);
   }
 
   await invalidateCachedTeamContextForUser(user.id);
@@ -228,15 +224,11 @@ export async function POST(request: Request) {
       teamId: rpcRow.team_id,
       metadata: { reason: "seat_sync_failed" },
     });
-    return json(
-      {
-        ok: true,
-        warning: t("errors.billingSyncFailedAfterAccept"),
-        inviteAccepted: true,
-        teamName: rpcRow.team_name ?? t("defaults.teamName"),
-      },
-      { status: 200 },
-    );
+    return jsonSuccess({
+      warning: t("errors.billingSyncFailedAfterAccept"),
+      inviteAccepted: true,
+      teamName: rpcRow.team_name ?? t("defaults.teamName"),
+    });
   }
 
   logAuditEvent({
@@ -247,8 +239,7 @@ export async function POST(request: Request) {
     metadata: { seatSynced: true },
   });
 
-  return json({
-    ok: true,
+  return jsonSuccess({
     teamName: rpcRow.team_name ?? t("defaults.teamName"),
   });
 }

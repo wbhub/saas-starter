@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
 import { logAuditEvent } from "@/lib/audit";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
+import { jsonError, jsonSuccess } from "@/lib/http/api-json";
 import { withTeamRoute } from "@/lib/http/team-route";
 import { logger } from "@/lib/logger";
 import { getRouteTranslator } from "@/lib/i18n/locale";
@@ -31,7 +31,7 @@ export async function DELETE(request: Request, context: InviteRouteContext) {
     handler: async ({ supabase, user, teamContext, requestId }) => {
       const { inviteId } = await context.params;
       if (!UUID_RE.test(inviteId)) {
-        return NextResponse.json({ error: t("errors.invalidInviteId") }, { status: 400 });
+        return jsonError(t("errors.invalidInviteId"), 400);
       }
 
       const { data: deletedInvite, error } = await supabase
@@ -57,10 +57,10 @@ export async function DELETE(request: Request, context: InviteRouteContext) {
           resourceId: inviteId,
           metadata: { reason: "delete_error" },
         });
-        return NextResponse.json({ error: t("errors.unableToRevokeInvite") }, { status: 500 });
+        return jsonError(t("errors.unableToRevokeInvite"), 500);
       }
       if (!deletedInvite) {
-        return NextResponse.json({ error: t("errors.pendingInviteNotFound") }, { status: 404 });
+        return jsonError(t("errors.pendingInviteNotFound"), 404);
       }
 
       logAuditEvent({
@@ -70,7 +70,7 @@ export async function DELETE(request: Request, context: InviteRouteContext) {
         teamId: teamContext.teamId,
         resourceId: inviteId,
       });
-      return NextResponse.json({ ok: true });
+      return jsonSuccess();
     },
   });
 }

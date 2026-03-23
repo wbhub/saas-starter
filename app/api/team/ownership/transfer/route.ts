@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
 import { logAuditEvent } from "@/lib/audit";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
+import { jsonError, jsonErrorFromResponse, jsonSuccess } from "@/lib/http/api-json";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
@@ -27,12 +27,12 @@ export async function POST(request: Request) {
   const t = await getRouteTranslator("ApiTeamOwnershipTransfer", request);
   const csrfError = verifyCsrfProtection(request);
   if (csrfError) {
-    return csrfError;
+    return jsonErrorFromResponse(csrfError, "Invalid request origin.");
   }
 
   const contentTypeError = requireJsonContentType(request);
   if (contentTypeError) {
-    return contentTypeError;
+    return jsonErrorFromResponse(contentTypeError, "Content-Type must be application/json.");
   }
 
   const supabase = await createClient();
@@ -40,22 +40,16 @@ export async function POST(request: Request) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.json({ error: t("errors.unauthorized") }, { status: 401 });
+    return jsonError(t("errors.unauthorized"), 401);
   }
 
   const teamContext = await getCachedTeamContextForUser(supabase, user.id);
   if (!teamContext) {
-    return NextResponse.json(
-      { error: t("errors.noTeamMembership") },
-      { status: 403 },
-    );
+    return jsonError(t("errors.noTeamMembership"), 403);
   }
 
   if (teamContext.role !== "owner") {
-    return NextResponse.json(
-      { error: t("errors.forbidden") },
-      { status: 403 },
-    );
+    return jsonError(t("errors.forbidden"), 403);
   }
 
   const rateLimit = await checkRateLimit({
@@ -63,29 +57,22 @@ export async function POST(request: Request) {
     ...RATE_LIMITS.teamOwnershipTransferByActor,
   });
   if (!rateLimit.allowed) {
-    return NextResponse.json(
-      { error: t("errors.rateLimited") },
-      {
-        status: 429,
-        headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
-      },
-    );
+    return jsonError(t("errors.rateLimited"), 429, {
+      headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
+    });
   }
 
   const parseResult = await parseJsonWithSchema(request, transferOwnershipSchema);
   if (!parseResult.success) {
     if (parseResult.tooLarge) {
-      return NextResponse.json({ error: t("errors.payloadTooLarge") }, { status: 413 });
+      return jsonError(t("errors.payloadTooLarge"), 413);
     }
-    return NextResponse.json({ error: t("errors.invalidPayload") }, { status: 400 });
+    return jsonError(t("errors.invalidPayload"), 400);
   }
 
   const { nextOwnerUserId } = parseResult.data;
   if (nextOwnerUserId === user.id) {
-    return NextResponse.json(
-      { error: t("errors.alreadyOwner") },
-      { status: 409 },
-    );
+    return jsonError(t("errors.alreadyOwner"), 409);
   }
 
   const admin = createAdminClient();
@@ -107,7 +94,7 @@ export async function POST(request: Request) {
       resourceId: nextOwnerUserId,
       metadata: { reason: "rpc_error" },
     });
-    return NextResponse.json({ error: t("errors.unableToTransfer") }, { status: 500 });
+    return jsonError(t("errors.unableToTransfer"), 500);
   }
 
   const rpcRow = (Array.isArray(rpcData) ? rpcData[0] : rpcData) as
@@ -116,16 +103,16 @@ export async function POST(request: Request) {
   if (!rpcRow || !rpcRow.ok) {
     const code = rpcRow?.error_code;
     if (code === "target_not_found") {
-      return NextResponse.json({ error: t("errors.targetNotFound") }, { status: 404 });
+      return jsonError(t("errors.targetNotFound"), 404);
     }
     if (code === "target_already_owner") {
-      return NextResponse.json({ error: t("errors.targetAlreadyOwner") }, { status: 409 });
+      return jsonError(t("errors.targetAlreadyOwner"), 409);
     }
     if (code === "not_current_owner") {
-      return NextResponse.json({ error: t("errors.forbidden") }, { status: 403 });
+      return jsonError(t("errors.forbidden"), 403);
     }
     if (code === "same_user") {
-      return NextResponse.json({ error: t("errors.alreadyOwner") }, { status: 409 });
+      return jsonError(t("errors.alreadyOwner"), 409);
     }
 
     logAuditEvent({
@@ -136,7 +123,7 @@ export async function POST(request: Request) {
       resourceId: nextOwnerUserId,
       metadata: { reason: code ?? "unknown" },
     });
-    return NextResponse.json({ error: t("errors.unableToTransfer") }, { status: 500 });
+    return jsonError(t("errors.unableToTransfer"), 500);
   }
 
   await Promise.all([
@@ -151,5 +138,5 @@ export async function POST(request: Request) {
     teamId: teamContext.teamId,
     resourceId: nextOwnerUserId,
   });
-  return NextResponse.json({ ok: true });
+  return jsonSuccess();
 }

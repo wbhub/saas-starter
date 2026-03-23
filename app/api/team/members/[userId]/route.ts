@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
 import { logAuditEvent } from "@/lib/audit";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
+import { jsonError, jsonErrorFromResponse, jsonSuccess } from "@/lib/http/api-json";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
@@ -36,7 +36,7 @@ export async function DELETE(request: Request, context: TeamMembersRouteContext)
   const t = await getRouteTranslator("ApiTeamMembers", request);
   const csrfError = verifyCsrfProtection(request);
   if (csrfError) {
-    return csrfError;
+    return jsonErrorFromResponse(csrfError, "Invalid request origin.");
   }
 
   const supabase = await createClient();
@@ -45,22 +45,16 @@ export async function DELETE(request: Request, context: TeamMembersRouteContext)
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.json({ error: t("errors.unauthorized") }, { status: 401 });
+    return jsonError(t("errors.unauthorized"), 401);
   }
 
   const teamContext = await getCachedTeamContextForUser(supabase, user.id);
   if (!teamContext) {
-    return NextResponse.json(
-      { error: t("errors.noTeamMembership") },
-      { status: 403 },
-    );
+    return jsonError(t("errors.noTeamMembership"), 403);
   }
 
   if (teamContext.role !== "owner" && teamContext.role !== "admin") {
-    return NextResponse.json(
-      { error: t("errors.removeForbidden") },
-      { status: 403 },
-    );
+    return jsonError(t("errors.removeForbidden"), 403);
   }
 
   const rateLimit = await checkRateLimit({
@@ -68,18 +62,14 @@ export async function DELETE(request: Request, context: TeamMembersRouteContext)
     ...RATE_LIMITS.teamMemberRemoveByActor,
   });
   if (!rateLimit.allowed) {
-    return NextResponse.json(
-      { error: t("errors.rateLimited") },
-      {
-        status: 429,
-        headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
-      },
-    );
+    return jsonError(t("errors.rateLimited"), 429, {
+      headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
+    });
   }
 
   const { userId: targetUserId } = await context.params;
   if (!UUID_RE.test(targetUserId)) {
-    return NextResponse.json({ error: t("errors.invalidMemberId") }, { status: 400 });
+    return jsonError(t("errors.invalidMemberId"), 400);
   }
 
   if (targetUserId === user.id) {
@@ -91,10 +81,7 @@ export async function DELETE(request: Request, context: TeamMembersRouteContext)
       resourceId: targetUserId,
       metadata: { reason: "self_removal_not_supported" },
     });
-    return NextResponse.json(
-      { error: t("errors.selfRemovalNotSupported") },
-      { status: 400 },
-    );
+    return jsonError(t("errors.selfRemovalNotSupported"), 400);
   }
 
   const admin = createAdminClient();
@@ -107,18 +94,15 @@ export async function DELETE(request: Request, context: TeamMembersRouteContext)
 
   if (targetMembershipError) {
     logger.error("Failed to load target membership for removal", targetMembershipError);
-    return NextResponse.json({ error: t("errors.unableToRemoveMember") }, { status: 500 });
+    return jsonError(t("errors.unableToRemoveMember"), 500);
   }
 
   if (!targetMembership) {
-    return NextResponse.json({ error: t("errors.memberNotFound") }, { status: 404 });
+    return jsonError(t("errors.memberNotFound"), 404);
   }
 
   if (teamContext.role === "admin" && targetMembership.role !== "member") {
-    return NextResponse.json(
-      { error: t("errors.adminRemoveLimit") },
-      { status: 403 },
-    );
+    return jsonError(t("errors.adminRemoveLimit"), 403);
   }
 
   if (targetMembership.role === "owner") {
@@ -130,14 +114,11 @@ export async function DELETE(request: Request, context: TeamMembersRouteContext)
 
     if (ownerCountError) {
       logger.error("Failed to count team owners before removal", ownerCountError);
-      return NextResponse.json({ error: t("errors.unableToRemoveMember") }, { status: 500 });
+      return jsonError(t("errors.unableToRemoveMember"), 500);
     }
 
     if ((ownerCount ?? 0) <= 1) {
-      return NextResponse.json(
-        { error: t("errors.cannotRemoveLastOwner") },
-        { status: 409 },
-      );
+      return jsonError(t("errors.cannotRemoveLastOwner"), 409);
     }
   }
 
@@ -158,10 +139,7 @@ export async function DELETE(request: Request, context: TeamMembersRouteContext)
         resourceId: targetUserId,
         metadata: { reason: "last_owner_db_guard" },
       });
-      return NextResponse.json(
-        { error: t("errors.cannotRemoveLastOwner") },
-        { status: 409 },
-      );
+      return jsonError(t("errors.cannotRemoveLastOwner"), 409);
     }
     logAuditEvent({
       action: "team.member.remove",
@@ -171,7 +149,7 @@ export async function DELETE(request: Request, context: TeamMembersRouteContext)
       resourceId: targetUserId,
       metadata: { reason: "delete_error" },
     });
-    return NextResponse.json({ error: t("errors.unableToRemoveMember") }, { status: 500 });
+    return jsonError(t("errors.unableToRemoveMember"), 500);
   }
 
   await invalidateCachedTeamContextForUser(targetUserId);
@@ -206,14 +184,10 @@ export async function DELETE(request: Request, context: TeamMembersRouteContext)
       resourceId: targetUserId,
       metadata: { reason: "seat_sync_failed" },
     });
-    return NextResponse.json(
-      {
-        ok: true,
-        warning: t("errors.billingSyncFailedAfterRemoval"),
-        memberRemoved: true,
-      },
-      { status: 200 },
-    );
+    return jsonSuccess({
+      warning: t("errors.billingSyncFailedAfterRemoval"),
+      memberRemoved: true,
+    });
   }
 
   logAuditEvent({
@@ -225,19 +199,19 @@ export async function DELETE(request: Request, context: TeamMembersRouteContext)
     metadata: { seatSynced },
   });
 
-  return NextResponse.json({ ok: true, seatSynced: true });
+  return jsonSuccess({ seatSynced: true });
 }
 
 export async function PATCH(request: Request, context: TeamMembersRouteContext) {
   const t = await getRouteTranslator("ApiTeamMembers", request);
   const csrfError = verifyCsrfProtection(request);
   if (csrfError) {
-    return csrfError;
+    return jsonErrorFromResponse(csrfError, "Invalid request origin.");
   }
 
   const contentTypeError = requireJsonContentType(request);
   if (contentTypeError) {
-    return contentTypeError;
+    return jsonErrorFromResponse(contentTypeError, "Content-Type must be application/json.");
   }
 
   const supabase = await createClient();
@@ -245,21 +219,15 @@ export async function PATCH(request: Request, context: TeamMembersRouteContext) 
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.json({ error: t("errors.unauthorized") }, { status: 401 });
+    return jsonError(t("errors.unauthorized"), 401);
   }
 
   const teamContext = await getCachedTeamContextForUser(supabase, user.id);
   if (!teamContext) {
-    return NextResponse.json(
-      { error: t("errors.noTeamMembership") },
-      { status: 403 },
-    );
+    return jsonError(t("errors.noTeamMembership"), 403);
   }
   if (teamContext.role !== "owner" && teamContext.role !== "admin") {
-    return NextResponse.json(
-      { error: t("errors.updateRoleForbidden") },
-      { status: 403 },
-    );
+    return jsonError(t("errors.updateRoleForbidden"), 403);
   }
 
   const rateLimit = await checkRateLimit({
@@ -267,32 +235,25 @@ export async function PATCH(request: Request, context: TeamMembersRouteContext) 
     ...RATE_LIMITS.teamMemberRoleUpdateByActor,
   });
   if (!rateLimit.allowed) {
-    return NextResponse.json(
-      { error: t("errors.rateLimited") },
-      {
-        status: 429,
-        headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
-      },
-    );
+    return jsonError(t("errors.rateLimited"), 429, {
+      headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
+    });
   }
 
   const { userId: targetUserId } = await context.params;
   if (!UUID_RE.test(targetUserId)) {
-    return NextResponse.json({ error: t("errors.invalidMemberId") }, { status: 400 });
+    return jsonError(t("errors.invalidMemberId"), 400);
   }
   if (targetUserId === user.id) {
-    return NextResponse.json(
-      { error: t("errors.useOwnershipTransferForSelf") },
-      { status: 400 },
-    );
+    return jsonError(t("errors.useOwnershipTransferForSelf"), 400);
   }
 
   const parseResult = await parseJsonWithSchema(request, updateMemberRoleSchema);
   if (!parseResult.success) {
     if (parseResult.tooLarge) {
-      return NextResponse.json({ error: t("errors.payloadTooLarge") }, { status: 413 });
+      return jsonError(t("errors.payloadTooLarge"), 413);
     }
-    return NextResponse.json({ error: t("errors.invalidRolePayload") }, { status: 400 });
+    return jsonError(t("errors.invalidRolePayload"), 400);
   }
   const { role: nextRole } = parseResult.data;
 
@@ -305,26 +266,20 @@ export async function PATCH(request: Request, context: TeamMembersRouteContext) 
     .maybeSingle<TeamMembershipRow>();
   if (targetMembershipError) {
     logger.error("Failed to load target membership for role update", targetMembershipError);
-    return NextResponse.json({ error: t("errors.unableToUpdateMemberRole") }, { status: 500 });
+    return jsonError(t("errors.unableToUpdateMemberRole"), 500);
   }
   if (!targetMembership) {
-    return NextResponse.json({ error: t("errors.memberNotFound") }, { status: 404 });
+    return jsonError(t("errors.memberNotFound"), 404);
   }
   if (targetMembership.role === "owner") {
-    return NextResponse.json(
-      { error: t("errors.useOwnershipTransferForOwner") },
-      { status: 409 },
-    );
+    return jsonError(t("errors.useOwnershipTransferForOwner"), 409);
   }
   if (teamContext.role === "admin" && targetMembership.role !== "member") {
-    return NextResponse.json(
-      { error: t("errors.adminUpdateRoleLimit") },
-      { status: 403 },
-    );
+    return jsonError(t("errors.adminUpdateRoleLimit"), 403);
   }
 
   if (targetMembership.role === nextRole) {
-    return NextResponse.json({ ok: true, unchanged: true });
+    return jsonSuccess({ unchanged: true });
   }
 
   const { error: updateError } = await admin
@@ -342,7 +297,7 @@ export async function PATCH(request: Request, context: TeamMembersRouteContext) 
       resourceId: targetUserId,
       metadata: { reason: "update_error", nextRole },
     });
-    return NextResponse.json({ error: t("errors.unableToUpdateMemberRole") }, { status: 500 });
+    return jsonError(t("errors.unableToUpdateMemberRole"), 500);
   }
 
   await invalidateCachedTeamContextForUser(targetUserId);
@@ -355,5 +310,5 @@ export async function PATCH(request: Request, context: TeamMembersRouteContext) 
     resourceId: targetUserId,
     metadata: { nextRole },
   });
-  return NextResponse.json({ ok: true });
+  return jsonSuccess();
 }

@@ -155,6 +155,7 @@ describe("DELETE /api/team/members/[userId]", () => {
 
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({
+      ok: false,
       error: "Admins can only remove members.",
     });
   });

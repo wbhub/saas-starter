@@ -45,7 +45,7 @@ Backend routes:
 - Vercel AI SDK (`ai`, `@ai-sdk/openai`, `@ai-sdk/react`)
 - Resend (`resend`)
 - Tailwind CSS 4
-- Internationalization: `next-intl` (locales: `en`, `es`; locale prefix disabled)
+- Internationalization: `next-intl` (locales: `en`, `es`, `fr`, `zh`, `pt`, `ko`; locale prefix disabled)
 - Vitest, Playwright, ESLint
 - Optional observability/runtime: Sentry, Upstash Redis
 
@@ -184,10 +184,19 @@ Optional:
 
 ## Internationalization
 
-- `next-intl` is configured with locales `en` and `es`.
+- `next-intl` is configured with locales `en`, `es`, `fr`, `zh`, `pt`, and `ko`.
+- Locale source of truth is `i18n/routing.ts` (`routing.locales` + `routing.defaultLocale`).
 - `localePrefix` is set to `never` (no locale segment in URLs).
 - Automatic locale detection is enabled (Accept-Language/cookie/request locale).
 - `lib/i18n/config.ts` currently has `SHOW_LOCALE_SWITCHER=false` by default.
+
+## API Response Format
+
+- JSON API success responses should use `{ ok: true, ... }`.
+- JSON API error responses should use `{ ok: false, error: string }`.
+- Prefer `lib/http/api-json.ts` helpers (`jsonSuccess`, `jsonError`) in route handlers.
+- When using `jsonWithRequestId`, keep the same `ok` envelope in the body.
+- Exceptions are endpoints that intentionally do not return normal JSON envelopes (for example, `/api/ai/chat` streaming responses and `/api/stripe/webhook` acknowledgment payloads).
 
 ## How Core Features Work
 

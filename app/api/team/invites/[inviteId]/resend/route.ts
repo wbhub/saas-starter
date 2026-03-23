@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
 import { logAuditEvent } from "@/lib/audit";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { getAppUrl } from "@/lib/env";
+import { jsonError, jsonSuccess } from "@/lib/http/api-json";
 import { withTeamRoute } from "@/lib/http/team-route";
 import { logger } from "@/lib/logger";
 import { getResendClient, getResendFromEmail } from "@/lib/resend/server";
@@ -41,7 +41,7 @@ export async function POST(request: Request, context: ResendInviteRouteContext) 
     handler: async ({ supabase, user, teamContext, requestId }) => {
       const { inviteId } = await context.params;
       if (!UUID_RE.test(inviteId)) {
-        return NextResponse.json({ error: t("errors.invalidInviteId") }, { status: 400 });
+        return jsonError(t("errors.invalidInviteId"), 400);
       }
 
       const { data: invite, error: inviteError } = await supabase
@@ -57,10 +57,10 @@ export async function POST(request: Request, context: ResendInviteRouteContext) 
           teamId: teamContext.teamId,
           inviteId,
         });
-        return NextResponse.json({ error: t("errors.unableToResendInvite") }, { status: 500 });
+        return jsonError(t("errors.unableToResendInvite"), 500);
       }
       if (!invite) {
-        return NextResponse.json({ error: t("errors.pendingInviteNotFound") }, { status: 404 });
+        return jsonError(t("errors.pendingInviteNotFound"), 404);
       }
 
       const token = createRawInviteToken();
@@ -89,7 +89,7 @@ export async function POST(request: Request, context: ResendInviteRouteContext) 
           resourceId: invite.id,
           metadata: { reason: "update_error" },
         });
-        return NextResponse.json({ error: t("errors.unableToResendInvite") }, { status: 500 });
+        return jsonError(t("errors.unableToResendInvite"), 500);
       }
 
       const inviteUrl = `${getAppUrl()}/invite/${token}`;
@@ -127,7 +127,7 @@ export async function POST(request: Request, context: ResendInviteRouteContext) 
         resourceId: invite.id,
         metadata: { emailSent, reason: emailSent ? undefined : "email_delivery_failed" },
       });
-      return NextResponse.json({ ok: true, emailSent });
+      return jsonSuccess({ emailSent });
     },
   });
 }

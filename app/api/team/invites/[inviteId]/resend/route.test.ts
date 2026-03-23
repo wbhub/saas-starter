@@ -38,8 +38,8 @@ describe("POST /api/team/invites/[inviteId]/resend", () => {
         }),
       }),
     }));
-    vi.doMock("@/lib/team-context", () => ({
-      getTeamContextForUser: vi.fn().mockResolvedValue({
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
         teamId: "team_123",
         teamName: "Acme",
         role: "owner",
