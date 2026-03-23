@@ -36,6 +36,7 @@ describe("POST /api/auth/forgot-password", () => {
       isResendCustomEmailConfigured: () => true,
       getResendClientIfConfigured: vi.fn(),
       getResendFromEmailIfConfigured: vi.fn(),
+      sendResendEmail: vi.fn(),
     }));
     vi.doMock("@/lib/env", () => ({
       env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
@@ -90,6 +91,9 @@ describe("POST /api/auth/forgot-password", () => {
       isResendCustomEmailConfigured: () => true,
       getResendClientIfConfigured: () => ({ emails: { send } }),
       getResendFromEmailIfConfigured: () => "noreply@example.com",
+      sendResendEmail: vi.fn(async () => {
+        await send();
+      }),
     }));
     vi.doMock("@/lib/env", () => ({
       env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
@@ -153,6 +157,7 @@ describe("POST /api/auth/forgot-password", () => {
       isResendCustomEmailConfigured: () => true,
       getResendClientIfConfigured: vi.fn(),
       getResendFromEmailIfConfigured: vi.fn(),
+      sendResendEmail: vi.fn(),
     }));
     vi.doMock("@/lib/env", () => ({
       env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
@@ -211,6 +216,7 @@ describe("POST /api/auth/forgot-password", () => {
       isResendCustomEmailConfigured: () => true,
       getResendClientIfConfigured: vi.fn(),
       getResendFromEmailIfConfigured: vi.fn(),
+      sendResendEmail: vi.fn(),
     }));
     vi.doMock("@/lib/env", () => ({
       env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
@@ -270,6 +276,7 @@ describe("POST /api/auth/forgot-password", () => {
       isResendCustomEmailConfigured: () => false,
       getResendClientIfConfigured: vi.fn(),
       getResendFromEmailIfConfigured: vi.fn(),
+      sendResendEmail: vi.fn(),
     }));
     vi.doMock("@/lib/env", () => ({
       env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },

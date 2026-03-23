@@ -59,3 +59,26 @@ export function getResendSupportEmail() {
 export function getResendSupportEmailIfConfigured() {
   return getTrimmedResendEnv("RESEND_SUPPORT_EMAIL") ?? null;
 }
+
+export type ResendEmailPayload = {
+  from: string;
+  to: string;
+  subject: string;
+  text: string;
+  replyTo?: string;
+};
+
+export async function sendResendEmail(payload: ResendEmailPayload) {
+  const resendClient = getResendClientIfConfigured();
+  if (!resendClient) {
+    throw new Error("Resend is not configured.");
+  }
+
+  await resendClient.emails.send({
+    from: payload.from,
+    to: payload.to,
+    subject: payload.subject,
+    text: payload.text,
+    replyTo: payload.replyTo,
+  });
+}

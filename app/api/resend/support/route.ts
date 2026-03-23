@@ -6,6 +6,7 @@ import {
   getResendFromEmailIfConfigured,
   getResendSupportEmailIfConfigured,
   isResendSupportEmailConfigured,
+  sendResendEmail,
 } from "@/lib/resend/server";
 import { getClientRateLimitIdentifier } from "@/lib/http/client-ip";
 import { requireJsonContentType } from "@/lib/http/content-type";
@@ -14,6 +15,8 @@ import { checkRateLimit } from "@/lib/security/rate-limit";
 import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { logger } from "@/lib/logger";
 import { getRouteTranslator } from "@/lib/i18n/locale";
+import { isTriggerConfigured } from "@/lib/trigger/config";
+import { triggerSendEmailTask } from "@/lib/trigger/dispatch";
 const supportPayloadSchema = z.object({
   subject: z
     .string()
@@ -137,7 +140,7 @@ export async function POST(request: Request) {
         ? t("email.subjectWithInput", { subject })
         : t("email.defaultSubject");
 
-    await resend.emails.send({
+    const emailPayload = {
       from: fromEmail,
       to: supportEmail,
       subject: renderedSubject,
@@ -151,7 +154,19 @@ export async function POST(request: Request) {
         message,
       ].join("\n"),
       replyTo: user.email ?? undefined,
-    });
+    };
+
+    if (isTriggerConfigured()) {
+      const triggered = await triggerSendEmailTask(emailPayload);
+      if (!triggered) {
+        logger.warn("Support email Trigger enqueue failed, falling back to inline Resend send", {
+          userId: user.id,
+        });
+        await sendResendEmail(emailPayload);
+      }
+    } else {
+      await sendResendEmail(emailPayload);
+    }
 
     return NextResponse.json({ ok: true });
   } catch (error) {

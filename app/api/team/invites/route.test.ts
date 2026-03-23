@@ -137,6 +137,9 @@ describe("POST /api/team/invites", () => {
       isResendCustomEmailConfigured: () => true,
       getResendClientIfConfigured: () => ({ emails: { send } }),
       getResendFromEmailIfConfigured: () => "SaaS Starter <onboarding@example.com>",
+      sendResendEmail: vi.fn(async () => {
+        await send();
+      }),
     }));
     vi.doMock("@/lib/audit", () => ({
       logAuditEvent,
@@ -253,6 +256,7 @@ describe("POST /api/team/invites", () => {
       isResendCustomEmailConfigured: () => false,
       getResendClientIfConfigured: vi.fn(),
       getResendFromEmailIfConfigured: vi.fn(),
+      sendResendEmail: vi.fn(),
     }));
     vi.doMock("@/lib/audit", () => ({
       logAuditEvent,
@@ -427,6 +431,7 @@ describe("POST /api/team/invites", () => {
       isResendCustomEmailConfigured: () => true,
       getResendClientIfConfigured: () => ({ emails: { send: vi.fn() } }),
       getResendFromEmailIfConfigured: () => "SaaS Starter <onboarding@example.com>",
+      sendResendEmail: vi.fn(),
     }));
 
     const { POST } = await import("./route");
@@ -525,6 +530,9 @@ describe("POST /api/team/invites", () => {
       isResendCustomEmailConfigured: () => true,
       getResendClientIfConfigured: () => ({ emails: { send } }),
       getResendFromEmailIfConfigured: () => "SaaS Starter <onboarding@example.com>",
+      sendResendEmail: vi.fn(async () => {
+        await send();
+      }),
     }));
 
     const { POST } = await import("./route");
@@ -610,6 +618,7 @@ describe("POST /api/team/invites", () => {
       isResendCustomEmailConfigured: () => true,
       getResendClientIfConfigured: () => ({ emails: { send: vi.fn() } }),
       getResendFromEmailIfConfigured: () => "SaaS Starter <onboarding@example.com>",
+      sendResendEmail: vi.fn(),
     }));
 
     const { POST } = await import("./route");
