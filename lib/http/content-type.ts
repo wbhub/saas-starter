@@ -20,7 +20,7 @@ export function requireJsonContentType(
   }
 
   return NextResponse.json(
-    { error: options?.errorMessage ?? "Content-Type must be application/json." },
+    { ok: false as const, error: options?.errorMessage ?? "Content-Type must be application/json." },
     { status: 415 },
   );
 }

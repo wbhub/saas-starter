@@ -174,6 +174,7 @@ If you want `/dashboard/ai` and `/api/ai/chat`:
 - `npm run build` - production build
 - `npm run start` - run production build
 - `npm run lint` - ESLint
+- `npm run lint:conventions` - check env usage, response helpers, and route wrapper conventions
 - `npm run typecheck` - TypeScript check
 - `npm run test` - Vitest (once)
 - `npm run test:watch` - Vitest (watch)

@@ -26,6 +26,7 @@ describe("POST /api/stripe/portal", () => {
 
     expect(response.status).toBe(503);
     await expect(response.json()).resolves.toEqual({
+      ok: false,
       error: "Billing is not configured for this deployment.",
     });
   });
@@ -59,6 +60,7 @@ describe("POST /api/stripe/portal", () => {
 
     expect(response.status).toBe(415);
     await expect(response.json()).resolves.toEqual({
+      ok: false,
       error: "Content-Type must be application/json.",
     });
   });
@@ -101,7 +103,10 @@ describe("POST /api/stripe/portal", () => {
     );
 
     expect(response.status).toBe(401);
-    await expect(response.json()).resolves.toEqual({ error: "Unauthorized" });
+    await expect(response.json()).resolves.toEqual({
+      ok: false,
+      error: "Unauthorized",
+    });
   });
 
   it("returns billing portal url for a valid owned customer", async () => {
@@ -161,6 +166,7 @@ describe("POST /api/stripe/portal", () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
+      ok: true,
       url: "https://billing.stripe.test/session",
     });
     expect(createPortalSession).toHaveBeenCalledWith({

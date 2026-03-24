@@ -4,7 +4,7 @@ import {
   type PlanKey,
   type StripePriceIdEnvKey,
 } from "@/lib/stripe/plans";
-import { isBillingEnabled, isFreePlanEnabled } from "@/lib/billing/capabilities";
+import { isBillingEnabled, isFreePlanEnabled } from "@/lib/billing/provider";
 
 type StaticServerEnvKey =
   | "NEXT_PUBLIC_APP_URL"
@@ -40,6 +40,8 @@ type OptionalEnvKey =
   | "BILLING_PROVIDER"
   | "CRON_SECRET"
   | "INTERCOM_IDENTITY_SECRET"
+  | "NEXT_PUBLIC_AUTH_GOOGLE_ENABLED"
+  | "NEXT_PUBLIC_AUTH_MICROSOFT_ENABLED"
   | "NEXT_PUBLIC_INTERCOM_APP_ID"
   | "TRUST_PROXY_HEADERS"
   | "TRUSTED_PROXY_HEADER_NAMES"
@@ -191,6 +193,12 @@ const envBase = {
   },
   get INTERCOM_IDENTITY_SECRET() {
     return optionalEnv("INTERCOM_IDENTITY_SECRET");
+  },
+  get NEXT_PUBLIC_AUTH_GOOGLE_ENABLED() {
+    return optionalEnv("NEXT_PUBLIC_AUTH_GOOGLE_ENABLED");
+  },
+  get NEXT_PUBLIC_AUTH_MICROSOFT_ENABLED() {
+    return optionalEnv("NEXT_PUBLIC_AUTH_MICROSOFT_ENABLED");
   },
   get NEXT_PUBLIC_INTERCOM_APP_ID() {
     return optionalEnv("NEXT_PUBLIC_INTERCOM_APP_ID");

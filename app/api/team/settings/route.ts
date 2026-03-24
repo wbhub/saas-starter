@@ -1,16 +1,10 @@
 import { logAuditEvent } from "@/lib/audit";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
-import { jsonError, jsonErrorFromResponse, jsonSuccess } from "@/lib/http/api-json";
-import { createClient } from "@/lib/supabase/server";
+import { jsonError, jsonSuccess } from "@/lib/http/api-json";
+import { withTeamRoute } from "@/lib/http/team-route";
+import { z } from "@/lib/http/request-validation";
 import { createAdminClient } from "@/lib/supabase/admin";
-import {
-  getCachedTeamContextForUser,
-  invalidateCachedTeamContextForUser,
-} from "@/lib/team-context-cache";
-import { requireJsonContentType } from "@/lib/http/content-type";
-import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
-import { checkRateLimit } from "@/lib/security/rate-limit";
-import { verifyCsrfProtection } from "@/lib/security/csrf";
+import { invalidateCachedTeamContextForUser } from "@/lib/team-context-cache";
 import { logger } from "@/lib/logger";
 import { getRouteTranslator } from "@/lib/i18n/locale";
 
@@ -24,99 +18,74 @@ type TeamMembershipUserRow = {
 
 export async function PATCH(request: Request) {
   const t = await getRouteTranslator("ApiTeamSettings", request);
-  const csrfError = verifyCsrfProtection(request);
-  if (csrfError) {
-    return jsonErrorFromResponse(csrfError, "Invalid request origin.");
-  }
 
-  const contentTypeError = requireJsonContentType(request);
-  if (contentTypeError) {
-    return jsonErrorFromResponse(contentTypeError, "Content-Type must be application/json.");
-  }
+  return withTeamRoute({
+    request,
+    allowedRoles: ["owner", "admin"],
+    unauthorizedMessage: t("errors.unauthorized"),
+    missingTeamMembershipMessage: t("errors.noTeamMembership"),
+    forbiddenMessage: t("errors.forbidden"),
+    schema: teamSettingsSchema,
+    invalidPayloadMessage: t("errors.invalidPayload"),
+    payloadTooLargeMessage: t("errors.payloadTooLarge"),
+    rateLimits: ({ teamId, userId }) => [
+      {
+        key: `team-settings:update:${teamId}:${userId}`,
+        ...RATE_LIMITS.teamSettingsUpdateByActor,
+        message: t("errors.rateLimited"),
+      },
+    ],
+    handler: async ({ supabase, user, teamContext, body }) => {
+      const { teamName } = body;
+      const { error } = await supabase
+        .from("teams")
+        .update({ name: teamName })
+        .eq("id", teamContext.teamId);
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return jsonError(t("errors.unauthorized"), 401);
-  }
+      if (error) {
+        logger.error("Failed to update organization settings", error);
+        logAuditEvent({
+          action: "team.settings.update",
+          outcome: "failure",
+          actorUserId: user.id,
+          teamId: teamContext.teamId,
+          metadata: { reason: "update_error" },
+        });
+        return jsonError(t("errors.unableToUpdate"), 500);
+      }
 
-  const teamContext = await getCachedTeamContextForUser(supabase, user.id);
-  if (!teamContext) {
-    return jsonError(t("errors.noTeamMembership"), 403);
-  }
+      const admin = createAdminClient();
+      const { data: teamMembers, error: teamMembersError } = await admin
+        .from("team_memberships")
+        .select("user_id")
+        .eq("team_id", teamContext.teamId)
+        .returns<TeamMembershipUserRow[]>();
 
-  if (teamContext.role !== "owner" && teamContext.role !== "admin") {
-    return jsonError(t("errors.forbidden"), 403);
-  }
+      if (teamMembersError) {
+        logger.warn("Failed to load team members for team-context cache invalidation", {
+          teamId: teamContext.teamId,
+          actorUserId: user.id,
+          error: teamMembersError,
+        });
+        await invalidateCachedTeamContextForUser(user.id);
+      } else {
+        const userIds = new Set((teamMembers ?? []).map((membership) => membership.user_id));
+        if (userIds.size === 0) {
+          userIds.add(user.id);
+        }
+        await Promise.all(
+          Array.from(userIds, (memberUserId) => invalidateCachedTeamContextForUser(memberUserId)),
+        );
+      }
 
-  const rateLimit = await checkRateLimit({
-    key: `team-settings:update:${teamContext.teamId}:${user.id}`,
-    ...RATE_LIMITS.teamSettingsUpdateByActor,
+      logAuditEvent({
+        action: "team.settings.update",
+        outcome: "success",
+        actorUserId: user.id,
+        teamId: teamContext.teamId,
+        metadata: { teamName },
+      });
+      return jsonSuccess();
+    },
   });
-  if (!rateLimit.allowed) {
-    return jsonError(t("errors.rateLimited"), 429, {
-      headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
-    });
-  }
-
-  const parseResult = await parseJsonWithSchema(request, teamSettingsSchema);
-  if (!parseResult.success) {
-    if (parseResult.tooLarge) {
-      return jsonError(t("errors.payloadTooLarge"), 413);
-    }
-    return jsonError(t("errors.invalidPayload"), 400);
-  }
-
-  const { teamName } = parseResult.data;
-  const { error } = await supabase
-    .from("teams")
-    .update({ name: teamName })
-    .eq("id", teamContext.teamId);
-
-  if (error) {
-    logger.error("Failed to update organization settings", error);
-    logAuditEvent({
-      action: "team.settings.update",
-      outcome: "failure",
-      actorUserId: user.id,
-      teamId: teamContext.teamId,
-      metadata: { reason: "update_error" },
-    });
-    return jsonError(t("errors.unableToUpdate"), 500);
-  }
-
-  const admin = createAdminClient();
-  const { data: teamMembers, error: teamMembersError } = await admin
-    .from("team_memberships")
-    .select("user_id")
-    .eq("team_id", teamContext.teamId)
-    .returns<TeamMembershipUserRow[]>();
-
-  if (teamMembersError) {
-    logger.warn("Failed to load team members for team-context cache invalidation", {
-      teamId: teamContext.teamId,
-      actorUserId: user.id,
-      error: teamMembersError,
-    });
-    await invalidateCachedTeamContextForUser(user.id);
-  } else {
-    const userIds = new Set((teamMembers ?? []).map((membership) => membership.user_id));
-    if (userIds.size === 0) {
-      userIds.add(user.id);
-    }
-    await Promise.all(
-      Array.from(userIds, (memberUserId) => invalidateCachedTeamContextForUser(memberUserId)),
-    );
-  }
-
-  logAuditEvent({
-    action: "team.settings.update",
-    outcome: "success",
-    actorUserId: user.id,
-    teamId: teamContext.teamId,
-    metadata: { teamName },
-  });
-  return jsonSuccess();
 }

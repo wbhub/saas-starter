@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+const isBillingEnabledMock = vi.fn(() => true);
+
 function createWebhookEventsTableMocks() {
   const insert = vi.fn().mockResolvedValue({ error: null });
   const maybeSingle = vi.fn().mockResolvedValue({
@@ -61,8 +63,9 @@ describe("POST /api/stripe/webhook", () => {
     vi.resetModules();
     vi.clearAllMocks();
     process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
+    isBillingEnabledMock.mockReturnValue(true);
     vi.doMock("@/lib/billing/capabilities", () => ({
-      isBillingEnabled: () => true,
+      isBillingEnabled: isBillingEnabledMock,
     }));
   });
 
@@ -102,14 +105,13 @@ describe("POST /api/stripe/webhook", () => {
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
+      ok: false,
       error: "Missing Stripe signature",
     });
   });
 
   it("returns 503 when billing is disabled", async () => {
-    vi.doMock("@/lib/billing/capabilities", () => ({
-      isBillingEnabled: () => false,
-    }));
+    isBillingEnabledMock.mockReturnValue(false);
     vi.doMock("next/headers", () => ({
       headers: async () => new Headers(),
     }));
@@ -123,6 +125,7 @@ describe("POST /api/stripe/webhook", () => {
 
     expect(response.status).toBe(503);
     await expect(response.json()).resolves.toEqual({
+      ok: false,
       error: "Billing webhooks are not configured for this deployment.",
     });
   });
@@ -134,6 +137,13 @@ describe("POST /api/stripe/webhook", () => {
         new Headers({
           "stripe-signature": "t=1,v1=test",
         }),
+    }));
+    vi.doMock("@/lib/env", () => ({
+      env: {
+        get STRIPE_WEBHOOK_SECRET(): string {
+          throw new Error("Missing required environment variable: STRIPE_WEBHOOK_SECRET");
+        },
+      },
     }));
     vi.doMock("@/lib/stripe/server", () => ({
       getStripeServerClient: () => ({
@@ -152,6 +162,7 @@ describe("POST /api/stripe/webhook", () => {
 
     expect(response.status).toBe(503);
     await expect(response.json()).resolves.toEqual({
+      ok: false,
       error: "Billing webhooks are not configured for this deployment.",
     });
   });
@@ -189,6 +200,7 @@ describe("POST /api/stripe/webhook", () => {
 
     expect(response.status).toBe(415);
     await expect(response.json()).resolves.toEqual({
+      ok: false,
       error: "Content-Type must be application/json.",
     });
   });
@@ -238,6 +250,7 @@ describe("POST /api/stripe/webhook", () => {
     );
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
+      ok: false,
       error: "Webhook signature verification failed.",
     });
   });
@@ -485,6 +498,7 @@ describe("POST /api/stripe/webhook", () => {
 
     expect(response.status).toBe(500);
     await expect(response.json()).resolves.toEqual({
+      ok: false,
       error: "Webhook handling failed.",
     });
     expect(customerRetrieve).not.toHaveBeenCalled();

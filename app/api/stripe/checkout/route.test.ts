@@ -29,6 +29,7 @@ describe("POST /api/stripe/checkout", () => {
 
     expect(response.status).toBe(503);
     await expect(response.json()).resolves.toEqual({
+      ok: false,
       error: "Billing is not configured for this deployment.",
     });
   });
@@ -98,6 +99,7 @@ describe("POST /api/stripe/checkout", () => {
 
     expect(response.status).toBe(409);
     await expect(response.json()).resolves.toEqual({
+      ok: false,
       error: "You already have an active subscription.",
     });
   });
@@ -151,6 +153,7 @@ describe("POST /api/stripe/checkout", () => {
 
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({
+      ok: false,
       error: "Only team owners and admins can manage billing.",
     });
   });
@@ -270,6 +273,7 @@ describe("POST /api/stripe/checkout", () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
+      ok: true,
       url: "https://checkout.stripe.test",
     });
     expect(customersCreate).toHaveBeenCalledWith(
@@ -398,6 +402,7 @@ describe("POST /api/stripe/checkout", () => {
     expect(response.status).toBe(409);
     expect(response.headers.get("Retry-After")).toBe("8");
     await expect(response.json()).resolves.toEqual({
+      ok: false,
       error: "Checkout is already in progress. Please wait and try again.",
     });
   });

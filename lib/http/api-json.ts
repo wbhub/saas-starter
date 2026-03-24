@@ -7,28 +7,28 @@ export type ApiJsonSuccess<T extends Record<string, unknown> = Record<string, ne
 export type ApiJsonError = {
   ok: false;
   error: string;
+  code?: string;
 };
 
 export function jsonSuccess<T extends Record<string, unknown>>(
   data: T = {} as T,
   init?: ResponseInit,
 ) {
-  return NextResponse.json({ ok: true as const, ...data }, init);
+  return NextResponse.json({ ...data, ok: true as const }, init);
 }
 
-export function jsonError(error: string, status: number, init?: ResponseInit) {
-  return NextResponse.json({ ok: false as const, error }, { ...init, status });
-}
-
-export async function jsonErrorFromResponse(response: Response, fallbackError: string) {
-  try {
-    const payload = (await response.clone().json()) as { error?: unknown };
-    if (typeof payload.error === "string" && payload.error.trim().length > 0) {
-      return jsonError(payload.error, response.status, { headers: response.headers });
-    }
-  } catch {
-    // Ignore parse failures and fallback to provided default message.
+export function jsonError(
+  error: string,
+  status: number,
+  init?: ResponseInit & { code?: string; data?: Record<string, unknown> },
+) {
+  const { code, data, ...responseInit } = init ?? {};
+  const body: Record<string, unknown> = { ok: false as const, error };
+  if (code) {
+    body.code = code;
   }
-
-  return jsonError(fallbackError, response.status, { headers: response.headers });
+  if (data) {
+    Object.assign(body, data);
+  }
+  return NextResponse.json(body, { ...responseInit, status });
 }

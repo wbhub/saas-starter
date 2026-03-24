@@ -83,6 +83,7 @@ describe("POST /api/auth/signup", () => {
 
     expect(res.status).toBe(400);
     await expect(res.json()).resolves.toEqual({
+      ok: false,
       error: "Unable to create your account.",
     });
   });

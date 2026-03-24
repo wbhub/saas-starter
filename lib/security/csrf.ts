@@ -128,7 +128,7 @@ export function getServerActionCsrfCookieOptions() {
   return getCsrfCookieOptions(process.env.NODE_ENV === "production");
 }
 
-type CsrfErrorMessages = {
+export type CsrfErrorMessages = {
   invalidOrigin?: string;
   missingToken?: string;
   invalidToken?: string;
@@ -137,7 +137,7 @@ type CsrfErrorMessages = {
 export function verifyCsrfProtection(request: Request, messages?: CsrfErrorMessages) {
   if (!isBrowserRequestFromAllowedOrigin(request)) {
     return NextResponse.json(
-      { error: messages?.invalidOrigin ?? "Invalid request origin." },
+      { ok: false as const, error: messages?.invalidOrigin ?? "Invalid request origin." },
       { status: 403 },
     );
   }
@@ -150,14 +150,14 @@ export function verifyCsrfProtection(request: Request, messages?: CsrfErrorMessa
 
   if (!ensureTokenShape(headerToken) || !ensureTokenShape(cookieToken)) {
     return NextResponse.json(
-      { error: messages?.missingToken ?? "Missing CSRF token." },
+      { ok: false as const, error: messages?.missingToken ?? "Missing CSRF token." },
       { status: 403 },
     );
   }
 
   if (headerToken !== cookieToken) {
     return NextResponse.json(
-      { error: messages?.invalidToken ?? "Invalid CSRF token." },
+      { ok: false as const, error: messages?.invalidToken ?? "Invalid CSRF token." },
       { status: 403 },
     );
   }

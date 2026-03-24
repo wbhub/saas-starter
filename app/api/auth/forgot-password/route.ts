@@ -1,6 +1,8 @@
 import { NextResponse, after } from "next/server";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { getAppUrl } from "@/lib/env";
+import { jsonError } from "@/lib/http/api-json";
+import { getOrCreateRequestId, withRequestId } from "@/lib/http/request-id";
 import {
   getResendClientIfConfigured,
   getResendFromEmailIfConfigured,
@@ -144,24 +146,26 @@ async function sendPasswordResetEmailInBackground(email: string, locale: AppLoca
 export async function POST(request: Request) {
   const locale = resolveRequestLocale(request);
   const t = await getLocaleTranslator("ApiForgotPassword", locale);
+  const requestId = getOrCreateRequestId(request);
   const genericSuccessMessage = t("messages.genericSuccess");
+  const genericSuccess = () => withRequestId(NextResponse.json({ message: genericSuccessMessage }), requestId);
 
   const csrfError = verifyCsrfProtection(request);
   if (csrfError) {
-    return csrfError;
+    return withRequestId(csrfError, requestId);
   }
 
   const contentTypeError = requireJsonContentType(request);
   if (contentTypeError) {
-    return contentTypeError;
+    return withRequestId(contentTypeError, requestId);
   }
 
   const bodyParse = await parseJsonWithSchema(request, forgotPasswordPayloadSchema);
   if (!bodyParse.success) {
     if (bodyParse.tooLarge) {
-      return NextResponse.json({ error: t("errors.payloadTooLarge") }, { status: 413 });
+      return withRequestId(jsonError(t("errors.payloadTooLarge"), 413), requestId);
     }
-    return NextResponse.json({ message: genericSuccessMessage });
+    return genericSuccess();
   }
   const { email } = bodyParse.data;
   const clientId = getClientRateLimitIdentifier(request);
@@ -170,11 +174,11 @@ export async function POST(request: Request) {
     ...RATE_LIMITS.forgotPasswordByClient,
   });
   if (!ipRateLimit.allowed) {
-    return NextResponse.json({ message: genericSuccessMessage });
+    return genericSuccess();
   }
 
   if (!isValidEmail(email)) {
-    return NextResponse.json({ message: genericSuccessMessage });
+    return genericSuccess();
   }
 
   const emailRateLimit = await checkRateLimit({
@@ -182,10 +186,10 @@ export async function POST(request: Request) {
     ...RATE_LIMITS.forgotPasswordByEmail,
   });
   if (!emailRateLimit.allowed) {
-    return NextResponse.json({ message: genericSuccessMessage });
+    return genericSuccess();
   }
 
   after(() => sendPasswordResetEmailInBackground(email, locale));
 
-  return NextResponse.json({ message: genericSuccessMessage });
+  return genericSuccess();
 }

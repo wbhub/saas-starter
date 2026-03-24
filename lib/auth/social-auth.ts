@@ -1,3 +1,5 @@
+import { env } from "@/lib/env";
+
 export const LAST_AUTH_PROVIDER_COOKIE = "auth_last_provider";
 
 export type AuthProvider = "google" | "microsoft";
@@ -21,10 +23,10 @@ function isEnabledFlag(value: string | undefined) {
 export function getEnabledSocialAuthProviders(): AuthProvider[] {
   const providers: AuthProvider[] = [];
 
-  if (isEnabledFlag(process.env.NEXT_PUBLIC_AUTH_GOOGLE_ENABLED)) {
+  if (isEnabledFlag(env.NEXT_PUBLIC_AUTH_GOOGLE_ENABLED)) {
     providers.push("google");
   }
-  if (isEnabledFlag(process.env.NEXT_PUBLIC_AUTH_MICROSOFT_ENABLED)) {
+  if (isEnabledFlag(env.NEXT_PUBLIC_AUTH_MICROSOFT_ENABLED)) {
     providers.push("microsoft");
   }
 

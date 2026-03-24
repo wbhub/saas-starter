@@ -1,6 +1,8 @@
-import { NextResponse } from "next/server";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
-import { createClient } from "@/lib/supabase/server";
+import { jsonError, jsonSuccess } from "@/lib/http/api-json";
+import { withAuthedRoute } from "@/lib/http/authed-route";
+import { getClientRateLimitIdentifier } from "@/lib/http/client-ip";
+import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
 import {
   getResendClientIfConfigured,
   getResendFromEmailIfConfigured,
@@ -8,15 +10,11 @@ import {
   isResendSupportEmailConfigured,
   sendResendEmail,
 } from "@/lib/resend/server";
-import { getClientRateLimitIdentifier } from "@/lib/http/client-ip";
-import { requireJsonContentType } from "@/lib/http/content-type";
-import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
-import { checkRateLimit } from "@/lib/security/rate-limit";
-import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { logger } from "@/lib/logger";
 import { getRouteTranslator } from "@/lib/i18n/locale";
 import { isTriggerConfigured } from "@/lib/trigger/config";
 import { triggerSendEmailTask } from "@/lib/trigger/dispatch";
+
 const supportPayloadSchema = z.object({
   subject: z
     .string()
@@ -30,150 +28,102 @@ const supportPayloadSchema = z.object({
 export async function POST(request: Request) {
   const t = await getRouteTranslator("ApiSupport", request);
 
-  const csrfError = verifyCsrfProtection(request);
-  if (csrfError) {
-    return csrfError;
-  }
+  return withAuthedRoute({
+    request,
+    requireJsonBody: true,
+    unauthorizedMessage: t("errors.unauthorized"),
+    rateLimits: ({ request: req, userId }) => {
+      const clientId = getClientRateLimitIdentifier(req);
+      return [
+        {
+          key: `support:user:${userId}`,
+          ...RATE_LIMITS.supportByUser,
+          message: t("errors.rateLimited"),
+        },
+        {
+          key: `support:${clientId.keyType}:${clientId.value}`,
+          ...RATE_LIMITS.supportByClient,
+          message: t("errors.rateLimited"),
+        },
+      ];
+    },
+    handler: async ({ request: req, user }) => {
+      const bodyParse = await parseJsonWithSchema(req, supportPayloadSchema);
+      if (!bodyParse.success) {
+        if (bodyParse.tooLarge) {
+          return jsonError(t("errors.payloadTooLarge"), 413);
+        }
+        const issuePath = bodyParse.error.issues[0]?.path?.[0];
+        const issueCode = bodyParse.error.issues[0]?.code;
+        if (issuePath === "subject" && issueCode === "too_big") {
+          return jsonError(t("errors.subjectTooLong"), 400);
+        }
+        if (issuePath === "message" && issueCode === "too_small") {
+          return jsonError(t("errors.messageTooShort"), 400);
+        }
+        if (issuePath === "message" && issueCode === "too_big") {
+          return jsonError(t("errors.messageTooLong"), 400);
+        }
+        return jsonError(t("errors.invalidPayload"), 400);
+      }
+      const { subject, message } = bodyParse.data;
 
-  const contentTypeError = requireJsonContentType(request);
-  if (contentTypeError) {
-    return contentTypeError;
-  }
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ error: t("errors.unauthorized") }, { status: 401 });
-  }
-
-  const clientId = getClientRateLimitIdentifier(request);
-  const userRateLimitPromise = checkRateLimit({
-    key: `support:user:${user.id}`,
-    ...RATE_LIMITS.supportByUser,
-  });
-
-  const ipRateLimitPromise = checkRateLimit({
-    key: `support:${clientId.keyType}:${clientId.value}`,
-    ...RATE_LIMITS.supportByClient,
-  });
-
-  const [userRateLimit, ipRateLimit] = await Promise.all([
-    userRateLimitPromise,
-    ipRateLimitPromise,
-  ]);
-
-  if (!userRateLimit.allowed || !ipRateLimit.allowed) {
-    const retryAfterSeconds = Math.max(
-      userRateLimit.retryAfterSeconds,
-      ipRateLimit.retryAfterSeconds,
-    );
-    return NextResponse.json(
-      { error: t("errors.rateLimited") },
-      {
-        status: 429,
-        headers: { "Retry-After": String(retryAfterSeconds) },
-      },
-    );
-  }
-
-  const bodyParse = await parseJsonWithSchema(request, supportPayloadSchema);
-  if (!bodyParse.success) {
-    if (bodyParse.tooLarge) {
-      return NextResponse.json({ error: t("errors.payloadTooLarge") }, { status: 413 });
-    }
-    const issuePath = bodyParse.error.issues[0]?.path?.[0];
-    const issueCode = bodyParse.error.issues[0]?.code;
-    if (issuePath === "subject" && issueCode === "too_big") {
-      return NextResponse.json(
-        { error: t("errors.subjectTooLong") },
-        { status: 400 },
-      );
-    }
-    if (issuePath === "message" && issueCode === "too_small") {
-      return NextResponse.json(
-        { error: t("errors.messageTooShort") },
-        { status: 400 },
-      );
-    }
-    if (issuePath === "message" && issueCode === "too_big") {
-      return NextResponse.json(
-        { error: t("errors.messageTooLong") },
-        { status: 400 },
-      );
-    }
-    return NextResponse.json(
-      { error: t("errors.invalidPayload") },
-      { status: 400 },
-    );
-  }
-  const { subject, message } = bodyParse.data;
-
-  if (!isResendSupportEmailConfigured()) {
-    logger.warn("Support email is disabled because Resend is not fully configured", {
-      userId: user.id,
-    });
-    return NextResponse.json(
-      { error: t("errors.featureDisabled") },
-      { status: 503 },
-    );
-  }
-
-  try {
-    const resend = getResendClientIfConfigured();
-    const fromEmail = getResendFromEmailIfConfigured();
-    const supportEmail = getResendSupportEmailIfConfigured();
-    if (!resend || !fromEmail || !supportEmail) {
-      logger.warn("Support email send skipped because Resend became unavailable mid-request", {
-        userId: user.id,
-      });
-      return NextResponse.json(
-        { error: t("errors.featureDisabled") },
-        { status: 503 },
-      );
-    }
-    const submittedBy = user.email ?? t("email.unknownEmail");
-    const renderedSubject =
-      subject.length > 0
-        ? t("email.subjectWithInput", { subject })
-        : t("email.defaultSubject");
-
-    const emailPayload = {
-      from: fromEmail,
-      to: supportEmail,
-      subject: renderedSubject,
-      text: [
-        t("email.line1"),
-        "",
-        t("email.userId", { userId: user.id }),
-        t("email.email", { email: submittedBy }),
-        "",
-        t("email.messageLabel"),
-        message,
-      ].join("\n"),
-      replyTo: user.email ?? undefined,
-    };
-
-    if (isTriggerConfigured()) {
-      const triggered = await triggerSendEmailTask(emailPayload);
-      if (!triggered) {
-        logger.warn("Support email Trigger enqueue failed, falling back to inline Resend send", {
+      if (!isResendSupportEmailConfigured()) {
+        logger.warn("Support email is disabled because Resend is not fully configured", {
           userId: user.id,
         });
-        await sendResendEmail(emailPayload);
+        return jsonError(t("errors.featureDisabled"), 503);
       }
-    } else {
-      await sendResendEmail(emailPayload);
-    }
 
-    return NextResponse.json({ ok: true });
-  } catch (error) {
-    logger.error("Failed to send support email", error);
-    return NextResponse.json(
-      { error: t("errors.unableToSend") },
-      { status: 500 },
-    );
-  }
+      try {
+        const resend = getResendClientIfConfigured();
+        const fromEmail = getResendFromEmailIfConfigured();
+        const supportEmail = getResendSupportEmailIfConfigured();
+        if (!resend || !fromEmail || !supportEmail) {
+          logger.warn("Support email send skipped because Resend became unavailable mid-request", {
+            userId: user.id,
+          });
+          return jsonError(t("errors.featureDisabled"), 503);
+        }
+        const submittedBy = user.email ?? t("email.unknownEmail");
+        const renderedSubject =
+          subject.length > 0
+            ? t("email.subjectWithInput", { subject })
+            : t("email.defaultSubject");
+
+        const emailPayload = {
+          from: fromEmail,
+          to: supportEmail,
+          subject: renderedSubject,
+          text: [
+            t("email.line1"),
+            "",
+            t("email.userId", { userId: user.id }),
+            t("email.email", { email: submittedBy }),
+            "",
+            t("email.messageLabel"),
+            message,
+          ].join("\n"),
+          replyTo: user.email ?? undefined,
+        };
+
+        if (isTriggerConfigured()) {
+          const triggered = await triggerSendEmailTask(emailPayload);
+          if (!triggered) {
+            logger.warn("Support email Trigger enqueue failed, falling back to inline Resend send", {
+              userId: user.id,
+            });
+            await sendResendEmail(emailPayload);
+          }
+        } else {
+          await sendResendEmail(emailPayload);
+        }
+
+        return jsonSuccess();
+      } catch (error) {
+        logger.error("Failed to send support email", error);
+        return jsonError(t("errors.unableToSend"), 500);
+      }
+    },
+  });
 }

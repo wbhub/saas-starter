@@ -1,16 +1,10 @@
 import { logAuditEvent } from "@/lib/audit";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
-import { jsonError, jsonErrorFromResponse, jsonSuccess } from "@/lib/http/api-json";
-import { createClient } from "@/lib/supabase/server";
+import { jsonError, jsonSuccess } from "@/lib/http/api-json";
+import { withTeamRoute } from "@/lib/http/team-route";
+import { z } from "@/lib/http/request-validation";
 import { createAdminClient } from "@/lib/supabase/admin";
-import {
-  getCachedTeamContextForUser,
-  invalidateCachedTeamContextForUser,
-} from "@/lib/team-context-cache";
-import { requireJsonContentType } from "@/lib/http/content-type";
-import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
-import { checkRateLimit } from "@/lib/security/rate-limit";
-import { verifyCsrfProtection } from "@/lib/security/csrf";
+import { invalidateCachedTeamContextForUser } from "@/lib/team-context-cache";
 import { syncTeamSeatQuantity } from "@/lib/stripe/seats";
 import { enqueueSeatSyncRetry } from "@/lib/stripe/seat-sync-retries";
 import { logger } from "@/lib/logger";
@@ -34,281 +28,242 @@ const updateMemberRoleSchema = z.object({
 
 export async function DELETE(request: Request, context: TeamMembersRouteContext) {
   const t = await getRouteTranslator("ApiTeamMembers", request);
-  const csrfError = verifyCsrfProtection(request);
-  if (csrfError) {
-    return jsonErrorFromResponse(csrfError, "Invalid request origin.");
-  }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  return withTeamRoute({
+    request,
+    allowedRoles: ["owner", "admin"],
+    unauthorizedMessage: t("errors.unauthorized"),
+    missingTeamMembershipMessage: t("errors.noTeamMembership"),
+    forbiddenMessage: t("errors.removeForbidden"),
+    rateLimits: ({ teamId, userId }) => [
+      {
+        key: `team-member-remove:${teamId}:${userId}`,
+        ...RATE_LIMITS.teamMemberRemoveByActor,
+        message: t("errors.rateLimited"),
+      },
+    ],
+    handler: async ({ user, teamContext }) => {
+      const { userId: targetUserId } = await context.params;
+      if (!UUID_RE.test(targetUserId)) {
+        return jsonError(t("errors.invalidMemberId"), 400);
+      }
 
-  if (!user) {
-    return jsonError(t("errors.unauthorized"), 401);
-  }
+      if (targetUserId === user.id) {
+        logAuditEvent({
+          action: "team.member.remove",
+          outcome: "denied",
+          actorUserId: user.id,
+          teamId: teamContext.teamId,
+          resourceId: targetUserId,
+          metadata: { reason: "self_removal_not_supported" },
+        });
+        return jsonError(t("errors.selfRemovalNotSupported"), 400);
+      }
 
-  const teamContext = await getCachedTeamContextForUser(supabase, user.id);
-  if (!teamContext) {
-    return jsonError(t("errors.noTeamMembership"), 403);
-  }
+      const admin = createAdminClient();
+      const { data: targetMembership, error: targetMembershipError } = await admin
+        .from("team_memberships")
+        .select("user_id,role")
+        .eq("team_id", teamContext.teamId)
+        .eq("user_id", targetUserId)
+        .maybeSingle<TeamMembershipRow>();
 
-  if (teamContext.role !== "owner" && teamContext.role !== "admin") {
-    return jsonError(t("errors.removeForbidden"), 403);
-  }
+      if (targetMembershipError) {
+        logger.error("Failed to load target membership for removal", targetMembershipError);
+        return jsonError(t("errors.unableToRemoveMember"), 500);
+      }
 
-  const rateLimit = await checkRateLimit({
-    key: `team-member-remove:${teamContext.teamId}:${user.id}`,
-    ...RATE_LIMITS.teamMemberRemoveByActor,
-  });
-  if (!rateLimit.allowed) {
-    return jsonError(t("errors.rateLimited"), 429, {
-      headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
-    });
-  }
+      if (!targetMembership) {
+        return jsonError(t("errors.memberNotFound"), 404);
+      }
 
-  const { userId: targetUserId } = await context.params;
-  if (!UUID_RE.test(targetUserId)) {
-    return jsonError(t("errors.invalidMemberId"), 400);
-  }
+      if (teamContext.role === "admin" && targetMembership.role !== "member") {
+        return jsonError(t("errors.adminRemoveLimit"), 403);
+      }
 
-  if (targetUserId === user.id) {
-    logAuditEvent({
-      action: "team.member.remove",
-      outcome: "denied",
-      actorUserId: user.id,
-      teamId: teamContext.teamId,
-      resourceId: targetUserId,
-      metadata: { reason: "self_removal_not_supported" },
-    });
-    return jsonError(t("errors.selfRemovalNotSupported"), 400);
-  }
+      if (targetMembership.role === "owner") {
+        const { count: ownerCount, error: ownerCountError } = await admin
+          .from("team_memberships")
+          .select("user_id", { count: "exact", head: true })
+          .eq("team_id", teamContext.teamId)
+          .eq("role", "owner");
 
-  const admin = createAdminClient();
-  const { data: targetMembership, error: targetMembershipError } = await admin
-    .from("team_memberships")
-    .select("user_id,role")
-    .eq("team_id", teamContext.teamId)
-    .eq("user_id", targetUserId)
-    .maybeSingle<TeamMembershipRow>();
+        if (ownerCountError) {
+          logger.error("Failed to count team owners before removal", ownerCountError);
+          return jsonError(t("errors.unableToRemoveMember"), 500);
+        }
 
-  if (targetMembershipError) {
-    logger.error("Failed to load target membership for removal", targetMembershipError);
-    return jsonError(t("errors.unableToRemoveMember"), 500);
-  }
+        if ((ownerCount ?? 0) <= 1) {
+          return jsonError(t("errors.cannotRemoveLastOwner"), 409);
+        }
+      }
 
-  if (!targetMembership) {
-    return jsonError(t("errors.memberNotFound"), 404);
-  }
+      const { error: deleteError } = await admin
+        .from("team_memberships")
+        .delete()
+        .eq("team_id", teamContext.teamId)
+        .eq("user_id", targetUserId);
 
-  if (teamContext.role === "admin" && targetMembership.role !== "member") {
-    return jsonError(t("errors.adminRemoveLimit"), 403);
-  }
+      if (deleteError) {
+        logger.error("Failed to delete team membership", deleteError);
+        if (deleteError.code === "P0010") {
+          logAuditEvent({
+            action: "team.member.remove",
+            outcome: "denied",
+            actorUserId: user.id,
+            teamId: teamContext.teamId,
+            resourceId: targetUserId,
+            metadata: { reason: "last_owner_db_guard" },
+          });
+          return jsonError(t("errors.cannotRemoveLastOwner"), 409);
+        }
+        logAuditEvent({
+          action: "team.member.remove",
+          outcome: "failure",
+          actorUserId: user.id,
+          teamId: teamContext.teamId,
+          resourceId: targetUserId,
+          metadata: { reason: "delete_error" },
+        });
+        return jsonError(t("errors.unableToRemoveMember"), 500);
+      }
 
-  if (targetMembership.role === "owner") {
-    const { count: ownerCount, error: ownerCountError } = await admin
-      .from("team_memberships")
-      .select("user_id", { count: "exact", head: true })
-      .eq("team_id", teamContext.teamId)
-      .eq("role", "owner");
+      await invalidateCachedTeamContextForUser(targetUserId);
 
-    if (ownerCountError) {
-      logger.error("Failed to count team owners before removal", ownerCountError);
-      return jsonError(t("errors.unableToRemoveMember"), 500);
-    }
+      let seatSynced = true;
+      try {
+        await syncTeamSeatQuantity(teamContext.teamId, {
+          idempotencyKey: `seat-sync:remove-member:${teamContext.teamId}:${targetUserId}:${user.id}`,
+        });
+      } catch (error) {
+        seatSynced = false;
+        logger.error("Removed member but failed to sync Stripe seats", error);
+        try {
+          await enqueueSeatSyncRetry({
+            teamId: teamContext.teamId,
+            source: "team.member.remove",
+            error,
+          });
+        } catch (retryError) {
+          logger.error("Failed to enqueue seat sync retry after member removal", retryError, {
+            teamId: teamContext.teamId,
+          });
+        }
+      }
 
-    if ((ownerCount ?? 0) <= 1) {
-      return jsonError(t("errors.cannotRemoveLastOwner"), 409);
-    }
-  }
+      if (!seatSynced) {
+        logAuditEvent({
+          action: "team.member.remove",
+          outcome: "failure",
+          actorUserId: user.id,
+          teamId: teamContext.teamId,
+          resourceId: targetUserId,
+          metadata: { reason: "seat_sync_failed" },
+        });
+        return jsonSuccess({
+          warning: t("errors.billingSyncFailedAfterRemoval"),
+          memberRemoved: true,
+        });
+      }
 
-  const { error: deleteError } = await admin
-    .from("team_memberships")
-    .delete()
-    .eq("team_id", teamContext.teamId)
-    .eq("user_id", targetUserId);
-
-  if (deleteError) {
-    logger.error("Failed to delete team membership", deleteError);
-    if (deleteError.code === "P0010") {
       logAuditEvent({
         action: "team.member.remove",
-        outcome: "denied",
+        outcome: "success",
         actorUserId: user.id,
         teamId: teamContext.teamId,
         resourceId: targetUserId,
-        metadata: { reason: "last_owner_db_guard" },
+        metadata: { seatSynced },
       });
-      return jsonError(t("errors.cannotRemoveLastOwner"), 409);
-    }
-    logAuditEvent({
-      action: "team.member.remove",
-      outcome: "failure",
-      actorUserId: user.id,
-      teamId: teamContext.teamId,
-      resourceId: targetUserId,
-      metadata: { reason: "delete_error" },
-    });
-    return jsonError(t("errors.unableToRemoveMember"), 500);
-  }
 
-  await invalidateCachedTeamContextForUser(targetUserId);
-
-  let seatSynced = true;
-  try {
-    await syncTeamSeatQuantity(teamContext.teamId, {
-      idempotencyKey: `seat-sync:remove-member:${teamContext.teamId}:${targetUserId}:${user.id}`,
-    });
-  } catch (error) {
-    seatSynced = false;
-    logger.error("Removed member but failed to sync Stripe seats", error);
-    try {
-      await enqueueSeatSyncRetry({
-        teamId: teamContext.teamId,
-        source: "team.member.remove",
-        error,
-      });
-    } catch (retryError) {
-      logger.error("Failed to enqueue seat sync retry after member removal", retryError, {
-        teamId: teamContext.teamId,
-      });
-    }
-  }
-
-  if (!seatSynced) {
-    logAuditEvent({
-      action: "team.member.remove",
-      outcome: "failure",
-      actorUserId: user.id,
-      teamId: teamContext.teamId,
-      resourceId: targetUserId,
-      metadata: { reason: "seat_sync_failed" },
-    });
-    return jsonSuccess({
-      warning: t("errors.billingSyncFailedAfterRemoval"),
-      memberRemoved: true,
-    });
-  }
-
-  logAuditEvent({
-    action: "team.member.remove",
-    outcome: "success",
-    actorUserId: user.id,
-    teamId: teamContext.teamId,
-    resourceId: targetUserId,
-    metadata: { seatSynced },
+      return jsonSuccess({ seatSynced: true });
+    },
   });
-
-  return jsonSuccess({ seatSynced: true });
 }
 
 export async function PATCH(request: Request, context: TeamMembersRouteContext) {
   const t = await getRouteTranslator("ApiTeamMembers", request);
-  const csrfError = verifyCsrfProtection(request);
-  if (csrfError) {
-    return jsonErrorFromResponse(csrfError, "Invalid request origin.");
-  }
 
-  const contentTypeError = requireJsonContentType(request);
-  if (contentTypeError) {
-    return jsonErrorFromResponse(contentTypeError, "Content-Type must be application/json.");
-  }
+  return withTeamRoute({
+    request,
+    allowedRoles: ["owner", "admin"],
+    unauthorizedMessage: t("errors.unauthorized"),
+    missingTeamMembershipMessage: t("errors.noTeamMembership"),
+    forbiddenMessage: t("errors.updateRoleForbidden"),
+    schema: updateMemberRoleSchema,
+    invalidPayloadMessage: t("errors.invalidRolePayload"),
+    payloadTooLargeMessage: t("errors.payloadTooLarge"),
+    rateLimits: ({ teamId, userId }) => [
+      {
+        key: `team-member-role:update:${teamId}:${userId}`,
+        ...RATE_LIMITS.teamMemberRoleUpdateByActor,
+        message: t("errors.rateLimited"),
+      },
+    ],
+    handler: async ({ user, teamContext, body }) => {
+      const { userId: targetUserId } = await context.params;
+      if (!UUID_RE.test(targetUserId)) {
+        return jsonError(t("errors.invalidMemberId"), 400);
+      }
+      if (targetUserId === user.id) {
+        return jsonError(t("errors.useOwnershipTransferForSelf"), 400);
+      }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return jsonError(t("errors.unauthorized"), 401);
-  }
+      const { role: nextRole } = body;
 
-  const teamContext = await getCachedTeamContextForUser(supabase, user.id);
-  if (!teamContext) {
-    return jsonError(t("errors.noTeamMembership"), 403);
-  }
-  if (teamContext.role !== "owner" && teamContext.role !== "admin") {
-    return jsonError(t("errors.updateRoleForbidden"), 403);
-  }
+      const admin = createAdminClient();
+      const { data: targetMembership, error: targetMembershipError } = await admin
+        .from("team_memberships")
+        .select("user_id,role")
+        .eq("team_id", teamContext.teamId)
+        .eq("user_id", targetUserId)
+        .maybeSingle<TeamMembershipRow>();
+      if (targetMembershipError) {
+        logger.error("Failed to load target membership for role update", targetMembershipError);
+        return jsonError(t("errors.unableToUpdateMemberRole"), 500);
+      }
+      if (!targetMembership) {
+        return jsonError(t("errors.memberNotFound"), 404);
+      }
+      if (targetMembership.role === "owner") {
+        return jsonError(t("errors.useOwnershipTransferForOwner"), 409);
+      }
+      if (teamContext.role === "admin" && targetMembership.role !== "member") {
+        return jsonError(t("errors.adminUpdateRoleLimit"), 403);
+      }
 
-  const rateLimit = await checkRateLimit({
-    key: `team-member-role:update:${teamContext.teamId}:${user.id}`,
-    ...RATE_LIMITS.teamMemberRoleUpdateByActor,
+      if (targetMembership.role === nextRole) {
+        return jsonSuccess({ unchanged: true });
+      }
+
+      const { error: updateError } = await admin
+        .from("team_memberships")
+        .update({ role: nextRole })
+        .eq("team_id", teamContext.teamId)
+        .eq("user_id", targetUserId);
+      if (updateError) {
+        logger.error("Failed to update team membership role", updateError);
+        logAuditEvent({
+          action: "team.member.role_update",
+          outcome: "failure",
+          actorUserId: user.id,
+          teamId: teamContext.teamId,
+          resourceId: targetUserId,
+          metadata: { reason: "update_error", nextRole },
+        });
+        return jsonError(t("errors.unableToUpdateMemberRole"), 500);
+      }
+
+      await invalidateCachedTeamContextForUser(targetUserId);
+
+      logAuditEvent({
+        action: "team.member.role_update",
+        outcome: "success",
+        actorUserId: user.id,
+        teamId: teamContext.teamId,
+        resourceId: targetUserId,
+        metadata: { nextRole },
+      });
+      return jsonSuccess();
+    },
   });
-  if (!rateLimit.allowed) {
-    return jsonError(t("errors.rateLimited"), 429, {
-      headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
-    });
-  }
-
-  const { userId: targetUserId } = await context.params;
-  if (!UUID_RE.test(targetUserId)) {
-    return jsonError(t("errors.invalidMemberId"), 400);
-  }
-  if (targetUserId === user.id) {
-    return jsonError(t("errors.useOwnershipTransferForSelf"), 400);
-  }
-
-  const parseResult = await parseJsonWithSchema(request, updateMemberRoleSchema);
-  if (!parseResult.success) {
-    if (parseResult.tooLarge) {
-      return jsonError(t("errors.payloadTooLarge"), 413);
-    }
-    return jsonError(t("errors.invalidRolePayload"), 400);
-  }
-  const { role: nextRole } = parseResult.data;
-
-  const admin = createAdminClient();
-  const { data: targetMembership, error: targetMembershipError } = await admin
-    .from("team_memberships")
-    .select("user_id,role")
-    .eq("team_id", teamContext.teamId)
-    .eq("user_id", targetUserId)
-    .maybeSingle<TeamMembershipRow>();
-  if (targetMembershipError) {
-    logger.error("Failed to load target membership for role update", targetMembershipError);
-    return jsonError(t("errors.unableToUpdateMemberRole"), 500);
-  }
-  if (!targetMembership) {
-    return jsonError(t("errors.memberNotFound"), 404);
-  }
-  if (targetMembership.role === "owner") {
-    return jsonError(t("errors.useOwnershipTransferForOwner"), 409);
-  }
-  if (teamContext.role === "admin" && targetMembership.role !== "member") {
-    return jsonError(t("errors.adminUpdateRoleLimit"), 403);
-  }
-
-  if (targetMembership.role === nextRole) {
-    return jsonSuccess({ unchanged: true });
-  }
-
-  const { error: updateError } = await admin
-    .from("team_memberships")
-    .update({ role: nextRole })
-    .eq("team_id", teamContext.teamId)
-    .eq("user_id", targetUserId);
-  if (updateError) {
-    logger.error("Failed to update team membership role", updateError);
-    logAuditEvent({
-      action: "team.member.role_update",
-      outcome: "failure",
-      actorUserId: user.id,
-      teamId: teamContext.teamId,
-      resourceId: targetUserId,
-      metadata: { reason: "update_error", nextRole },
-    });
-    return jsonError(t("errors.unableToUpdateMemberRole"), 500);
-  }
-
-  await invalidateCachedTeamContextForUser(targetUserId);
-
-  logAuditEvent({
-    action: "team.member.role_update",
-    outcome: "success",
-    actorUserId: user.id,
-    teamId: teamContext.teamId,
-    resourceId: targetUserId,
-    metadata: { nextRole },
-  });
-  return jsonSuccess();
 }

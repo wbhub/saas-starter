@@ -2,6 +2,13 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { SECOND_MS } from "@/lib/constants/durations";
 import { getRedisClient } from "@/lib/redis/client";
 
+export type RateLimitDescriptor = {
+  key: string;
+  limit: number;
+  windowMs: number;
+  message: string;
+};
+
 type RateLimitOptions = {
   key: string;
   limit: number;

@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "test:e2e:smoke": "playwright test --project=smoke",
     "test:e2e": "playwright test --project=full",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "lint:conventions": "tsx scripts/check-env-usage.ts && tsx scripts/check-response-helpers.ts && tsx scripts/check-route-wrappers.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.31",
@@ -49,6 +50,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.7",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5",
     "vitest": "^4.1.0"
   }

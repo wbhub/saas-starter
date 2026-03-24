@@ -162,13 +162,17 @@ Key rule: `lib/billing/` reads from Stripe sync data but never calls the Stripe 
 
 ### `env` (lib/env.ts)
 
-Type-safe environment variable access via lazy property getters. Application/business logic should prefer `env.MY_KEY`; some infrastructure modules intentionally read `process.env` directly for lightweight config checks. Required env getters throw on access if missing; optional getters return `undefined`.
+Type-safe environment variable access via lazy property getters. Application and business code must use `env.MY_KEY`; direct `process.env` reads are restricted to an explicit infrastructure allowlist (see CONVENTIONS.md "Environment Variables > `process.env` allowlist"). Required env getters throw on access if missing; optional getters return `undefined`.
 
 In production Node runtime, `validateRequiredEnvAtBoot()` forces critical getters to fire, failing fast on misconfiguration.
 
 ### `withTeamRoute` (lib/http/team-route.ts)
 
 A middleware wrapper that handles the full validation chain for team-scoped API routes: CSRF, content-type, auth, team context, role checks, rate limiting, and body parsing. Your route handler receives a pre-validated context object with `user`, `teamContext`, `body`, and `requestId`.
+
+### `withAuthedRoute` (lib/http/authed-route.ts)
+
+A middleware wrapper for routes that require authentication but not team membership (e.g., invite acceptance, personal team recovery, support email). Handles CSRF, content-type, auth, rate limiting, and optional body parsing. Your handler receives `request`, `requestId`, `supabase`, `user`, and `body`. Use `withTeamRoute` when team context is required; use `withAuthedRoute` when only a logged-in user is needed.
 
 ### `checkRateLimit` (lib/security/rate-limit.ts)
 

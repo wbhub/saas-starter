@@ -84,6 +84,7 @@ describe("POST /api/auth/login", () => {
 
     expect(res.status).toBe(429);
     await expect(res.json()).resolves.toEqual({
+      ok: false,
       error: "Too many login attempts. Please try again later.",
     });
   });
