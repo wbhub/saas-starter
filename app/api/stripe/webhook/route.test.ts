@@ -107,7 +107,9 @@ describe("POST /api/stripe/webhook", () => {
   });
 
   it("returns 503 when billing is disabled", async () => {
-    vi.doUnmock("@/lib/billing/capabilities");
+    vi.doMock("@/lib/billing/capabilities", () => ({
+      isBillingEnabled: () => false,
+    }));
     vi.doMock("next/headers", () => ({
       headers: async () => new Headers(),
     }));
