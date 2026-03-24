@@ -3,10 +3,7 @@ import { estimateImagePromptTokens, estimatePromptTokens } from "./token-estimat
 
 describe("estimatePromptTokens", () => {
   it("estimates text-only messages with a stable char-to-token ratio", () => {
-    const messages = [
-      { content: "hello world" },
-      { content: "How are you doing today?" },
-    ];
+    const messages = [{ content: "hello world" }, { content: "How are you doing today?" }];
 
     const totalChars = "hello world".length + "How are you doing today?".length;
     const expected = Math.ceil(totalChars / 3) + messages.length * 8;

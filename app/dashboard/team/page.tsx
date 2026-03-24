@@ -26,8 +26,7 @@ export default async function DashboardTeamPage() {
     teamMemberships,
     displayName,
     csrfToken,
-  } =
-    await getDashboardBaseData();
+  } = await getDashboardBaseData();
 
   if (teamContextLoadFailed) {
     return (
@@ -57,14 +56,10 @@ export default async function DashboardTeamPage() {
       : "paid_solo";
   const seatPlan =
     billingContext.isPaidPlan && billingContext.effectivePlanKey
-      ? PLAN_CATALOG.find((plan) => plan.key === billingContext.effectivePlanKey) ?? null
+      ? (PLAN_CATALOG.find((plan) => plan.key === billingContext.effectivePlanKey) ?? null)
       : null;
   const seatPriceLabel = seatPlan
-    ? formatStaticUsdMonthlyLabel(
-        seatPlan.amountMonthly,
-        locale,
-        tPricing("priceSuffix.month"),
-      )
+    ? formatStaticUsdMonthlyLabel(seatPlan.amountMonthly, locale, tPricing("priceSuffix.month"))
     : null;
   const { teamMembers, pendingInvites } = await getTeamMembersAndPendingInvites(
     supabase,
@@ -85,12 +80,8 @@ export default async function DashboardTeamPage() {
     >
       <header className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm sm:p-6">
         <p className="text-sm text-muted-foreground">{t("header.eyebrow")}</p>
-        <h1 className="mt-1 text-2xl font-semibold text-foreground">
-          {t("header.title")}
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {t("header.description")}
-        </p>
+        <h1 className="mt-1 text-2xl font-semibold text-foreground">{t("header.title")}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{t("header.description")}</p>
       </header>
 
       <section>

@@ -1,9 +1,6 @@
 import { task } from "@trigger.dev/sdk/v3";
 import { reconcileTeamSeatQuantities } from "@/lib/stripe/seat-reconcile";
-import {
-  TRIGGER_TASK_IDS,
-  type ReconcileSeatQuantitiesPayload,
-} from "@/lib/trigger/jobs/payloads";
+import { TRIGGER_TASK_IDS, type ReconcileSeatQuantitiesPayload } from "@/lib/trigger/jobs/payloads";
 
 export const reconcileSeatQuantitiesTask = task({
   id: TRIGGER_TASK_IDS.reconcileSeatQuantities,

@@ -172,10 +172,12 @@ describe("withAuthedRoute", () => {
     expect(handler).toHaveBeenCalledTimes(1);
     expect(response.status).toBe(200);
     const body = await response.json();
-    expect(body).toEqual(expect.objectContaining({
-      userId: "user_1",
-      body: { token: "abc123" },
-    }));
+    expect(body).toEqual(
+      expect.objectContaining({
+        userId: "user_1",
+        body: { token: "abc123" },
+      }),
+    );
   });
 
   it("attaches x-request-id to handler responses", async () => {

@@ -2,10 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import {
-  CLIENT_IDEMPOTENCY_TTL_MS,
-  SYNC_PENDING_RELOAD_DELAY_MS,
-} from "@/lib/constants/billing";
+import { CLIENT_IDEMPOTENCY_TTL_MS, SYNC_PENDING_RELOAD_DELAY_MS } from "@/lib/constants/billing";
 import { getCsrfHeaders } from "@/lib/http/csrf";
 import { PLAN_KEYS, type PlanKey } from "@/lib/stripe/plans";
 
@@ -21,11 +18,7 @@ type PostJsonOptions = {
   fallbackErrorMessage?: string;
 };
 
-async function postJson(
-  path: string,
-  body: Record<string, string>,
-  options?: PostJsonOptions,
-) {
+async function postJson(path: string, body: Record<string, string>, options?: PostJsonOptions) {
   const response = await fetch(path, {
     method: "POST",
     headers: {
@@ -37,9 +30,7 @@ async function postJson(
   });
 
   if (!response.ok) {
-    const payload = (await response.json().catch(() => null)) as
-      | { error?: string }
-      | null;
+    const payload = (await response.json().catch(() => null)) as { error?: string } | null;
     throw new Error(payload?.error ?? options?.fallbackErrorMessage ?? "Request failed");
   }
 
@@ -80,10 +71,7 @@ function createIdempotencyToken(action: "checkout" | "change-plan", planKey: Pla
       : `${Math.random().toString(36).slice(2)}-${now.toString(36)}`;
   const token = `${action}-${planKey}-${randomPart}`;
   try {
-    window.sessionStorage.setItem(
-      storageKey,
-      JSON.stringify({ token, expiresAt: now + ttlMs }),
-    );
+    window.sessionStorage.setItem(storageKey, JSON.stringify({ token, expiresAt: now + ttlMs }));
   } catch {
     // Ignore storage errors.
   }
@@ -168,9 +156,13 @@ export function BillingActions({
     setLoadingAction("portal");
     setMessage(null);
     try {
-      const payload = await postJson("/api/stripe/portal", {}, {
-        fallbackErrorMessage: t("errors.requestFailed"),
-      });
+      const payload = await postJson(
+        "/api/stripe/portal",
+        {},
+        {
+          fallbackErrorMessage: t("errors.requestFailed"),
+        },
+      );
       if (!payload.url) throw new Error(t("errors.missingPortalUrl"));
       const opened = window.open(payload.url, "_blank", "noopener,noreferrer");
       if (!opened) {
@@ -187,45 +179,45 @@ export function BillingActions({
 
   return (
     <div className="space-y-4 rounded-xl border app-border-subtle app-surface p-5">
-      <h3 className="text-lg font-semibold text-foreground">
-        {t("title")}
-      </h3>
+      <h3 className="text-lg font-semibold text-foreground">{t("title")}</h3>
       <p className="text-sm text-muted-foreground">
         {!billingEnabled
           ? t("description.billingDisabled")
           : !canManageBilling
-          ? t("description.noPermission")
-          : hasSubscription
-            ? t("description.hasSubscription")
-            : t("description.noSubscription")}
+            ? t("description.noPermission")
+            : hasSubscription
+              ? t("description.hasSubscription")
+              : t("description.noSubscription")}
       </p>
 
       <div className="flex flex-wrap gap-2">
-        {!billingEnabled || !canManageBilling ? null : !hasSubscription
-          ? PLAN_KEYS.map((key) => (
-              <button
-                key={key}
-                onClick={() => startCheckout(key)}
-                disabled={loadingAction !== null}
-                className="rounded-lg bg-btn-accent px-4 py-2 text-sm font-medium text-white hover:bg-btn-accent-hover disabled:opacity-60"
-              >
-                {loadingAction === `checkout-${key}`
-                  ? t("actions.opening")
-                  : t("actions.subscribe", { name: tPlans(`plans.${key}.name`) })}
-              </button>
-            ))
-          : availablePlanKeys.map((key) => (
-              <button
-                key={key}
-                onClick={() => changePlan(key)}
-                disabled={loadingAction !== null}
-                className="rounded-lg border app-border-subtle px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-surface-hover disabled:opacity-60"
-              >
-                {loadingAction === `change-${key}`
-                  ? t("actions.updating")
-                  : t("actions.switchTo", { name: tPlans(`plans.${key}.name`) })}
-              </button>
-            ))}
+        {!billingEnabled || !canManageBilling
+          ? null
+          : !hasSubscription
+            ? PLAN_KEYS.map((key) => (
+                <button
+                  key={key}
+                  onClick={() => startCheckout(key)}
+                  disabled={loadingAction !== null}
+                  className="rounded-lg bg-btn-accent px-4 py-2 text-sm font-medium text-white hover:bg-btn-accent-hover disabled:opacity-60"
+                >
+                  {loadingAction === `checkout-${key}`
+                    ? t("actions.opening")
+                    : t("actions.subscribe", { name: tPlans(`plans.${key}.name`) })}
+                </button>
+              ))
+            : availablePlanKeys.map((key) => (
+                <button
+                  key={key}
+                  onClick={() => changePlan(key)}
+                  disabled={loadingAction !== null}
+                  className="rounded-lg border app-border-subtle px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-surface-hover disabled:opacity-60"
+                >
+                  {loadingAction === `change-${key}`
+                    ? t("actions.updating")
+                    : t("actions.switchTo", { name: tPlans(`plans.${key}.name`) })}
+                </button>
+              ))}
 
         {billingEnabled && canManageBilling && hasSubscription ? (
           <button

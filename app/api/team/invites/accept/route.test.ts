@@ -14,11 +14,6 @@ describe("POST /api/team/invites/accept", () => {
       data: [{ ok: true, error_code: null, team_id: "team_123", team_name: "Acme Team" }],
       error: null,
     });
-    const inviteLookupMaybeSingle = vi.fn().mockResolvedValue({
-      data: { team_id: "team_123" },
-      error: null,
-    });
-    const memberCountEq = vi.fn().mockResolvedValue({ count: 2, error: null });
     const syncTeamSeatQuantity = vi.fn().mockResolvedValue({
       updated: true,
       previousQuantity: 1,
@@ -35,34 +30,7 @@ describe("POST /api/team/invites/accept", () => {
       }),
     }));
     vi.doMock("@/lib/supabase/admin", () => ({
-      createAdminClient: () => ({
-        from: vi.fn((table: string) => {
-          if (table === "team_invites") {
-            return {
-              select: vi.fn().mockReturnValue({
-                eq: vi.fn().mockReturnValue({
-                  is: vi.fn().mockReturnValue({
-                    gt: vi.fn().mockReturnValue({
-                      limit: vi.fn().mockReturnValue({
-                        maybeSingle: inviteLookupMaybeSingle,
-                      }),
-                    }),
-                  }),
-                }),
-              }),
-            };
-          }
-          if (table === "team_memberships") {
-            return {
-              select: vi.fn().mockReturnValue({
-                eq: memberCountEq,
-              }),
-            };
-          }
-          throw new Error(`Unexpected table: ${table}`);
-        }),
-        rpc,
-      }),
+      createAdminClient: () => ({ rpc }),
     }));
     vi.doMock("@/lib/team-invites", () => ({
       hashInviteToken: vi.fn().mockReturnValue("hash_123"),
@@ -101,6 +69,7 @@ describe("POST /api/team/invites/accept", () => {
       p_token_hash: "hash_123",
       p_user_id: "user_123",
       p_user_email: "member@example.com",
+      p_max_members: 100,
     });
     expect(syncTeamSeatQuantity).toHaveBeenCalledWith("team_123", {
       idempotencyKey: "seat-sync:accept-invite:team_123:user_123",
@@ -112,14 +81,7 @@ describe("POST /api/team/invites/accept", () => {
       data: [{ ok: true, error_code: null, team_id: "team_123", team_name: "Acme Team" }],
       error: null,
     });
-    const syncTeamSeatQuantity = vi
-      .fn()
-      .mockRejectedValue(new Error("stripe seat update failed"));
-    const inviteLookupMaybeSingle = vi.fn().mockResolvedValue({
-      data: { team_id: "team_123" },
-      error: null,
-    });
-    const memberCountEq = vi.fn().mockResolvedValue({ count: 2, error: null });
+    const syncTeamSeatQuantity = vi.fn().mockRejectedValue(new Error("stripe seat update failed"));
 
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: async () => ({
@@ -131,34 +93,7 @@ describe("POST /api/team/invites/accept", () => {
       }),
     }));
     vi.doMock("@/lib/supabase/admin", () => ({
-      createAdminClient: () => ({
-        from: vi.fn((table: string) => {
-          if (table === "team_invites") {
-            return {
-              select: vi.fn().mockReturnValue({
-                eq: vi.fn().mockReturnValue({
-                  is: vi.fn().mockReturnValue({
-                    gt: vi.fn().mockReturnValue({
-                      limit: vi.fn().mockReturnValue({
-                        maybeSingle: inviteLookupMaybeSingle,
-                      }),
-                    }),
-                  }),
-                }),
-              }),
-            };
-          }
-          if (table === "team_memberships") {
-            return {
-              select: vi.fn().mockReturnValue({
-                eq: memberCountEq,
-              }),
-            };
-          }
-          throw new Error(`Unexpected table: ${table}`);
-        }),
-        rpc,
-      }),
+      createAdminClient: () => ({ rpc }),
     }));
     vi.doMock("@/lib/team-invites", () => ({
       hashInviteToken: vi.fn().mockReturnValue("hash_123"),
@@ -197,13 +132,11 @@ describe("POST /api/team/invites/accept", () => {
     });
   });
 
-  it("returns 409 when team member cap is reached before acceptance", async () => {
-    const rpc = vi.fn();
-    const inviteLookupMaybeSingle = vi.fn().mockResolvedValue({
-      data: { team_id: "team_123" },
+  it("returns 409 when team member cap is reached (team_full from RPC)", async () => {
+    const rpc = vi.fn().mockResolvedValue({
+      data: [{ ok: false, error_code: "team_full", team_id: "team_123", team_name: null }],
       error: null,
     });
-    const memberCountEq = vi.fn().mockResolvedValue({ count: 100, error: null });
 
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: async () => ({
@@ -215,34 +148,7 @@ describe("POST /api/team/invites/accept", () => {
       }),
     }));
     vi.doMock("@/lib/supabase/admin", () => ({
-      createAdminClient: () => ({
-        from: vi.fn((table: string) => {
-          if (table === "team_invites") {
-            return {
-              select: vi.fn().mockReturnValue({
-                eq: vi.fn().mockReturnValue({
-                  is: vi.fn().mockReturnValue({
-                    gt: vi.fn().mockReturnValue({
-                      limit: vi.fn().mockReturnValue({
-                        maybeSingle: inviteLookupMaybeSingle,
-                      }),
-                    }),
-                  }),
-                }),
-              }),
-            };
-          }
-          if (table === "team_memberships") {
-            return {
-              select: vi.fn().mockReturnValue({
-                eq: memberCountEq,
-              }),
-            };
-          }
-          throw new Error(`Unexpected table: ${table}`);
-        }),
-        rpc,
-      }),
+      createAdminClient: () => ({ rpc }),
     }));
     vi.doMock("@/lib/team-invites", () => ({
       hashInviteToken: vi.fn().mockReturnValue("hash_123"),
@@ -277,6 +183,11 @@ describe("POST /api/team/invites/accept", () => {
       ok: false,
       error: "Team member limit reached. Ask an owner/admin to increase capacity first.",
     });
-    expect(rpc).not.toHaveBeenCalled();
+    expect(rpc).toHaveBeenCalledWith("accept_team_invite_atomic", {
+      p_token_hash: "hash_123",
+      p_user_id: "user_123",
+      p_user_email: "member@example.com",
+      p_max_members: 100,
+    });
   });
 });

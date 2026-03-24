@@ -23,11 +23,7 @@ type TeamMembershipRow = {
   teams: { id: string; name: string | null } | null;
 };
 
-async function getMembershipForTeam(
-  supabase: SupabaseClient,
-  userId: string,
-  teamId: string,
-) {
+async function getMembershipForTeam(supabase: SupabaseClient, userId: string, teamId: string) {
   const result = await supabase
     .from("team_memberships")
     .select("team_id,role,teams(id,name)")
@@ -39,10 +35,7 @@ async function getMembershipForTeam(
   return result;
 }
 
-async function getFirstMembership(
-  supabase: SupabaseClient,
-  userId: string,
-) {
+async function getFirstMembership(supabase: SupabaseClient, userId: string) {
   const result = await supabase
     .from("team_memberships")
     .select("team_id,role,teams(id,name)")

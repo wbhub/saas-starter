@@ -5,9 +5,7 @@ import {
   type UserContent,
   type UserModelMessage,
 } from "ai";
-import {
-  maybeProcessAiBudgetFinalizeRetries,
-} from "@/lib/ai/budget-finalize-retries";
+import { maybeProcessAiBudgetFinalizeRetries } from "@/lib/ai/budget-finalize-retries";
 import { jsonError } from "@/lib/http/api-json";
 import { getOrCreateRequestId, withRequestId } from "@/lib/http/request-id";
 import {
@@ -15,10 +13,7 @@ import {
   finalizeTeamAiBudgetClaimWithRetry,
   type BudgetClaim,
 } from "@/lib/ai/chat-budget";
-import {
-  getAiAccessMode,
-  getAiAllowedSubscriptionStatuses,
-} from "@/lib/ai/config";
+import { getAiAccessMode, getAiAllowedSubscriptionStatuses } from "@/lib/ai/config";
 import { type AiModality } from "@/lib/ai/config";
 import { estimatePromptTokens } from "@/lib/ai/token-estimation";
 import { logAuditEvent } from "@/lib/audit";
@@ -50,12 +45,7 @@ const AI_FORBIDDEN_STATUS = 403;
 const AI_PAYMENT_REQUIRED_STATUS = 402;
 const MAX_ATTACHMENTS_PER_MESSAGE = 8;
 const MAX_ATTACHMENTS_PER_REQUEST = 16;
-const SUPPORTED_IMAGE_MIME_TYPES = new Set([
-  "image/png",
-  "image/jpeg",
-  "image/webp",
-  "image/gif",
-]);
+const SUPPORTED_IMAGE_MIME_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
 const SUPPORTED_FILE_MIME_TYPES = new Set(["application/pdf", "text/plain", "text/csv"]);
 
 function isHttpsUrl(value: string) {
@@ -72,7 +62,12 @@ const attachmentSchema = z
     type: z.enum(["image", "file"]),
     mimeType: z.string().trim().toLowerCase().min(1).max(255),
     name: z.string().trim().min(1).max(255).optional(),
-    url: z.string().trim().url().refine((value) => isHttpsUrl(value), "Attachment URL must use https.").optional(),
+    url: z
+      .string()
+      .trim()
+      .url()
+      .refine((value) => isHttpsUrl(value), "Attachment URL must use https.")
+      .optional(),
     data: z.string().trim().min(1).max(300_000).optional(),
     fileId: z.string().trim().min(1).max(255).optional(),
   })
@@ -215,13 +210,14 @@ function toUserMessageContent(message: ChatMessage): UserContent {
 
   const content: Array<Record<string, unknown>> = [{ type: "text", text: message.content }];
   for (const attachment of attachments) {
-    const providerOptions = attachment.fileId && supportsOpenAiFileIds
-      ? {
-          openai: {
-            fileId: attachment.fileId,
-          },
-        }
-      : undefined;
+    const providerOptions =
+      attachment.fileId && supportsOpenAiFileIds
+        ? {
+            openai: {
+              fileId: attachment.fileId,
+            },
+          }
+        : undefined;
 
     if (attachment.type === "image") {
       content.push({
@@ -337,8 +333,11 @@ async function insertAiUsageRow({
 export async function POST(request: Request) {
   const t = await getRouteTranslator("ApiAiChat", request);
   const requestId = getOrCreateRequestId(request);
-  const err = (error: string, status: number, init?: ResponseInit & { code?: string; data?: Record<string, unknown> }) =>
-    withRequestId(jsonError(error, status, init), requestId);
+  const err = (
+    error: string,
+    status: number,
+    init?: ResponseInit & { code?: string; data?: Record<string, unknown> },
+  ) => withRequestId(jsonError(error, status, init), requestId);
   const aiUnavailableMessage = t("errors.unavailable");
   const planRequiredMessage = t("errors.planRequired");
   const budgetExceededMessage = t("errors.budgetExceeded");
@@ -445,7 +444,10 @@ export async function POST(request: Request) {
     }
   }
 
-  let subscriptionRow: { stripe_price_id: string | null; status: SubscriptionStatus | null } | null = null;
+  let subscriptionRow: {
+    stripe_price_id: string | null;
+    status: SubscriptionStatus | null;
+  } | null = null;
   if (aiAccessMode !== "all") {
     let subscriptionQuery = supabase
       .from("subscriptions")
@@ -797,11 +799,12 @@ export async function POST(request: Request) {
         attachmentCounts,
       },
     });
-    const upstreamMessage = upstreamError.code === "upstream_rate_limited"
-      ? upstreamRateLimitedMessage
-      : upstreamError.code === "upstream_bad_request"
-        ? upstreamBadRequestMessage
-        : aiUnavailableMessage;
+    const upstreamMessage =
+      upstreamError.code === "upstream_rate_limited"
+        ? upstreamRateLimitedMessage
+        : upstreamError.code === "upstream_bad_request"
+          ? upstreamBadRequestMessage
+          : aiUnavailableMessage;
     return aiErrorResponse({
       error: upstreamMessage,
       code: upstreamError.code,

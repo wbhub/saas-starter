@@ -71,13 +71,9 @@ function getRetryDelayMs() {
     return boundedExponentialDelay;
   }
 
-  const jitterMultiplier =
-    1 + (Math.random() * 2 - 1) * AUDIT_RETRY_JITTER_FACTOR;
+  const jitterMultiplier = 1 + (Math.random() * 2 - 1) * AUDIT_RETRY_JITTER_FACTOR;
   const jitteredDelay = Math.round(boundedExponentialDelay * jitterMultiplier);
-  return Math.max(
-    AUDIT_FLUSH_INTERVAL_MS,
-    Math.min(jitteredDelay, AUDIT_RETRY_MAX_INTERVAL_MS),
-  );
+  return Math.max(AUDIT_FLUSH_INTERVAL_MS, Math.min(jitteredDelay, AUDIT_RETRY_MAX_INTERVAL_MS));
 }
 
 function enforceQueueLimit() {

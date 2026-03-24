@@ -120,7 +120,9 @@ async function isLastOwnerOfAnyTeam(userId: string): Promise<boolean> {
     return false;
   }
 
-  const ownedTeamIds = Array.from(new Set(ownedMemberships.map((membership) => membership.team_id)));
+  const ownedTeamIds = Array.from(
+    new Set(ownedMemberships.map((membership) => membership.team_id)),
+  );
   const { data: ownerMemberships, error: ownerMembershipsError } = await adminClient
     .from("team_memberships")
     .select("team_id,user_id")
@@ -399,10 +401,7 @@ export async function requestEmailChange(
   }
 
   const emailRedirectTo = `${getAppUrl()}/dashboard/settings?emailChange=confirmed`;
-  const { error } = await supabase.auth.updateUser(
-    { email: newEmail },
-    { emailRedirectTo },
-  );
+  const { error } = await supabase.auth.updateUser({ email: newEmail }, { emailRedirectTo });
 
   if (error) {
     logger.error("Failed to request email change", error, { userId: user.id });

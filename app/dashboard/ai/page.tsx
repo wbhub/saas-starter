@@ -62,24 +62,16 @@ export default async function DashboardAiPage() {
     >
       <header className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm sm:p-6">
         <p className="text-sm text-muted-foreground">{t("header.eyebrow")}</p>
-        <h1 className="mt-1 text-2xl font-semibold text-foreground">
-          {t("header.title")}
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {t("header.description")}
-        </p>
+        <h1 className="mt-1 text-2xl font-semibold text-foreground">{t("header.title")}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{t("header.description")}</p>
       </header>
 
       {aiUiGate.isVisibleInUi ? (
         <AiChatCard />
       ) : (
         <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-foreground">
-            {t("unavailable.title")}
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {t("unavailable.description")}
-          </p>
+          <h2 className="text-lg font-semibold text-foreground">{t("unavailable.title")}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{t("unavailable.description")}</p>
           <p className="mt-3 rounded-lg app-surface-subtle px-3 py-2 text-sm text-muted-foreground">
             {aiUiGate.reason === "plan_not_allowed"
               ? t("unavailable.reason.planRequired")

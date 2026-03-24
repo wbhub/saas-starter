@@ -143,10 +143,7 @@ export function verifyCsrfProtection(request: Request, messages?: CsrfErrorMessa
   }
 
   const headerToken = request.headers.get(CSRF_HEADER_NAME)?.trim() ?? "";
-  const cookieToken = parseCookieValue(
-    request.headers.get("cookie"),
-    CSRF_COOKIE_NAME,
-  ).trim();
+  const cookieToken = parseCookieValue(request.headers.get("cookie"), CSRF_COOKIE_NAME).trim();
 
   if (!ensureTokenShape(headerToken) || !ensureTokenShape(cookieToken)) {
     return NextResponse.json(
@@ -177,11 +174,12 @@ function getAllowedOriginsFromHeaders(requestHeaders: Headers) {
   const forwardedHost = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
   if (forwardedHost) {
     const forwardedProto = requestHeaders.get("x-forwarded-proto");
-    const protocol = forwardedProto === "http" || forwardedProto === "https"
-      ? forwardedProto
-      : process.env.NODE_ENV === "production"
-        ? "https"
-        : "http";
+    const protocol =
+      forwardedProto === "http" || forwardedProto === "https"
+        ? forwardedProto
+        : process.env.NODE_ENV === "production"
+          ? "https"
+          : "http";
     origins.add(`${protocol}://${forwardedHost}`);
   }
 
@@ -214,10 +212,7 @@ export function verifyCsrfProtectionForServerAction(
   const formToken = typeof formTokenInput === "string" ? formTokenInput.trim() : "";
   const headerToken = requestHeaders.get(CSRF_HEADER_NAME)?.trim() ?? "";
   const submittedToken = headerToken || formToken;
-  const cookieToken = parseCookieValue(
-    requestHeaders.get("cookie"),
-    CSRF_COOKIE_NAME,
-  ).trim();
+  const cookieToken = parseCookieValue(requestHeaders.get("cookie"), CSRF_COOKIE_NAME).trim();
 
   if (!ensureTokenShape(submittedToken) || !ensureTokenShape(cookieToken)) {
     return {

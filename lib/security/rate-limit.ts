@@ -113,11 +113,7 @@ function resetCircuitBreaker() {
   state.openUntil = 0;
 }
 
-function fallbackCheckRateLimit({
-  key,
-  limit,
-  windowMs,
-}: RateLimitOptions): RateLimitResult {
+function fallbackCheckRateLimit({ key, limit, windowMs }: RateLimitOptions): RateLimitResult {
   const now = Date.now();
   const store = getStore();
 
@@ -152,9 +148,11 @@ async function redisCheckRateLimit({
 
   const windowSeconds = Math.max(1, Math.ceil(windowMs / 1000));
   const redisKey = `rate-limit:${key}`;
-  const count = await redis.eval<[string], number>(ATOMIC_RATE_LIMIT_INCREMENT_SCRIPT, [redisKey], [
-    String(windowSeconds),
-  ]);
+  const count = await redis.eval<[string], number>(
+    ATOMIC_RATE_LIMIT_INCREMENT_SCRIPT,
+    [redisKey],
+    [String(windowSeconds)],
+  );
 
   if (count > limit) {
     const ttlSeconds = await redis.ttl(redisKey);
@@ -208,11 +206,7 @@ export async function checkRateLimit({
     }
 
     const row = Array.isArray(data) ? data[0] : data;
-    if (
-      row &&
-      typeof row.allowed === "boolean" &&
-      typeof row.retry_after_seconds === "number"
-    ) {
+    if (row && typeof row.allowed === "boolean" && typeof row.retry_after_seconds === "number") {
       if (isProduction) {
         resetCircuitBreaker();
       }
@@ -257,4 +251,3 @@ export async function checkRateLimit({
 
   return fallbackCheckRateLimit({ key, limit, windowMs });
 }
-

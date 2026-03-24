@@ -32,13 +32,12 @@ describe("Dashboard page billing selection", () => {
   });
 
   it("filters subscription query to live statuses", async () => {
-    const profileMaybeSingle = vi
-      .fn()
-      .mockResolvedValue({ data: { full_name: null, created_at: "2026-01-01T00:00:00Z" }, error: null });
+    const profileMaybeSingle = vi.fn().mockResolvedValue({
+      data: { full_name: null, created_at: "2026-01-01T00:00:00Z" },
+      error: null,
+    });
     const subscriptionIn = vi.fn().mockReturnThis();
-    const subscriptionMaybeSingle = vi
-      .fn()
-      .mockResolvedValue({ data: null, error: null });
+    const subscriptionMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
 
     const profilesQuery = {
       select: vi.fn().mockReturnThis(),
@@ -57,19 +56,17 @@ describe("Dashboard page billing selection", () => {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       order: vi.fn().mockReturnThis(),
-      returns: vi
-        .fn()
-        .mockResolvedValue({
-          data: [
-            {
-              user_id: "user_123",
-              role: "owner",
-              created_at: "2026-01-01T00:00:00Z",
-              profiles: { id: "user_123", full_name: "Test User" },
-            },
-          ],
-          error: null,
-        }),
+      returns: vi.fn().mockResolvedValue({
+        data: [
+          {
+            user_id: "user_123",
+            role: "owner",
+            created_at: "2026-01-01T00:00:00Z",
+            profiles: { id: "user_123", full_name: "Test User" },
+          },
+        ],
+        error: null,
+      }),
     };
     const teamInvitesQuery = {
       select: vi.fn().mockReturnThis(),
@@ -204,9 +201,7 @@ describe("Dashboard page billing selection", () => {
             return {
               select: vi.fn().mockReturnThis(),
               eq: vi.fn().mockReturnThis(),
-              maybeSingle: vi
-                .fn()
-                .mockResolvedValue({ data: null, error: { message: "boom" } }),
+              maybeSingle: vi.fn().mockResolvedValue({ data: null, error: { message: "boom" } }),
             };
           }
 
@@ -271,4 +266,3 @@ describe("Dashboard page billing selection", () => {
     consoleWarn.mockRestore();
   });
 });
-

@@ -6,9 +6,7 @@ vi.mock("next/server", async (importOriginal) => {
     ...actual,
     /** Run scheduled work on a microtask so Vitest can flush it without request AsyncLocalStorage. */
     after: (task: Parameters<typeof actual.after>[0]) => {
-      void Promise.resolve(
-        typeof task === "function" ? (task as () => unknown)() : task,
-      );
+      void Promise.resolve(typeof task === "function" ? (task as () => unknown)() : task);
     },
   };
 });
@@ -304,4 +302,3 @@ describe("POST /api/auth/forgot-password", () => {
     });
   });
 });
-

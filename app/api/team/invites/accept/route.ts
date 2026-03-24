@@ -24,10 +24,6 @@ type AcceptInviteRpcResult = {
   team_name: string | null;
 };
 
-type InviteTeamLookupRow = {
-  team_id: string;
-};
-
 export async function POST(request: Request) {
   const t = await getRouteTranslator("ApiTeamInviteAccept", request);
 
@@ -64,49 +60,19 @@ export async function POST(request: Request) {
 
       const admin = createAdminClient();
       const teamMaxMembers = getTeamMaxMembers();
-      const nowIso = new Date().toISOString();
-      const inviteLookupResult = await admin
-        .from("team_invites")
-        .select("team_id")
-        .eq("token_hash", tokenHash)
-        .is("accepted_at", null)
-        .gt("expires_at", nowIso)
-        .limit(1)
-        .maybeSingle<InviteTeamLookupRow>();
-      if (inviteLookupResult.error) {
-        logger.error("Failed to resolve invite team before acceptance", inviteLookupResult.error, {
-          requestId,
-          userId: user.id,
-        });
-        return jsonError(t("errors.unableToAcceptInvite"), 500);
-      }
-      if (inviteLookupResult.data?.team_id) {
-        const teamId = inviteLookupResult.data.team_id;
-        const { count: memberCount, error: memberCountError } = await admin
-          .from("team_memberships")
-          .select("user_id", { count: "exact", head: true })
-          .eq("team_id", teamId);
-        if (memberCountError) {
-          logger.error("Failed to enforce team member cap before invite acceptance", memberCountError, {
-            requestId,
-            teamId,
-            userId: user.id,
-          });
-          return jsonError(t("errors.unableToAcceptInvite"), 500);
-        }
-        if ((memberCount ?? 0) >= teamMaxMembers) {
-          return jsonError(t("errors.teamMemberLimitReached"), 409);
-        }
-      }
 
       const { data, error: rpcError } = await admin.rpc("accept_team_invite_atomic", {
         p_token_hash: tokenHash,
         p_user_id: user.id,
         p_user_email: userEmail,
+        p_max_members: teamMaxMembers,
       });
 
       if (rpcError) {
-        logger.error("Failed to accept invite atomically", rpcError, { requestId, userId: user.id });
+        logger.error("Failed to accept invite atomically", rpcError, {
+          requestId,
+          userId: user.id,
+        });
         logAuditEvent({
           action: "team.invite.accept",
           outcome: "failure",
@@ -136,6 +102,9 @@ export async function POST(request: Request) {
         }
         if (code === "email_mismatch") {
           return jsonError(t("errors.inviteEmailMismatch"), 403);
+        }
+        if (code === "team_full") {
+          return jsonError(t("errors.teamMemberLimitReached"), 409);
         }
         return jsonError(t("errors.unableToAcceptInvite"), 500);
       }

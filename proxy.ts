@@ -94,12 +94,8 @@ function buildCspHeader(nonce: string) {
       .filter(Boolean)
       .join(" "),
 
-    intercomEnabled
-      ? "font-src 'self' https://js.intercomcdn.com"
-      : undefined,
-    intercomEnabled
-      ? "media-src 'self' https://js.intercomcdn.com"
-      : undefined,
+    intercomEnabled ? "font-src 'self' https://js.intercomcdn.com" : undefined,
+    intercomEnabled ? "media-src 'self' https://js.intercomcdn.com" : undefined,
 
     "upgrade-insecure-requests",
   ];
@@ -189,7 +185,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
 };

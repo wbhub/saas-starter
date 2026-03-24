@@ -56,10 +56,7 @@ async function getLiveSubscriptionId(teamId: string) {
   return data?.stripe_subscription_id ?? null;
 }
 
-export async function syncTeamSeatQuantity(
-  teamId: string,
-  options?: { idempotencyKey?: string },
-) {
+export async function syncTeamSeatQuantity(teamId: string, options?: { idempotencyKey?: string }) {
   if (!isBillingEnabled()) {
     return { updated: false as const, reason: "billing_disabled" as const };
   }
@@ -124,9 +121,7 @@ export async function syncTeamSeatQuantity(
         ],
         proration_behavior: getSeatProrationBehavior(),
       },
-      options?.idempotencyKey
-        ? { idempotencyKey: `${options.idempotencyKey}:recount` }
-        : undefined,
+      options?.idempotencyKey ? { idempotencyKey: `${options.idempotencyKey}:recount` } : undefined,
     );
   }
 

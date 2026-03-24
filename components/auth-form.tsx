@@ -78,11 +78,7 @@ function authFormReducer(state: AuthFormState, action: AuthFormAction): AuthForm
 function SocialProviderIcon({ provider }: { provider: AuthProvider }) {
   if (provider === "google") {
     return (
-      <svg
-        aria-hidden="true"
-        viewBox="0 0 24 24"
-        className="h-4 w-4 shrink-0"
-      >
+      <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4 shrink-0">
         <path
           fill="#4285F4"
           d="M21.805 12.23c0-.68-.061-1.333-.173-1.961H12v3.71h5.502a4.704 4.704 0 0 1-2.04 3.086v2.56h3.296c1.93-1.777 3.047-4.397 3.047-7.395Z"
@@ -104,11 +100,7 @@ function SocialProviderIcon({ provider }: { provider: AuthProvider }) {
   }
 
   return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      className="h-4 w-4 shrink-0"
-    >
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4 shrink-0">
       <path fill="#F25022" d="M2 2h9.5v9.5H2z" />
       <path fill="#7FBA00" d="M12.5 2H22v9.5h-9.5z" />
       <path fill="#00A4EF" d="M2 12.5h9.5V22H2z" />
@@ -134,16 +126,10 @@ export function AuthForm({
   const { email, password, loading, socialLoadingProvider, message, messageType } = state;
   const isLogin = mode === "login";
   const hasSocialProviders = socialProviders.length > 0;
-  const socialProviderOptions = getSocialProviderOptions(
-    socialProviders,
-    lastUsedProvider,
-  );
+  const socialProviderOptions = getSocialProviderOptions(socialProviders, lastUsedProvider);
   const messageId = `${mode}-auth-message`;
   const passwordHintId = `${mode}-password-hint`;
-  const passwordDescribedBy = [
-    !isLogin ? passwordHintId : "",
-    message ? messageId : "",
-  ]
+  const passwordDescribedBy = [!isLogin ? passwordHintId : "", message ? messageId : ""]
     .filter(Boolean)
     .join(" ");
 
@@ -158,9 +144,7 @@ export function AuthForm({
           headers: { "Content-Type": "application/json", ...getCsrfHeaders() },
           body: JSON.stringify({ email, password }),
         });
-        const payload = (await response.json().catch(() => null)) as
-          | AuthApiResponse
-          | null;
+        const payload = (await response.json().catch(() => null)) as AuthApiResponse | null;
         if (!response.ok) {
           throw new Error(payload?.error ?? t("errors.unableToLogIn"));
         }
@@ -179,9 +163,7 @@ export function AuthForm({
           headers: { "Content-Type": "application/json", ...getCsrfHeaders() },
           body: JSON.stringify({ email, password }),
         });
-        const payload = (await response.json().catch(() => null)) as
-          | AuthApiResponse
-          | null;
+        const payload = (await response.json().catch(() => null)) as AuthApiResponse | null;
         if (!response.ok) {
           throw new Error(payload?.error ?? t("errors.unableToCreateAccount"));
         }
@@ -231,13 +213,9 @@ export function AuthForm({
 
   return (
     <div className="w-full max-w-md rounded-2xl border app-border-subtle app-surface p-8 text-[color:var(--foreground)] shadow-sm">
-      <h1 className="text-2xl font-semibold">
-        {isLogin ? t("title.login") : t("title.signup")}
-      </h1>
+      <h1 className="text-2xl font-semibold">{isLogin ? t("title.login") : t("title.signup")}</h1>
       <p className="mt-2 text-sm text-[color:var(--muted-foreground)]">
-        {isLogin
-          ? t("description.login")
-          : t("description.signup")}
+        {isLogin ? t("description.login") : t("description.signup")}
       </p>
 
       {hasSocialProviders ? (
@@ -255,9 +233,7 @@ export function AuthForm({
               >
                 <SocialProviderIcon provider={provider} />
                 <span>
-                  {isProviderLoading
-                    ? t("pleaseWait")
-                    : t("continueWith", { provider: label })}
+                  {isProviderLoading ? t("pleaseWait") : t("continueWith", { provider: label })}
                 </span>
                 {isLastUsed ? (
                   <span className="rounded-full border app-border-subtle px-2 py-0.5 text-[10px] uppercase tracking-wide text-[color:var(--muted-foreground)]">
@@ -306,7 +282,9 @@ export function AuthForm({
             minLength={12}
             autoComplete={isLogin ? "current-password" : "new-password"}
             value={password}
-            onChange={(e) => dispatch({ type: "SET_FIELD", field: "password", value: e.target.value })}
+            onChange={(e) =>
+              dispatch({ type: "SET_FIELD", field: "password", value: e.target.value })
+            }
             aria-describedby={passwordDescribedBy || undefined}
             aria-invalid={messageType === "error" && Boolean(message)}
             className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-[color:var(--foreground)] outline-none ring-[color:var(--ring)] placeholder:text-[color:var(--muted-foreground)] focus:ring-2"
@@ -358,10 +336,7 @@ export function AuthForm({
       ) : (
         <p className="mt-5 text-sm text-[color:var(--muted-foreground)]">
           {t("alreadyHaveAccount")}{" "}
-          <Link
-            href="/login"
-            className="font-medium text-[color:var(--accent)] hover:opacity-90"
-          >
+          <Link href="/login" className="font-medium text-[color:var(--accent)] hover:opacity-90">
             {t("logIn")}
           </Link>
         </p>

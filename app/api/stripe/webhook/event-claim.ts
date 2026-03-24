@@ -9,9 +9,7 @@ function createClaimToken() {
 
 export async function claimWebhookEvent(event: Stripe.Event) {
   const supabase = createAdminClient();
-  const claimedUntil = new Date(
-    Date.now() + WEBHOOK_CLAIM_TTL_SECONDS * 1000,
-  ).toISOString();
+  const claimedUntil = new Date(Date.now() + WEBHOOK_CLAIM_TTL_SECONDS * 1000).toISOString();
   const nowIso = new Date().toISOString();
   const claimToken = createClaimToken();
   const claimRow = {
@@ -76,9 +74,7 @@ export async function releaseWebhookEventClaim(eventId: string, claimToken: stri
 
 export async function extendWebhookEventClaim(eventId: string, claimToken: string) {
   const supabase = createAdminClient();
-  const nextClaimExpiresAt = new Date(
-    Date.now() + WEBHOOK_CLAIM_TTL_SECONDS * 1000,
-  ).toISOString();
+  const nextClaimExpiresAt = new Date(Date.now() + WEBHOOK_CLAIM_TTL_SECONDS * 1000).toISOString();
   const { error } = await supabase
     .from("stripe_webhook_events")
     .update({

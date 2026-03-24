@@ -33,14 +33,14 @@ export function InviteAcceptCard({
         headers: { "Content-Type": "application/json", ...getCsrfHeaders() },
         body: JSON.stringify({ token }),
       });
-      const payload = (await response.json().catch(() => null)) as
-        | AcceptInviteResponse
-        | null;
+      const payload = (await response.json().catch(() => null)) as AcceptInviteResponse | null;
       if (!response.ok) {
         throw new Error(payload?.error ?? t("errors.unableToAccept"));
       }
 
-      setMessage(t("messages.joined", { teamName: payload?.teamName ?? t("messages.defaultTeamName") }));
+      setMessage(
+        t("messages.joined", { teamName: payload?.teamName ?? t("messages.defaultTeamName") }),
+      );
       router.push("/dashboard");
       router.refresh();
     } catch (error) {
@@ -52,12 +52,8 @@ export function InviteAcceptCard({
 
   return (
     <section className="mx-auto w-full max-w-lg rounded-xl border app-border-subtle app-surface p-6 shadow-sm">
-      <h1 className="text-2xl font-semibold text-foreground">
-        {t("title")}
-      </h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        {t("description")}
-      </p>
+      <h1 className="text-2xl font-semibold text-foreground">{t("title")}</h1>
+      <p className="mt-2 text-sm text-muted-foreground">{t("description")}</p>
 
       {!isAuthenticated ? (
         <p className="mt-4 rounded-lg app-surface-subtle px-3 py-2 text-sm text-muted-foreground">

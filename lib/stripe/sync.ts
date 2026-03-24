@@ -62,10 +62,7 @@ export async function resolveTeamIdFromStripeCustomer(
   return null;
 }
 
-export async function upsertStripeCustomer(
-  teamId: string,
-  stripeCustomerId: string,
-) {
+export async function upsertStripeCustomer(teamId: string, stripeCustomerId: string) {
   const { error } = await getAdminClient().from("stripe_customers").upsert(
     {
       team_id: teamId,
@@ -77,6 +74,26 @@ export async function upsertStripeCustomer(
   if (error) {
     throw new Error(`Failed to upsert stripe customer: ${error.message}`);
   }
+}
+
+export async function handleCustomerDeleted(stripeCustomerId: string) {
+  const admin = getAdminClient();
+
+  const { data, error } = await admin.rpc("delete_stripe_customer_and_cancel_subscriptions", {
+    p_stripe_customer_id: stripeCustomerId,
+  });
+
+  if (error) {
+    throw new Error(
+      `Failed to handle Stripe customer deletion for ${stripeCustomerId}: ${error.message}`,
+    );
+  }
+
+  const cancelled = Array.isArray(data) ? data[0] : data;
+  logger.info("Handled Stripe customer deletion", {
+    stripeCustomerId,
+    subscriptionsCancelled: cancelled ?? 0,
+  });
 }
 
 export async function syncSubscription(
@@ -93,9 +110,7 @@ export async function syncSubscription(
   }
 
   const stripeCustomerId =
-    typeof subscription.customer === "string"
-      ? subscription.customer
-      : subscription.customer.id;
+    typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
 
   const teamId = await resolveTeamIdFromStripeCustomer(stripeCustomerId);
   if (!teamId) {

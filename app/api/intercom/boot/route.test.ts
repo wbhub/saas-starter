@@ -29,7 +29,12 @@ describe("GET /api/intercom/boot", () => {
         auth: {
           getUser: async () => ({
             data: {
-              user: { id: "u1", email: "a@b.com", created_at: "2026-01-01T00:00:00Z", user_metadata: {} },
+              user: {
+                id: "u1",
+                email: "a@b.com",
+                created_at: "2026-01-01T00:00:00Z",
+                user_metadata: {},
+              },
             },
           }),
         },

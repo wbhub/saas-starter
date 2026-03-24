@@ -45,9 +45,8 @@ export function getStripePriceIdEnvKey(planKey: PlanKey): StripePriceIdEnvKey {
   return `STRIPE_${planKey.toUpperCase()}_PRICE_ID` as StripePriceIdEnvKey;
 }
 
-export const STRIPE_PLAN_PRICE_ID_ENV_KEYS: readonly StripePriceIdEnvKey[] = PLAN_KEYS.map(
-  getStripePriceIdEnvKey,
-);
+export const STRIPE_PLAN_PRICE_ID_ENV_KEYS: readonly StripePriceIdEnvKey[] =
+  PLAN_KEYS.map(getStripePriceIdEnvKey);
 
 export const PLAN_CATALOG: PlanCatalogEntry[] = [
   {

@@ -37,9 +37,7 @@ describe("GET /api/cron/reconcile-seat-quantities", () => {
 
   it("returns 503 when CRON_SECRET is not set", async () => {
     const { GET } = await import("./route");
-    const response = await GET(
-      new Request("http://localhost/api/cron/reconcile-seat-quantities"),
-    );
+    const response = await GET(new Request("http://localhost/api/cron/reconcile-seat-quantities"));
 
     expect(response.status).toBe(503);
     await expect(response.json()).resolves.toEqual({
@@ -109,9 +107,7 @@ describe("GET /api/cron/reconcile-seat-quantities", () => {
       discoveredFromStripe: 1,
       stripePagesScanned: 1,
     });
-    const { processDueAiBudgetFinalizeRetries } = await import(
-      "@/lib/ai/budget-finalize-retries"
-    );
+    const { processDueAiBudgetFinalizeRetries } = await import("@/lib/ai/budget-finalize-retries");
     vi.mocked(processDueAiBudgetFinalizeRetries).mockResolvedValue({
       processed: 2,
       finalized: 1,
@@ -159,17 +155,13 @@ describe("GET /api/cron/reconcile-seat-quantities", () => {
     }));
     const { reconcileTeamSeatQuantities } = await import("@/lib/stripe/seat-reconcile");
     vi.mocked(reconcileTeamSeatQuantities).mockRejectedValueOnce(new Error("stripe timeout"));
-    const { processDueAiBudgetFinalizeRetries } = await import(
-      "@/lib/ai/budget-finalize-retries"
-    );
-    const processRetries = vi
-      .mocked(processDueAiBudgetFinalizeRetries)
-      .mockResolvedValue({
-        processed: 1,
-        finalized: 1,
-        skipped: 0,
-        failed: 0,
-      });
+    const { processDueAiBudgetFinalizeRetries } = await import("@/lib/ai/budget-finalize-retries");
+    const processRetries = vi.mocked(processDueAiBudgetFinalizeRetries).mockResolvedValue({
+      processed: 1,
+      finalized: 1,
+      skipped: 0,
+      failed: 0,
+    });
 
     const { GET } = await import("./route");
     const response = await GET(
@@ -181,22 +173,22 @@ describe("GET /api/cron/reconcile-seat-quantities", () => {
     expect(response.status).toBe(500);
     expect(processRetries).toHaveBeenCalledOnce();
     const body = await response.json();
-    expect(body).toEqual(expect.objectContaining({
-      ok: false,
-      error: "Cron run completed with one or more internal job failures.",
-      seatReconcileFailed: true,
-    }));
+    expect(body).toEqual(
+      expect.objectContaining({
+        ok: false,
+        error: "Cron run completed with one or more internal job failures.",
+        seatReconcileFailed: true,
+      }),
+    );
     expect(body.aiBudgetFinalizeRetries).toBeDefined();
   });
 
   it("returns 500 when AI budget finalize retry processing fails", async () => {
     vi.stubEnv("CRON_SECRET", "expected");
-    const { processDueAiBudgetFinalizeRetries } = await import(
-      "@/lib/ai/budget-finalize-retries"
+    const { processDueAiBudgetFinalizeRetries } = await import("@/lib/ai/budget-finalize-retries");
+    vi.mocked(processDueAiBudgetFinalizeRetries).mockRejectedValueOnce(
+      new Error("retry queue unavailable"),
     );
-    vi
-      .mocked(processDueAiBudgetFinalizeRetries)
-      .mockRejectedValueOnce(new Error("retry queue unavailable"));
     const { GET } = await import("./route");
     const response = await GET(
       new Request("http://localhost/api/cron/reconcile-seat-quantities", {
@@ -206,10 +198,12 @@ describe("GET /api/cron/reconcile-seat-quantities", () => {
 
     expect(response.status).toBe(500);
     const body = await response.json();
-    expect(body).toEqual(expect.objectContaining({
-      ok: false,
-      error: "Cron run completed with one or more internal job failures.",
-      aiBudgetFinalizeRetriesFailed: true,
-    }));
+    expect(body).toEqual(
+      expect.objectContaining({
+        ok: false,
+        error: "Cron run completed with one or more internal job failures.",
+        aiBudgetFinalizeRetriesFailed: true,
+      }),
+    );
   });
 });

@@ -55,10 +55,7 @@ export async function POST(request: NextRequest) {
   const hasRecoveryProof = request.cookies.get(PASSWORD_RECOVERY_COOKIE)?.value === "1";
   const recoveryUserId = request.cookies.get(PASSWORD_RECOVERY_USER_COOKIE)?.value ?? "";
   if (!hasRecoveryProof || !recoveryUserId) {
-    return jsonError(
-      "Reset link is invalid or expired. Please request a new link.",
-      403,
-    );
+    return jsonError("Reset link is invalid or expired. Please request a new link.", 403);
   }
 
   const supabase = await createClient();
@@ -66,10 +63,7 @@ export async function POST(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user || user.id !== recoveryUserId) {
-    return jsonError(
-      "Reset link is invalid or expired. Please request a new link.",
-      403,
-    );
+    return jsonError("Reset link is invalid or expired. Please request a new link.", 403);
   }
 
   const { error } = await supabase.auth.updateUser({ password });

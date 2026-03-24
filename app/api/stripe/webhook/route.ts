@@ -19,8 +19,7 @@ import { triggerStripeWebhookProcessTask } from "@/lib/trigger/dispatch";
 
 export async function POST(req: Request) {
   const requestId = getOrCreateRequestId(req);
-  const err = (error: string, status: number) =>
-    withRequestId(jsonError(error, status), requestId);
+  const err = (error: string, status: number) => withRequestId(jsonError(error, status), requestId);
 
   const t = await getRouteTranslator("ApiStripeWebhook", req);
 
@@ -78,9 +77,12 @@ export async function POST(req: Request) {
         return withRequestId(NextResponse.json({ received: true }), requestId);
       }
 
-      logger.warn("Falling back to inline Stripe webhook processing after Trigger enqueue failure", {
-        eventId: event.id,
-      });
+      logger.warn(
+        "Falling back to inline Stripe webhook processing after Trigger enqueue failure",
+        {
+          eventId: event.id,
+        },
+      );
     }
 
     const processed = await claimAndProcessStripeWebhookEvent(event, {

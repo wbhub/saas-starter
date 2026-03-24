@@ -39,11 +39,14 @@ describe("lib/ai/config env parsing", () => {
 
     const config = await import("./config");
     expect(config.getAiAccessMode()).toBe("paid");
-    expect(warn).toHaveBeenCalledWith('Invalid AI_ACCESS_MODE "everything"; defaulting to "paid".', {
-      envKey: "AI_ACCESS_MODE",
-      invalidValue: "everything",
-      fallbackBehavior: "paid",
-    });
+    expect(warn).toHaveBeenCalledWith(
+      'Invalid AI_ACCESS_MODE "everything"; defaulting to "paid".',
+      {
+        envKey: "AI_ACCESS_MODE",
+        invalidValue: "everything",
+        fallbackBehavior: "paid",
+      },
+    );
   });
 
   it("parses by_plan rules and default monthly budget values", async () => {
@@ -66,7 +69,12 @@ describe("lib/ai/config env parsing", () => {
           allowedModalities: ["image"],
         },
         growth: { enabled: false, model: "gpt-4.1", monthlyBudget: -4 },
-        pro: { enabled: true, model: null, monthlyBudget: 9999, allowedModalities: ["text", "file"] },
+        pro: {
+          enabled: true,
+          model: null,
+          monthlyBudget: 9999,
+          allowedModalities: ["text", "file"],
+        },
       }),
     );
     vi.stubEnv(

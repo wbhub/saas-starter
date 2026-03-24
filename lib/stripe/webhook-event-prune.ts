@@ -9,9 +9,7 @@ import {
  * Deletes old rows from `stripe_webhook_events` (completed past retention, stale claims).
  * When `sampleRate` is below 1, only runs with that probability (for opportunistic prune on webhook traffic).
  */
-export async function pruneStripeWebhookEventRows(options?: {
-  sampleRate?: number;
-}) {
+export async function pruneStripeWebhookEventRows(options?: { sampleRate?: number }) {
   const sampleRate = options?.sampleRate ?? 1;
   if (sampleRate < 1 && Math.random() >= sampleRate) {
     return;

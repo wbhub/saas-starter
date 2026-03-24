@@ -38,7 +38,12 @@ const DEFAULT_AI_ALLOWED_MODALITIES: readonly AiModality[] = ["text"];
 const DEFAULT_AI_BY_PLAN_RULES: AiByPlanRules = Object.fromEntries(
   AI_POLICY_PLAN_KEYS.map((planKey) => [
     planKey,
-    { enabled: false, model: null, monthlyBudget: 0, allowedModalities: DEFAULT_AI_ALLOWED_MODALITIES },
+    {
+      enabled: false,
+      model: null,
+      monthlyBudget: 0,
+      allowedModalities: DEFAULT_AI_ALLOWED_MODALITIES,
+    },
   ]),
 ) as AiByPlanRules;
 
@@ -77,10 +82,13 @@ function parseAllowedSubscriptionStatuses(
     );
 
   if (!parsed.length) {
-    logger.warn("AI_ALLOWED_SUBSCRIPTION_STATUSES yielded no valid statuses; AI access is disabled.", {
-      envKey: "AI_ALLOWED_SUBSCRIPTION_STATUSES",
-      fallbackBehavior: "access_disabled",
-    });
+    logger.warn(
+      "AI_ALLOWED_SUBSCRIPTION_STATUSES yielded no valid statuses; AI access is disabled.",
+      {
+        envKey: "AI_ALLOWED_SUBSCRIPTION_STATUSES",
+        fallbackBehavior: "access_disabled",
+      },
+    );
     return [];
   }
 
@@ -149,9 +157,7 @@ function parsePlanModelMap(rawValue: string | undefined): AiPlanModelMap {
   ) as AiPlanModelMap;
 }
 
-function parsePlanMonthlyTokenBudgetMap(
-  rawValue: string | undefined,
-): AiPlanMonthlyTokenBudgetMap {
+function parsePlanMonthlyTokenBudgetMap(rawValue: string | undefined): AiPlanMonthlyTokenBudgetMap {
   const parsed = parseJsonObjectEnv(rawValue, "AI_PLAN_MONTHLY_TOKEN_BUDGET_MAP_JSON");
   if (!parsed) {
     return DEFAULT_AI_PLAN_MONTHLY_TOKEN_BUDGET_MAP;
@@ -183,7 +189,8 @@ function parseModalities(
       ? rawValue.split(",").map((value) => value.trim())
       : [];
   const parsed = values.filter(
-    (value): value is AiModality => typeof value === "string" && AI_MODALITIES.includes(value as AiModality),
+    (value): value is AiModality =>
+      typeof value === "string" && AI_MODALITIES.includes(value as AiModality),
   );
   const unique = Array.from(new Set(parsed));
   if (!unique.length) {
@@ -281,7 +288,10 @@ function parseAiByPlanRules(
   return Object.fromEntries(
     AI_POLICY_PLAN_KEYS.map((planKey) => [
       planKey,
-      configured[planKey] ?? { ...DEFAULT_AI_BY_PLAN_RULES[planKey], allowedModalities: fallbackModalities },
+      configured[planKey] ?? {
+        ...DEFAULT_AI_BY_PLAN_RULES[planKey],
+        allowedModalities: fallbackModalities,
+      },
     ]),
   ) as AiByPlanRules;
 }

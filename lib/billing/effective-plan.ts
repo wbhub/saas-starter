@@ -1,6 +1,10 @@
 import { env } from "@/lib/env";
 import { resolvePlanKeyByPriceId } from "@/lib/stripe/price-id-lookup";
-import { LIVE_SUBSCRIPTION_STATUSES, type PlanKey, type SubscriptionStatus } from "@/lib/stripe/plans";
+import {
+  LIVE_SUBSCRIPTION_STATUSES,
+  type PlanKey,
+  type SubscriptionStatus,
+} from "@/lib/stripe/plans";
 
 export type EffectivePlanKey = "free" | PlanKey;
 
@@ -9,7 +13,9 @@ type SubscriptionPlanInput = {
   stripe_price_id?: string | null;
 };
 
-function isLiveSubscriptionStatus(status: SubscriptionStatus | null | undefined): status is SubscriptionStatus {
+function isLiveSubscriptionStatus(
+  status: SubscriptionStatus | null | undefined,
+): status is SubscriptionStatus {
   if (!status) {
     return false;
   }

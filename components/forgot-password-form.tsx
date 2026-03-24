@@ -28,9 +28,7 @@ export function ForgotPasswordForm() {
         headers: { "Content-Type": "application/json", ...getCsrfHeaders() },
         body: JSON.stringify({ email }),
       });
-      const payload = (await response.json().catch(() => null)) as
-        | ApiResponse
-        | null;
+      const payload = (await response.json().catch(() => null)) as ApiResponse | null;
 
       if (!response.ok) {
         setMessageType("error");
@@ -38,10 +36,7 @@ export function ForgotPasswordForm() {
       }
 
       setMessageType("success");
-      setMessage(
-        payload?.message ??
-          t("messages.resetLinkSentIfAccountExists"),
-      );
+      setMessage(payload?.message ?? t("messages.resetLinkSentIfAccountExists"));
     } catch (error) {
       setMessageType("error");
       setMessage(error instanceof Error ? error.message : t("errors.unexpected"));
@@ -53,9 +48,7 @@ export function ForgotPasswordForm() {
   return (
     <div className="w-full max-w-md rounded-2xl border app-border-subtle app-surface p-8 text-[color:var(--foreground)] shadow-sm">
       <h1 className="text-2xl font-semibold">{t("title")}</h1>
-      <p className="mt-2 text-sm text-[color:var(--muted-foreground)]">
-        {t("description")}
-      </p>
+      <p className="mt-2 text-sm text-[color:var(--muted-foreground)]">{t("description")}</p>
 
       <form className="mt-6 space-y-4" onSubmit={onSubmit} aria-busy={loading}>
         <label className="block">

@@ -10,10 +10,7 @@ type SeatSyncRetryRow = {
 };
 
 function computeRetryDelayMs(attemptCount: number) {
-  return Math.min(
-    MAX_RETRY_DELAY_MS,
-    BASE_RETRY_DELAY_MS * 2 ** Math.max(0, attemptCount - 1),
-  );
+  return Math.min(MAX_RETRY_DELAY_MS, BASE_RETRY_DELAY_MS * 2 ** Math.max(0, attemptCount - 1));
 }
 
 function toErrorMessage(error: unknown) {

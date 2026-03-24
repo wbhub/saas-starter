@@ -77,10 +77,7 @@ function getScopedIdempotencyKey(baseKey: string | undefined, scope: string) {
   return `${baseKey}:${scope}`;
 }
 
-async function claimTeamStripeCustomer(
-  teamId: string,
-  createdCustomerId: string,
-) {
+async function claimTeamStripeCustomer(teamId: string, createdCustomerId: string) {
   const admin = createAdminClient();
   const { error: claimError } = await admin.from("stripe_customers").upsert(
     {
@@ -200,15 +197,14 @@ export async function POST(req: Request) {
     });
   }
 
-  const { data: existingSubscription, error: existingSubscriptionError } =
-    await supabase
-      .from("subscriptions")
-      .select("stripe_subscription_id")
-      .eq("team_id", teamContext.teamId)
-      .in("status", LIVE_SUBSCRIPTION_STATUSES)
-      .order("current_period_end", { ascending: false })
-      .limit(1)
-      .maybeSingle<ExistingSubscriptionRow>();
+  const { data: existingSubscription, error: existingSubscriptionError } = await supabase
+    .from("subscriptions")
+    .select("stripe_subscription_id")
+    .eq("team_id", teamContext.teamId)
+    .in("status", LIVE_SUBSCRIPTION_STATUSES)
+    .order("current_period_end", { ascending: false })
+    .limit(1)
+    .maybeSingle<ExistingSubscriptionRow>();
 
   if (existingSubscriptionError) {
     return err(t("errors.couldNotVerifySubscription"), 500);
@@ -250,9 +246,7 @@ export async function POST(req: Request) {
             supabase_user_id: user.id,
           },
         },
-        customerIdempotencyKey
-          ? { idempotencyKey: customerIdempotencyKey }
-          : undefined,
+        customerIdempotencyKey ? { idempotencyKey: customerIdempotencyKey } : undefined,
       );
       customerId = await claimTeamStripeCustomer(teamContext.teamId, customer.id);
       if (customerId !== customer.id) {
@@ -285,9 +279,7 @@ export async function POST(req: Request) {
           supabase_user_id: user.id,
         },
       },
-      sessionIdempotencyKey
-        ? { idempotencyKey: sessionIdempotencyKey }
-        : undefined,
+      sessionIdempotencyKey ? { idempotencyKey: sessionIdempotencyKey } : undefined,
     );
 
     return withRequestId(jsonSuccess({ url: session.url }), requestId);

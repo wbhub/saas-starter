@@ -21,10 +21,7 @@ describe("checkRateLimit", () => {
   });
 
   it("allows under the limit and blocks once redis counter exceeds the limit", async () => {
-    const evalMock = vi
-      .fn()
-      .mockResolvedValueOnce(1)
-      .mockResolvedValueOnce(2);
+    const evalMock = vi.fn().mockResolvedValueOnce(1).mockResolvedValueOnce(2);
     const ttlMock = vi.fn().mockResolvedValue(17);
     const rpc = vi.fn();
 

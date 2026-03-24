@@ -17,9 +17,7 @@ export default async function SignupPage() {
   const supabase = await createClient();
   const cookieStore = await cookies();
   const socialProviders = getEnabledSocialAuthProviders();
-  const lastUsedProvider = parseAuthProvider(
-    cookieStore.get(LAST_AUTH_PROVIDER_COOKIE)?.value,
-  );
+  const lastUsedProvider = parseAuthProvider(cookieStore.get(LAST_AUTH_PROVIDER_COOKIE)?.value);
   const {
     data: { user },
   } = await supabase.auth.getUser();

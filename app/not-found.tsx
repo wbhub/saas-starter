@@ -15,16 +15,12 @@ export default async function NotFound() {
         <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-emerald-400 text-white shadow-sm shadow-indigo-500/30">
           <Sparkles className="h-4 w-4" />
         </div>
-        <span className="text-xl font-semibold tracking-tight">
-          {common("brandName")}
-        </span>
+        <span className="text-xl font-semibold tracking-tight">{common("brandName")}</span>
       </Link>
 
       <p className="text-6xl font-bold tracking-tight">404</p>
       <h1 className="mt-4 text-2xl font-semibold">{t("title")}</h1>
-      <p className="mt-2 max-w-md text-muted-foreground">
-        {t("description")}
-      </p>
+      <p className="mt-2 max-w-md text-muted-foreground">{t("description")}</p>
 
       <div className="mt-8 flex gap-4">
         <Link

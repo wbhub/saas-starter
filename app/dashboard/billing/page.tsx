@@ -30,8 +30,7 @@ export default async function DashboardBillingPage() {
     teamMemberships,
     displayName,
     csrfToken,
-  } =
-    await getDashboardBaseData();
+  } = await getDashboardBaseData();
 
   if (teamContextLoadFailed) {
     return (
@@ -53,14 +52,13 @@ export default async function DashboardBillingPage() {
     getDashboardBillingContext(supabase, teamContext.teamId),
     getDashboardAiUiGate(supabase, teamContext.teamId),
   ]);
-  const { billingEnabled, subscription, effectivePlanKey, memberCount, isPaidPlan } = billingContext;
+  const { billingEnabled, subscription, effectivePlanKey, memberCount, isPaidPlan } =
+    billingContext;
   const teamUiMode = !isPaidPlan ? "free" : memberCount > 1 ? "paid_team" : "paid_solo";
   const currentPaidPlanKey: PlanKey | null =
-    isPaidPlan && effectivePlanKey && effectivePlanKey !== "free"
-      ? effectivePlanKey
-      : null;
+    isPaidPlan && effectivePlanKey && effectivePlanKey !== "free" ? effectivePlanKey : null;
   const currentPlan = currentPaidPlanKey
-    ? PLAN_CATALOG.find((plan) => plan.key === currentPaidPlanKey) ?? null
+    ? (PLAN_CATALOG.find((plan) => plan.key === currentPaidPlanKey) ?? null)
     : null;
   const estimatedMonthlySeatTotal =
     subscription && currentPlan ? subscription.seat_quantity * currentPlan.amountMonthly : null;
@@ -81,12 +79,8 @@ export default async function DashboardBillingPage() {
     >
       <header className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm sm:p-6">
         <p className="text-sm text-muted-foreground">{t("header.eyebrow")}</p>
-        <h1 className="mt-1 text-2xl font-semibold text-foreground">
-          {t("header.title")}
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {t("header.description")}
-        </p>
+        <h1 className="mt-1 text-2xl font-semibold text-foreground">{t("header.title")}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{t("header.description")}</p>
       </header>
 
       {!isPaidPlan ? (
@@ -102,12 +96,8 @@ export default async function DashboardBillingPage() {
             </div>
           ) : null}
           <div className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
-            <h2 className="text-lg font-semibold text-foreground">
-              {t("freeMode.title")}
-            </h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {t("freeMode.description")}
-            </p>
+            <h2 className="text-lg font-semibold text-foreground">{t("freeMode.title")}</h2>
+            <p className="mt-2 text-sm text-muted-foreground">{t("freeMode.description")}</p>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
             {PLAN_CATALOG.map((plan) => (
@@ -151,9 +141,7 @@ export default async function DashboardBillingPage() {
               </div>
               <div className="flex items-center justify-between">
                 <dt className="text-muted-foreground">{t("currentSubscription.status")}</dt>
-                <dd className="uppercase tracking-wide text-foreground">
-                  {subscription.status}
-                </dd>
+                <dd className="uppercase tracking-wide text-foreground">{subscription.status}</dd>
               </div>
               <div className="flex items-center justify-between">
                 <dt className="text-muted-foreground">{t("currentSubscription.seats")}</dt>
@@ -162,9 +150,7 @@ export default async function DashboardBillingPage() {
               {currentPlan ? (
                 <div className="flex items-center justify-between">
                   <dt className="text-muted-foreground">{t("currentSubscription.perSeatCost")}</dt>
-                  <dd className="text-foreground">
-                    {catalogSeatPrice(currentPlan.amountMonthly)}
-                  </dd>
+                  <dd className="text-foreground">{catalogSeatPrice(currentPlan.amountMonthly)}</dd>
                 </div>
               ) : null}
               <div className="flex items-center justify-between">
@@ -208,9 +194,7 @@ export default async function DashboardBillingPage() {
 
       {teamUiMode === "paid_solo" && currentPlan ? (
         <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-foreground">
-            {t("paidSolo.title")}
-          </h2>
+          <h2 className="text-lg font-semibold text-foreground">{t("paidSolo.title")}</h2>
           <p className="mt-2 text-sm text-muted-foreground">
             {t("paidSolo.description", { amount: catalogSeatPrice(currentPlan.amountMonthly) })}
           </p>

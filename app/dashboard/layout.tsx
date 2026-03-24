@@ -5,9 +5,7 @@ import { signIntercomUserId } from "@/lib/intercom/signature";
 import { createClient } from "@/lib/supabase/server";
 import { env } from "@/lib/env";
 
-export default async function DashboardLayout({
-  children,
-}: Readonly<{ children: ReactNode }>) {
+export default async function DashboardLayout({ children }: Readonly<{ children: ReactNode }>) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -23,13 +21,13 @@ export default async function DashboardLayout({
 
   const profileName =
     intercomConfig && user
-      ? (
+      ? ((
           await supabase
             .from("profiles")
             .select("full_name")
             .eq("id", user.id)
             .maybeSingle<{ full_name: string | null }>()
-        ).data?.full_name ?? null
+        ).data?.full_name ?? null)
       : null;
 
   const intercomUser =

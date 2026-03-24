@@ -23,7 +23,10 @@ test.describe("@smoke billing checkout", () => {
 
     await page.goto("/dashboard/billing");
     const subscribeButton = page.getByRole("button", { name: /Subscribe /i }).first();
-    test.skip(!(await subscribeButton.isVisible()), "No checkout action available for current billing state.");
+    test.skip(
+      !(await subscribeButton.isVisible()),
+      "No checkout action available for current billing state.",
+    );
 
     await subscribeButton.click();
     await expect(page).toHaveURL(/https:\/\/checkout\.stripe\.com\//);

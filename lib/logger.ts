@@ -60,12 +60,13 @@ function redactSensitiveString(value: string): string {
   }, value);
 }
 
-function sanitizeForSentry(
-  value: unknown,
-  depth = 0,
-  seen = new WeakSet<object>(),
-): unknown {
-  if (value == null || typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+function sanitizeForSentry(value: unknown, depth = 0, seen = new WeakSet<object>()): unknown {
+  if (
+    value == null ||
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  ) {
     if (typeof value === "string") {
       return redactSensitiveString(value);
     }
@@ -93,7 +94,9 @@ function sanitizeForSentry(
   }
 
   if (Array.isArray(value)) {
-    return value.slice(0, SENTRY_CONTEXT_MAX_ARRAY_ITEMS).map((item) => sanitizeForSentry(item, depth + 1, seen));
+    return value
+      .slice(0, SENTRY_CONTEXT_MAX_ARRAY_ITEMS)
+      .map((item) => sanitizeForSentry(item, depth + 1, seen));
   }
 
   if (typeof value === "object") {
@@ -120,9 +123,7 @@ function sanitizeForSentry(
 
 function emitStructured(level: LogLevel, message: string, context?: Record<string, unknown>) {
   const safeMessage = redactSensitiveString(message);
-  const safeContext = context
-    ? (sanitizeForSentry(context) as Record<string, unknown>)
-    : undefined;
+  const safeContext = context ? (sanitizeForSentry(context) as Record<string, unknown>) : undefined;
   const entry: LogEntry = {
     level,
     msg: safeMessage,
@@ -130,21 +131,12 @@ function emitStructured(level: LogLevel, message: string, context?: Record<strin
     ...safeContext,
   };
 
-  const fn =
-    level === "error"
-      ? console.error
-      : level === "warn"
-        ? console.warn
-        : console.log;
+  const fn = level === "error" ? console.error : level === "warn" ? console.warn : console.log;
 
   fn(JSON.stringify(entry));
 }
 
-function reportToSentry(
-  message: string,
-  error?: unknown,
-  context?: Record<string, unknown>,
-) {
+function reportToSentry(message: string, error?: unknown, context?: Record<string, unknown>) {
   if (!SENTRY_ENABLED) {
     return;
   }
@@ -174,10 +166,7 @@ function reportToSentry(
     }
 
     if (error != null) {
-      Sentry.captureMessage(
-        redactSensitiveString(`${message}: ${String(error)}`),
-        "error",
-      );
+      Sentry.captureMessage(redactSensitiveString(`${message}: ${String(error)}`), "error");
       return;
     }
 

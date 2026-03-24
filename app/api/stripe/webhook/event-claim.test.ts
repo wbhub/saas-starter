@@ -2,7 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 function createWebhookEventsAdminMock({
   insertResult = { error: null as { code?: string; message: string } | null },
-  updateResult = { data: [] as Array<{ stripe_event_id: string }>, error: null as { message: string } | null },
+  updateResult = {
+    data: [] as Array<{ stripe_event_id: string }>,
+    error: null as { message: string } | null,
+  },
 } = {}) {
   const insert = vi.fn().mockResolvedValue(insertResult);
   const updateLimit = vi.fn().mockResolvedValue(updateResult);
@@ -101,10 +104,7 @@ describe("webhook event claim lifecycle", () => {
 
     expect(result.claimed).toBe(true);
     expect(result.claimToken).toEqual(expect.any(String));
-    expect(admin.updateBuilder.lt).toHaveBeenCalledWith(
-      "claim_expires_at",
-      expect.any(String),
-    );
+    expect(admin.updateBuilder.lt).toHaveBeenCalledWith("claim_expires_at", expect.any(String));
   });
 
   it("extends claim heartbeat ttl for in-flight event", async () => {

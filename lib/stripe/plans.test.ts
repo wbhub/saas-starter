@@ -12,4 +12,3 @@ describe("plan catalog consistency", () => {
     }
   });
 });
-

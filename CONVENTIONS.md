@@ -16,7 +16,7 @@ import { withAuthedRoute } from "@/lib/http/authed-route";
 export async function POST(request: Request) {
   return withAuthedRoute({
     request,
-    schema: myZodSchema,               // optional: parse + validate JSON body
+    schema: myZodSchema, // optional: parse + validate JSON body
     rateLimits: ({ userId }) => [
       {
         key: `my-feature:${userId}`,
@@ -71,8 +71,8 @@ import { withTeamRoute } from "@/lib/http/team-route";
 export async function POST(request: Request) {
   return withTeamRoute({
     request,
-    allowedRoles: ["owner", "admin"],  // optional: restrict to specific roles
-    schema: myZodSchema,               // optional: parse + validate JSON body
+    allowedRoles: ["owner", "admin"], // optional: restrict to specific roles
+    schema: myZodSchema, // optional: parse + validate JSON body
     rateLimits: ({ userId, teamId }) => [
       {
         key: `my-feature:${teamId}:${userId}`,
@@ -165,23 +165,23 @@ The `env` object uses lazy property getters. Each `get FOO()` only reads `proces
 
 Direct `process.env` reads are **only** permitted in the following locations. All other application/business code must use `env.*` from `lib/env.ts`.
 
-| Location | Reason |
-|----------|--------|
-| `lib/env.ts` | The gateway itself -- reads `process.env` and exposes typed getters. |
-| `lib/billing/provider.ts` | Lightweight billing-provider detection imported by `lib/env.ts` (avoids circular dependency). |
-| `instrumentation.ts`, `instrumentation-client.ts` | Sentry boot runs before the app is fully initialized. |
-| `next.config.ts` | Build-time configuration -- `lib/env.ts` is not available. |
-| `proxy.ts` | Middleware/proxy-level boot checks. |
-| `sentry.*.config.ts` | Sentry SDK init files. |
-| `trigger.config.ts` | Trigger.dev SDK config runs in its own process. |
-| `playwright.config.ts`, `e2e/**` | Test infrastructure. |
-| `*.test.ts` | Unit tests manipulating `process.env` for isolation. |
-| `lib/audit.ts` | Reads tuning parameters (`AUDIT_*`) with fallbacks; lightweight config, not business secrets. |
-| `app/dashboard/error.tsx`, `app/global-error.tsx` | Client components that check `NEXT_PUBLIC_SENTRY_DSN` (inlined by Next.js). |
-| `app/dashboard/actions.ts` | `NODE_ENV` check for CSRF cookie options. |
-| `lib/stripe/client.ts` | Client-side module; reads `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` which is inlined by Next.js at build time. |
-| `scripts/` | CI enforcement scripts that scan the file system — not application code. |
-| `NODE_ENV` in `lib/security/csrf.ts`, `lib/security/rate-limit.ts`, `lib/logger.ts` | Framework-level environment detection, not business config. |
+| Location                                                                            | Reason                                                                                                    |
+| ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `lib/env.ts`                                                                        | The gateway itself -- reads `process.env` and exposes typed getters.                                      |
+| `lib/billing/provider.ts`                                                           | Lightweight billing-provider detection imported by `lib/env.ts` (avoids circular dependency).             |
+| `instrumentation.ts`, `instrumentation-client.ts`                                   | Sentry boot runs before the app is fully initialized.                                                     |
+| `next.config.ts`                                                                    | Build-time configuration -- `lib/env.ts` is not available.                                                |
+| `proxy.ts`                                                                          | Middleware/proxy-level boot checks.                                                                       |
+| `sentry.*.config.ts`                                                                | Sentry SDK init files.                                                                                    |
+| `trigger.config.ts`                                                                 | Trigger.dev SDK config runs in its own process.                                                           |
+| `playwright.config.ts`, `e2e/**`                                                    | Test infrastructure.                                                                                      |
+| `*.test.ts`                                                                         | Unit tests manipulating `process.env` for isolation.                                                      |
+| `lib/audit.ts`                                                                      | Reads tuning parameters (`AUDIT_*`) with fallbacks; lightweight config, not business secrets.             |
+| `app/dashboard/error.tsx`, `app/global-error.tsx`                                   | Client components that check `NEXT_PUBLIC_SENTRY_DSN` (inlined by Next.js).                               |
+| `app/dashboard/actions.ts`                                                          | `NODE_ENV` check for CSRF cookie options.                                                                 |
+| `lib/stripe/client.ts`                                                              | Client-side module; reads `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` which is inlined by Next.js at build time. |
+| `scripts/`                                                                          | CI enforcement scripts that scan the file system — not application code.                                  |
+| `NODE_ENV` in `lib/security/csrf.ts`, `lib/security/rate-limit.ts`, `lib/logger.ts` | Framework-level environment detection, not business config.                                               |
 
 ## Error Handling
 
@@ -204,19 +204,19 @@ Use the route's i18n translator `t()` for user-facing error messages. Do **not**
 
 Common status codes used in this codebase:
 
-| Status | Meaning | When to use |
-|--------|---------|-------------|
-| 400 | Bad Request | Invalid payload, failed Zod validation |
-| 401 | Unauthorized | No authenticated user |
-| 402 | Payment Required | AI budget exceeded or paid plan required |
-| 403 | Forbidden | CSRF failure, insufficient role, missing team membership |
-| 404 | Not Found | Resource doesn't exist |
-| 409 | Conflict | Already exists, duplicate, same-state change |
-| 410 | Gone | Expired resource (e.g., expired invite) |
-| 413 | Payload Too Large | Request body exceeds size limit |
-| 415 | Unsupported Media Type | Missing/invalid `Content-Type` for JSON endpoints |
-| 429 | Too Many Requests | Rate limited (include `Retry-After` for local rate-limit responses) |
-| 503 | Service Unavailable | Required service not configured or down |
+| Status | Meaning                | When to use                                                         |
+| ------ | ---------------------- | ------------------------------------------------------------------- |
+| 400    | Bad Request            | Invalid payload, failed Zod validation                              |
+| 401    | Unauthorized           | No authenticated user                                               |
+| 402    | Payment Required       | AI budget exceeded or paid plan required                            |
+| 403    | Forbidden              | CSRF failure, insufficient role, missing team membership            |
+| 404    | Not Found              | Resource doesn't exist                                              |
+| 409    | Conflict               | Already exists, duplicate, same-state change                        |
+| 410    | Gone                   | Expired resource (e.g., expired invite)                             |
+| 413    | Payload Too Large      | Request body exceeds size limit                                     |
+| 415    | Unsupported Media Type | Missing/invalid `Content-Type` for JSON endpoints                   |
+| 429    | Too Many Requests      | Rate limited (include `Retry-After` for local rate-limit responses) |
+| 503    | Service Unavailable    | Required service not configured or down                             |
 
 Never expose internal error details to the client. Log the full error server-side with `logger.error()`, return a generic message to the user.
 

@@ -20,11 +20,7 @@ export function ThemeToggle() {
   const nextTheme = order[(index + 1) % order.length];
 
   const Icon =
-    displayedTheme === "system"
-      ? Monitor
-      : displayedTheme === "light"
-        ? SunMedium
-        : Moon;
+    displayedTheme === "system" ? Monitor : displayedTheme === "light" ? SunMedium : Moon;
 
   return (
     <button
@@ -38,4 +34,3 @@ export function ThemeToggle() {
     </button>
   );
 }
-

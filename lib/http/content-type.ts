@@ -11,16 +11,16 @@ export function hasJsonContentType(request: Request) {
   return getMediaType(request.headers.get("content-type")) === JSON_MEDIA_TYPE;
 }
 
-export function requireJsonContentType(
-  request: Request,
-  options?: { errorMessage?: string },
-) {
+export function requireJsonContentType(request: Request, options?: { errorMessage?: string }) {
   if (hasJsonContentType(request)) {
     return null;
   }
 
   return NextResponse.json(
-    { ok: false as const, error: options?.errorMessage ?? "Content-Type must be application/json." },
+    {
+      ok: false as const,
+      error: options?.errorMessage ?? "Content-Type must be application/json.",
+    },
     { status: 415 },
   );
 }

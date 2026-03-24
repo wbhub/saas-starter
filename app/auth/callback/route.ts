@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  LAST_AUTH_PROVIDER_COOKIE,
-  parseSupabaseProvider,
-} from "@/lib/auth/social-auth";
+import { LAST_AUTH_PROVIDER_COOKIE, parseSupabaseProvider } from "@/lib/auth/social-auth";
 import { DAY_MS, MINUTE_MS } from "@/lib/constants/durations";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { getAppUrl } from "@/lib/env";
@@ -77,7 +74,12 @@ function toAbsoluteUrl(pathnameWithQuery: string) {
   }
 }
 
-function maybeSetCallbackCookie(response: NextResponse, request: NextRequest, isNew: boolean, value: string) {
+function maybeSetCallbackCookie(
+  response: NextResponse,
+  request: NextRequest,
+  isNew: boolean,
+  value: string,
+) {
   if (!isNew) return response;
 
   response.cookies.set({
@@ -163,25 +165,45 @@ export async function GET(request: NextRequest) {
         headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
       },
     );
-    return maybeSetCallbackCookie(response, request, callbackClientId.isNew, callbackClientId.value);
+    return maybeSetCallbackCookie(
+      response,
+      request,
+      callbackClientId.isNew,
+      callbackClientId.value,
+    );
   }
 
   if (!code) {
     const response = NextResponse.redirect(toAbsoluteUrl("/login?error=missing_code"));
-    return maybeSetCallbackCookie(response, request, callbackClientId.isNew, callbackClientId.value);
+    return maybeSetCallbackCookie(
+      response,
+      request,
+      callbackClientId.isNew,
+      callbackClientId.value,
+    );
   }
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
     const response = NextResponse.redirect(toAbsoluteUrl("/login?error=invalid_code"));
-    return maybeSetCallbackCookie(response, request, callbackClientId.isNew, callbackClientId.value);
+    return maybeSetCallbackCookie(
+      response,
+      request,
+      callbackClientId.isNew,
+      callbackClientId.value,
+    );
   }
 
   const recoveredUserId = data.session?.user.id;
   if (safeNext.startsWith("/reset-password") && !recoveredUserId) {
     const response = NextResponse.redirect(toAbsoluteUrl("/login?error=invalid_code"));
-    return maybeSetCallbackCookie(response, request, callbackClientId.isNew, callbackClientId.value);
+    return maybeSetCallbackCookie(
+      response,
+      request,
+      callbackClientId.isNew,
+      callbackClientId.value,
+    );
   }
 
   const response = NextResponse.redirect(toAbsoluteUrl(safeNext));

@@ -36,8 +36,7 @@ describe("Login page social auth config", () => {
     }));
     vi.doMock("next/headers", () => ({
       cookies: async () => ({
-        get: (name: string) =>
-          name === "auth_last_provider" ? { value: "microsoft" } : undefined,
+        get: (name: string) => (name === "auth_last_provider" ? { value: "microsoft" } : undefined),
       }),
     }));
     vi.doMock("@/components/auth-form", () => ({
@@ -66,9 +65,7 @@ describe("Login page social auth config", () => {
     }));
 
     const LoginPage = (await import("./page")).default;
-    const html = renderToStaticMarkup(
-      await LoginPage({ searchParams: Promise.resolve({}) }),
-    );
+    const html = renderToStaticMarkup(await LoginPage({ searchParams: Promise.resolve({}) }));
 
     expect(html).toContain('data-social="google,microsoft"');
     expect(html).toContain('data-last-used="microsoft"');
@@ -106,9 +103,7 @@ describe("Login page social auth config", () => {
     }));
 
     const LoginPage = (await import("./page")).default;
-    const html = renderToStaticMarkup(
-      await LoginPage({ searchParams: Promise.resolve({}) }),
-    );
+    const html = renderToStaticMarkup(await LoginPage({ searchParams: Promise.resolve({}) }));
 
     expect(html).toContain('data-social=""');
   });

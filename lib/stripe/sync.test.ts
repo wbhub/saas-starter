@@ -315,7 +315,9 @@ describe("syncSubscription", () => {
     }));
 
     const { syncSubscription } = await import("./sync");
-    await syncSubscription(createBaseSubscription({ status: "definitely_unknown_status" }) as never);
+    await syncSubscription(
+      createBaseSubscription({ status: "definitely_unknown_status" }) as never,
+    );
 
     expect(adminMock.rpc).not.toHaveBeenCalled();
     expect(warn).toHaveBeenCalledWith(

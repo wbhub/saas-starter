@@ -41,9 +41,7 @@ for (const fullPath of files) {
 }
 
 if (violations.length > 0) {
-  console.error(
-    "❌ Team routes using manual CSRF pipeline without withTeamRoute/withAuthedRoute:",
-  );
+  console.error("❌ Team routes using manual CSRF pipeline without withTeamRoute/withAuthedRoute:");
   for (const file of violations) {
     console.error(`   ${file}`);
   }

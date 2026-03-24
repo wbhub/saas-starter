@@ -62,10 +62,7 @@ export async function withTeamRoute<TBody = undefined>({
   handler,
 }: TeamRouteOptions<TBody>) {
   const requestId = getOrCreateRequestId(request);
-  const json = (
-    body: unknown,
-    init?: ResponseInit,
-  ) => jsonWithRequestId(requestId, body, init);
+  const json = (body: unknown, init?: ResponseInit) => jsonWithRequestId(requestId, body, init);
   const jsonErr = (error: string, status: number, init?: ResponseInit) =>
     jsonWithRequestId(requestId, { ok: false as const, error }, { ...init, status });
 
@@ -94,7 +91,10 @@ export async function withTeamRoute<TBody = undefined>({
 
   const teamContext = await getCachedTeamContextForUser(supabase, user.id);
   if (!teamContext) {
-    return jsonErr(missingTeamMembershipMessage ?? "No team membership found for this account.", 403);
+    return jsonErr(
+      missingTeamMembershipMessage ?? "No team membership found for this account.",
+      403,
+    );
   }
 
   if (allowedRoles && !allowedRoles.includes(teamContext.role)) {
@@ -109,12 +109,17 @@ export async function withTeamRoute<TBody = undefined>({
       role: teamContext.role,
     });
     if (descriptors.length > 0) {
-      const results = await Promise.all(descriptors.map((descriptor) => checkRateLimit(descriptor)));
+      const results = await Promise.all(
+        descriptors.map((descriptor) => checkRateLimit(descriptor)),
+      );
       const deniedIndex = results.findIndex((result) => !result.allowed);
       if (deniedIndex >= 0) {
         const retryAfterSeconds = Math.max(...results.map((result) => result.retryAfterSeconds));
         return json(
-          { ok: false as const, error: descriptors[deniedIndex]?.message ?? tooManyRequestsMessage },
+          {
+            ok: false as const,
+            error: descriptors[deniedIndex]?.message ?? tooManyRequestsMessage,
+          },
           {
             status: 429,
             headers: { "Retry-After": String(retryAfterSeconds) },
