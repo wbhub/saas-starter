@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { getAppUrl } from "@/lib/env";
+import { env, getAppUrl } from "@/lib/env";
+import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { syncTeamSeatQuantity } from "@/lib/stripe/seats";
@@ -18,6 +19,7 @@ import {
   getServerActionCsrfCookieOptions,
   verifyCsrfProtectionForServerAction,
 } from "@/lib/security/csrf";
+import { checkRateLimit } from "@/lib/security/rate-limit";
 import { isValidEmail } from "@/lib/validation";
 
 export type UpdateDashboardSettingsState = {
@@ -53,11 +55,23 @@ type TeamMembershipRow = {
   team_id: string;
 };
 
-function extractProfilePhotoPath(url: string): string | null {
+function getSupabaseStorageOrigin(): string | null {
+  try {
+    return new URL(env.NEXT_PUBLIC_SUPABASE_URL).origin;
+  } catch {
+    return null;
+  }
+}
+
+function extractProfilePhotoPath(url: string, expectedStorageOrigin: string): string | null {
   try {
     const parsed = new URL(url);
+    if (parsed.origin !== expectedStorageOrigin) {
+      return null;
+    }
+
     const match = parsed.pathname.match(
-      /\/storage\/v1\/object\/(?:public|sign)\/profile-photos\/(.+)$/,
+      /^\/storage\/v1\/object\/(?:public|sign)\/profile-photos\/(.+)$/,
     );
     if (!match?.[1]) {
       return null;
@@ -67,6 +81,24 @@ function extractProfilePhotoPath(url: string): string | null {
   } catch {
     return null;
   }
+}
+
+function isAllowedAvatarUrl(url: string, expectedStorageOrigin: string, userId: string): boolean {
+  const profilePhotoPath = extractProfilePhotoPath(url, expectedStorageOrigin);
+  if (!profilePhotoPath) {
+    return false;
+  }
+
+  const pathSegments = profilePhotoPath.split("/").filter((segment) => segment.length > 0);
+  if (pathSegments.length < 2) {
+    return false;
+  }
+
+  if (pathSegments.some((segment) => segment === "." || segment === "..")) {
+    return false;
+  }
+
+  return pathSegments[0] === userId;
 }
 
 async function isLastOwnerOfAnyTeam(userId: string): Promise<boolean> {
@@ -230,6 +262,18 @@ export async function updateDashboardSettings(
     };
   }
 
+  const rateLimit = await checkRateLimit({
+    key: `dashboard-settings:update:${user.id}`,
+    ...RATE_LIMITS.dashboardSettingsUpdateByUser,
+  });
+  if (!rateLimit.allowed) {
+    const waitSeconds = Math.max(1, rateLimit.retryAfterSeconds);
+    return {
+      status: "error",
+      message: `Too many settings updates. Please wait ${waitSeconds} seconds and try again.`,
+    };
+  }
+
   const existingProfileResult = await supabase
     .from("profiles")
     .select("avatar_url")
@@ -252,10 +296,34 @@ export async function updateDashboardSettings(
     typeof avatarUrlInput === "string" && avatarUrlInput.trim().length > 0
       ? avatarUrlInput.trim()
       : null;
+  const storageOrigin = getSupabaseStorageOrigin();
+
+  if (!storageOrigin) {
+    logger.error("Supabase URL is invalid; cannot validate avatar URL", undefined, {
+      userId: user.id,
+    });
+    return {
+      status: "error",
+      message: "Could not validate profile photo URL. Please try again.",
+    };
+  }
+
+  let sanitizedAvatarUrl = avatarUrl;
+  if (sanitizedAvatarUrl && !isAllowedAvatarUrl(sanitizedAvatarUrl, storageOrigin, user.id)) {
+    if (sanitizedAvatarUrl === previousAvatarUrl) {
+      // Auto-heal legacy invalid values while still blocking newly injected URLs.
+      sanitizedAvatarUrl = null;
+    } else {
+      return {
+        status: "error",
+        message: "Profile photo URL is invalid. Please upload your photo again.",
+      };
+    }
+  }
 
   const { error } = await supabase
     .from("profiles")
-    .update({ full_name: fullName, avatar_url: avatarUrl })
+    .update({ full_name: fullName, avatar_url: sanitizedAvatarUrl })
     .eq("id", user.id);
 
   if (error) {
@@ -266,8 +334,8 @@ export async function updateDashboardSettings(
     };
   }
 
-  if (previousAvatarUrl && previousAvatarUrl !== avatarUrl) {
-    const previousPhotoPath = extractProfilePhotoPath(previousAvatarUrl);
+  if (previousAvatarUrl && previousAvatarUrl !== sanitizedAvatarUrl) {
+    const previousPhotoPath = extractProfilePhotoPath(previousAvatarUrl, storageOrigin);
     if (previousPhotoPath) {
       const adminClient = createAdminClient();
       const { error: removeError } = await adminClient.storage
