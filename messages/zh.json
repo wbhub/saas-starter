@@ -4,9 +4,9 @@
     "myTeam": "我的团队"
   },
   "Metadata": {
-    "title": "SaaS 入门 | Next.js、Supabase、Stripe",
-    "description": "通用、生产就绪的 SaaS 入门程序，具有 Next.js、Supabase auth 和 Stripe 订阅。",
-    "openGraphImageAlt": "SaaS 入门预览图像"
+    "title": "SaaS Starter | 生产级 Next.js SaaS 基础",
+    "description": "发布多租户 SaaS，内置身份验证、角色、按席位 Stripe 计费、AI 预算、i18n 和加固的安全管道 — 全部基于 Next.js 16、Supabase 和 React 19 预先配置。",
+    "openGraphImageAlt": "SaaS Starter 架构概览"
   },
   "NotFound": {
     "title": "页面未找到",
@@ -29,9 +29,9 @@
     }
   },
   "SiteHeader": {
-    "dashboard": "仪表板",
+    "dashboard": "控制台",
     "login": "登录",
-    "openApp": "打开应用程序",
+    "openApp": "打开应用",
     "startFree": "免费开始"
   },
   "SiteFooter": {
@@ -58,8 +58,8 @@
       "signup": "创建您的帐户"
     },
     "description": {
-      "login": "登录以管理您的 SaaS 订阅。",
-      "signup": "从安全身份验证和计费就绪基础设施开始。"
+      "login": "登录您的控制台。",
+      "signup": "从生产就绪的身份验证、团队和计费开始。"
     },
     "socialAuthLabel": "社会认证",
     "pleaseWait": "请稍等...",
@@ -81,77 +81,77 @@
   },
   "Landing": {
     "header": {
-      "dashboard": "仪表板",
+      "dashboard": "控制台",
       "login": "登录",
-      "openApp": "打开应用程序",
+      "openApp": "打开应用",
       "startFree": "免费开始"
     },
     "hero": {
-      "badge": "生产级 SaaS 基础",
-      "title": "只需几天而不是几个月即可启动可投入生产的 SaaS。",
-      "description": "跳过数月的平台工作。身份验证、团队访问、基于席位的计费、支持电子邮件和 AI 就绪 API 均已连接，因此您可以专注于客户付费的产品。",
-      "goDashboard": "转到仪表板",
+      "badge": "交付产品，而非平台",
+      "title": "您需要花数月构建的 SaaS 基础设施已经就绪。",
+      "description": "身份验证、多租户团队、按席位 Stripe 计费、数据库级 AI 令牌预算、审计日志和加固的安全管道 — 基于 Next.js 16、Supabase 和 React 19 端到端连接，让您完全专注于产品的独特价值。",
+      "goDashboard": "前往控制台",
       "startFreeNow": "立即免费开始",
       "viewPricing": "查看定价",
-      "feature1": "Supabase 身份验证流程",
-      "feature2": "团队邀请和角色",
-      "feature3": "基于席位的 Stripe 计费",
-      "feature4": "AI聊天端点",
-      "feature5": "重新发送支持电子邮件",
-      "feature6": "CSRF + CSP + 速率限制",
-      "shipNowTitle": "您立即发货的物品",
-      "shipNowDescription": "应用程序和 API 流程映射到真正的 SaaS 启动。",
-      "shipItem1": "注册、登录、忘记密码、重置密码和受保护的仪表板路由",
-      "shipItem2": "团队入职，包括邀请、接受、角色管理和所有权转让",
-      "shipItem3": "基于座位的 Stripe 结帐、计费门户、计划更改和 Webhook 同步",
-      "shipItem4": "支持具有重新发送传递和经过身份验证的发件人上下文的请求 API",
-      "shipItem5": "可选的人工智能聊天路线，具有流式响应、预算和计划感知访问",
-      "shipItem6": "安全默认设置，包括 CSRF 检查、CSP 标头、请求 ID 和速率限制"
+      "feature1": "多租户团队角色",
+      "feature2": "按席位 Stripe 计费",
+      "feature3": "AI 令牌预算",
+      "feature4": "三层速率限制",
+      "feature5": "幂等 Webhook",
+      "feature6": "5 种语言 i18n",
+      "shipNowTitle": "第一天就能交付的功能",
+      "shipNowDescription": "生产级深度流程，而非样板桩代码。",
+      "shipItem1": "完整的身份验证生命周期 — 注册、登录、OAuth（Google + Microsoft）、密码重置和带会话刷新中间件的受保护控制台",
+      "shipItem2": "多租户团队，包含邀请流程、基于角色的访问（owner/admin/member）、原子化所有权转移和数据库级最后所有者保护",
+      "shipItem3": "Stripe 结账、账单门户、计划变更和基于 claims 表的幂等 Webhook 处理，可选 Trigger.dev 卸载",
+      "shipItem4": "通过 cron 进行席位调和，包含重试队列、邀请接受时自动同步数量和订阅状态追踪",
+      "shipItem5": "AI 聊天支持流式响应、按计划的访问控制和在 Postgres 中以 claim/finalize 语义执行的月度令牌预算，附带重试队列",
+      "shipItem6": "CSRF 双重提交 cookie、带 nonce 的 CSP、类型化环境变量启动时验证、请求 ID、审计日志和带熔断器的多层速率限制"
     },
     "gettingStarted": {
-      "title": "如何启动并运行",
-      "description": "按照自述文件中的设置从新克隆到具有真实身份验证和计费流程的工作 SaaS 应用程序。",
-      "step1Title": "1.克隆并安装",
-      "step1Text": "安装依赖项，将 `.env.example` 复制到 `.env.local`，然后设置所需的值。",
-      "step2Title": "2. 配置提供商",
-      "step2Text": "应用“supabase/schema.sql”，添加 Stripe 价格 ID + webhook 密钥，并配置重新发送。",
-      "step3Title": "3. 定制和启动",
-      "step3Text": "更新品牌、定价和产品逻辑，然后使用可选的 cron 作业部署到 Vercel。"
+      "title": "几分钟内运行，而非几周",
+      "description": "从克隆到拥有真实身份验证、团队、计费和安全性的工作 SaaS 只需三步 — 配有四份详细的架构指南。",
+      "step1Title": "1. 克隆并配置",
+      "step1Text": "安装依赖、复制 .env.example 并设置密钥。类型化的环境变量验证在启动时捕获配置错误，而非运行时。",
+      "step2Title": "2. 连接服务提供商",
+      "step2Text": "在 Supabase 中运行 schema.sql（20+ 表、RLS 策略、触发器和 RPC 已就绪），添加 Stripe 价格 ID 并配置 Resend 域名。",
+      "step3Title": "3. 构建您的产品",
+      "step3Text": "身份验证、团队、计费、AI 和安全性已处理完毕。自定义品牌、添加您的产品逻辑并部署 — Redis、Trigger.dev 和 Sentry 在需要扩展时可选启用。"
     },
     "whyStarter": {
-      "label": "为什么选择这个首发",
-      "title": "专为真正的 SaaS 操作而构建，而不仅仅是演示。",
-      "description": "该代码库包括团队、订阅、支持、AI 访问控制和操作 cron 端点的生产模式。",
-      "stat1Label": "包含应用程序路线",
-      "stat1Value": "公共+授权+仪表板",
-      "stat2Label": "预先连接的核心工作流程",
-      "stat2Value": "身份验证 + 团队 + 计费",
-      "stat3Label": "包括安全基线",
-      "stat3Value": "CSRF+CSP+限速"
+      "label": "为什么选择这个 starter",
+      "title": "生产级模式，而非演示级脚手架。",
+      "description": "每个集成都按照您经历过艰难教训后会采用的方式构建 — 原子化数据库操作、重试队列、幂等 Webhook 和全方位的优雅降级。",
+      "stat1Label": "Postgres 表、触发器和 RPC",
+      "stat1Value": "20+",
+      "stat2Label": "无前缀路由的语言",
+      "stat2Value": "5",
+      "stat3Label": "带熔断器的速率限制层",
+      "stat3Value": "3"
     },
     "bestPractices": {
-      "title": "内置最佳实践",
-      "description": "核心路径的实施考虑到了安全性和可维护性，因此您可以放心地进行扩展。",
-      "securityDefaultsTitle": "安全默认设置",
-      "securityDefaultsText": "包括 CSRF 保护、CSP、严格的 API 标头和请求感知中间件。",
-      "teamBillingTitle": "基于团队的计费",
-      "teamBillingText": "Stripe 订阅是团队范围的，包括席位协调、门户访问和计划更改。",
-      "operationalTitle": "运营端点",
-      "operationalText": "Cron 路由通过基于令牌的授权来协调席位并清理 Webhook 数据。"
+      "title": "默认加固",
+      "description": "安全性、数据完整性和运维韧性融入每一层 — 而非事后补充。",
+      "securityDefaultsTitle": "纵深防御安全",
+      "securityDefaultsText": "CSRF 双重提交 cookie、带 nonce 的 CSP、严格的 API content-type 验证、每个响应附带请求 ID，以及每条路由上的可组合身份验证/角色中间件。",
+      "teamBillingTitle": "数据完整性模式",
+      "teamBillingText": "用于邀请接受、所有权转移和订阅同步的原子化 RPC。数据库触发器防止删除最后一个所有者并自动修复孤立的团队上下文。",
+      "operationalTitle": "运维韧性",
+      "operationalText": "多层速率限制（Redis、Supabase RPC、内存）配合熔断器降级、带重试队列的席位调和 cron，以及幂等 Stripe Webhook 处理。"
     },
     "stack": {
-      "title": "堆栈内部",
-      "description": "Next.js App Router 在 UI 路由、API 处理程序和共享平台库之间具有清晰的界限。",
-      "authTitle": "身份验证和用户流程",
-      "authText": "Supabase SSR 身份验证助手、邀请接受流程、团队上下文和帐户设置已连接。",
-      "billingTitle": "计费和条带",
-      "billingText": "结帐、门户和更改计划 API 由 Webhook 重复数据删除和订阅同步逻辑支持。",
-      "opsTitle": "人工智能、支持和可观察性",
-      "opsText": "AI 聊天、重新发送支持电子邮件和可选的 Intercom + Sentry 集成已准备好进行配置。"
+      "title": "技术栈内部",
+      "description": "Next.js 16 App Router 搭配 React 19、TypeScript 严格模式，在 UI 路由、API 处理器和共享平台库之间有清晰的边界。",
+      "authTitle": "身份验证与多租户团队",
+      "authText": "Supabase SSR 身份验证支持 Google 和 Microsoft OAuth，团队上下文缓存（Redis + 内存 + 数据库），基于角色的 API 包装器，带原子化席位同步的邀请接受，以及完整的账户生命周期管理。",
+      "billingTitle": "计费与 Webhook 可靠性",
+      "billingText": "Stripe 结账、门户和计划变更 API 由基于 claims 表的幂等 Webhook 处理、订阅同步 RPC、席位调和 cron 和可选 Trigger.dev 卸载提供支持。",
+      "opsTitle": "AI、可观测性与支持",
+      "opsText": "AI 聊天支持流式响应和数据库级月度令牌预算，Resend 支持邮件附带发送者上下文，批量审计日志，以及可选的 Intercom 和 Sentry 集成 — 全部通过 feature flag 控制。"
     },
     "pricing": {
-      "title": "Stripe 的基于座位的定价",
-      "description": "配置 Starter、Growth 和 Pro 价格 ID 一次，登陆页面和计费流程即可保持同步。",
+      "title": "从 Stripe 实时同步的定价",
+      "description": "价格在渲染时直接从您的 Stripe 账户获取。一次性配置价格 ID，落地页、结账和账单门户自动保持同步。",
       "mostPopular": "最受欢迎",
       "managePlan": "管理计划",
       "choosePlan": "选择 {name}",
@@ -165,33 +165,33 @@
       "plans": {
         "starter": {
           "name": "入门版",
-          "description": "适合验证新产品的创业者。"
+          "description": "为验证新产品的创始人提供身份验证、团队和计费。"
         },
         "growth": {
           "name": "成长版",
-          "description": "适合扩大激活与留存的团队。"
+          "description": "随着团队增长，添加 AI 访问、席位扩展和使用量追踪。"
         },
         "pro": {
           "name": "专业版",
-          "description": "适合需要大规模可靠性的企业。"
+          "description": "完整平台，包含优先支持、审计日志和高级集成。"
         }
       }
     },
     "ctaFaq": {
-      "title": "准备好更快地交付您的 SaaS 了吗？",
-      "description": "从经过验证的身份验证、团队、计费和 API 基础设施开始，然后构建使您的业务独一无二的产品体验。",
-      "openDashboard": "打开仪表板",
-      "createAccount": "创建您的帐户",
+      "title": "不要重复造基础设施的轮子。开始交付产品。",
+      "description": "每个 SaaS 都需要身份验证、团队、计费和安全性。从这个经过数千行生产级代码打磨的版本开始，把时间花在客户真正付费的功能上。",
+      "openDashboard": "打开控制台",
+      "createAccount": "创建账户",
       "comparePlans": "比较计划",
-      "faqTitle": "常问问题",
+      "faqTitle": "常见问题",
       "q1": "开箱即用包含什么？",
-      "a1": "面向生产的 SaaS 基础，具有 Supabase 身份验证、团队邀请和角色、基于席位的 Stripe 计费、仪表板路由、通过 Resend 的支持电子邮件以及已连接的安全中间件。",
-      "q2": "我需要自己构建身份验证和计费吗？",
-      "a2": "不需要。登录、注册、密码重置、受保护的路线、结帐、计划更改、计费门户和 Webhook 处理已经实现，因此您可以专注于产品功能。",
-      "q3": "团队和权限如何处理？",
-      "a3": "团队支持邀请流程和基于角色的访问（“所有者”、“管理员”、“成员”），并通过 API 路由和数据库策略处理所有权转移和受保护的成员资格操作。",
-      "q4": "包含AI聊天吗？",
-      "a4": "是的。当设置了 AI 提供商密钥（`AI_PROVIDER_API_KEY` 或 `OPENAI_API_KEY`）时，`/api/ai/chat` 包含流式响应、CSRF 检查、速率限制，以及按付费状态或计划配置的访问规则。"
+      "a1": "完整的 SaaS 基础：Supabase 身份验证支持 OAuth（Google + Microsoft），多租户团队支持基于角色的访问和邀请流程，按席位的 Stripe 计费搭配幂等 Webhook 和调和 cron，流式 AI 聊天搭配数据库级令牌预算，通过 Resend 发送的支持邮件，审计日志，5 种语言 i18n，以及涵盖 CSRF、CSP、速率限制和请求追踪的安全管道。",
+      "q2": "集成的深度如何 — 是桩代码还是生产就绪？",
+      "a2": "生产就绪。Stripe Webhook 使用 claims 表实现幂等性，可选卸载到 Trigger.dev。团队邀请通过原子化 Postgres RPC 解析并同步席位数量。AI 预算在数据库中以 claim/finalize 语义和重试队列执行。速率限制在三层之间级联并配备熔断器。这些是您在运营真实产品后才会形成的模式。",
+      "q3": "团队、角色和权限如何管理？",
+      "a3": "每个用户在注册时通过数据库触发器获得一个个人团队。团队支持 owner、admin 和 member 角色，包含邀请流程、基于令牌的接受和原子化所有权转移。数据库触发器防止删除最后一个所有者并自动修复孤立的团队上下文。所有团队 API 路由使用可组合中间件，在单个管道中解析身份验证、成员关系和角色。",
+      "q4": "以后可以在不重新架构的情况下扩展什么？",
+      "a4": "Redis 用于速率限制和团队上下文缓存（没有它也能优雅降级），Trigger.dev 用于将 Webhook 处理卸载到后台任务，Sentry 用于错误监控 — 全部通过 feature flag 选择性启用。Postgres schema、RLS 策略和 API 管道的设计支持这些扩展，无需结构性更改。"
     }
   },
   "DashboardSidebar": {
