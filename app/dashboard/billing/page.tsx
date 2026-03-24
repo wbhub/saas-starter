@@ -80,11 +80,11 @@ export default async function DashboardBillingPage() {
       csrfToken={csrfToken}
     >
       <header className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm sm:p-6">
-        <p className="text-sm text-slate-500 dark:text-slate-400">{t("header.eyebrow")}</p>
-        <h1 className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-50">
+        <p className="text-sm text-muted-foreground">{t("header.eyebrow")}</p>
+        <h1 className="mt-1 text-2xl font-semibold text-foreground">
           {t("header.title")}
         </h1>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+        <p className="mt-1 text-sm text-muted-foreground">
           {t("header.description")}
         </p>
       </header>
@@ -93,19 +93,19 @@ export default async function DashboardBillingPage() {
         <section className="space-y-4">
           {!billingEnabled ? (
             <div className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+              <h2 className="text-lg font-semibold text-foreground">
                 {t("billingDisabled.title")}
               </h2>
-              <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+              <p className="mt-2 text-sm text-muted-foreground">
                 {t("billingDisabled.description")}
               </p>
             </div>
           ) : null}
           <div className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+            <h2 className="text-lg font-semibold text-foreground">
               {t("freeMode.title")}
             </h2>
-            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+            <p className="mt-2 text-sm text-muted-foreground">
               {t("freeMode.description")}
             </p>
           </div>
@@ -115,19 +115,19 @@ export default async function DashboardBillingPage() {
                 key={plan.key}
                 className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm"
               >
-                <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                <p className="text-sm font-medium text-muted-foreground">
                   {tPlanCopy(`plans.${plan.key}.name`)}
                 </p>
-                <p className="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-50">
+                <p className="mt-2 text-2xl font-semibold text-foreground">
                   {catalogSeatPrice(plan.amountMonthly)}
                 </p>
-                <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                <p className="mt-1 text-sm text-muted-foreground">
                   {tPlanCopy(`plans.${plan.key}.description`)}
                 </p>
-                <p className="mt-3 text-sm text-slate-700 dark:text-slate-200">
+                <p className="mt-3 text-sm text-muted-foreground">
                   {t("freeMode.perSeat", { amount: catalogSeatPrice(plan.amountMonthly) })}
                 </p>
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                <p className="mt-1 text-xs text-muted-foreground">
                   {t("freeMode.collaborationIncluded")}
                 </p>
               </article>
@@ -136,40 +136,40 @@ export default async function DashboardBillingPage() {
         </section>
       ) : (
         <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+          <h2 className="text-lg font-semibold text-foreground">
             {t("currentSubscription.title")}
           </h2>
           {subscription ? (
             <dl className="mt-4 space-y-2 text-sm">
               <div className="flex items-center justify-between">
-                <dt className="text-slate-500 dark:text-slate-400">{t("currentSubscription.currentPlan")}</dt>
-                <dd className="font-medium text-slate-900 dark:text-slate-100">
+                <dt className="text-muted-foreground">{t("currentSubscription.currentPlan")}</dt>
+                <dd className="font-medium text-foreground">
                   {currentPaidPlanKey
                     ? tPlanCopy(`plans.${currentPaidPlanKey}.name`)
                     : t("currentSubscription.unknown")}
                 </dd>
               </div>
               <div className="flex items-center justify-between">
-                <dt className="text-slate-500 dark:text-slate-400">{t("currentSubscription.status")}</dt>
-                <dd className="uppercase tracking-wide text-slate-800 dark:text-slate-100">
+                <dt className="text-muted-foreground">{t("currentSubscription.status")}</dt>
+                <dd className="uppercase tracking-wide text-foreground">
                   {subscription.status}
                 </dd>
               </div>
               <div className="flex items-center justify-between">
-                <dt className="text-slate-500 dark:text-slate-400">{t("currentSubscription.seats")}</dt>
-                <dd className="text-slate-800 dark:text-slate-100">{subscription.seat_quantity}</dd>
+                <dt className="text-muted-foreground">{t("currentSubscription.seats")}</dt>
+                <dd className="text-foreground">{subscription.seat_quantity}</dd>
               </div>
               {currentPlan ? (
                 <div className="flex items-center justify-between">
-                  <dt className="text-slate-500 dark:text-slate-400">{t("currentSubscription.perSeatCost")}</dt>
-                  <dd className="text-slate-800 dark:text-slate-100">
+                  <dt className="text-muted-foreground">{t("currentSubscription.perSeatCost")}</dt>
+                  <dd className="text-foreground">
                     {catalogSeatPrice(currentPlan.amountMonthly)}
                   </dd>
                 </div>
               ) : null}
               <div className="flex items-center justify-between">
-                <dt className="text-slate-500 dark:text-slate-400">{t("currentSubscription.periodEnd")}</dt>
-                <dd className="text-slate-800 dark:text-slate-100">
+                <dt className="text-muted-foreground">{t("currentSubscription.periodEnd")}</dt>
+                <dd className="text-foreground">
                   {subscription.current_period_end
                     ? formatUtcDate(subscription.current_period_end, undefined, locale)
                     : t("currentSubscription.notAvailable")}
@@ -177,12 +177,12 @@ export default async function DashboardBillingPage() {
               </div>
             </dl>
           ) : (
-            <div className="mt-4 rounded-lg app-surface-subtle p-4 text-sm text-slate-600 dark:text-slate-200">
+            <div className="mt-4 rounded-lg app-surface-subtle p-4 text-sm text-muted-foreground">
               {t("currentSubscription.noSubscription")}
             </div>
           )}
           {teamUiMode === "paid_team" && currentPlan && estimatedMonthlySeatTotal !== null ? (
-            <p className="mt-4 rounded-lg app-surface-subtle px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
+            <p className="mt-4 rounded-lg app-surface-subtle px-3 py-2 text-sm text-muted-foreground">
               {t("paidTeam.breakdown", {
                 seats: String(subscription?.seat_quantity ?? memberCount),
                 seatCost: catalogSeatPrice(currentPlan.amountMonthly),
@@ -208,15 +208,15 @@ export default async function DashboardBillingPage() {
 
       {teamUiMode === "paid_solo" && currentPlan ? (
         <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+          <h2 className="text-lg font-semibold text-foreground">
             {t("paidSolo.title")}
           </h2>
-          <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+          <p className="mt-2 text-sm text-muted-foreground">
             {t("paidSolo.description", { amount: catalogSeatPrice(currentPlan.amountMonthly) })}
           </p>
           <Link
             href="/dashboard/team"
-            className="mt-4 inline-flex rounded-lg border app-border-subtle px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800"
+            className="mt-4 inline-flex rounded-lg border app-border-subtle px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-surface-hover"
           >
             {t("paidSolo.action")}
           </Link>

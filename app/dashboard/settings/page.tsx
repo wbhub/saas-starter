@@ -73,11 +73,11 @@ export default async function DashboardSettingsPage() {
       csrfToken={csrfToken}
     >
       <header className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm sm:p-6">
-        <p className="text-sm text-slate-500 dark:text-slate-400">{t("header.eyebrow")}</p>
-        <h1 className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-50">
+        <p className="text-sm text-muted-foreground">{t("header.eyebrow")}</p>
+        <h1 className="mt-1 text-2xl font-semibold text-foreground">
           {t("header.title")}
         </h1>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+        <p className="mt-1 text-sm text-muted-foreground">
           {t("header.description")}
         </p>
       </header>
@@ -118,15 +118,15 @@ export default async function DashboardSettingsPage() {
 
       {teamUiMode === "paid_solo" ? (
         <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+          <h2 className="text-lg font-semibold text-foreground">
             {t("inviteTeammates.title")}
           </h2>
-          <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+          <p className="mt-2 text-sm text-muted-foreground">
             {t("inviteTeammates.description")}
           </p>
           <Link
             href="/dashboard/team"
-            className="mt-4 inline-flex rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
+            className="mt-4 inline-flex rounded-lg bg-btn-primary px-4 py-2 text-sm font-medium text-btn-primary-text hover:bg-btn-primary-hover"
           >
             {t("inviteTeammates.action")}
           </Link>

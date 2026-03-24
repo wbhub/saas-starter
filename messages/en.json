@@ -8,6 +8,12 @@
     "description": "Generic, production-ready SaaS starter with Next.js, Supabase auth, and Stripe subscriptions.",
     "openGraphImageAlt": "SaaS Starter preview image"
   },
+  "NotFound": {
+    "title": "Page not found",
+    "description": "The page you are looking for does not exist or has been moved.",
+    "goHome": "Back to home",
+    "goDashboard": "Go to dashboard"
+  },
   "LocaleSwitcher": {
     "label": "Language",
     "english": "English",

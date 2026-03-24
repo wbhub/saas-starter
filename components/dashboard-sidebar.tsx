@@ -64,10 +64,10 @@ export function DashboardSidebar({
     <aside className="rounded-xl border app-border-subtle app-surface p-4 shadow-sm lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)] lg:min-h-[560px] lg:p-5">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
             {t("DashboardSidebar.appDashboard")}
           </p>
-          <p className="mt-1 text-base font-semibold text-slate-900 dark:text-slate-50">
+          <p className="mt-1 text-base font-semibold text-foreground">
             {teamUiMode === "free"
               ? t("DashboardSidebar.soloWorkspace")
               : (teamName ?? t("Common.myTeam"))}
@@ -80,12 +80,12 @@ export function DashboardSidebar({
       </div>
 
       <div className="mt-5 rounded-lg app-surface-subtle px-3 py-2">
-        <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">
+        <p className="truncate text-sm font-medium text-foreground">
           {displayName}
         </p>
-        <p className="truncate text-xs text-slate-600 dark:text-slate-300">{userEmail}</p>
+        <p className="truncate text-xs text-muted-foreground">{userEmail}</p>
         {teamUiMode !== "free" ? (
-          <p className="mt-1 text-xs capitalize text-slate-600 dark:text-slate-300">{role}</p>
+          <p className="mt-1 text-xs capitalize text-muted-foreground">{role}</p>
         ) : null}
       </div>
 
@@ -95,7 +95,7 @@ export function DashboardSidebar({
           <input type="hidden" name="redirectTo" value={pathname} />
           <label
             htmlFor="active-team-select"
-            className="block text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400"
+            className="block text-xs uppercase tracking-wide text-muted-foreground"
           >
             {t("DashboardSidebar.team")}
           </label>
@@ -104,7 +104,7 @@ export function DashboardSidebar({
               id="active-team-select"
               name="teamId"
               defaultValue={activeTeamId}
-              className="min-w-0 flex-1 rounded-md border app-border-subtle app-surface px-2 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:text-slate-100 dark:focus:ring-slate-500"
+              className="min-w-0 flex-1 rounded-md border app-border-subtle app-surface px-2 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             >
               {teamMemberships.map((membership) => (
                 <option key={membership.teamId} value={membership.teamId}>
@@ -114,7 +114,7 @@ export function DashboardSidebar({
             </select>
             <button
               type="submit"
-              className="rounded-md border app-border-subtle px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800"
+              className="rounded-md border app-border-subtle px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-surface-hover"
             >
               {t("DashboardSidebar.switch")}
             </button>
@@ -133,8 +133,8 @@ export function DashboardSidebar({
               aria-current={isActive ? "page" : undefined}
               className={`block rounded-md px-3 py-2 text-sm ${
                 isActive
-                  ? "bg-slate-900/10 font-medium text-slate-900 dark:bg-slate-100/10 dark:text-slate-50"
-                  : "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                  ? "bg-btn-primary/10 font-medium text-foreground"
+                  : "text-muted-foreground hover:bg-surface-hover"
               }`}
             >
               {item.label}
@@ -146,7 +146,7 @@ export function DashboardSidebar({
       <div className="mt-5 flex gap-2 lg:mt-auto">
         <Link
           href="/"
-          className="inline-flex flex-1 items-center justify-center rounded-md border app-border-subtle px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800"
+          className="inline-flex flex-1 items-center justify-center rounded-md border app-border-subtle px-3 py-2 text-sm text-muted-foreground hover:bg-surface-hover"
         >
           {t("DashboardSidebar.home")}
         </Link>
@@ -154,7 +154,7 @@ export function DashboardSidebar({
           <input type="hidden" name="csrf_token" value={csrfToken} />
           <button
             type="submit"
-            className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
+            className="w-full rounded-md bg-btn-primary px-3 py-2 text-sm font-medium text-btn-primary-text hover:bg-btn-primary-hover"
           >
             {t("DashboardSidebar.logout")}
           </button>

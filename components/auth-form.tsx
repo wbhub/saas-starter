@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useReducer } from "react";
 import { useTranslations } from "next-intl";
 import {
   AuthProvider,
@@ -21,6 +21,59 @@ type AuthApiResponse = {
   message?: string;
   sessionCreated?: boolean;
 };
+
+type AuthFormState = {
+  email: string;
+  password: string;
+  loading: boolean;
+  socialLoadingProvider: AuthProvider | null;
+  message: string | null;
+  messageType: "error" | "success";
+};
+
+type AuthFormAction =
+  | { type: "SET_FIELD"; field: "email" | "password"; value: string }
+  | { type: "SUBMIT_START" }
+  | { type: "SUBMIT_SUCCESS"; message?: string }
+  | { type: "SUBMIT_ERROR"; message: string }
+  | { type: "OAUTH_START"; provider: AuthProvider }
+  | { type: "OAUTH_ERROR"; message: string };
+
+const authFormInitialState: AuthFormState = {
+  email: "",
+  password: "",
+  loading: false,
+  socialLoadingProvider: null,
+  message: null,
+  messageType: "success",
+};
+
+function authFormReducer(state: AuthFormState, action: AuthFormAction): AuthFormState {
+  switch (action.type) {
+    case "SET_FIELD":
+      return { ...state, [action.field]: action.value };
+    case "SUBMIT_START":
+      return { ...state, loading: true, message: null };
+    case "SUBMIT_SUCCESS":
+      return {
+        ...state,
+        loading: false,
+        messageType: "success",
+        message: action.message ?? null,
+      };
+    case "SUBMIT_ERROR":
+      return { ...state, loading: false, messageType: "error", message: action.message };
+    case "OAUTH_START":
+      return { ...state, socialLoadingProvider: action.provider, message: null };
+    case "OAUTH_ERROR":
+      return {
+        ...state,
+        socialLoadingProvider: null,
+        messageType: "error",
+        message: action.message,
+      };
+  }
+}
 
 function SocialProviderIcon({ provider }: { provider: AuthProvider }) {
   if (provider === "google") {
@@ -77,14 +130,8 @@ export function AuthForm({
 }) {
   const router = useRouter();
   const t = useTranslations("AuthForm");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [socialLoadingProvider, setSocialLoadingProvider] = useState<AuthProvider | null>(
-    null,
-  );
-  const [message, setMessage] = useState<string | null>(null);
-  const [messageType, setMessageType] = useState<"error" | "success">("success");
+  const [state, dispatch] = useReducer(authFormReducer, authFormInitialState);
+  const { email, password, loading, socialLoadingProvider, message, messageType } = state;
   const isLogin = mode === "login";
   const hasSocialProviders = socialProviders.length > 0;
   const socialProviderOptions = getSocialProviderOptions(
@@ -102,8 +149,7 @@ export function AuthForm({
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setLoading(true);
-    setMessage(null);
+    dispatch({ type: "SUBMIT_START" });
 
     try {
       if (isLogin) {
@@ -119,6 +165,7 @@ export function AuthForm({
           throw new Error(payload?.error ?? t("errors.unableToLogIn"));
         }
 
+        dispatch({ type: "SUBMIT_SUCCESS" });
         router.push(redirectTo);
         router.refresh();
       } else {
@@ -140,27 +187,26 @@ export function AuthForm({
         }
 
         if (payload?.sessionCreated) {
+          dispatch({ type: "SUBMIT_SUCCESS" });
           router.push("/dashboard");
           router.refresh();
           return;
         }
-        setMessageType("success");
-        setMessage(
-          payload?.message ??
-            t("messages.accountCreated"),
-        );
+        dispatch({
+          type: "SUBMIT_SUCCESS",
+          message: payload?.message ?? t("messages.accountCreated"),
+        });
       }
     } catch (error) {
-      setMessageType("error");
-      setMessage(error instanceof Error ? error.message : t("errors.unexpected"));
-    } finally {
-      setLoading(false);
+      dispatch({
+        type: "SUBMIT_ERROR",
+        message: error instanceof Error ? error.message : t("errors.unexpected"),
+      });
     }
   }
 
   async function onOAuthClick(provider: AuthProvider) {
-    setSocialLoadingProvider(provider);
-    setMessage(null);
+    dispatch({ type: "OAUTH_START", provider });
 
     try {
       const supabase = createClient();
@@ -176,9 +222,10 @@ export function AuthForm({
         throw new Error(error.message || t("errors.unableSocialLogin"));
       }
     } catch (error) {
-      setMessageType("error");
-      setMessage(error instanceof Error ? error.message : t("errors.unexpected"));
-      setSocialLoadingProvider(null);
+      dispatch({
+        type: "OAUTH_ERROR",
+        message: error instanceof Error ? error.message : t("errors.unexpected"),
+      });
     }
   }
 
@@ -243,7 +290,7 @@ export function AuthForm({
             required
             autoComplete="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => dispatch({ type: "SET_FIELD", field: "email", value: e.target.value })}
             aria-describedby={message ? messageId : undefined}
             aria-invalid={messageType === "error" && Boolean(message)}
             className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-[color:var(--foreground)] outline-none ring-[color:var(--ring)] placeholder:text-[color:var(--muted-foreground)] focus:ring-2"
@@ -259,7 +306,7 @@ export function AuthForm({
             minLength={12}
             autoComplete={isLogin ? "current-password" : "new-password"}
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => dispatch({ type: "SET_FIELD", field: "password", value: e.target.value })}
             aria-describedby={passwordDescribedBy || undefined}
             aria-invalid={messageType === "error" && Boolean(message)}
             className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-[color:var(--foreground)] outline-none ring-[color:var(--ring)] placeholder:text-[color:var(--muted-foreground)] focus:ring-2"
@@ -273,7 +320,7 @@ export function AuthForm({
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+          className="w-full rounded-lg bg-btn-accent px-4 py-2 font-medium text-white hover:bg-btn-accent-hover disabled:opacity-60"
         >
           {loading ? t("pleaseWait") : isLogin ? t("submit.login") : t("submit.signup")}
         </button>

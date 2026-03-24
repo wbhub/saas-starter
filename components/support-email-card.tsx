@@ -48,16 +48,16 @@ export function SupportEmailCard() {
 
   return (
     <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
-      <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+      <h2 className="text-lg font-semibold text-foreground">
         {t("title")}
       </h2>
-      <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+      <p className="mt-2 text-sm text-muted-foreground">
         {t("description")}
       </p>
 
       <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
         <label className="block">
-          <span className="mb-1 block text-sm font-medium text-slate-800 dark:text-slate-100">
+          <span className="mb-1 block text-sm font-medium text-foreground">
             {t("fields.subject")}
           </span>
           <input
@@ -65,13 +65,13 @@ export function SupportEmailCard() {
             maxLength={120}
             value={subject}
             onChange={(event) => setSubject(event.target.value)}
-            className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-sm text-slate-900 outline-none ring-[color:var(--ring)] placeholder:text-slate-500 focus:ring-2 dark:text-slate-50 dark:placeholder:text-slate-400"
+            className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-sm text-foreground outline-none ring-ring placeholder:text-muted-foreground focus:ring-2"
             placeholder={t("fields.subjectPlaceholder")}
           />
         </label>
 
         <label className="block">
-          <span className="mb-1 block text-sm font-medium text-slate-800 dark:text-slate-100">
+          <span className="mb-1 block text-sm font-medium text-foreground">
             {t("fields.message")}
           </span>
           <textarea
@@ -81,7 +81,7 @@ export function SupportEmailCard() {
             rows={5}
             value={message}
             onChange={(event) => setMessage(event.target.value)}
-            className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-sm text-slate-900 outline-none ring-[color:var(--ring)] placeholder:text-slate-500 focus:ring-2 dark:text-slate-50 dark:placeholder:text-slate-400"
+            className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-sm text-foreground outline-none ring-ring placeholder:text-muted-foreground focus:ring-2"
             placeholder={t("fields.messagePlaceholder")}
           />
         </label>
@@ -89,14 +89,14 @@ export function SupportEmailCard() {
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
+          className="rounded-lg bg-btn-primary px-4 py-2 text-sm font-medium text-btn-primary-text hover:bg-btn-primary-hover disabled:opacity-60"
         >
           {submitting ? t("actions.sending") : t("actions.sendSupportEmail")}
         </button>
       </form>
 
       {feedback ? (
-        <p className="mt-3 rounded-lg app-surface-subtle px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
+        <p className="mt-3 rounded-lg app-surface-subtle px-3 py-2 text-sm text-muted-foreground">
           {feedback}
         </p>
       ) : null}

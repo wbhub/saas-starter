@@ -27,7 +27,7 @@ function SaveButton({ pendingLabel, idleLabel }: { pendingLabel: string; idleLab
     <button
       type="submit"
       disabled={pending}
-      className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
+      className="rounded-lg bg-btn-primary px-4 py-2 text-sm font-medium text-btn-primary-text hover:bg-btn-primary-hover disabled:opacity-60"
     >
       {pending ? pendingLabel : idleLabel}
     </button>
@@ -48,14 +48,14 @@ function PreferenceToggle({
   return (
     <label className="flex items-start justify-between gap-4 rounded-lg border app-border-subtle px-3 py-2">
       <span>
-        <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">{label}</span>
-        <span className="mt-0.5 block text-xs text-slate-600 dark:text-slate-300">{description}</span>
+        <span className="block text-sm font-medium text-foreground">{label}</span>
+        <span className="mt-0.5 block text-xs text-muted-foreground">{description}</span>
       </span>
       <input
         type="checkbox"
         name={name}
         defaultChecked={defaultChecked}
-        className="mt-1 h-4 w-4 rounded border app-border-subtle bg-transparent text-slate-900 focus:ring-2 focus:ring-[color:var(--ring)] dark:text-slate-100"
+        className="mt-1 h-4 w-4 rounded border app-border-subtle bg-transparent text-foreground focus:ring-2 focus:ring-ring"
       />
     </label>
   );
@@ -72,10 +72,10 @@ export function NotificationPreferencesCard({
 
   return (
     <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
-      <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+      <h2 className="text-lg font-semibold text-foreground">
         {t("title")}
       </h2>
-      <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+      <p className="mt-2 text-sm text-muted-foreground">
         {t("description")}
       </p>
 
@@ -107,7 +107,7 @@ export function NotificationPreferencesCard({
           className={`mt-3 rounded-lg px-3 py-2 text-sm ${
             state.status === "error"
               ? "border border-rose-300/60 bg-rose-50 text-rose-700 dark:border-rose-700/60 dark:bg-rose-950/30 dark:text-rose-200"
-              : "app-surface-subtle text-slate-700 dark:text-slate-200"
+              : "app-surface-subtle text-muted-foreground"
           }`}
         >
           {state.message}

@@ -68,26 +68,26 @@ export default async function DashboardUsagePage() {
       csrfToken={csrfToken}
     >
       <header className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm sm:p-6">
-        <p className="text-sm text-slate-500 dark:text-slate-400">{t("header.eyebrow")}</p>
-        <h1 className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-50">
+        <p className="text-sm text-muted-foreground">{t("header.eyebrow")}</p>
+        <h1 className="mt-1 text-2xl font-semibold text-foreground">
           {t("header.title")}
         </h1>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+        <p className="mt-1 text-sm text-muted-foreground">
           {t("header.description")}
         </p>
       </header>
 
       <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">{t("table.title")}</h2>
+        <h2 className="text-lg font-semibold text-foreground">{t("table.title")}</h2>
         {usageRows.length === 0 ? (
-          <p className="mt-3 rounded-lg app-surface-subtle px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
+          <p className="mt-3 rounded-lg app-surface-subtle px-3 py-2 text-sm text-muted-foreground">
             {t("table.noUsage")}
           </p>
         ) : (
           <div className="mt-4 overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="border-b app-border-subtle text-left text-slate-500 dark:text-slate-400">
+                <tr className="border-b app-border-subtle text-left text-muted-foreground">
                   <th className="px-2 py-2 font-medium">{t("table.month")}</th>
                   <th className="px-2 py-2 font-medium">{t("table.usedTokens")}</th>
                   <th className="px-2 py-2 font-medium">{t("table.reservedTokens")}</th>
@@ -96,16 +96,16 @@ export default async function DashboardUsagePage() {
               <tbody>
                 {usageRows.map((row) => (
                   <tr key={row.month_start} className="border-b app-border-subtle last:border-0">
-                    <td className="px-2 py-2 text-slate-800 dark:text-slate-100">
+                    <td className="px-2 py-2 text-foreground">
                       {formatUtcDate(row.month_start, {
                         year: "numeric",
                         month: "short",
                       }, locale)}
                     </td>
-                    <td className="px-2 py-2 text-slate-800 dark:text-slate-100">
+                    <td className="px-2 py-2 text-foreground">
                       {formatTokens(row.used_tokens, locale)}
                     </td>
-                    <td className="px-2 py-2 text-slate-800 dark:text-slate-100">
+                    <td className="px-2 py-2 text-foreground">
                       {formatTokens(row.reserved_tokens, locale)}
                     </td>
                   </tr>

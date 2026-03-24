@@ -36,7 +36,7 @@ export function SiteHeader({ isLoggedIn }: { isLoggedIn: boolean }) {
           </Link>
           <Link
             href={isLoggedIn ? "/dashboard" : "/signup"}
-            className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400"
+            className="rounded-lg bg-btn-accent px-4 py-2 text-sm font-medium text-white hover:bg-btn-accent-hover"
           >
             {isLoggedIn ? t("SiteHeader.openApp") : t("SiteHeader.startFree")}
           </Link>

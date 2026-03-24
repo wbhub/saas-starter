@@ -52,15 +52,15 @@ export function InviteAcceptCard({
 
   return (
     <section className="mx-auto w-full max-w-lg rounded-xl border app-border-subtle app-surface p-6 shadow-sm">
-      <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50">
+      <h1 className="text-2xl font-semibold text-foreground">
         {t("title")}
       </h1>
-      <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+      <p className="mt-2 text-sm text-muted-foreground">
         {t("description")}
       </p>
 
       {!isAuthenticated ? (
-        <p className="mt-4 rounded-lg app-surface-subtle px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
+        <p className="mt-4 rounded-lg app-surface-subtle px-3 py-2 text-sm text-muted-foreground">
           {t("loginFirst")}
         </p>
       ) : (
@@ -68,14 +68,14 @@ export function InviteAcceptCard({
           type="button"
           onClick={acceptInvite}
           disabled={submitting}
-          className="mt-5 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
+          className="mt-5 rounded-lg bg-btn-primary px-4 py-2 text-sm font-medium text-btn-primary-text hover:bg-btn-primary-hover disabled:opacity-60"
         >
           {submitting ? t("actions.accepting") : t("actions.acceptInvite")}
         </button>
       )}
 
       {message ? (
-        <p className="mt-4 rounded-lg app-surface-subtle px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
+        <p className="mt-4 rounded-lg app-surface-subtle px-3 py-2 text-sm text-muted-foreground">
           {message}
         </p>
       ) : null}

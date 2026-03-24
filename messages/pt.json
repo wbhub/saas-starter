@@ -8,6 +8,12 @@
     "description": "Iniciador de SaaS genérico e pronto para produção com assinaturas Next.js, Supabase auth e Stripe.",
     "openGraphImageAlt": "Imagem de visualização do SaaS Starter"
   },
+  "NotFound": {
+    "title": "Página não encontrada",
+    "description": "A página que você procura não existe ou foi movida.",
+    "goHome": "Voltar ao início",
+    "goDashboard": "Ir ao painel"
+  },
   "LocaleSwitcher": {
     "label": "Linguagem",
     "english": "Inglês",

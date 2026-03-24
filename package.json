@@ -13,6 +13,7 @@
     "test:e2e:smoke": "playwright test --project=smoke",
     "test:e2e": "playwright test --project=full",
     "test:e2e:ui": "playwright test --ui",
+    "test:coverage": "vitest run --coverage",
     "lint:conventions": "tsx scripts/check-env-usage.ts && tsx scripts/check-response-helpers.ts && tsx scripts/check-route-wrappers.ts"
   },
   "dependencies": {
@@ -47,6 +48,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^4.1.1",
     "eslint": "^9",
     "eslint-config-next": "16.1.7",
     "tailwindcss": "^4",

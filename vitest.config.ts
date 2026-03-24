@@ -10,6 +10,27 @@ export default defineConfig({
   test: {
     environment: "node",
     exclude: [".claude/**", "node_modules/**", "e2e/**"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "lcov"],
+      include: [
+        "app/**/*.{ts,tsx}",
+        "lib/**/*.{ts,tsx}",
+        "components/**/*.{ts,tsx}",
+      ],
+      exclude: [
+        "**/*.test.{ts,tsx}",
+        "e2e/**",
+        ".claude/**",
+        "node_modules/**",
+      ],
+      thresholds: {
+        lines: 20,
+        functions: 20,
+        branches: 20,
+        statements: 20,
+      },
+    },
   },
 });
 

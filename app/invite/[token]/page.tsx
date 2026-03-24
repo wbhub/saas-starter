@@ -17,7 +17,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
   return (
     <main className="min-h-screen bg-[color:var(--background)] px-6 py-12 text-[color:var(--foreground)]">
       {!user ? (
-        <div className="mx-auto mb-4 w-full max-w-lg rounded-lg border app-border-subtle app-surface-subtle px-4 py-3 text-sm text-slate-700 dark:text-slate-200">
+        <div className="mx-auto mb-4 w-full max-w-lg rounded-lg border app-border-subtle app-surface-subtle px-4 py-3 text-sm text-muted-foreground">
           <p>
             You need to log in before accepting this invite.{" "}
             <Link
