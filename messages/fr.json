@@ -4,9 +4,9 @@
     "myTeam": "Mon équipe"
   },
   "Metadata": {
-    "title": "Démarreur SaaS | Next.js, Supabase, Stripe",
-    "description": "Démarreur SaaS générique et prêt pour la production avec abonnements Next.js, Supabase auth et Stripe.",
-    "openGraphImageAlt": "Image d’aperçu de SaaS Starter"
+    "title": "SaaS Starter | Base SaaS de production avec Next.js",
+    "description": "Lancez un SaaS multi-tenant avec auth, rôles, facturation Stripe par siège, budgets AI, i18n et un pipeline de sécurité renforcé — le tout précâblé sur Next.js 16, Supabase et React 19.",
+    "openGraphImageAlt": "Aperçu de l'architecture SaaS Starter"
   },
   "NotFound": {
     "title": "Page introuvable",
@@ -32,7 +32,7 @@
     "dashboard": "Tableau de bord",
     "login": "Se connecter",
     "openApp": "Ouvrir l'application",
-    "startFree": "Commencez gratuitement"
+    "startFree": "Commencer gratuitement"
   },
   "SiteFooter": {
     "companyPlaceholder": "[Nom de l'entreprise]",
@@ -58,8 +58,8 @@
       "signup": "Créez votre compte"
     },
     "description": {
-      "login": "Connectez-vous pour gérer votre abonnement SaaS.",
-      "signup": "Commencez par une authentification sécurisée et une infrastructure prête à la facturation."
+      "login": "Connectez-vous à votre tableau de bord.",
+      "signup": "Démarrez avec auth, équipes et facturation prêts pour la production."
     },
     "socialAuthLabel": "Authentification sociale",
     "pleaseWait": "S'il vous plaît, attendez...",
@@ -84,77 +84,77 @@
       "dashboard": "Tableau de bord",
       "login": "Se connecter",
       "openApp": "Ouvrir l'application",
-      "startFree": "Commencez gratuitement"
+      "startFree": "Commencer gratuitement"
     },
     "hero": {
-      "badge": "Base SaaS de qualité production",
-      "title": "Lancez un SaaS prêt pour la production en quelques jours, et non en quelques mois.",
-      "description": "Évitez des mois de travail sur la plateforme. L'authentification, l'accès des équipes, la facturation basée sur le poste, l'e-mail d'assistance et les API prêtes pour l'IA sont déjà connectés afin que vous puissiez vous concentrer sur le produit pour lequel les clients paient.",
+      "badge": "Livrez votre produit, pas votre plateforme",
+      "title": "L'infrastructure SaaS que vous mettriez des mois à construire est déjà prête.",
+      "description": "Auth, équipes multi-tenant, facturation Stripe par siège, AI avec budgets de tokens appliqués en base, journalisation d'audit et pipeline de sécurité renforcé — câblé de bout en bout sur Next.js 16, Supabase et React 19 pour que vous vous concentriez entièrement sur ce qui rend votre produit unique.",
       "goDashboard": "Aller au tableau de bord",
-      "startFreeNow": "Commencez gratuitement maintenant",
-      "viewPricing": "Voir les prix",
-      "feature1": "Flux d'authentification Supabase",
-      "feature2": "Invitations et rôles d’équipe",
-      "feature3": "Facturation Stripe basée sur le siège",
-      "feature4": "Point de terminaison de chat IA",
-      "feature5": "Renvoyer l'e-mail d'assistance",
-      "feature6": "CSRF + CSP + limites de débit",
-      "shipNowTitle": "Ce que vous expédiez immédiatement",
-      "shipNowDescription": "Flux d'applications et d'API mappés à un véritable lancement SaaS.",
-      "shipItem1": "Inscription, connexion, mot de passe oublié, réinitialisation du mot de passe et itinéraires protégés du tableau de bord",
-      "shipItem2": "Intégration de l'équipe avec invitations, acceptation, gestion des rôles et transfert de propriété",
-      "shipItem3": "Paiement Stripe basé sur le siège, portail de facturation, modifications de forfait et synchronisation des webhooks",
-      "shipItem4": "API de demande de support avec livraison de renvoi et contexte d'expéditeur authentifié",
-      "shipItem5": "Route de discussion IA en option avec réponses en streaming, budgétisation et accès tenant compte du plan",
-      "shipItem6": "Paramètres de sécurité par défaut, notamment les contrôles CSRF, les en-têtes CSP, les ID de demande et la limitation de débit"
+      "startFreeNow": "Commencer gratuitement",
+      "viewPricing": "Voir les tarifs",
+      "feature1": "Rôles multi-tenant",
+      "feature2": "Facturation Stripe par siège",
+      "feature3": "AI avec budgets de tokens",
+      "feature4": "Rate limiting à 3 niveaux",
+      "feature5": "Webhooks idempotents",
+      "feature6": "i18n en 5 langues",
+      "shipNowTitle": "Ce que vous livrez dès le premier jour",
+      "shipNowDescription": "Des flux de production complets, pas des stubs de boilerplate.",
+      "shipItem1": "Cycle d'auth complet — inscription, connexion, OAuth (Google + Microsoft), réinitialisation de mot de passe et tableau de bord protégé avec middleware de rafraîchissement de session",
+      "shipItem2": "Équipes multi-tenant avec invitations, accès par rôle (owner/admin/member), transfert atomique de propriété et gardes de dernier propriétaire en base de données",
+      "shipItem3": "Checkout Stripe, portail de facturation, changements de plan et traitement idempotent des webhooks avec table de claims et déchargement optionnel vers Trigger.dev",
+      "shipItem4": "Réconciliation des sièges via cron avec file de relance, synchronisation automatique des quantités à l'acceptation d'invitation et suivi du statut d'abonnement",
+      "shipItem5": "Chat AI avec streaming, contrôle d'accès par plan et budgets mensuels de tokens appliqués dans Postgres avec sémantique claim/finalize et files de relance",
+      "shipItem6": "CSRF avec cookies double-submit, CSP avec nonces, env typé avec validation au démarrage, identifiants de requête, journalisation d'audit et rate limiting multicouche avec circuit breaker"
     },
     "gettingStarted": {
-      "title": "Comment devenir opérationnel",
-      "description": "Suivez la configuration dans le README pour passer d'un nouveau clone à une application SaaS fonctionnelle avec de vrais flux d'authentification et de facturation.",
-      "step1Title": "1. Cloner et installer",
-      "step1Text": "Installez les dépendances, copiez « .env.example » dans « .env.local » et définissez vos valeurs requises.",
-      "step2Title": "2. Configurer les fournisseurs",
-      "step2Text": "Appliquez `supabase/schema.sql`, ajoutez les identifiants de prix Stripe + le secret du webhook et configurez le renvoi.",
-      "step3Title": "3. Personnaliser et lancer",
-      "step3Text": "Mettez à jour l'image de marque, les prix et la logique du produit, puis déployez sur Vercel avec des tâches cron facultatives."
+      "title": "Opérationnel en minutes, pas en semaines",
+      "description": "Trois étapes du clone à un SaaS fonctionnel avec auth, équipes, facturation et sécurité réels — appuyé par quatre guides d'architecture détaillés.",
+      "step1Title": "1. Cloner et configurer",
+      "step1Text": "Installez les dépendances, copiez .env.example et définissez vos clés. La validation typée de l'env détecte les erreurs de configuration au démarrage, pas en production.",
+      "step2Title": "2. Connecter les fournisseurs",
+      "step2Text": "Exécutez schema.sql dans Supabase (plus de 20 tables, politiques RLS, triggers et RPCs prêts), ajoutez les identifiants de prix Stripe et configurez votre domaine Resend.",
+      "step3Title": "3. Construire votre produit",
+      "step3Text": "Auth, équipes, facturation, AI et sécurité sont gérés. Personnalisez le branding, ajoutez votre logique produit et déployez — Redis, Trigger.dev et Sentry sont optionnels quand vous avez besoin de monter en charge."
     },
     "whyStarter": {
-      "label": "Pourquoi ce démarreur",
-      "title": "Conçu pour de véritables opérations SaaS, pas seulement pour des démonstrations.",
-      "description": "La base de code comprend des modèles axés sur la production pour les équipes, les abonnements, le support, les contrôles d'accès par l'IA et les points de terminaison cron opérationnels.",
-      "stat1Label": "Itinéraires d'application inclus",
-      "stat1Value": "Public + Authentification + Tableau de bord",
-      "stat2Label": "Flux de travail de base précâblés",
-      "stat2Value": "Authentification + Équipes + Facturation",
-      "stat3Label": "Base de sécurité incluse",
-      "stat3Value": "CSRF + CSP + limitation de débit"
+      "label": "Pourquoi ce starter",
+      "title": "Des patterns de production, pas du scaffolding de démo.",
+      "description": "Chaque intégration est construite comme vous la construiriez après avoir appris les leçons difficiles — opérations atomiques en BD, files de relance, webhooks idempotents et fallbacks élégants partout.",
+      "stat1Label": "Tables, triggers et RPCs Postgres",
+      "stat1Value": "20+",
+      "stat2Label": "Langues avec routage sans préfixe",
+      "stat2Value": "5",
+      "stat3Label": "Couches de rate-limit avec circuit breaker",
+      "stat3Value": "3"
     },
     "bestPractices": {
-      "title": "Meilleures pratiques intégrées",
-      "description": "Les chemins principaux sont mis en œuvre dans un souci de sécurité et de maintenabilité, afin que vous puissiez vous développer en toute confiance.",
-      "securityDefaultsTitle": "Paramètres de sécurité par défaut",
-      "securityDefaultsText": "La protection CSRF, le CSP, les en-têtes API stricts et le middleware prenant en compte les requêtes sont inclus.",
-      "teamBillingTitle": "Facturation basée sur l'équipe",
-      "teamBillingText": "Les abonnements Stripe sont limités à l'équipe avec le rapprochement des sièges, l'accès au portail et les modifications de forfait.",
-      "operationalTitle": "Points finaux opérationnels",
-      "operationalText": "Les routes Cron réconcilient les sièges et nettoient les données des webhooks, avec une autorisation basée sur des jetons."
+      "title": "Sécurisé par défaut",
+      "description": "Sécurité, intégrité des données et résilience opérationnelle sont intégrées dans chaque couche — pas ajoutées après coup.",
+      "securityDefaultsTitle": "Sécurité en profondeur",
+      "securityDefaultsText": "CSRF avec cookies double-submit, CSP avec nonces, validation stricte du content-type API, identifiants de requête sur chaque réponse et middleware composable auth/rôles sur chaque route.",
+      "teamBillingTitle": "Patterns d'intégrité des données",
+      "teamBillingText": "RPCs atomiques pour l'acceptation d'invitations, le transfert de propriété et la synchronisation d'abonnements. Des triggers empêchent la suppression du dernier propriétaire et réparent automatiquement le contexte d'équipe orphelin.",
+      "operationalTitle": "Résilience opérationnelle",
+      "operationalText": "Rate limiting multicouche (Redis, Supabase RPC, en mémoire) avec fallback circuit breaker, crons de réconciliation de sièges avec files de relance et traitement idempotent des webhooks Stripe."
     },
     "stack": {
-      "title": "À l'intérieur de la pile",
-      "description": "Routeur d'applications Next.js avec des limites claires entre les routes de l'interface utilisateur, les gestionnaires d'API et les bibliothèques de plates-formes partagées.",
-      "authTitle": "Flux d'authentification et d'utilisateurs",
-      "authText": "Les assistants d'authentification Supabase SSR, le flux d'acceptation des invitations, le contexte de l'équipe et les paramètres du compte sont déjà connectés.",
-      "billingTitle": "Facturation et Stripe",
-      "billingText": "Les API de paiement, de portail et de plan de modification s'appuient sur une logique de déduplication de webhook et de synchronisation d'abonnement.",
-      "opsTitle": "IA, support et observabilité",
-      "opsText": "Le chat AI, le renvoi d'e-mails d'assistance et les intégrations facultatives Intercom + Sentry sont prêts à être configurés."
+      "title": "Dans la stack",
+      "description": "Next.js 16 App Router avec React 19, TypeScript en mode strict et des frontières claires entre routes UI, handlers API et bibliothèques de plateforme partagées.",
+      "authTitle": "Auth et équipes multi-tenant",
+      "authText": "Auth SSR Supabase avec OAuth Google et Microsoft, cache de contexte d'équipe (Redis + en mémoire + BD), wrappers API basés sur les rôles, acceptation d'invitation avec synchronisation atomique des sièges et gestion complète du cycle de vie du compte.",
+      "billingTitle": "Facturation et fiabilité des webhooks",
+      "billingText": "APIs de checkout, portail et changement de plan Stripe adossées au traitement idempotent des webhooks via table de claims, RPCs de synchronisation d'abonnements, crons de réconciliation de sièges et déchargement optionnel vers Trigger.dev.",
+      "opsTitle": "AI, observabilité et support",
+      "opsText": "Chat AI avec streaming et budgets mensuels de tokens appliqués en BD, email de support via Resend avec contexte de l'expéditeur, journalisation d'audit par lots et intégrations optionnelles Intercom et Sentry — le tout derrière des feature flags."
     },
     "pricing": {
-      "title": "Tarification basée sur le siège de Stripe",
-      "description": "Configurez les identifiants de prix Starter, Growth et Pro une fois, et la page de destination et les flux de facturation restent synchronisés.",
+      "title": "Tarifs en direct synchronisés depuis Stripe",
+      "description": "Les prix sont récupérés directement depuis votre compte Stripe au moment du rendu. Configurez vos identifiants de prix une fois et la landing, le checkout et le portail de facturation restent synchronisés automatiquement.",
       "mostPopular": "Le plus populaire",
       "managePlan": "Gérer le forfait",
-      "choosePlan": "Choisissez {name}",
+      "choosePlan": "Choisir {name}",
       "priceSuffix": {
         "month": "/mois",
         "year": "/an",
@@ -165,33 +165,33 @@
       "plans": {
         "starter": {
           "name": "Starter",
-          "description": "Parfait pour les fondateurs qui valident un nouveau produit."
+          "description": "Auth, équipes et facturation pour les fondateurs validant un nouveau produit."
         },
         "growth": {
           "name": "Croissance",
-          "description": "Pour les équipes qui développent l’activation et la rétention."
+          "description": "Ajoutez l'accès AI, la mise à l'échelle des sièges et le suivi d'utilisation à mesure que votre équipe grandit."
         },
         "pro": {
           "name": "Pro",
-          "description": "Pour les entreprises qui ont besoin de fiabilité à grande échelle."
+          "description": "Plateforme complète avec support prioritaire, journalisation d'audit et intégrations avancées."
         }
       }
     },
     "ctaFaq": {
-      "title": "Prêt à expédier votre SaaS plus rapidement ?",
-      "description": "Commencez par une infrastructure d’authentification, d’équipe, de facturation et d’API éprouvée, puis créez l’expérience produit qui rend votre entreprise unique.",
+      "title": "Arrêtez de reconstruire l'infrastructure. Commencez à livrer du produit.",
+      "description": "Chaque SaaS a besoin d'auth, d'équipes, de facturation et de sécurité. Partez de la version qui a nécessité des milliers de lignes de code pensé pour la production, et consacrez votre temps à ce pour quoi vos clients paient vraiment.",
       "openDashboard": "Ouvrir le tableau de bord",
-      "createAccount": "Créez votre compte",
-      "comparePlans": "Comparez les forfaits",
+      "createAccount": "Créer votre compte",
+      "comparePlans": "Comparer les forfaits",
       "faqTitle": "FAQ",
-      "q1": "Qu'est-ce qui est inclus hors de la boîte ?",
-      "a1": "Une fondation SaaS orientée production avec l'authentification Supabase, les invitations et les rôles d'équipe, la facturation Stripe basée sur le siège, les itinéraires du tableau de bord, l'e-mail d'assistance via Resend et le middleware de sécurité déjà connecté.",
-      "q2": "Dois-je créer une authentification et me facturer ?",
-      "a2": "Non. La connexion, l'inscription, la réinitialisation du mot de passe, les itinéraires protégés, le paiement, les modifications de forfait, le portail de facturation et la gestion des webhooks sont déjà implémentés afin que vous puissiez vous concentrer sur les fonctionnalités du produit.",
-      "q3": "Comment les équipes et les autorisations sont-elles gérées ?",
-      "a3": "Les équipes prennent en charge les flux d'invitations et l'accès basé sur les rôles (`propriétaire`, `admin`, `membre`), avec des opérations de transfert de propriété et d'adhésion protégée gérées via des routes API et des politiques de base de données.",
-      "q4": "Le chat IA est-il inclus ?",
-      "a4": "Oui. `/api/ai/chat` est inclus avec les réponses en streaming, les contrôles CSRF, la limitation de débit et les règles d'accès configurables par statut ou plan payant lorsqu'une clé de fournisseur IA est définie (`AI_PROVIDER_API_KEY` ou `OPENAI_API_KEY`)."
+      "q1": "Qu'est-ce qui est inclus de base ?",
+      "a1": "Une base SaaS complète : auth Supabase avec OAuth (Google + Microsoft), équipes multi-tenant avec accès par rôle et flux d'invitation, facturation Stripe par siège avec webhooks idempotents et crons de réconciliation, chat AI avec streaming et budgets de tokens appliqués en BD, email de support via Resend, journalisation d'audit, i18n en 5 langues et un pipeline de sécurité couvrant CSRF, CSP, rate limiting et traçabilité des requêtes.",
+      "q2": "Quelle est la profondeur des intégrations — des stubs ou du production-ready ?",
+      "a2": "Production-ready. Les webhooks Stripe utilisent une table de claims pour l'idempotence avec déchargement optionnel vers Trigger.dev. Les invitations d'équipe se résolvent via des RPCs atomiques Postgres qui synchronisent les quantités de sièges. Les budgets AI sont appliqués en base avec sémantique claim/finalize et files de relance. Le rate limiting descend en cascade sur trois couches avec un circuit breaker. Ce sont des patterns auxquels vous arriveriez après avoir exploité un vrai produit.",
+      "q3": "Comment les équipes, rôles et permissions sont-ils gérés ?",
+      "a3": "Chaque utilisateur reçoit une équipe personnelle à l'inscription via un trigger de base de données. Les équipes supportent les rôles owner, admin et member avec flux d'invitation, acceptation par token et transfert atomique de propriété. Des triggers empêchent la suppression du dernier propriétaire et réparent automatiquement le contexte d'équipe orphelin. Toutes les routes API d'équipe utilisent un middleware composable qui résout auth, appartenance et rôle en un seul pipeline.",
+      "q4": "Que puis-je faire monter en charge plus tard sans refondre l'architecture ?",
+      "a4": "Redis pour le cache de rate-limit et de contexte d'équipe (avec fallback élégant sans), Trigger.dev pour décharger le traitement des webhooks en tâches de fond, et Sentry pour la surveillance des erreurs — tout en opt-in derrière des feature flags. Le schéma Postgres, les politiques RLS et le pipeline API sont conçus pour les supporter sans changements structurels."
     }
   },
   "DashboardSidebar": {

@@ -55,14 +55,14 @@ export const PLAN_CATALOG: PlanCatalogEntry[] = [
     name: "Starter",
     priceLabel: "$25/mo",
     amountMonthly: 25,
-    description: "Perfect for founders validating a new product.",
+    description: "Auth, teams, and billing for founders validating a new product.",
   },
   {
     key: "growth",
     name: "Growth",
     priceLabel: "$50/mo",
     amountMonthly: 50,
-    description: "For teams scaling activation and retention.",
+    description: "Add AI access, seat scaling, and usage tracking as your team grows.",
     popular: true,
   },
   {
@@ -70,7 +70,7 @@ export const PLAN_CATALOG: PlanCatalogEntry[] = [
     name: "Pro",
     priceLabel: "$100/mo",
     amountMonthly: 100,
-    description: "For businesses that need reliability at scale.",
+    description: "Full platform with priority support, audit logging, and advanced integrations.",
   },
 ];
 

@@ -4,9 +4,9 @@
     "myTeam": "My Team"
   },
   "Metadata": {
-    "title": "SaaS Starter | Next.js, Supabase, Stripe",
-    "description": "Generic, production-ready SaaS starter with Next.js, Supabase auth, and Stripe subscriptions.",
-    "openGraphImageAlt": "SaaS Starter preview image"
+    "title": "SaaS Starter | Production-Grade Next.js SaaS Foundation",
+    "description": "Ship a team-based SaaS with auth, roles, seat-based Stripe billing, AI budgeting, i18n, and a hardened security pipeline — all prewired on Next.js 16, Supabase, and React 19.",
+    "openGraphImageAlt": "SaaS Starter architecture overview"
   },
   "NotFound": {
     "title": "Page not found",
@@ -58,8 +58,8 @@
       "signup": "Create your account"
     },
     "description": {
-      "login": "Sign in to manage your SaaS subscription.",
-      "signup": "Start with secure auth and billing-ready infrastructure."
+      "login": "Sign in to your dashboard.",
+      "signup": "Get started with production-ready auth, teams, and billing."
     },
     "socialAuthLabel": "Social authentication",
     "pleaseWait": "Please wait...",
@@ -87,71 +87,71 @@
       "startFree": "Start Free"
     },
     "hero": {
-      "badge": "Production-grade SaaS foundation",
-      "title": "Launch a production-ready SaaS in days, not months.",
-      "description": "Skip months of platform work. Auth, team access, seat-based billing, support email, and AI-ready APIs are already wired so you can focus on the product customers pay for.",
+      "badge": "Ship your product, not your platform",
+      "title": "The SaaS infrastructure you'd spend months building is already done.",
+      "description": "Auth, multi-tenant teams, seat-based Stripe billing, AI with DB-enforced budgets, audit logging, and a hardened security pipeline — wired end-to-end on Next.js 16, Supabase, and React 19 so you can focus entirely on what makes your product unique.",
       "goDashboard": "Go to dashboard",
       "startFreeNow": "Start free now",
       "viewPricing": "View pricing",
-      "feature1": "Supabase auth flows",
-      "feature2": "Team invites and roles",
-      "feature3": "Seat-based Stripe billing",
-      "feature4": "AI chat endpoint",
-      "feature5": "Resend support email",
-      "feature6": "CSRF + CSP + rate limits",
-      "shipNowTitle": "What you ship immediately",
-      "shipNowDescription": "App and API flows mapped to a real SaaS launch.",
-      "shipItem1": "Signup, login, forgot-password, reset-password, and protected dashboard routes",
-      "shipItem2": "Team onboarding with invites, acceptance, role management, and ownership transfer",
-      "shipItem3": "Seat-based Stripe checkout, billing portal, plan changes, and webhook syncing",
-      "shipItem4": "Support request API with Resend delivery and authenticated sender context",
-      "shipItem5": "Optional AI chat route with streaming responses, budgeting, and plan-aware access",
-      "shipItem6": "Security defaults including CSRF checks, CSP headers, request IDs, and rate limiting"
+      "feature1": "Multi-tenant team roles",
+      "feature2": "Seat-based Stripe billing",
+      "feature3": "AI with token budgets",
+      "feature4": "3-layer rate limiting",
+      "feature5": "Webhook idempotency",
+      "feature6": "i18n in 5 languages",
+      "shipNowTitle": "What you ship on day one",
+      "shipNowDescription": "Production-depth flows, not boilerplate stubs.",
+      "shipItem1": "Full auth lifecycle — signup, login, OAuth (Google + Microsoft), password reset, and protected dashboard with session refresh middleware",
+      "shipItem2": "Multi-tenant teams with invite flows, role-based access (owner/admin/member), atomic ownership transfer, and last-owner database guards",
+      "shipItem3": "Stripe checkout, billing portal, plan changes, and idempotent webhook processing with a claims table and optional Trigger.dev offload",
+      "shipItem4": "Seat reconciliation via cron with a retry queue, automatic quantity sync on invite acceptance, and subscription status tracking",
+      "shipItem5": "AI chat with streaming responses, plan-aware access gating, and monthly token budgets enforced in Postgres with claim/finalize and retry queues",
+      "shipItem6": "CSRF double-submit cookies, CSP with nonces, typed env with boot validation, request IDs, audit logging, and multi-layer rate limiting with circuit breaker"
     },
     "gettingStarted": {
-      "title": "How to get up-and-running",
-      "description": "Follow the setup in the README to go from fresh clone to a working SaaS app with real auth and billing flows.",
-      "step1Title": "1. Clone & install",
-      "step1Text": "Install dependencies, copy `.env.example` to `.env.local`, and set your required values.",
-      "step2Title": "2. Configure providers",
-      "step2Text": "Apply `supabase/schema.sql`, add Stripe price IDs + webhook secret, and configure Resend.",
-      "step3Title": "3. Customize & launch",
-      "step3Text": "Update branding, pricing, and product logic, then deploy to Vercel with optional cron jobs."
+      "title": "Running in minutes, not weeks",
+      "description": "Three steps from clone to a working SaaS with real auth, teams, billing, and security — backed by four detailed architecture guides.",
+      "step1Title": "1. Clone & configure",
+      "step1Text": "Install dependencies, copy .env.example, and set your keys. Typed env validation catches misconfigurations at boot, not at runtime.",
+      "step2Title": "2. Wire your providers",
+      "step2Text": "Run schema.sql in Supabase (20+ tables, RLS policies, triggers, and RPCs are ready), add Stripe price IDs, and set your Resend domain.",
+      "step3Title": "3. Build your product",
+      "step3Text": "Auth, teams, billing, AI, and security are handled. Customize branding, add your product logic, and deploy — Redis, Trigger.dev, and Sentry are opt-in when you need scale."
     },
     "whyStarter": {
       "label": "Why this starter",
-      "title": "Built for real SaaS operations, not just demos.",
-      "description": "The codebase includes production-minded patterns for teams, subscriptions, support, AI access controls, and operational cron endpoints.",
-      "stat1Label": "App routes included",
-      "stat1Value": "Public + Auth + Dashboard",
-      "stat2Label": "Core workflows prewired",
-      "stat2Value": "Auth + Teams + Billing",
-      "stat3Label": "Security baseline included",
-      "stat3Value": "CSRF + CSP + rate limiting"
+      "title": "Production-grade patterns, not demo-quality scaffolding.",
+      "description": "Every integration is built the way you'd build it after learning the hard lessons — atomic DB operations, retry queues, idempotent webhooks, and graceful fallbacks throughout.",
+      "stat1Label": "Postgres tables, triggers, and RPCs",
+      "stat1Value": "20+",
+      "stat2Label": "Languages with locale-free routing",
+      "stat2Value": "5",
+      "stat3Label": "Rate-limit layers with circuit breaker",
+      "stat3Value": "3"
     },
     "bestPractices": {
-      "title": "Built-in best practices",
-      "description": "Core paths are implemented with safety and maintainability in mind, so you can extend confidently.",
-      "securityDefaultsTitle": "Security defaults",
-      "securityDefaultsText": "CSRF protection, CSP, strict API headers, and request-aware middleware are included.",
-      "teamBillingTitle": "Team-based billing",
-      "teamBillingText": "Stripe subscriptions are team-scoped with seat reconciliation, portal access, and plan changes.",
-      "operationalTitle": "Operational endpoints",
-      "operationalText": "Cron routes reconcile seats and clean webhook data, with token-based authorization."
+      "title": "Hardened by default",
+      "description": "Security, data integrity, and operational resilience are built into every layer — not bolted on as afterthoughts.",
+      "securityDefaultsTitle": "Defense-in-depth security",
+      "securityDefaultsText": "CSRF double-submit cookies, CSP with nonces, strict API content-type enforcement, request IDs on every response, and composable auth/role middleware on every route.",
+      "teamBillingTitle": "Data integrity patterns",
+      "teamBillingText": "Atomic RPCs for invite acceptance, ownership transfer, and subscription sync. Database triggers prevent deleting the last team owner and auto-repair orphaned team context.",
+      "operationalTitle": "Operational resilience",
+      "operationalText": "Multi-layer rate limiting (Redis, Supabase RPC, in-memory) with circuit breaker fallback, seat reconciliation crons with retry queues, and idempotent Stripe webhook processing."
     },
     "stack": {
       "title": "Inside the stack",
-      "description": "Next.js App Router with clear boundaries across UI routes, API handlers, and shared platform libraries.",
-      "authTitle": "Auth & user flows",
-      "authText": "Supabase SSR auth helpers, invite acceptance flow, team context, and account settings are already connected.",
-      "billingTitle": "Billing & Stripe",
-      "billingText": "Checkout, portal, and change-plan APIs are backed by webhook dedupe and subscription sync logic.",
-      "opsTitle": "AI, support, and observability",
-      "opsText": "AI chat, Resend support email, and optional Intercom + Sentry integrations are ready to configure."
+      "description": "Next.js 16 App Router with React 19, TypeScript strict mode, and clear boundaries between UI routes, API handlers, and shared platform libraries.",
+      "authTitle": "Auth & multi-tenant teams",
+      "authText": "Supabase SSR auth with Google and Microsoft OAuth, team context caching (Redis + in-memory + DB), role-based API wrappers, invite acceptance with atomic seat sync, and full account lifecycle management.",
+      "billingTitle": "Billing & webhook reliability",
+      "billingText": "Stripe checkout, portal, and plan-change APIs backed by idempotent webhook processing via a claims table, subscription sync RPCs, seat reconciliation crons, and optional Trigger.dev offload.",
+      "opsTitle": "AI, observability, and support",
+      "opsText": "Streaming AI chat with DB-enforced monthly token budgets, Resend support email with sender context, batched audit logging, and optional Intercom and Sentry integrations — all behind feature flags."
     },
     "pricing": {
-      "title": "Seat-based pricing from Stripe",
-      "description": "Configure Starter, Growth, and Pro price IDs once, and the landing page and billing flows stay in sync.",
+      "title": "Live pricing synced from Stripe",
+      "description": "Prices are fetched directly from your Stripe account at render time. Configure your price IDs once and the landing page, checkout, and billing portal stay in sync automatically.",
       "mostPopular": "Most popular",
       "managePlan": "Manage Plan",
       "choosePlan": "Choose {name}",
@@ -165,33 +165,33 @@
       "plans": {
         "starter": {
           "name": "Starter",
-          "description": "Perfect for founders validating a new product."
+          "description": "Auth, teams, and billing for founders validating a new product."
         },
         "growth": {
           "name": "Growth",
-          "description": "For teams scaling activation and retention."
+          "description": "Add AI access, seat scaling, and usage tracking as your team grows."
         },
         "pro": {
           "name": "Pro",
-          "description": "For businesses that need reliability at scale."
+          "description": "Full platform with priority support, audit logging, and advanced integrations."
         }
       }
     },
     "ctaFaq": {
-      "title": "Ready to ship your SaaS faster?",
-      "description": "Start with proven auth, team, billing, and API infrastructure, then build the product experience that makes your business unique.",
+      "title": "Stop rebuilding infrastructure. Start shipping product.",
+      "description": "Every SaaS needs auth, teams, billing, and security. Start with the version that took thousands of lines of production-minded code to get right, and put your time into what customers actually pay for.",
       "openDashboard": "Open dashboard",
       "createAccount": "Create your account",
       "comparePlans": "Compare plans",
       "faqTitle": "FAQ",
       "q1": "What is included out of the box?",
-      "a1": "A production-oriented SaaS foundation with Supabase auth, team invites and roles, seat-based Stripe billing, dashboard routes, support email via Resend, and security middleware already wired in.",
-      "q2": "Do I need to build auth and billing myself?",
-      "a2": "No. Login, signup, password reset, protected routes, checkout, plan changes, billing portal, and webhook handling are already implemented so you can focus on product features.",
-      "q3": "How are teams and permissions handled?",
-      "a3": "Teams support invite flows and role-based access (`owner`, `admin`, `member`), with ownership transfer and guarded membership operations handled through API routes and database policies.",
-      "q4": "Is AI chat included?",
-      "a4": "Yes. `/api/ai/chat` is included with streaming responses, CSRF checks, rate limiting, and configurable access rules by paid status or plan when an AI provider key is set (`AI_PROVIDER_API_KEY` or `OPENAI_API_KEY`)."
+      "a1": "A complete SaaS foundation: Supabase auth with OAuth (Google + Microsoft), multi-tenant teams with role-based access and invite flows, seat-based Stripe billing with idempotent webhooks and reconciliation crons, streaming AI chat with DB-enforced token budgets, support email via Resend, audit logging, i18n in 5 languages, and a security pipeline covering CSRF, CSP, rate limiting, and request tracing.",
+      "q2": "How deep are the integrations — stubs or production-ready?",
+      "a2": "Production-ready. Stripe webhooks use a claims table for idempotency with optional Trigger.dev offload. Team invites resolve through atomic Postgres RPCs that sync seat quantities. AI budgets are enforced in the database with claim/finalize semantics and retry queues. Rate limiting cascades through three layers with a circuit breaker. These are patterns you'd arrive at after operating a real product.",
+      "q3": "How are teams, roles, and permissions handled?",
+      "a3": "Every user gets a personal team on signup via a database trigger. Teams support owner, admin, and member roles with invite flows, token-based acceptance, and atomic ownership transfer. Database triggers prevent deleting the last owner and auto-repair orphaned team context. All team API routes use composable middleware that resolves auth, team membership, and role in a single pipeline.",
+      "q4": "What can I scale up later without rearchitecting?",
+      "a4": "Redis for rate-limit and team-context caching (falls back gracefully without it), Trigger.dev for offloading webhook processing to background jobs, and Sentry for error monitoring — all opt-in behind feature flags. The Postgres schema, RLS policies, and API pipeline are designed to support these without structural changes."
     }
   },
   "DashboardSidebar": {
