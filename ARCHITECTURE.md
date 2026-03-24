@@ -11,7 +11,7 @@ How the pieces of this codebase fit together.
 - **Billing**: Stripe (subscriptions, seat-based pricing)
 - **AI**: Vercel AI SDK (provider-agnostic: OpenAI, Anthropic, Google)
 - **Email**: Resend
-- **Background Jobs**: Trigger.dev v3
+- **Background Jobs**: Trigger.dev v4
 - **Caching**: Upstash Redis (optional)
 - **Error Monitoring**: Sentry (optional)
 - **In-app Messaging**: Intercom (optional)
@@ -22,14 +22,14 @@ How the pieces of this codebase fit together.
 ```
 app/                          # Next.js App Router
   api/                        # API routes (organized by domain)
-    auth/                     # signup, login, forgot-password, callback
+    auth/                     # signup, login, forgot-password
     team/                     # invites, members, settings, ownership
     stripe/                   # checkout, change-plan, portal, webhook
     ai/                       # chat (streaming)
     cron/                     # reconcile-seat-quantities, prune-webhook-events
     resend/                   # support email
     intercom/                 # identity boot
-  auth/                       # Public auth pages (login, signup, reset-password)
+  auth/                       # OAuth callback route
   dashboard/                  # Protected dashboard pages
     actions.ts                # Server actions (logout, update settings, delete account, etc.)
 
@@ -80,22 +80,22 @@ Route Handler (POST/GET/PATCH/DELETE function)
   +-- 2. Content-Type validation (lib/http/content-type.ts)
   |     Requires application/json for routes with a body
   |
-  +-- 3. Body parsing + Zod validation (lib/http/request-validation.ts)
-  |     Reads body with size limit (256KB default), validates schema
-  |
-  +-- 4. Authentication (lib/supabase/server.ts)
+  +-- 3. Authentication (lib/supabase/server.ts)
   |     Creates a Supabase server client, calls getUser()
   |
-  +-- 5. Team context resolution (lib/team-context-cache.ts)
+  +-- 4. Team context resolution (lib/team-context-cache.ts)
   |     Redis -> in-memory cache -> database lookup
   |     Returns { teamId, teamName, role } or null
   |
-  +-- 6. Role authorization
+  +-- 5. Role authorization
   |     Checks if user's role is in allowedRoles
   |
-  +-- 7. Rate limiting (lib/security/rate-limit.ts)
+  +-- 6. Rate limiting (lib/security/rate-limit.ts)
   |     Redis -> Supabase RPC -> in-memory fallback
   |     Returns 429 with Retry-After header if blocked
+  |
+  +-- 7. Body parsing + Zod validation (lib/http/request-validation.ts)
+  |     Reads body with size limit (256KB default), validates schema
   |
   +-- 8. Business logic
   |     Database operations, external API calls
@@ -104,10 +104,10 @@ Route Handler (POST/GET/PATCH/DELETE function)
   |     Batched inserts to audit_events table
   |
   v
-Response (JSON with x-request-id header)
+Response
 ```
 
-For team-scoped routes, steps 1-7 are handled by `withTeamRoute()` in `lib/http/team-route.ts`. For standalone routes (auth, cron), each step is called explicitly.
+For team-scoped routes, `withTeamRoute()` in `lib/http/team-route.ts` typically handles steps 1-8 (including body parsing when a schema is provided). Standalone routes (auth, cron, and some Stripe routes) call the same primitives explicitly and may parse request bodies earlier when needed.
 
 ### Server Actions
 
@@ -115,7 +115,7 @@ Server actions (`app/dashboard/actions.ts`) follow a similar pattern but use `ve
 
 ### Pages
 
-Dashboard pages load data server-side via cached functions in `lib/dashboard/server.ts`:
+Public auth pages live at top-level routes (`app/login/`, `app/signup/`, `app/forgot-password/`, `app/reset-password/`). Dashboard pages load data server-side via cached functions in `lib/dashboard/server.ts`:
 
 ```
 Dashboard Page (app/dashboard/page.tsx)
@@ -162,9 +162,9 @@ Key rule: `lib/billing/` reads from Stripe sync data but never calls the Stripe 
 
 ### `env` (lib/env.ts)
 
-Type-safe environment variable access via lazy property getters. Every env var is accessed through `env.MY_KEY` -- never through `process.env` directly. Required variables throw on access if missing; optional variables return `undefined`.
+Type-safe environment variable access via lazy property getters. Application/business logic should prefer `env.MY_KEY`; some infrastructure modules intentionally read `process.env` directly for lightweight config checks. Required env getters throw on access if missing; optional getters return `undefined`.
 
-At boot, `validateRequiredEnvAtBoot()` forces all critical getters to fire, failing fast on misconfiguration.
+In production Node runtime, `validateRequiredEnvAtBoot()` forces critical getters to fire, failing fast on misconfiguration.
 
 ### `withTeamRoute` (lib/http/team-route.ts)
 
@@ -184,7 +184,7 @@ Structured JSON logging in production, pretty console output in development. All
 
 ### `logAuditEvent` (lib/audit.ts)
 
-Batched audit event persistence. Events are queued in memory, flushed in batches of 25 (or every 200ms), with exponential backoff retry on failure. The queue is capped at 1,000 events to prevent unbounded memory growth.
+Batched audit event persistence. Events are queued in memory, flushed in batches of 25 (or every 200ms), with exponential backoff retry on failure. The queue defaults to a 1,000-event cap (configurable via env) to prevent unbounded memory growth.
 
 ### AI Provider Abstraction (lib/ai/provider.ts)
 
@@ -276,4 +276,4 @@ Most features are toggled via environment variables, not code flags:
 | Sentry | `NEXT_PUBLIC_SENTRY_DSN` set | `SENTRY_ENABLED` in `lib/logger.ts` |
 | Social auth providers | `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true`, etc. | `getEnabledSocialAuthProviders()` in `lib/auth/social-auth.ts` |
 
-Every feature degrades gracefully when its dependencies aren't configured. For example, if Trigger.dev isn't configured, webhook processing falls back to inline execution. If Redis isn't configured, rate limiting falls back to Supabase RPC, then to in-memory.
+Core integrations degrade gracefully when dependencies are missing. For example, if Trigger.dev isn't configured, webhook processing falls back to inline execution. If Redis isn't configured, rate limiting falls back to Supabase RPC, then to in-memory.

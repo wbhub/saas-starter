@@ -20,7 +20,7 @@ A production-ready Next.js SaaS foundation built to help you launch faster:
 - Vercel AI SDK (optional)
 - Intercom (optional)
 - Redis (optional)
-- Trigger.dev v3 (optional)
+- Trigger.dev (optional)
 - Sentry (optional)
 
 ## Prerequisites
@@ -66,7 +66,7 @@ Use `.env.example` as the source of truth for all available variables.
 - AI chat: Vercel AI SDK (`AI_PROVIDER` + provider keys)
 - In-app messenger: Intercom (`NEXT_PUBLIC_INTERCOM_APP_ID`, `INTERCOM_IDENTITY_SECRET`)
 - Multi-instance rate limiting/cache: Redis via Upstash (`UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`)
-- Background job offloading: Trigger.dev v3 (`TRIGGER_SECRET_KEY`, `TRIGGER_PROJECT_REF`)
+- Background job offloading: Trigger.dev (`TRIGGER_SECRET_KEY`, `TRIGGER_PROJECT_REF`)
 - Error monitoring: Sentry (`NEXT_PUBLIC_SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_ENVIRONMENT`, `SENTRY_ENVIRONMENT`)
 
 ## Quick Start
@@ -157,7 +157,7 @@ If you want `/dashboard/ai` and `/api/ai/chat`:
 
 - Set `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` for multi-instance rate limiting and team-context caching
 
-### Trigger.dev v3 Background Jobs
+### Trigger.dev Background Jobs
 
 - Set `TRIGGER_SECRET_KEY` to enable Trigger dispatch from webhook/cron/email/retry flows.
 - Set `TRIGGER_PROJECT_REF` for Trigger CLI/deploy configuration (`trigger.config.ts`).
