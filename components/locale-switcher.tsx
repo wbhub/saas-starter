@@ -53,13 +53,7 @@ export function LocaleSwitcher({ className }: LocaleSwitcherProps) {
   const currentLabel = getLocaleLabel(locale);
 
   return (
-    <div
-      ref={containerRef}
-      className={cn(
-        "relative inline-flex",
-        className,
-      )}
-    >
+    <div ref={containerRef} className={cn("relative inline-flex", className)}>
       <button
         type="button"
         aria-label={`${t("label")}: ${currentLabel}`}

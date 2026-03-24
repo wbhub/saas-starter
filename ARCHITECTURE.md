@@ -267,17 +267,17 @@ A single `getAiLanguageModel(model)` function that returns a Vercel AI SDK model
 
 Most features are toggled via environment variables, not code flags:
 
-| Feature | Enabled when | Controlled by |
-|---------|-------------|---------------|
-| Stripe billing | `BILLING_PROVIDER=stripe` + Stripe env vars set | `isBillingEnabled()` in `lib/billing/capabilities.ts` |
-| Free plan | `APP_FREE_PLAN_ENABLED=true` (default) | `isFreePlanEnabled()` in `lib/billing/capabilities.ts` |
-| AI chat | AI provider env var set (e.g., `OPENAI_API_KEY`) | `isAiProviderConfigured` in `lib/ai/provider.ts` |
-| AI access mode | `AI_ACCESS_MODE` = `paid` / `all` / `by_plan` | `getAiAccessMode()` in `lib/ai/config.ts` |
-| Email (Resend) | `RESEND_API_KEY` + `RESEND_FROM_EMAIL` set | `isResendCustomEmailConfigured()` in `lib/resend/server.ts` |
-| Background jobs | `TRIGGER_SECRET_KEY` set | `isTriggerConfigured()` in `lib/trigger/config.ts` |
-| Redis caching | `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` set | `getRedisClient()` returns non-null in `lib/redis/client.ts` |
-| Intercom | `NEXT_PUBLIC_INTERCOM_APP_ID` set | Checked in dashboard layout |
-| Sentry | `NEXT_PUBLIC_SENTRY_DSN` set | `SENTRY_ENABLED` in `lib/logger.ts` |
-| Social auth providers | `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true`, etc. | `getEnabledSocialAuthProviders()` in `lib/auth/social-auth.ts` |
+| Feature               | Enabled when                                              | Controlled by                                                  |
+| --------------------- | --------------------------------------------------------- | -------------------------------------------------------------- |
+| Stripe billing        | `BILLING_PROVIDER=stripe` + Stripe env vars set           | `isBillingEnabled()` in `lib/billing/capabilities.ts`          |
+| Free plan             | `APP_FREE_PLAN_ENABLED=true` (default)                    | `isFreePlanEnabled()` in `lib/billing/capabilities.ts`         |
+| AI chat               | AI provider env var set (e.g., `OPENAI_API_KEY`)          | `isAiProviderConfigured` in `lib/ai/provider.ts`               |
+| AI access mode        | `AI_ACCESS_MODE` = `paid` / `all` / `by_plan`             | `getAiAccessMode()` in `lib/ai/config.ts`                      |
+| Email (Resend)        | `RESEND_API_KEY` + `RESEND_FROM_EMAIL` set                | `isResendCustomEmailConfigured()` in `lib/resend/server.ts`    |
+| Background jobs       | `TRIGGER_SECRET_KEY` set                                  | `isTriggerConfigured()` in `lib/trigger/config.ts`             |
+| Redis caching         | `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` set | `getRedisClient()` returns non-null in `lib/redis/client.ts`   |
+| Intercom              | `NEXT_PUBLIC_INTERCOM_APP_ID` set                         | Checked in dashboard layout                                    |
+| Sentry                | `NEXT_PUBLIC_SENTRY_DSN` set                              | `SENTRY_ENABLED` in `lib/logger.ts`                            |
+| Social auth providers | `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true`, etc.              | `getEnabledSocialAuthProviders()` in `lib/auth/social-auth.ts` |
 
 Core integrations degrade gracefully when dependencies are missing. For example, if Trigger.dev isn't configured, webhook processing falls back to inline execution. If Redis isn't configured, rate limiting falls back to Supabase RPC, then to in-memory.

@@ -828,10 +828,44 @@ revoke execute on function public.sync_stripe_subscription_atomic(uuid, text, te
 revoke execute on function public.sync_stripe_subscription_atomic(uuid, text, text, text, integer, text, timestamptz, timestamptz, timestamptz, boolean, timestamptz) from authenticated;
 grant execute on function public.sync_stripe_subscription_atomic(uuid, text, text, text, integer, text, timestamptz, timestamptz, timestamptz, boolean, timestamptz) to service_role;
 
+create or replace function public.delete_stripe_customer_and_cancel_subscriptions(
+  p_stripe_customer_id text
+)
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_cancelled integer := 0;
+begin
+  update public.subscriptions
+  set
+    status = 'canceled',
+    cancel_at_period_end = false,
+    stripe_event_created_at = timezone('utc', now())
+  where stripe_customer_id = p_stripe_customer_id
+    and status in ('incomplete', 'trialing', 'active', 'past_due', 'unpaid', 'paused');
+
+  get diagnostics v_cancelled = row_count;
+
+  delete from public.stripe_customers
+  where stripe_customer_id = p_stripe_customer_id;
+
+  return v_cancelled;
+end;
+$$;
+
+revoke execute on function public.delete_stripe_customer_and_cancel_subscriptions(text) from public;
+revoke execute on function public.delete_stripe_customer_and_cancel_subscriptions(text) from anon;
+revoke execute on function public.delete_stripe_customer_and_cancel_subscriptions(text) from authenticated;
+grant execute on function public.delete_stripe_customer_and_cancel_subscriptions(text) to service_role;
+
 create or replace function public.accept_team_invite_atomic(
   p_token_hash text,
   p_user_id uuid,
-  p_user_email text
+  p_user_email text,
+  p_max_members integer default null
 )
 returns table(ok boolean, error_code text, team_id uuid, team_name text)
 language plpgsql
@@ -841,6 +875,7 @@ as $$
 declare
   v_invite public.team_invites%rowtype;
   v_team_name text;
+  v_current_members integer;
 begin
   select ti.*
   into v_invite
@@ -868,6 +903,20 @@ begin
     return;
   end if;
 
+  if p_max_members is not null then
+    perform pg_advisory_xact_lock(hashtext('team_invite_cap:' || v_invite.team_id::text));
+
+    select count(*)
+    into v_current_members
+    from public.team_memberships tm
+    where tm.team_id = v_invite.team_id;
+
+    if v_current_members >= p_max_members then
+      return query select false, 'team_full', v_invite.team_id, null::text;
+      return;
+    end if;
+  end if;
+
   insert into public.team_memberships (team_id, user_id, role)
   values (v_invite.team_id, p_user_id, v_invite.role)
   on conflict (team_id, user_id) do nothing;
@@ -891,10 +940,64 @@ begin
 end;
 $$;
 
-revoke execute on function public.accept_team_invite_atomic(text, uuid, text) from public;
-revoke execute on function public.accept_team_invite_atomic(text, uuid, text) from anon;
-revoke execute on function public.accept_team_invite_atomic(text, uuid, text) from authenticated;
-grant execute on function public.accept_team_invite_atomic(text, uuid, text) to service_role;
+revoke execute on function public.accept_team_invite_atomic(text, uuid, text, integer) from public;
+revoke execute on function public.accept_team_invite_atomic(text, uuid, text, integer) from anon;
+revoke execute on function public.accept_team_invite_atomic(text, uuid, text, integer) from authenticated;
+grant execute on function public.accept_team_invite_atomic(text, uuid, text, integer) to service_role;
+
+create or replace function public.create_team_invite_atomic(
+  p_team_id uuid,
+  p_email text,
+  p_role text,
+  p_token_hash text,
+  p_invited_by uuid,
+  p_expires_at timestamptz,
+  p_max_members integer
+)
+returns table(ok boolean, error_code text)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_current_members integer;
+  v_pending_invites integer;
+begin
+  perform pg_advisory_xact_lock(hashtext('team_invite_cap:' || p_team_id::text));
+
+  select count(*)
+  into v_current_members
+  from public.team_memberships tm
+  where tm.team_id = p_team_id;
+
+  select count(*)
+  into v_pending_invites
+  from public.team_invites ti
+  where ti.team_id = p_team_id
+    and ti.accepted_at is null
+    and ti.expires_at > timezone('utc', now());
+
+  if (v_current_members + v_pending_invites) >= p_max_members then
+    return query select false, 'team_full';
+    return;
+  end if;
+
+  begin
+    insert into public.team_invites (team_id, email, role, token_hash, invited_by, expires_at)
+    values (p_team_id, p_email, p_role, p_token_hash, p_invited_by, p_expires_at);
+  exception when unique_violation then
+    return query select false, 'duplicate_pending_invite';
+    return;
+  end;
+
+  return query select true, null::text;
+end;
+$$;
+
+revoke execute on function public.create_team_invite_atomic(uuid, text, text, text, uuid, timestamptz, integer) from public;
+revoke execute on function public.create_team_invite_atomic(uuid, text, text, text, uuid, timestamptz, integer) from anon;
+revoke execute on function public.create_team_invite_atomic(uuid, text, text, text, uuid, timestamptz, integer) from authenticated;
+grant execute on function public.create_team_invite_atomic(uuid, text, text, text, uuid, timestamptz, integer) to service_role;
 
 create or replace function public.transfer_team_ownership_atomic(
   p_team_id uuid,

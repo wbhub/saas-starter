@@ -11,12 +11,8 @@ export function SecuritySettingsCard({ csrfToken }: SecuritySettingsCardProps) {
 
   return (
     <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
-      <h2 className="text-lg font-semibold text-foreground">
-        {t("title")}
-      </h2>
-      <p className="mt-2 text-sm text-muted-foreground">
-        {t("description")}
-      </p>
+      <h2 className="text-lg font-semibold text-foreground">{t("title")}</h2>
+      <p className="mt-2 text-sm text-muted-foreground">{t("description")}</p>
 
       <div className="mt-4 flex flex-wrap gap-2">
         <form action={logoutAllSessions}>

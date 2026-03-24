@@ -30,9 +30,7 @@ describe("POST /api/ai/chat access and gating", () => {
     }));
     vi.doMock("@/lib/ai/config", () => ({
       getAiAccessMode: vi.fn().mockReturnValue("paid"),
-      getAiAllowedSubscriptionStatuses: vi
-        .fn()
-        .mockReturnValue(["trialing", "active", "past_due"]),
+      getAiAllowedSubscriptionStatuses: vi.fn().mockReturnValue(["trialing", "active", "past_due"]),
       getAiDefaultModel: vi.fn().mockReturnValue("gpt-4.1-mini"),
       getAiDefaultMonthlyTokenBudget: vi.fn().mockReturnValue(2_000_000),
       getAiRuleForPlan: vi.fn().mockReturnValue({
@@ -302,9 +300,7 @@ describe("POST /api/ai/chat access and gating", () => {
   it("allows free users in all mode", async () => {
     vi.doMock("@/lib/ai/config", () => ({
       getAiAccessMode: vi.fn().mockReturnValue("all"),
-      getAiAllowedSubscriptionStatuses: vi
-        .fn()
-        .mockReturnValue(["trialing", "active", "past_due"]),
+      getAiAllowedSubscriptionStatuses: vi.fn().mockReturnValue(["trialing", "active", "past_due"]),
       getAiDefaultModel: vi.fn().mockReturnValue("gpt-4.1-mini"),
       getAiDefaultMonthlyTokenBudget: vi.fn().mockReturnValue(0),
       getAiRuleForPlan: vi.fn(),
@@ -448,9 +444,7 @@ describe("POST /api/ai/chat access and gating", () => {
   it("filters by_plan subscription lookup to live statuses", async () => {
     vi.doMock("@/lib/ai/config", () => ({
       getAiAccessMode: vi.fn().mockReturnValue("by_plan"),
-      getAiAllowedSubscriptionStatuses: vi
-        .fn()
-        .mockReturnValue(["trialing", "active", "past_due"]),
+      getAiAllowedSubscriptionStatuses: vi.fn().mockReturnValue(["trialing", "active", "past_due"]),
       getAiDefaultModel: vi.fn().mockReturnValue("gpt-4.1-mini"),
       getAiDefaultMonthlyTokenBudget: vi.fn().mockReturnValue(0),
       getAiRuleForPlan: vi.fn().mockReturnValue({
@@ -749,9 +743,7 @@ describe("POST /api/ai/chat access and gating", () => {
     }));
     vi.doMock("@/lib/ai/config", () => ({
       getAiAccessMode: vi.fn().mockReturnValue("all"),
-      getAiAllowedSubscriptionStatuses: vi
-        .fn()
-        .mockReturnValue(["trialing", "active", "past_due"]),
+      getAiAllowedSubscriptionStatuses: vi.fn().mockReturnValue(["trialing", "active", "past_due"]),
       getAiDefaultModel: vi.fn().mockReturnValue("gpt-4.1-mini"),
       getAiDefaultMonthlyTokenBudget: vi.fn().mockReturnValue(0),
       getAiRuleForPlan: vi.fn().mockReturnValue({

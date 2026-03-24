@@ -26,10 +26,7 @@ type IntercomSettings = {
   user_hash?: string;
 };
 
-type IntercomCommand = (
-  command: string,
-  ...args: unknown[]
-) => void;
+type IntercomCommand = (command: string, ...args: unknown[]) => void;
 
 declare global {
   interface Window {
@@ -106,9 +103,7 @@ function loadIntercomScript(appId: string) {
 export function IntercomProvider({ appId, user }: IntercomProviderProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [resolvedUser, setResolvedUser] = useState<IntercomUser | null | undefined>(
-    user,
-  );
+  const [resolvedUser, setResolvedUser] = useState<IntercomUser | null | undefined>(user);
 
   useEffect(() => {
     setResolvedUser(user);
@@ -174,9 +169,7 @@ export function IntercomProvider({ appId, user }: IntercomProviderProps) {
       return;
     }
 
-    const intercomStub: IntercomCommand & { q?: unknown[] } = (
-      ...args: unknown[]
-    ) => {
+    const intercomStub: IntercomCommand & { q?: unknown[] } = (...args: unknown[]) => {
       intercomStub.q = intercomStub.q ?? [];
       intercomStub.q.push(args);
     };

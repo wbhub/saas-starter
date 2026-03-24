@@ -6,12 +6,13 @@ describe("POST /api/auth/signup", () => {
     vi.clearAllMocks();
   });
 
-  function mockDeps(overrides: {
-    signUp?: ReturnType<typeof vi.fn>;
-  } = {}) {
+  function mockDeps(
+    overrides: {
+      signUp?: ReturnType<typeof vi.fn>;
+    } = {},
+  ) {
     const signUp =
-      overrides.signUp ??
-      vi.fn().mockResolvedValue({ data: { session: null }, error: null });
+      overrides.signUp ?? vi.fn().mockResolvedValue({ data: { session: null }, error: null });
 
     vi.doMock("@/lib/security/csrf", () => ({
       verifyCsrfProtection: () => null,

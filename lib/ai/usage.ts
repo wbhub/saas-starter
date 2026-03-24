@@ -28,7 +28,10 @@ export function resolveActualTokenUsage({
   const estimatedCompletionFromOutput = Math.max(0, Math.ceil(streamedCompletionChars / 4));
   const boundedCompletionTokens = Math.max(
     0,
-    Math.min(estimatedCompletionFromOutput, Math.floor(projectedRequestTokens) - boundedPromptTokens),
+    Math.min(
+      estimatedCompletionFromOutput,
+      Math.floor(projectedRequestTokens) - boundedPromptTokens,
+    ),
   );
   const fallbackActual = boundedPromptTokens + boundedCompletionTokens;
 

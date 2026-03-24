@@ -35,8 +35,7 @@ describe("Signup page social auth config", () => {
     }));
     vi.doMock("next/headers", () => ({
       cookies: async () => ({
-        get: (name: string) =>
-          name === "auth_last_provider" ? { value: "microsoft" } : undefined,
+        get: (name: string) => (name === "auth_last_provider" ? { value: "microsoft" } : undefined),
       }),
     }));
     vi.doMock("@/components/auth-form", () => ({

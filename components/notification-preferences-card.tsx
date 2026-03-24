@@ -1,12 +1,13 @@
 "use client";
 
 import { useActionState } from "react";
-import { useFormStatus } from "react-dom";
 import { useTranslations } from "next-intl";
 import {
   updateNotificationPreferences,
   type UpdateNotificationPreferencesState,
 } from "@/app/dashboard/actions";
+import { SubmitButton } from "@/components/ui/submit-button";
+import { FormMessage } from "@/components/ui/form-message";
 
 type NotificationPreferencesCardProps = {
   marketingEmails: boolean;
@@ -19,20 +20,6 @@ const initialState: UpdateNotificationPreferencesState = {
   status: "idle",
   message: null,
 };
-
-function SaveButton({ pendingLabel, idleLabel }: { pendingLabel: string; idleLabel: string }) {
-  const { pending } = useFormStatus();
-
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="rounded-lg bg-btn-primary px-4 py-2 text-sm font-medium text-btn-primary-text hover:bg-btn-primary-hover disabled:opacity-60"
-    >
-      {pending ? pendingLabel : idleLabel}
-    </button>
-  );
-}
 
 function PreferenceToggle({
   name,
@@ -72,12 +59,8 @@ export function NotificationPreferencesCard({
 
   return (
     <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
-      <h2 className="text-lg font-semibold text-foreground">
-        {t("title")}
-      </h2>
-      <p className="mt-2 text-sm text-muted-foreground">
-        {t("description")}
-      </p>
+      <h2 className="text-lg font-semibold text-foreground">{t("title")}</h2>
+      <p className="mt-2 text-sm text-muted-foreground">{t("description")}</p>
 
       <form action={formAction} className="mt-4 space-y-3">
         <input type="hidden" name="csrf_token" value={csrfToken} />
@@ -99,20 +82,10 @@ export function NotificationPreferencesCard({
           description={t("items.marketingEmails.description")}
           defaultChecked={marketingEmails}
         />
-        <SaveButton pendingLabel={t("actions.saving")} idleLabel={t("actions.savePreferences")} />
+        <SubmitButton pendingLabel={t("actions.saving")} idleLabel={t("actions.savePreferences")} />
       </form>
 
-      {state.message ? (
-        <p
-          className={`mt-3 rounded-lg px-3 py-2 text-sm ${
-            state.status === "error"
-              ? "border border-rose-300/60 bg-rose-50 text-rose-700 dark:border-rose-700/60 dark:bg-rose-950/30 dark:text-rose-200"
-              : "app-surface-subtle text-muted-foreground"
-          }`}
-        >
-          {state.message}
-        </p>
-      ) : null}
+      <FormMessage status={state.status} message={state.message} />
     </section>
   );
 }

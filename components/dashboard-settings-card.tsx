@@ -1,13 +1,15 @@
 "use client";
 
 import { ChangeEvent, useActionState, useRef, useState } from "react";
-import { useFormStatus } from "react-dom";
 import { useTranslations } from "next-intl";
 import {
   updateDashboardSettings,
   type UpdateDashboardSettingsState,
 } from "@/app/dashboard/actions";
 import { createClient } from "@/lib/supabase/client";
+import { SubmitButton } from "@/components/ui/submit-button";
+import { Input } from "@/components/ui/input";
+import { FormMessage } from "@/components/ui/form-message";
 
 type DashboardSettingsCardProps = {
   userId: string;
@@ -21,20 +23,6 @@ const initialState: UpdateDashboardSettingsState = {
   status: "idle",
   message: null,
 };
-
-function SaveButton({ pendingLabel, idleLabel }: { pendingLabel: string; idleLabel: string }) {
-  const { pending } = useFormStatus();
-
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="rounded-lg bg-btn-primary px-4 py-2 text-sm font-medium text-btn-primary-text hover:bg-btn-primary-hover disabled:opacity-60"
-    >
-      {pending ? pendingLabel : idleLabel}
-    </button>
-  );
-}
 
 export function DashboardSettingsCard({
   userId,
@@ -108,9 +96,7 @@ export function DashboardSettingsCard({
   return (
     <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
       <h2 className="text-lg font-semibold text-foreground">{t("title")}</h2>
-      <p className="mt-2 text-sm text-muted-foreground">
-        {t("description")}
-      </p>
+      <p className="mt-2 text-sm text-muted-foreground">{t("description")}</p>
 
       <form action={formAction} className="mt-4 space-y-3">
         <input type="hidden" name="csrf_token" value={csrfToken} />
@@ -122,7 +108,11 @@ export function DashboardSettingsCard({
             <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-surface-subtle text-xs text-muted-foreground">
               {avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={avatarUrl} alt={t("upload.profileAvatarAlt")} className="h-full w-full object-cover" />
+                <img
+                  src={avatarUrl}
+                  alt={t("upload.profileAvatarAlt")}
+                  className="h-full w-full object-cover"
+                />
               ) : (
                 t("upload.noPhoto")
               )}
@@ -161,12 +151,11 @@ export function DashboardSettingsCard({
           <span className="mb-1 block text-sm font-medium text-foreground">
             {t("fields.displayName")}
           </span>
-          <input
+          <Input
             type="text"
             name="fullName"
             maxLength={80}
             defaultValue={fullName ?? ""}
-            className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-sm text-foreground outline-none ring-ring placeholder:text-muted-foreground focus:ring-2"
             placeholder={t("fields.displayNamePlaceholder")}
           />
         </label>
@@ -175,31 +164,14 @@ export function DashboardSettingsCard({
           <span className="mb-1 block text-sm font-medium text-foreground">
             {t("fields.email")}
           </span>
-          <input
-            type="email"
-            value={email ?? ""}
-            readOnly
-            className="w-full rounded-lg border app-border-subtle app-surface-subtle px-3 py-2 text-sm text-muted-foreground outline-none"
-          />
-          <p className="mt-1 text-xs text-muted-foreground">
-            {t("fields.emailHint")}
-          </p>
+          <Input type="email" value={email ?? ""} variant="readonly" />
+          <p className="mt-1 text-xs text-muted-foreground">{t("fields.emailHint")}</p>
         </label>
 
-        <SaveButton pendingLabel={t("actions.saving")} idleLabel={t("actions.saveSettings")} />
+        <SubmitButton pendingLabel={t("actions.saving")} idleLabel={t("actions.saveSettings")} />
       </form>
 
-      {state.message ? (
-        <p
-          className={`mt-3 rounded-lg px-3 py-2 text-sm ${
-            state.status === "error"
-              ? "border border-rose-300/60 bg-rose-50 text-rose-700 dark:border-rose-700/60 dark:bg-rose-950/30 dark:text-rose-200"
-              : "app-surface-subtle text-muted-foreground"
-          }`}
-        >
-          {state.message}
-        </p>
-      ) : null}
+      <FormMessage status={state.status} message={state.message} />
     </section>
   );
 }

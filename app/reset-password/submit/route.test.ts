@@ -1,11 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
-function makeRequest(
-  url: string,
-  body: Record<string, unknown>,
-  cookieHeader?: string,
-) {
+function makeRequest(url: string, body: Record<string, unknown>, cookieHeader?: string) {
   return new NextRequest(url, {
     method: "POST",
     headers: {
@@ -21,9 +17,8 @@ describe("POST /reset-password/submit", () => {
     vi.resetModules();
     vi.clearAllMocks();
     vi.doMock("@/lib/security/csrf", async () => {
-      const actual = await vi.importActual<typeof import("@/lib/security/csrf")>(
-        "@/lib/security/csrf",
-      );
+      const actual =
+        await vi.importActual<typeof import("@/lib/security/csrf")>("@/lib/security/csrf");
       return {
         ...actual,
         verifyCsrfProtection: vi.fn().mockReturnValue(null),
@@ -44,7 +39,9 @@ describe("POST /reset-password/submit", () => {
 
     const { POST } = await import("./route");
     const response = await POST(
-      makeRequest("http://localhost/reset-password/submit", { password: "correct horse battery staple" }),
+      makeRequest("http://localhost/reset-password/submit", {
+        password: "correct horse battery staple",
+      }),
     );
 
     expect(response.status).toBe(429);
@@ -65,7 +62,9 @@ describe("POST /reset-password/submit", () => {
 
     const { POST } = await import("./route");
     const response = await POST(
-      makeRequest("http://localhost/reset-password/submit", { password: "correct horse battery staple" }),
+      makeRequest("http://localhost/reset-password/submit", {
+        password: "correct horse battery staple",
+      }),
     );
 
     expect(response.status).toBe(403);

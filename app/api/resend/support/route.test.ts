@@ -223,4 +223,3 @@ describe("POST /api/resend/support", () => {
     });
   });
 });
-

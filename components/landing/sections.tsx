@@ -78,12 +78,8 @@ export function HeroSection() {
             <Clock3 className="h-4 w-4" />
             {t("badge")}
           </p>
-          <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">
-            {t("title")}
-          </h1>
-          <p className="app-muted mt-5 max-w-xl text-base">
-            {t("description")}
-          </p>
+          <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">{t("title")}</h1>
+          <p className="app-muted mt-5 max-w-xl text-base">{t("description")}</p>
           <div className="mt-8 flex flex-wrap gap-3">
             <AuthAwareLink
               loggedInHref="/dashboard"
@@ -133,9 +129,7 @@ export function HeroSection() {
           <div className="rounded-2xl border app-border-subtle app-surface-subtle p-6">
             <div className="mb-4">
               <h2 className="text-lg font-semibold">{t("shipNowTitle")}</h2>
-              <p className="app-muted mt-1 text-sm">
-                {t("shipNowDescription")}
-              </p>
+              <p className="app-muted mt-1 text-sm">{t("shipNowDescription")}</p>
             </div>
             <div className="grid gap-4">
               {shipItems.map((item) => (
@@ -171,9 +165,7 @@ export function GettingStartedSection() {
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <h2 className="text-2xl font-semibold md:text-3xl">{t("title")}</h2>
-          <p className="app-muted mt-2 max-w-2xl">
-            {t("description")}
-          </p>
+          <p className="app-muted mt-2 max-w-2xl">{t("description")}</p>
         </div>
       </div>
       <div className="grid gap-4 md:grid-cols-3">
@@ -204,12 +196,8 @@ export function WhyStarterSection() {
   return (
     <section className="rounded-3xl border app-border-subtle app-surface px-6 py-8 md:px-10 md:py-10">
       <div className="mx-auto max-w-3xl text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] app-muted">
-          {t("label")}
-        </p>
-        <h2 className="mt-3 text-2xl font-semibold md:text-3xl">
-          {t("title")}
-        </h2>
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] app-muted">{t("label")}</p>
+        <h2 className="mt-3 text-2xl font-semibold md:text-3xl">{t("title")}</h2>
         <p className="app-muted mt-3">{t("description")}</p>
       </div>
       <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
@@ -218,9 +206,7 @@ export function WhyStarterSection() {
             key={stat.label}
             className="inline-flex items-center gap-2 rounded-full border app-border-subtle bg-[color:var(--surface-subtle)] px-4 py-2 text-xs md:text-sm"
           >
-            <span className="font-medium text-indigo-600 dark:text-indigo-300">
-              {stat.value}
-            </span>
+            <span className="font-medium text-indigo-600 dark:text-indigo-300">{stat.value}</span>
             <span className="app-muted">· {stat.label}</span>
           </div>
         ))}
@@ -237,9 +223,7 @@ export function BestPracticesSection() {
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <h2 className="text-3xl font-semibold">{t("title")}</h2>
-          <p className="app-muted mt-2 max-w-2xl">
-            {t("description")}
-          </p>
+          <p className="app-muted mt-2 max-w-2xl">{t("description")}</p>
         </div>
       </div>
       <div className="grid gap-6 md:grid-cols-3">
@@ -271,9 +255,7 @@ export function StackSection() {
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <h2 className="text-2xl font-semibold md:text-3xl">{t("title")}</h2>
-          <p className="app-muted mt-2 max-w-2xl">
-            {t("description")}
-          </p>
+          <p className="app-muted mt-2 max-w-2xl">{t("description")}</p>
         </div>
       </div>
       <div className="grid gap-6 md:grid-cols-3">
@@ -394,7 +376,10 @@ export function CtaFaqSection() {
         <h2 className="text-3xl font-semibold">{t("faqTitle")}</h2>
         <div className="mt-8 grid gap-4 md:grid-cols-2">
           {faqs.map((faq) => (
-            <article key={faq.question} className="rounded-xl border app-border-subtle app-surface p-5">
+            <article
+              key={faq.question}
+              className="rounded-xl border app-border-subtle app-surface p-5"
+            >
               <h3 className="font-medium">{faq.question}</h3>
               <p className="app-muted mt-2 text-sm">{faq.answer}</p>
             </article>
@@ -405,15 +390,7 @@ export function CtaFaqSection() {
   );
 }
 
-function FeatureCard({
-  icon,
-  title,
-  text,
-}: {
-  icon: ReactNode;
-  title: string;
-  text: string;
-}) {
+function FeatureCard({ icon, title, text }: { icon: ReactNode; title: string; text: string }) {
   return (
     <article className="app-surface-subtle rounded-2xl border app-border-subtle p-6">
       <div className="mb-3">{icon}</div>

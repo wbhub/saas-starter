@@ -15,7 +15,11 @@ describe("POST /api/team/invites/[inviteId]/resend", () => {
     const updateEqTeamId = vi.fn().mockResolvedValue({ error: null });
     const updateEqId = vi.fn().mockReturnValue({ eq: updateEqTeamId });
     const maybeSingle = vi.fn().mockResolvedValue({
-      data: { id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", email: "person@example.com", role: "member" },
+      data: {
+        id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        email: "person@example.com",
+        role: "member",
+      },
       error: null,
     });
 
@@ -71,10 +75,9 @@ describe("POST /api/team/invites/[inviteId]/resend", () => {
 
     const { POST } = await import("./route");
     const response = await POST(
-      new Request(
-        "http://localhost/api/team/invites/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/resend",
-        { method: "POST" },
-      ),
+      new Request("http://localhost/api/team/invites/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/resend", {
+        method: "POST",
+      }),
       {
         params: Promise.resolve({
           inviteId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
@@ -104,7 +107,11 @@ describe("POST /api/team/invites/[inviteId]/resend", () => {
     const updateEqTeamId = vi.fn().mockResolvedValue({ error: null });
     const updateEqId = vi.fn().mockReturnValue({ eq: updateEqTeamId });
     const maybeSingle = vi.fn().mockResolvedValue({
-      data: { id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", email: "person@example.com", role: "member" },
+      data: {
+        id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        email: "person@example.com",
+        role: "member",
+      },
       error: null,
     });
 
@@ -158,10 +165,9 @@ describe("POST /api/team/invites/[inviteId]/resend", () => {
 
     const { POST } = await import("./route");
     const response = await POST(
-      new Request(
-        "http://localhost/api/team/invites/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/resend",
-        { method: "POST" },
-      ),
+      new Request("http://localhost/api/team/invites/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/resend", {
+        method: "POST",
+      }),
       {
         params: Promise.resolve({
           inviteId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",

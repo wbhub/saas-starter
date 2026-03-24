@@ -164,12 +164,10 @@ describe("reconcileTeamSeatQuantities", () => {
     const syncTeamSeatQuantity = vi.fn().mockResolvedValue({ updated: true });
     const listDueSeatSyncRetryTeamIds = vi.fn().mockResolvedValue(["team_retry"]);
     const clearSeatSyncRetry = vi.fn().mockResolvedValue(undefined);
-    const range = vi
-      .fn()
-      .mockResolvedValueOnce({
-        data: [],
-        error: null,
-      });
+    const range = vi.fn().mockResolvedValueOnce({
+      data: [],
+      error: null,
+    });
 
     vi.doMock("@/lib/supabase/admin", () => ({
       createAdminClient: () => ({

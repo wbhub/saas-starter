@@ -16,10 +16,7 @@ function saveRecoveryMarker() {
     return;
   }
 
-  window.sessionStorage.setItem(
-    RECOVERY_MARKER_KEY,
-    JSON.stringify({ issuedAt: Date.now() }),
-  );
+  window.sessionStorage.setItem(RECOVERY_MARKER_KEY, JSON.stringify({ issuedAt: Date.now() }));
 }
 
 function clearRecoveryMarker() {
@@ -192,9 +189,7 @@ export function ResetPasswordForm({ hasRecoveryProof, recoveryUserId }: ResetPas
   return (
     <div className="w-full max-w-md rounded-2xl border app-border-subtle app-surface p-8 text-[color:var(--foreground)] shadow-sm">
       <h1 className="text-2xl font-semibold">{t("title")}</h1>
-      <p className="mt-2 text-sm text-[color:var(--muted-foreground)]">
-        {t("description")}
-      </p>
+      <p className="mt-2 text-sm text-[color:var(--muted-foreground)]">{t("description")}</p>
 
       <form className="mt-6 space-y-4" onSubmit={onSubmit} aria-busy={loading}>
         <label className="block">

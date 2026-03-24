@@ -14,7 +14,9 @@ test.describe("@smoke ai chat streaming", () => {
     await page.goto("/dashboard/ai");
     await expect(page.getByText("AI chat is unavailable")).toBeVisible();
     await expect(page.getByText("AI is not configured for this app yet.")).toBeVisible();
-    await expect(page.getByPlaceholder("Ask anything about your product, docs, or workflow...")).toHaveCount(0);
+    await expect(
+      page.getByPlaceholder("Ask anything about your product, docs, or workflow..."),
+    ).toHaveCount(0);
   });
 
   test("AI ineligible plan shows unavailable state with billing CTA", async ({ page }) => {
@@ -40,7 +42,9 @@ test.describe("@smoke ai chat streaming", () => {
     });
 
     await page.goto("/dashboard/ai");
-    await page.getByPlaceholder("Ask anything about your product, docs, or workflow...").fill("Hello assistant");
+    await page
+      .getByPlaceholder("Ask anything about your product, docs, or workflow...")
+      .fill("Hello assistant");
     await page.getByRole("button", { name: "Send" }).click();
 
     await expect(page.getByText("Hello assistant")).toBeVisible();

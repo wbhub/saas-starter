@@ -14,13 +14,7 @@ function toSafeSentryError(error: Error): Error {
   return safeError;
 }
 
-export default function DashboardError({
-  error,
-  reset,
-}: {
-  error: Error;
-  reset: () => void;
-}) {
+export default function DashboardError({ error, reset }: { error: Error; reset: () => void }) {
   useEffect(() => {
     // Keep full details in the browser console for debugging.
     console.error("Dashboard rendering failed:", error);
@@ -32,9 +26,7 @@ export default function DashboardError({
   return (
     <main className="flex min-h-screen items-center justify-center bg-[color:var(--background)] px-4 text-[color:var(--foreground)]">
       <div className="max-w-md rounded-xl border border-red-200 bg-surface p-6 text-center dark:border-red-500/60">
-        <h2 className="text-xl font-semibold text-foreground">
-          Dashboard error
-        </h2>
+        <h2 className="text-xl font-semibold text-foreground">Dashboard error</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           Something went wrong while loading your dashboard. Please try again.
         </p>

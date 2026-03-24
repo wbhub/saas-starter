@@ -17,7 +17,8 @@ describe("billing capabilities", () => {
   });
 
   it("defaults to free enabled and billing disabled", async () => {
-    const { isFreePlanEnabled, getBillingProvider, isBillingEnabled } = await import("./capabilities");
+    const { isFreePlanEnabled, getBillingProvider, isBillingEnabled } =
+      await import("./capabilities");
     expect(isFreePlanEnabled()).toBe(true);
     expect(getBillingProvider()).toBe("none");
     expect(isBillingEnabled()).toBe(false);

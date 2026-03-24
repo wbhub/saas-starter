@@ -80,21 +80,27 @@ describe("withTeamRoute", () => {
   });
 
   it("passes csrfMessages through to verifyCsrfProtection", async () => {
-    const csrfError = new Response(
-      JSON.stringify({ ok: false, error: "Origen no valido" }),
-      { status: 403, headers: { "Content-Type": "application/json" } },
-    );
+    const csrfError = new Response(JSON.stringify({ ok: false, error: "Origen no valido" }), {
+      status: 403,
+      headers: { "Content-Type": "application/json" },
+    });
     vi.resetModules();
     const verifyCsrfProtection = vi.fn().mockReturnValue(csrfError);
     vi.doMock("@/lib/security/csrf", () => ({ verifyCsrfProtection }));
-    vi.doMock("@/lib/http/content-type", () => ({ requireJsonContentType: vi.fn().mockReturnValue(null) }));
+    vi.doMock("@/lib/http/content-type", () => ({
+      requireJsonContentType: vi.fn().mockReturnValue(null),
+    }));
     vi.doMock("@/lib/http/request-validation", () => ({ parseJsonWithSchema: vi.fn() }));
     vi.doMock("@/lib/security/rate-limit", () => ({ checkRateLimit: vi.fn() }));
     vi.doMock("@/lib/supabase/server", () => ({
-      createClient: async () => ({ auth: { getUser: async () => ({ data: { user: { id: "u1" } } }) } }),
+      createClient: async () => ({
+        auth: { getUser: async () => ({ data: { user: { id: "u1" } } }) },
+      }),
     }));
     vi.doMock("@/lib/team-context-cache", () => ({
-      getCachedTeamContextForUser: vi.fn().mockResolvedValue({ teamId: "t1", teamName: "A", role: "owner" }),
+      getCachedTeamContextForUser: vi
+        .fn()
+        .mockResolvedValue({ teamId: "t1", teamName: "A", role: "owner" }),
     }));
     const { withTeamRoute } = await import("./team-route");
 
@@ -117,7 +123,9 @@ describe("withTeamRoute", () => {
     });
 
     expect(response.status).toBe(401);
-    await expect(response.json()).resolves.toEqual(expect.objectContaining({ ok: false, error: "Unauthorized" }));
+    await expect(response.json()).resolves.toEqual(
+      expect.objectContaining({ ok: false, error: "Unauthorized" }),
+    );
   });
 
   it("rejects missing team membership with 403", async () => {
@@ -147,7 +155,10 @@ describe("withTeamRoute", () => {
 
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual(
-      expect.objectContaining({ ok: false, error: "You do not have permission to perform this action." }),
+      expect.objectContaining({
+        ok: false,
+        error: "You do not have permission to perform this action.",
+      }),
     );
   });
 
@@ -162,7 +173,12 @@ describe("withTeamRoute", () => {
       request: new Request("http://localhost/api/team", { method: "POST" }),
       rateLimits: () => [
         { key: "team-action:burst", limit: 1, windowMs: 1000, message: "Burst limit exceeded" },
-        { key: "team-action:sustained", limit: 5, windowMs: 10_000, message: "Sustained limit exceeded" },
+        {
+          key: "team-action:sustained",
+          limit: 5,
+          windowMs: 10_000,
+          message: "Sustained limit exceeded",
+        },
       ],
       handler: async () => jsonResponse({ ok: true }),
     });

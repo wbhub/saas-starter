@@ -34,7 +34,9 @@ export function DashboardSidebar({
 }: DashboardSidebarProps) {
   const t = useTranslations();
   const pathname = usePathname();
-  const navItems: Array<{ label: string; href: string }> = [{ label: t("DashboardSidebar.overview"), href: "/dashboard" }];
+  const navItems: Array<{ label: string; href: string }> = [
+    { label: t("DashboardSidebar.overview"), href: "/dashboard" },
+  ];
   if (showAiNav) {
     navItems.push({ label: t("DashboardSidebar.ai"), href: "/dashboard/ai" });
   }
@@ -80,9 +82,7 @@ export function DashboardSidebar({
       </div>
 
       <div className="mt-5 rounded-lg app-surface-subtle px-3 py-2">
-        <p className="truncate text-sm font-medium text-foreground">
-          {displayName}
-        </p>
+        <p className="truncate text-sm font-medium text-foreground">{displayName}</p>
         <p className="truncate text-xs text-muted-foreground">{userEmail}</p>
         {teamUiMode !== "free" ? (
           <p className="mt-1 text-xs capitalize text-muted-foreground">{role}</p>

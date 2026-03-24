@@ -47,14 +47,10 @@ export default async function DashboardPage() {
   ]);
   const { subscription, effectivePlanKey, memberCount, isPaidPlan } = billingContext;
   const currentPaidPlanKey: PlanKey | null =
-    isPaidPlan && effectivePlanKey && effectivePlanKey !== "free"
-      ? effectivePlanKey
-      : null;
+    isPaidPlan && effectivePlanKey && effectivePlanKey !== "free" ? effectivePlanKey : null;
   const teamUiMode = !isPaidPlan ? "free" : memberCount > 1 ? "paid_team" : "paid_solo";
   const teamNavLabel =
-    teamUiMode === "paid_solo"
-      ? t("DashboardPage.inviteTeammates")
-      : t("DashboardPage.teamNav");
+    teamUiMode === "paid_solo" ? t("DashboardPage.inviteTeammates") : t("DashboardPage.teamNav");
 
   return (
     <DashboardShell
@@ -73,22 +69,16 @@ export default async function DashboardPage() {
         <h1 className="mt-1 text-2xl font-semibold text-foreground">
           {t("DashboardPage.welcome", { name: displayName })}
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {t("DashboardPage.navigate")}
-        </p>
+        <p className="mt-1 text-sm text-muted-foreground">{t("DashboardPage.navigate")}</p>
       </header>
 
       <section className="grid gap-4 md:grid-cols-2">
         <article className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-foreground">
-            {t("DashboardPage.account")}
-          </h2>
+          <h2 className="text-lg font-semibold text-foreground">{t("DashboardPage.account")}</h2>
           <dl className="mt-4 space-y-2 text-sm">
             <div className="flex items-center justify-between">
               <dt className="text-muted-foreground">{t("DashboardPage.userId")}</dt>
-              <dd className="max-w-[220px] truncate text-foreground">
-                {user.id}
-              </dd>
+              <dd className="max-w-[220px] truncate text-foreground">{user.id}</dd>
             </div>
             {teamUiMode !== "free" ? (
               <>
@@ -105,9 +95,7 @@ export default async function DashboardPage() {
               </>
             ) : null}
             <div className="flex items-center justify-between">
-              <dt className="text-muted-foreground">
-                {t("DashboardPage.memberSince")}
-              </dt>
+              <dt className="text-muted-foreground">{t("DashboardPage.memberSince")}</dt>
               <dd className="text-foreground">
                 {formatUtcDate(profile?.created_at ?? user.created_at)}
               </dd>
@@ -122,9 +110,7 @@ export default async function DashboardPage() {
           {subscription ? (
             <dl className="mt-4 space-y-2 text-sm">
               <div className="flex items-center justify-between">
-                <dt className="text-muted-foreground">
-                  {t("DashboardPage.currentPlan")}
-                </dt>
+                <dt className="text-muted-foreground">{t("DashboardPage.currentPlan")}</dt>
                 <dd className="font-medium text-foreground">
                   {currentPaidPlanKey
                     ? tPlans(`plans.${currentPaidPlanKey}.name`)
@@ -133,9 +119,7 @@ export default async function DashboardPage() {
               </div>
               <div className="flex items-center justify-between">
                 <dt className="text-muted-foreground">{t("DashboardPage.status")}</dt>
-                <dd className="uppercase tracking-wide text-foreground">
-                  {subscription.status}
-                </dd>
+                <dd className="uppercase tracking-wide text-foreground">{subscription.status}</dd>
               </div>
               <div className="flex items-center justify-between">
                 <dt className="text-muted-foreground">{t("DashboardPage.seats")}</dt>
@@ -144,9 +128,7 @@ export default async function DashboardPage() {
             </dl>
           ) : effectivePlanKey === "free" ? (
             <div className="mt-4 rounded-lg app-surface-subtle p-4 text-sm text-muted-foreground">
-              <p className="font-medium text-foreground">
-                {t("DashboardPage.currentPlanFree")}
-              </p>
+              <p className="font-medium text-foreground">{t("DashboardPage.currentPlanFree")}</p>
               <p className="mt-1">{t("DashboardPage.visitBillingUpgrade")}</p>
             </div>
           ) : (

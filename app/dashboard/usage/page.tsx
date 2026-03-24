@@ -25,8 +25,7 @@ export default async function DashboardUsagePage() {
     teamMemberships,
     displayName,
     csrfToken,
-  } =
-    await getDashboardBaseData();
+  } = await getDashboardBaseData();
 
   if (teamContextLoadFailed) {
     return (
@@ -69,12 +68,8 @@ export default async function DashboardUsagePage() {
     >
       <header className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm sm:p-6">
         <p className="text-sm text-muted-foreground">{t("header.eyebrow")}</p>
-        <h1 className="mt-1 text-2xl font-semibold text-foreground">
-          {t("header.title")}
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {t("header.description")}
-        </p>
+        <h1 className="mt-1 text-2xl font-semibold text-foreground">{t("header.title")}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{t("header.description")}</p>
       </header>
 
       <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
@@ -97,10 +92,14 @@ export default async function DashboardUsagePage() {
                 {usageRows.map((row) => (
                   <tr key={row.month_start} className="border-b app-border-subtle last:border-0">
                     <td className="px-2 py-2 text-foreground">
-                      {formatUtcDate(row.month_start, {
-                        year: "numeric",
-                        month: "short",
-                      }, locale)}
+                      {formatUtcDate(
+                        row.month_start,
+                        {
+                          year: "numeric",
+                          month: "short",
+                        },
+                        locale,
+                      )}
                     </td>
                     <td className="px-2 py-2 text-foreground">
                       {formatTokens(row.used_tokens, locale)}

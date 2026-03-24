@@ -6,6 +6,9 @@ import { useLocale, useTranslations } from "next-intl";
 import { getCsrfHeaders } from "@/lib/http/csrf";
 import { formatUtcDate } from "@/lib/date";
 import { type AppLocale } from "@/i18n/routing";
+import { SubmitButton } from "@/components/ui/submit-button";
+import { Input } from "@/components/ui/input";
+import { FormMessage } from "@/components/ui/form-message";
 
 type TeamMember = {
   userId: string;
@@ -121,7 +124,17 @@ export function TeamInviteCard({
     resendInviteId: null,
     feedback: null,
   });
-  const { email, role, inviteTeamName, submitting, removingUserId, updatingRoleUserId, revokeInviteId, resendInviteId, feedback } = state;
+  const {
+    email,
+    role,
+    inviteTeamName,
+    submitting,
+    removingUserId,
+    updatingRoleUserId,
+    revokeInviteId,
+    resendInviteId,
+    feedback,
+  } = state;
 
   function getRoleLabel(value: "owner" | "admin" | "member") {
     if (value === "owner") return t("roles.owner");
@@ -157,9 +170,9 @@ export function TeamInviteCard({
           },
           body: JSON.stringify({ teamName: normalizedInviteTeamName }),
         });
-        const teamNamePayload = (await teamNameResponse.json().catch(() => null)) as
-          | { error?: string }
-          | null;
+        const teamNamePayload = (await teamNameResponse.json().catch(() => null)) as {
+          error?: string;
+        } | null;
         if (!teamNameResponse.ok) {
           throw new Error(teamNamePayload?.error ?? t("errors.updateTeamName"));
         }
@@ -191,9 +204,7 @@ export function TeamInviteCard({
   }
 
   async function removeMember(targetUserId: string) {
-    const confirmed = window.confirm(
-      t("confirmations.removeMember"),
-    );
+    const confirmed = window.confirm(t("confirmations.removeMember"));
     if (!confirmed) {
       return;
     }
@@ -205,9 +216,10 @@ export function TeamInviteCard({
         method: "DELETE",
         headers: getCsrfHeaders(),
       });
-      const payload = (await response.json().catch(() => null)) as
-        | { error?: string; ok?: boolean }
-        | null;
+      const payload = (await response.json().catch(() => null)) as {
+        error?: string;
+        ok?: boolean;
+      } | null;
       if (!response.ok) {
         throw new Error(payload?.error ?? t("errors.removeMember"));
       }
@@ -285,7 +297,9 @@ export function TeamInviteCard({
       }
       dispatch({
         type: "RESEND_INVITE_END",
-        feedback: payload?.emailSent ? t("feedback.inviteResent") : t("feedback.inviteResentEmailFailed"),
+        feedback: payload?.emailSent
+          ? t("feedback.inviteResent")
+          : t("feedback.inviteResentEmailFailed"),
       });
       router.refresh();
     } catch (error) {
@@ -327,12 +341,8 @@ export function TeamInviteCard({
 
   return (
     <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
-      <h2 className="text-lg font-semibold text-foreground">
-        {t("title")}
-      </h2>
-      <p className="mt-2 text-sm text-muted-foreground">
-        {t("description", { teamName })}
-      </p>
+      <h2 className="text-lg font-semibold text-foreground">{t("title")}</h2>
+      <p className="mt-2 text-sm text-muted-foreground">{t("description", { teamName })}</p>
       {seatPriceLabel ? (
         <p className="mt-2 rounded-lg app-surface-subtle px-3 py-2 text-sm text-muted-foreground">
           {t("pricing.perSeat", { amount: seatPriceLabel })}
@@ -349,9 +359,7 @@ export function TeamInviteCard({
               <p className="truncate font-medium text-foreground">
                 {member.fullName?.trim() || member.userId}
               </p>
-              <p className="truncate text-xs text-muted-foreground">
-                {member.userId}
-              </p>
+              <p className="truncate text-xs text-muted-foreground">{member.userId}</p>
             </div>
             <div className="ml-3 flex items-center gap-2">
               <span className="rounded-full border app-border-subtle px-2 py-0.5 text-xs capitalize text-muted-foreground">
@@ -362,10 +370,7 @@ export function TeamInviteCard({
                   type="button"
                   disabled={updatingRoleUserId !== null}
                   onClick={() =>
-                    updateMemberRole(
-                      member.userId,
-                      member.role === "admin" ? "member" : "admin",
-                    )
+                    updateMemberRole(member.userId, member.role === "admin" ? "member" : "admin")
                   }
                   className="rounded-md border app-border-subtle px-2 py-0.5 text-xs text-muted-foreground hover:bg-surface-hover disabled:opacity-60"
                 >
@@ -392,13 +397,9 @@ export function TeamInviteCard({
       </div>
 
       <div className="mt-4">
-        <h3 className="text-sm font-medium text-foreground">
-          {t("pending.title")}
-        </h3>
+        <h3 className="text-sm font-medium text-foreground">{t("pending.title")}</h3>
         {pendingInvites.length === 0 ? (
-          <p className="mt-2 text-sm text-muted-foreground">
-            {t("pending.none")}
-          </p>
+          <p className="mt-2 text-sm text-muted-foreground">{t("pending.none")}</p>
         ) : (
           <div className="mt-2 space-y-2 text-sm">
             {pendingInvites.map((invite) => (
@@ -407,11 +408,11 @@ export function TeamInviteCard({
                 className="flex items-center justify-between rounded-md app-surface-subtle px-3 py-2"
               >
                 <div className="truncate">
-                  <p className="truncate text-foreground">
-                    {invite.email}
-                  </p>
+                  <p className="truncate text-foreground">{invite.email}</p>
                   <p className="truncate text-xs text-muted-foreground">
-                    {t("pending.expires", { date: formatUtcDate(invite.expiresAt, undefined, locale) })}
+                    {t("pending.expires", {
+                      date: formatUtcDate(invite.expiresAt, undefined, locale),
+                    })}
                   </p>
                 </div>
                 <div className="ml-3 flex items-center gap-2">
@@ -426,7 +427,9 @@ export function TeamInviteCard({
                         onClick={() => resendInvite(invite.id)}
                         className="rounded-md border app-border-subtle px-2 py-0.5 text-xs text-muted-foreground hover:bg-surface-hover disabled:opacity-60"
                       >
-                        {resendInviteId === invite.id ? t("actions.resending") : t("actions.resend")}
+                        {resendInviteId === invite.id
+                          ? t("actions.resending")
+                          : t("actions.resend")}
                       </button>
                       <button
                         type="button"
@@ -458,13 +461,13 @@ export function TeamInviteCard({
               maxLength={80}
               disabled={!canInvite || submitting}
               value={inviteTeamName}
-              onChange={(event) => dispatch({ type: "SET_FIELD", field: "inviteTeamName", value: event.target.value })}
+              onChange={(event) =>
+                dispatch({ type: "SET_FIELD", field: "inviteTeamName", value: event.target.value })
+              }
               className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-sm text-foreground outline-none ring-ring placeholder:text-muted-foreground focus:ring-2 disabled:opacity-60"
               placeholder={t("inviteForm.teamNamePlaceholder")}
             />
-            <p className="mt-1 text-xs text-muted-foreground">
-              {t("inviteForm.teamNameHint")}
-            </p>
+            <p className="mt-1 text-xs text-muted-foreground">{t("inviteForm.teamNameHint")}</p>
           </label>
         ) : null}
 
@@ -472,13 +475,14 @@ export function TeamInviteCard({
           <span className="mb-1 block text-sm font-medium text-foreground">
             {t("inviteForm.emailLabel")}
           </span>
-          <input
+          <Input
             type="email"
             required
             disabled={!canInvite || submitting}
             value={email}
-            onChange={(event) => dispatch({ type: "SET_FIELD", field: "email", value: event.target.value })}
-            className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-sm text-foreground outline-none ring-ring placeholder:text-muted-foreground focus:ring-2 disabled:opacity-60"
+            onChange={(event) =>
+              dispatch({ type: "SET_FIELD", field: "email", value: event.target.value })
+            }
             placeholder={t("inviteForm.emailPlaceholder")}
           />
         </label>
@@ -490,7 +494,13 @@ export function TeamInviteCard({
           <select
             disabled={!canInvite || submitting}
             value={role}
-            onChange={(event) => dispatch({ type: "SET_FIELD", field: "role", value: event.target.value as "member" | "admin" })}
+            onChange={(event) =>
+              dispatch({
+                type: "SET_FIELD",
+                field: "role",
+                value: event.target.value as "member" | "admin",
+              })
+            }
             className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-sm text-foreground outline-none ring-ring focus:ring-2 disabled:opacity-60"
           >
             <option value="member">{t("roles.member")}</option>
@@ -498,27 +508,19 @@ export function TeamInviteCard({
           </select>
         </label>
 
-        <button
-          type="submit"
-          disabled={!canInvite || submitting}
-          className="rounded-lg bg-btn-primary px-4 py-2 text-sm font-medium text-btn-primary-text hover:bg-btn-primary-hover disabled:opacity-60"
-        >
-          {submitting ? t("actions.sending") : t("actions.sendInvite")}
-        </button>
+        <SubmitButton
+          loading={submitting}
+          disabled={!canInvite}
+          pendingLabel={t("actions.sending")}
+          idleLabel={t("actions.sendInvite")}
+        />
       </form>
 
       {!canInvite ? (
-        <p className="mt-3 text-sm text-muted-foreground">
-          {t("permissions.onlyOwnersAdmins")}
-        </p>
+        <p className="mt-3 text-sm text-muted-foreground">{t("permissions.onlyOwnersAdmins")}</p>
       ) : null}
 
-      {feedback ? (
-        <p className="mt-3 rounded-lg app-surface-subtle px-3 py-2 text-sm text-muted-foreground">
-          {feedback}
-        </p>
-      ) : null}
-
+      <FormMessage status="success" message={feedback} />
     </section>
   );
 }

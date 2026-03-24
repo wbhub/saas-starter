@@ -23,12 +23,8 @@ const DEFAULT_MODEL_MODALITIES_BY_PROVIDER: Record<AiProvider, readonly ModelMod
     { key: "gpt-4o*", modalities: ["text", "image", "file"] },
     { key: "gpt-5*", modalities: ["text", "image", "file"] },
   ],
-  anthropic: [
-    { key: "claude*", modalities: ["text", "image", "file"] },
-  ],
-  google: [
-    { key: "gemini*", modalities: ["text", "image", "file"] },
-  ],
+  anthropic: [{ key: "claude*", modalities: ["text", "image", "file"] }],
+  google: [{ key: "gemini*", modalities: ["text", "image", "file"] }],
 };
 
 function parseModalities(raw: unknown): readonly AiModality[] | null {
@@ -174,7 +170,9 @@ export function providerSupportsModalities(model: string, modalities: AiModality
     })),
   ];
 
-  const exactMatch = entries.find((entry) => entry.key === providerModelKey || entry.key === normalizedModel);
+  const exactMatch = entries.find(
+    (entry) => entry.key === providerModelKey || entry.key === normalizedModel,
+  );
   if (exactMatch) {
     return modalities.every((modality) => exactMatch.modalities.includes(modality));
   }

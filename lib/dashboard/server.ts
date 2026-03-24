@@ -10,10 +10,7 @@ import {
 } from "@/lib/ai/config";
 import { hasFeatureAccess } from "@/lib/billing/entitlements";
 import { isBillingEnabled } from "@/lib/billing/capabilities";
-import {
-  resolveEffectivePlanKey,
-  type EffectivePlanKey,
-} from "@/lib/billing/effective-plan";
+import { resolveEffectivePlanKey, type EffectivePlanKey } from "@/lib/billing/effective-plan";
 import { isAiProviderConfigured } from "@/lib/ai/provider";
 import { LIVE_SUBSCRIPTION_STATUSES, type SubscriptionStatus } from "@/lib/stripe/plans";
 import type { TeamContext } from "@/lib/team-context";
@@ -128,11 +125,11 @@ export const getDashboardBaseData = cache(async function getDashboardBaseData() 
 
   const [profileQuery, teamContextQuery, teamMembershipsQuery, notificationPreferencesQuery] =
     await Promise.allSettled([
-    supabase
-      .from("profiles")
+      supabase
+        .from("profiles")
         .select("id,full_name,avatar_url,created_at")
-      .eq("id", user.id)
-      .maybeSingle<ProfileRow>(),
+        .eq("id", user.id)
+        .maybeSingle<ProfileRow>(),
       getCachedTeamContextForUser(supabase, user.id),
       supabase
         .from("team_memberships")
@@ -243,9 +240,12 @@ export async function getLiveSubscription(
       .limit(1)
       .maybeSingle<SubscriptionRow>();
     if (subscriptionFetchResult.error) {
-      logger.warn("Failed to load dashboard subscription; continuing without active subscription.", {
-        error: subscriptionFetchResult.error,
-      });
+      logger.warn(
+        "Failed to load dashboard subscription; continuing without active subscription.",
+        {
+          error: subscriptionFetchResult.error,
+        },
+      );
       return null;
     }
     return subscriptionFetchResult.data;
@@ -257,10 +257,7 @@ export async function getLiveSubscription(
   }
 }
 
-export async function getTeamMemberCount(
-  supabase: SupabaseClient,
-  teamId: string,
-) {
+export async function getTeamMemberCount(supabase: SupabaseClient, teamId: string) {
   try {
     const memberCountResult = await supabase
       .from("team_memberships")
@@ -331,8 +328,10 @@ export async function getDashboardAiUiGate(
   }
 
   try {
-    let subscriptionRow: { stripe_price_id: string | null; status: SubscriptionStatus | null } | null =
-      null;
+    let subscriptionRow: {
+      stripe_price_id: string | null;
+      status: SubscriptionStatus | null;
+    } | null = null;
     if (accessMode === "paid") {
       const allowedStatuses = getAiAllowedSubscriptionStatuses();
       if (!allowedStatuses.length) {
@@ -362,11 +361,14 @@ export async function getDashboardAiUiGate(
         .maybeSingle<{ stripe_price_id: string | null; status: SubscriptionStatus | null }>();
 
       if (subscriptionResult.error) {
-        logger.warn("Failed to resolve AI UI gate subscription context; defaulting to hidden AI UI.", {
-          teamId,
-          accessMode,
-          error: subscriptionResult.error,
-        });
+        logger.warn(
+          "Failed to resolve AI UI gate subscription context; defaulting to hidden AI UI.",
+          {
+            teamId,
+            accessMode,
+            error: subscriptionResult.error,
+          },
+        );
         return {
           isVisibleInUi: false,
           reason: "access_mode_invalid",
@@ -384,7 +386,8 @@ export async function getDashboardAiUiGate(
       return {
         isVisibleInUi: false,
         reason:
-          aiAccess.denialReason === "default_model_missing" || aiAccess.denialReason === "plan_model_missing"
+          aiAccess.denialReason === "default_model_missing" ||
+          aiAccess.denialReason === "plan_model_missing"
             ? "access_mode_invalid"
             : "plan_not_allowed",
         effectivePlanKey,
@@ -413,10 +416,7 @@ export async function getDashboardAiUiGate(
   }
 }
 
-export async function getTeamMembersAndPendingInvites(
-  supabase: SupabaseClient,
-  teamId: string,
-) {
+export async function getTeamMembersAndPendingInvites(supabase: SupabaseClient, teamId: string) {
   const queryLimit = getTeamMaxMembers();
   const [membershipResult, pendingInvitesResult] = await Promise.allSettled([
     supabase
@@ -439,7 +439,7 @@ export async function getTeamMembersAndPendingInvites(
 
   const memberships =
     membershipResult.status === "fulfilled" && !membershipResult.value.error
-      ? membershipResult.value.data ?? []
+      ? (membershipResult.value.data ?? [])
       : [];
   if (membershipResult.status === "fulfilled" && membershipResult.value.error) {
     logger.warn("Failed to load team members; using empty member list.", {
@@ -454,7 +454,7 @@ export async function getTeamMembersAndPendingInvites(
 
   const pendingInvitesData =
     pendingInvitesResult.status === "fulfilled" && !pendingInvitesResult.value.error
-      ? pendingInvitesResult.value.data ?? []
+      ? (pendingInvitesResult.value.data ?? [])
       : [];
   if (pendingInvitesResult.status === "fulfilled" && pendingInvitesResult.value.error) {
     logger.warn("Failed to load pending team invites; using empty invite list.", {

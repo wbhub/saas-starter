@@ -56,9 +56,8 @@ export default async function DashboardSettingsPage() {
     : billingContext.memberCount > 1
       ? "paid_team"
       : "paid_solo";
-  const teamMembers = teamUiMode === "paid_team"
-    ? await getTeamMembers(supabase, teamContext.teamId)
-    : [];
+  const teamMembers =
+    teamUiMode === "paid_team" ? await getTeamMembers(supabase, teamContext.teamId) : [];
 
   return (
     <DashboardShell
@@ -74,12 +73,8 @@ export default async function DashboardSettingsPage() {
     >
       <header className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm sm:p-6">
         <p className="text-sm text-muted-foreground">{t("header.eyebrow")}</p>
-        <h1 className="mt-1 text-2xl font-semibold text-foreground">
-          {t("header.title")}
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {t("header.description")}
-        </p>
+        <h1 className="mt-1 text-2xl font-semibold text-foreground">{t("header.title")}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{t("header.description")}</p>
       </header>
 
       <section>
@@ -118,12 +113,8 @@ export default async function DashboardSettingsPage() {
 
       {teamUiMode === "paid_solo" ? (
         <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-foreground">
-            {t("inviteTeammates.title")}
-          </h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {t("inviteTeammates.description")}
-          </p>
+          <h2 className="text-lg font-semibold text-foreground">{t("inviteTeammates.title")}</h2>
+          <p className="mt-2 text-sm text-muted-foreground">{t("inviteTeammates.description")}</p>
           <Link
             href="/dashboard/team"
             className="mt-4 inline-flex rounded-lg bg-btn-primary px-4 py-2 text-sm font-medium text-btn-primary-text hover:bg-btn-primary-hover"

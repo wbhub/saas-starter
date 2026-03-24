@@ -9,12 +9,7 @@ import {
   seededUsers,
 } from "./fixtures/seeded";
 
-async function loginAndSaveState(
-  page: Page,
-  email: string,
-  password: string,
-  outputPath: string,
-) {
+async function loginAndSaveState(page: Page, email: string, password: string, outputPath: string) {
   await page.goto("/login");
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(password);

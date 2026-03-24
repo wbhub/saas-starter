@@ -9,14 +9,11 @@ export async function recoverPersonalTeamForUser(
   userEmail: string,
   fullName: string | null,
 ) {
-  const { data, error } = await createAdminClient().rpc(
-    "recover_personal_team_if_missing",
-    {
-      p_user_id: userId,
-      p_email: userEmail,
-      p_full_name: fullName,
-    },
-  );
+  const { data, error } = await createAdminClient().rpc("recover_personal_team_if_missing", {
+    p_user_id: userId,
+    p_email: userEmail,
+    p_full_name: fullName,
+  });
 
   if (error) {
     throw new Error(`Failed to recover personal team: ${error.message}`);

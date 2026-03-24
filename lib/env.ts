@@ -57,7 +57,7 @@ const SOFT_REQUIRED_KEYS = [
   "NEXT_PUBLIC_APP_URL",
   "NEXT_PUBLIC_SUPABASE_URL",
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
- ] as const satisfies ReadonlyArray<ServerEnvKey>;
+] as const satisfies ReadonlyArray<ServerEnvKey>;
 type SoftRequiredEnvKey = (typeof SOFT_REQUIRED_KEYS)[number];
 type HardRequiredEnvKey = Exclude<ServerEnvKey, SoftRequiredEnvKey>;
 const SOFT_REQUIRED_KEY_SET: ReadonlySet<ServerEnvKey> = new Set(SOFT_REQUIRED_KEYS);
@@ -244,7 +244,10 @@ const stripePriceEnvGetterDescriptors = Object.fromEntries(
   ]),
 ) as Record<StripePriceIdEnvKey, PropertyDescriptor>;
 
-export const env = Object.defineProperties(envBase, stripePriceEnvGetterDescriptors) as typeof envBase & {
+export const env = Object.defineProperties(
+  envBase,
+  stripePriceEnvGetterDescriptors,
+) as typeof envBase & {
   readonly [K in StripePriceIdEnvKey]: string;
 };
 
@@ -272,7 +275,10 @@ const CORE_REQUIRED_ENV_GETTERS: Readonly<
 
 const BILLING_REQUIRED_ENV_GETTERS: Readonly<
   Record<
-    "STRIPE_SECRET_KEY" | "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY" | "STRIPE_WEBHOOK_SECRET" | StripePriceIdEnvKey,
+    | "STRIPE_SECRET_KEY"
+    | "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY"
+    | "STRIPE_WEBHOOK_SECRET"
+    | StripePriceIdEnvKey,
     true
   >
 > = {
@@ -283,7 +289,10 @@ const BILLING_REQUIRED_ENV_GETTERS: Readonly<
 };
 
 const BILLING_REQUIRED_ENV_KEYS = Object.keys(BILLING_REQUIRED_ENV_GETTERS) as Array<
-  "STRIPE_SECRET_KEY" | "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY" | "STRIPE_WEBHOOK_SECRET" | StripePriceIdEnvKey
+  | "STRIPE_SECRET_KEY"
+  | "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY"
+  | "STRIPE_WEBHOOK_SECRET"
+  | StripePriceIdEnvKey
 >;
 
 function hasValue(key: string) {

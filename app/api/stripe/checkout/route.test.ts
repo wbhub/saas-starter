@@ -159,9 +159,7 @@ describe("POST /api/stripe/checkout", () => {
   });
 
   it("creates and stamps first-time Stripe customers idempotently", async () => {
-    const subscriptionsMaybeSingle = vi
-      .fn()
-      .mockResolvedValue({ data: null, error: null });
+    const subscriptionsMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
     const customersMaybeSingle = vi
       .fn()
       .mockResolvedValueOnce({ data: null, error: null })
@@ -310,12 +308,8 @@ describe("POST /api/stripe/checkout", () => {
   });
 
   it("returns 409 when checkout for the same user/plan is already in progress", async () => {
-    const subscriptionsMaybeSingle = vi
-      .fn()
-      .mockResolvedValue({ data: null, error: null });
-    const customersMaybeSingle = vi
-      .fn()
-      .mockResolvedValue({ data: null, error: null });
+    const subscriptionsMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+    const customersMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
 
     const subscriptionsQuery = {
       select: vi.fn().mockReturnThis(),
@@ -407,4 +401,3 @@ describe("POST /api/stripe/checkout", () => {
     });
   });
 });
-

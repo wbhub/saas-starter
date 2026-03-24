@@ -52,9 +52,7 @@ export default async function LoginPage({
   const params = await searchParams;
   const safeNext = getSafeNextPath(params.next);
   const socialProviders = getEnabledSocialAuthProviders();
-  const lastUsedProvider = parseAuthProvider(
-    cookieStore.get(LAST_AUTH_PROVIDER_COOKIE)?.value,
-  );
+  const lastUsedProvider = parseAuthProvider(cookieStore.get(LAST_AUTH_PROVIDER_COOKIE)?.value);
   const {
     data: { user },
   } = await supabase.auth.getUser();

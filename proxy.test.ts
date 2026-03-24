@@ -43,7 +43,9 @@ describe("proxy auth guard", () => {
     }));
 
     const { proxy } = await import("./proxy");
-    const response = await proxy(makeRequest("https://app.example.com/dashboard/settings?tab=billing"));
+    const response = await proxy(
+      makeRequest("https://app.example.com/dashboard/settings?tab=billing"),
+    );
 
     expect(response.status).toBe(307);
     expect(response.headers.get("location")).toBe(
@@ -62,7 +64,9 @@ describe("proxy auth guard", () => {
     }));
 
     const { proxy } = await import("./proxy");
-    const response = await proxy(makeRequest("https://app.example.com/dashboard/%5Cevil?tab=billing"));
+    const response = await proxy(
+      makeRequest("https://app.example.com/dashboard/%5Cevil?tab=billing"),
+    );
 
     expect(response.status).toBe(307);
     expect(response.headers.get("location")).toBe(

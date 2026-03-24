@@ -12,7 +12,9 @@ export async function triggerStripeWebhookProcessTask(payload: StripeWebhookProc
   return triggerTaskIfConfigured(TRIGGER_TASK_IDS.stripeWebhookProcess, payload);
 }
 
-export async function triggerReconcileSeatQuantitiesTask(payload: ReconcileSeatQuantitiesPayload = {}) {
+export async function triggerReconcileSeatQuantitiesTask(
+  payload: ReconcileSeatQuantitiesPayload = {},
+) {
   return triggerTaskIfConfigured(TRIGGER_TASK_IDS.reconcileSeatQuantities, payload);
 }
 

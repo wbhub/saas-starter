@@ -17,11 +17,7 @@ describe("POST /api/ai/chat finalize retry enqueue", () => {
   function mockCoreDependencies({
     enqueueImpl,
   }: {
-    enqueueImpl: (args: {
-      claimId: string;
-      actualTokens: number;
-      error: unknown;
-    }) => Promise<void>;
+    enqueueImpl: (args: { claimId: string; actualTokens: number; error: unknown }) => Promise<void>;
   }) {
     const maybeSingle = vi.fn().mockResolvedValue({
       data: { stripe_price_id: "price_growth", status: "active" },
@@ -94,9 +90,7 @@ describe("POST /api/ai/chat finalize retry enqueue", () => {
     }));
     vi.doMock("@/lib/ai/config", () => ({
       getAiAccessMode: vi.fn().mockReturnValue("paid"),
-      getAiAllowedSubscriptionStatuses: vi
-        .fn()
-        .mockReturnValue(["trialing", "active", "past_due"]),
+      getAiAllowedSubscriptionStatuses: vi.fn().mockReturnValue(["trialing", "active", "past_due"]),
       getAiDefaultModel: vi.fn().mockReturnValue("gpt-4.1-mini"),
       getAiDefaultMonthlyTokenBudget: vi.fn().mockReturnValue(2_000_000),
       getAiRuleForPlan: vi.fn().mockReturnValue({

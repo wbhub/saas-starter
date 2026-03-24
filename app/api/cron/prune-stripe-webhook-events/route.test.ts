@@ -87,9 +87,7 @@ describe("GET /api/cron/prune-stripe-webhook-events", () => {
 
     const { GET } = await import("./route");
     const response = await GET(
-      new Request(
-        "http://localhost/api/cron/prune-stripe-webhook-events?secret=qs-secret",
-      ),
+      new Request("http://localhost/api/cron/prune-stripe-webhook-events?secret=qs-secret"),
     );
 
     expect(response.status).toBe(401);

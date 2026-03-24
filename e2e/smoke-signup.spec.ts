@@ -22,7 +22,9 @@ test.describe("@smoke signup flow", () => {
     await page.getByRole("button", { name: "Create Account" }).click();
 
     await expect(page.locator("#signup-auth-message")).toBeVisible();
-    await expect(page.locator("#signup-auth-message")).toContainText(/Account created|inbox|verify/i);
+    await expect(page.locator("#signup-auth-message")).toContainText(
+      /Account created|inbox|verify/i,
+    );
   });
 
   test("live signup reaches dashboard when Supabase returns a session", async ({ page }) => {

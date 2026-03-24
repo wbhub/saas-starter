@@ -42,14 +42,11 @@ export async function enqueueAiBudgetFinalizeRetry({
   error: unknown;
   triggerDrain?: boolean;
 }) {
-  const { error: rpcError } = await createAdminClient().rpc(
-    "enqueue_ai_budget_finalize_retry",
-    {
-      p_claim_id: claimId,
-      p_actual_tokens: Math.max(0, actualTokens),
-      p_error: toErrorMessage(error),
-    },
-  );
+  const { error: rpcError } = await createAdminClient().rpc("enqueue_ai_budget_finalize_retry", {
+    p_claim_id: claimId,
+    p_actual_tokens: Math.max(0, actualTokens),
+    p_error: toErrorMessage(error),
+  });
 
   if (rpcError) {
     throw new Error(
@@ -158,7 +155,9 @@ export async function maybeProcessAiBudgetFinalizeRetries({
       return { ran: true as const, queued: true as const };
     }
 
-    logger.warn("Falling back to inline AI budget finalize retry drain after Trigger enqueue failure");
+    logger.warn(
+      "Falling back to inline AI budget finalize retry drain after Trigger enqueue failure",
+    );
   }
 
   try {

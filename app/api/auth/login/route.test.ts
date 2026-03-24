@@ -6,10 +6,12 @@ describe("POST /api/auth/login", () => {
     vi.clearAllMocks();
   });
 
-  function mockDeps(overrides: {
-    signInWithPassword?: ReturnType<typeof vi.fn>;
-    checkRateLimit?: ReturnType<typeof vi.fn>;
-  } = {}) {
+  function mockDeps(
+    overrides: {
+      signInWithPassword?: ReturnType<typeof vi.fn>;
+      checkRateLimit?: ReturnType<typeof vi.fn>;
+    } = {},
+  ) {
     const signInWithPassword =
       overrides.signInWithPassword ?? vi.fn().mockResolvedValue({ error: null });
     const checkRateLimit =
@@ -46,9 +48,7 @@ describe("POST /api/auth/login", () => {
     const { signInWithPassword } = mockDeps();
     const { POST } = await import("./route");
 
-    const res = await POST(
-      makeRequest({ email: "user@example.com", password: "Passw0rd!123" }),
-    );
+    const res = await POST(makeRequest({ email: "user@example.com", password: "Passw0rd!123" }));
 
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({ ok: true });
@@ -64,9 +64,7 @@ describe("POST /api/auth/login", () => {
     });
     const { POST } = await import("./route");
 
-    const res = await POST(
-      makeRequest({ email: "user@example.com", password: "Passw0rd!123" }),
-    );
+    const res = await POST(makeRequest({ email: "user@example.com", password: "Passw0rd!123" }));
 
     expect(res.status).toBe(401);
     expect(signInWithPassword).toHaveBeenCalled();
@@ -78,9 +76,7 @@ describe("POST /api/auth/login", () => {
     });
     const { POST } = await import("./route");
 
-    const res = await POST(
-      makeRequest({ email: "user@example.com", password: "Passw0rd!123" }),
-    );
+    const res = await POST(makeRequest({ email: "user@example.com", password: "Passw0rd!123" }));
 
     expect(res.status).toBe(429);
     await expect(res.json()).resolves.toEqual({

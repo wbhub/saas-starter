@@ -1,28 +1,14 @@
 "use client";
 
 import { useActionState } from "react";
-import { useFormStatus } from "react-dom";
 import { useTranslations } from "next-intl";
 import { deleteAccount, logoutAllSessions, type DeleteAccountState } from "@/app/dashboard/actions";
+import { SubmitButton } from "@/components/ui/submit-button";
 
 const initialState: DeleteAccountState = {
   status: "idle",
   message: null,
 };
-
-function DeleteButton({ pendingLabel, idleLabel }: { pendingLabel: string; idleLabel: string }) {
-  const { pending } = useFormStatus();
-
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:bg-rose-500 disabled:opacity-60"
-    >
-      {pending ? pendingLabel : idleLabel}
-    </button>
-  );
-}
 
 type DangerZoneCardProps = {
   email: string | null;
@@ -36,9 +22,7 @@ export function DangerZoneCard({ email, csrfToken }: DangerZoneCardProps) {
   return (
     <section className="rounded-xl border border-rose-300/60 bg-rose-50/60 p-5 shadow-sm dark:border-rose-900/70 dark:bg-rose-950/20">
       <h2 className="text-lg font-semibold text-rose-800 dark:text-rose-200">{t("title")}</h2>
-      <p className="mt-2 text-sm text-rose-700/90 dark:text-rose-200/80">
-        {t("description")}
-      </p>
+      <p className="mt-2 text-sm text-rose-700/90 dark:text-rose-200/80">{t("description")}</p>
 
       <div className="mt-4">
         <form action={logoutAllSessions}>
@@ -88,7 +72,11 @@ export function DangerZoneCard({ email, csrfToken }: DangerZoneCardProps) {
           />
           <span>{t("fields.confirmPermanent")}</span>
         </label>
-        <DeleteButton pendingLabel={t("actions.deleting")} idleLabel={t("actions.deletePermanently")} />
+        <SubmitButton
+          variant="danger"
+          pendingLabel={t("actions.deleting")}
+          idleLabel={t("actions.deletePermanently")}
+        />
       </form>
 
       {state.message ? (

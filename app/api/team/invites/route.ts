@@ -3,6 +3,7 @@ import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { jsonError, jsonSuccess } from "@/lib/http/api-json";
 import { withTeamRoute } from "@/lib/http/team-route";
 import { z } from "@/lib/http/request-validation";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { createClient } from "@/lib/supabase/server";
 import { isValidEmail } from "@/lib/validation";
 import {
@@ -120,36 +121,6 @@ export async function POST(request: Request) {
       }
 
       const teamMaxMembers = getTeamMaxMembers();
-      const nowIso = new Date().toISOString();
-      const [memberCountResult, pendingInviteCountResult] = await Promise.all([
-        supabase
-          .from("team_memberships")
-          .select("user_id", { count: "exact", head: true })
-          .eq("team_id", teamContext.teamId),
-        supabase
-          .from("team_invites")
-          .select("id", { count: "exact", head: true })
-          .eq("team_id", teamContext.teamId)
-          .is("accepted_at", null)
-          .gt("expires_at", nowIso),
-      ]);
-      if (memberCountResult.error || pendingInviteCountResult.error) {
-        logger.error(
-          "Failed to enforce team member cap before invite creation",
-          memberCountResult.error ?? pendingInviteCountResult.error,
-          {
-            requestId,
-            teamId: teamContext.teamId,
-          },
-        );
-        return jsonError(t("errors.unableToCreateInvite"), 500);
-      }
-
-      const projectedTeamSize =
-        (memberCountResult.count ?? 0) + (pendingInviteCountResult.count ?? 0);
-      if (projectedTeamSize >= teamMaxMembers) {
-        return jsonError(t("errors.teamMemberLimitReached"), 409);
-      }
 
       const token = createRawInviteToken();
       const tokenHash = hashInviteToken(token);
@@ -167,36 +138,43 @@ export async function POST(request: Request) {
         });
       }
 
-      const inviteInsert = {
-        team_id: teamContext.teamId,
-        email,
-        role,
-        token_hash: tokenHash,
-        invited_by: user.id,
-        expires_at: expiresAt,
-      };
-      let { error: insertError } = await supabase.from("team_invites").insert(inviteInsert);
+      const admin = createAdminClient();
+      const { data: rpcResult, error: rpcError } = await admin.rpc("create_team_invite_atomic", {
+        p_team_id: teamContext.teamId,
+        p_email: email,
+        p_role: role,
+        p_token_hash: tokenHash,
+        p_invited_by: user.id,
+        p_expires_at: expiresAt,
+        p_max_members: teamMaxMembers,
+      });
 
-      if (insertError?.code === "23505") {
-        // Retry once after cleanup to handle races where a stale invite row causes
-        // a transient unique-constraint conflict.
-        const retryCleanupError = await deleteExpiredInvitesForEmail({
-          supabase,
+      if (rpcError) {
+        logger.error("Failed to create team invite", rpcError, {
+          requestId,
           teamId: teamContext.teamId,
-          email,
         });
-        if (retryCleanupError) {
-          logger.error("Failed to cleanup expired invites before retry insert", retryCleanupError, {
-            requestId,
-            teamId: teamContext.teamId,
-          });
-        }
-        const retryInsertResult = await supabase.from("team_invites").insert(inviteInsert);
-        insertError = retryInsertResult.error;
+        logAuditEvent({
+          action: "team.invite.create",
+          outcome: "failure",
+          actorUserId: user.id,
+          teamId: teamContext.teamId,
+          metadata: { reason: "rpc_error", email },
+        });
+        return jsonError(t("errors.unableToCreateInvite"), 500);
       }
 
-      if (insertError) {
-        if (insertError.code === "23505") {
+      const rpcRow = (Array.isArray(rpcResult) ? rpcResult[0] : rpcResult) as {
+        ok: boolean;
+        error_code: string | null;
+      } | null;
+
+      if (!rpcRow?.ok) {
+        const code = rpcRow?.error_code;
+        if (code === "team_full") {
+          return jsonError(t("errors.teamMemberLimitReached"), 409);
+        }
+        if (code === "duplicate_pending_invite") {
           logAuditEvent({
             action: "team.invite.create",
             outcome: "failure",
@@ -206,24 +184,16 @@ export async function POST(request: Request) {
           });
           return jsonError(t("errors.pendingInviteExists"), 409);
         }
-        logger.error("Failed to create team invite", insertError, {
-          requestId,
-          teamId: teamContext.teamId,
-        });
-        logAuditEvent({
-          action: "team.invite.create",
-          outcome: "failure",
-          actorUserId: user.id,
-          teamId: teamContext.teamId,
-          metadata: { reason: "insert_error", email },
-        });
         return jsonError(t("errors.unableToCreateInvite"), 500);
       }
 
       const inviteUrl = `${getAppUrl()}/invite/${token}`;
       let emailSent = false;
-      let emailFailureReason: "resend_not_configured" | "resend_unavailable" | "resend_send_failed" | null =
-        null;
+      let emailFailureReason:
+        | "resend_not_configured"
+        | "resend_unavailable"
+        | "resend_send_failed"
+        | null = null;
 
       if (!isResendCustomEmailConfigured()) {
         emailFailureReason = "resend_not_configured";
@@ -265,10 +235,13 @@ export async function POST(request: Request) {
             if (isTriggerConfigured()) {
               const triggered = await triggerSendEmailTask(emailPayload);
               if (!triggered) {
-                logger.warn("Team invite Trigger enqueue failed, falling back to inline Resend send", {
-                  requestId,
-                  teamId: teamContext.teamId,
-                });
+                logger.warn(
+                  "Team invite Trigger enqueue failed, falling back to inline Resend send",
+                  {
+                    requestId,
+                    teamId: teamContext.teamId,
+                  },
+                );
                 await sendResendEmail(emailPayload);
               }
             } else {

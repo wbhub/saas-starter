@@ -14,7 +14,8 @@ function mockAiPageDependencies({
       const dictionary: Record<string, string> = {
         "header.eyebrow": "AI",
         "header.title": "Team AI chat",
-        "header.description": "Chat with your configured model using your team billing and usage limits.",
+        "header.description":
+          "Chat with your configured model using your team billing and usage limits.",
         "unavailable.title": "AI chat is unavailable",
         "unavailable.description": "This workspace cannot use AI chat right now.",
         "unavailable.reason.planRequired": "AI access requires an eligible paid plan.",

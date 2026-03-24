@@ -104,8 +104,7 @@ describe("getClientRateLimitIdentifier", () => {
 
     expect(getClientRateLimitIdentifier(request)).toEqual({
       keyType: "fingerprint",
-      value:
-        "mozilla:5:0:en:us:en:q:0:9:chromium:v:123:macos",
+      value: "mozilla:5:0:en:us:en:q:0:9:chromium:v:123:macos",
     });
   });
 
@@ -164,4 +163,3 @@ describe("getClientRateLimitIdentifier", () => {
     expect(result.value.length).toBeLessThanOrEqual(160);
   });
 });
-

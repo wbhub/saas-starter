@@ -52,7 +52,6 @@ export default defineConfig({
           // By default do not attach to whatever happens to be listening on :3000 (stuck/zombie
           // processes caused "hung" Playwright runs). Opt in with PLAYWRIGHT_REUSE_DEV_SERVER=true
           // when you already have a healthy `npm run dev` running.
-          reuseExistingServer:
-            !isCI && process.env.PLAYWRIGHT_REUSE_DEV_SERVER === "true",
+          reuseExistingServer: !isCI && process.env.PLAYWRIGHT_REUSE_DEV_SERVER === "true",
         },
 });

@@ -88,7 +88,10 @@ describe("csrf helpers", () => {
 
     const response = verifyCsrfProtection(request);
     expect(response?.status).toBe(403);
-    await expect(response?.json()).resolves.toEqual({ ok: false, error: "Invalid request origin." });
+    await expect(response?.json()).resolves.toEqual({
+      ok: false,
+      error: "Invalid request origin.",
+    });
   });
 
   it("rejects malformed csrf token shapes before token comparison", async () => {

@@ -21,9 +21,7 @@ function mockBillingPageDependencies(options: {
   vi.doMock("next-intl/server", () => ({
     getTranslations: vi.fn(async (namespaceOrOptions?: string | { namespace?: string }) => {
       const namespace =
-        typeof namespaceOrOptions === "string"
-          ? namespaceOrOptions
-          : namespaceOrOptions?.namespace;
+        typeof namespaceOrOptions === "string" ? namespaceOrOptions : namespaceOrOptions?.namespace;
       if (namespace === "Landing.pricing") {
         return (key: string) => {
           const dictionary: Record<string, string> = {
@@ -46,7 +44,8 @@ function mockBillingPageDependencies(options: {
           const dictionary: Record<string, string> = {
             "header.eyebrow": "Billing",
             "header.title": "Manage your subscription",
-            "header.description": "Update plans, open the Stripe portal, and review your subscription status.",
+            "header.description":
+              "Update plans, open the Stripe portal, and review your subscription status.",
             "currentSubscription.title": "Current subscription",
             "currentSubscription.currentPlan": "Current plan",
             "currentSubscription.unknown": "Unknown",

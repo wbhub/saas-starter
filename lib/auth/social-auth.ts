@@ -33,18 +33,14 @@ export function getEnabledSocialAuthProviders(): AuthProvider[] {
   return providers;
 }
 
-export function parseAuthProvider(
-  provider: string | null | undefined,
-): AuthProvider | null {
+export function parseAuthProvider(provider: string | null | undefined): AuthProvider | null {
   if (provider === "google" || provider === "microsoft") {
     return provider;
   }
   return null;
 }
 
-export function parseSupabaseProvider(
-  provider: string | null | undefined,
-): AuthProvider | null {
+export function parseSupabaseProvider(provider: string | null | undefined): AuthProvider | null {
   if (!provider) {
     return null;
   }
@@ -59,9 +55,7 @@ export function parseSupabaseProvider(
   return null;
 }
 
-export function toSupabaseOAuthProvider(
-  provider: AuthProvider,
-): SupabaseOAuthProvider {
+export function toSupabaseOAuthProvider(provider: AuthProvider): SupabaseOAuthProvider {
   if (provider === "microsoft") {
     return "azure";
   }

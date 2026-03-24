@@ -5,10 +5,7 @@ import {
   WEBHOOK_CLAIM_TTL_SECONDS,
   WEBHOOK_PRUNE_SAMPLE_RATE,
 } from "@/lib/stripe/webhook-constants";
-import {
-  syncSubscription,
-  upsertStripeCustomer,
-} from "@/lib/stripe/sync";
+import { syncSubscription, upsertStripeCustomer, handleCustomerDeleted } from "@/lib/stripe/sync";
 import { getStripeServerClient } from "@/lib/stripe/server";
 import { pruneStripeWebhookEventRows } from "@/lib/stripe/webhook-event-prune";
 import {
@@ -24,6 +21,19 @@ function getStripeOrThrow() {
     throw new Error("Stripe is not configured.");
   }
   return stripe;
+}
+
+/** Stripe API 2025+ nests subscription on `parent.subscription_details`; older payloads used top-level `subscription`. */
+function getInvoiceSubscriptionId(invoice: Stripe.Invoice): string | undefined {
+  const fromParent = invoice.parent?.subscription_details?.subscription;
+  if (fromParent != null) {
+    return typeof fromParent === "string" ? fromParent : fromParent.id;
+  }
+  if ("subscription" in invoice && invoice.subscription != null) {
+    const sub = invoice.subscription as string | Stripe.Subscription;
+    return typeof sub === "string" ? sub : sub.id;
+  }
+  return undefined;
 }
 
 async function ensureStripeCustomerOwnership(teamId: string, customerId: string) {
@@ -74,9 +84,7 @@ export async function processStripeWebhookEvent(event: Stripe.Event) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
       const customerId =
-        typeof session.customer === "string"
-          ? session.customer
-          : session.customer?.id;
+        typeof session.customer === "string" ? session.customer : session.customer?.id;
       const metadata = session.metadata ?? {};
       let teamId: string | null = metadata.supabase_team_id ?? null;
       const sessionReferenceId = session.client_reference_id;
@@ -88,9 +96,7 @@ export async function processStripeWebhookEvent(event: Stripe.Event) {
       }
 
       if (!teamId) {
-        throw new Error(
-          `Checkout session ${session.id} is missing supabase_team_id metadata.`,
-        );
+        throw new Error(`Checkout session ${session.id} is missing supabase_team_id metadata.`);
       }
 
       if (customerId && teamId) {
@@ -101,9 +107,7 @@ export async function processStripeWebhookEvent(event: Stripe.Event) {
       // Sync the subscription immediately for resilience — don't rely
       // solely on the separate customer.subscription.created event.
       const subscriptionId =
-        typeof session.subscription === "string"
-          ? session.subscription
-          : session.subscription?.id;
+        typeof session.subscription === "string" ? session.subscription : session.subscription?.id;
       if (subscriptionId) {
         const subscription = await stripe.subscriptions.retrieve(subscriptionId);
         await syncSubscription(subscription, {
@@ -114,14 +118,62 @@ export async function processStripeWebhookEvent(event: Stripe.Event) {
     }
     case "customer.subscription.created":
     case "customer.subscription.updated":
-    case "customer.subscription.deleted": {
+    case "customer.subscription.deleted":
+    case "customer.subscription.paused": {
       const subscription = event.data.object as Stripe.Subscription;
       await syncSubscription(subscription, {
         eventCreatedUnix: event.created,
       });
       break;
     }
+    case "invoice.payment_failed": {
+      const invoice = event.data.object as Stripe.Invoice;
+      const subId = getInvoiceSubscriptionId(invoice);
+      const custId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
+
+      logger.warn("Stripe invoice payment failed", {
+        invoiceId: invoice.id,
+        subscriptionId: subId ?? null,
+        customerId: custId ?? null,
+        amountDue: invoice.amount_due,
+        currency: invoice.currency,
+        attemptCount: invoice.attempt_count,
+      });
+
+      if (subId) {
+        const subscription = await stripe.subscriptions.retrieve(subId);
+        await syncSubscription(subscription, {
+          eventCreatedUnix: event.created,
+        });
+      }
+      break;
+    }
+    case "customer.deleted": {
+      const customer = event.data.object as Stripe.Customer;
+      logger.warn("Stripe customer deleted", {
+        customerId: customer.id,
+      });
+      await handleCustomerDeleted(customer.id);
+      break;
+    }
+    case "charge.dispute.created": {
+      const dispute = event.data.object as Stripe.Dispute;
+      const chargeId = typeof dispute.charge === "string" ? dispute.charge : dispute.charge?.id;
+      logger.error("Stripe dispute created — manual action required", {
+        disputeId: dispute.id,
+        chargeId: chargeId ?? null,
+        amount: dispute.amount,
+        currency: dispute.currency,
+        reason: dispute.reason,
+        status: dispute.status,
+      });
+      break;
+    }
     default:
+      logger.info("Unhandled Stripe webhook event type", {
+        eventType: event.type,
+        eventId: event.id,
+      });
       break;
   }
 }
@@ -131,10 +183,7 @@ export async function processClaimedStripeWebhookEvent(
   claimToken: string,
   options?: { pruneSampleRate?: number },
 ) {
-  const heartbeatIntervalMs = Math.max(
-    1_000,
-    Math.floor((WEBHOOK_CLAIM_TTL_SECONDS * 1000) / 2),
-  );
+  const heartbeatIntervalMs = Math.max(1_000, Math.floor((WEBHOOK_CLAIM_TTL_SECONDS * 1000) / 2));
   let claimHeartbeat: ReturnType<typeof setInterval> | null = null;
   const pruneSampleRate = options?.pruneSampleRate ?? WEBHOOK_PRUNE_SAMPLE_RATE;
 

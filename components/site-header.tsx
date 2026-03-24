@@ -45,4 +45,3 @@ export function SiteHeader({ isLoggedIn }: { isLoggedIn: boolean }) {
     </header>
   );
 }
-

@@ -49,11 +49,7 @@ function formatStripePriceLabel(
     currency: price.currency.toUpperCase(),
     maximumFractionDigits: 2,
   }).format(price.unit_amount / 100);
-  const suffix = formatIntervalLabel(
-    price.recurring?.interval,
-    price.recurring?.interval_count,
-    t,
-  );
+  const suffix = formatIntervalLabel(price.recurring?.interval, price.recurring?.interval_count, t);
   return `${amount}${suffix}`;
 }
 
@@ -93,9 +89,7 @@ export const getPublicPricingCatalog = cache(async (): Promise<PublicPricingPlan
         logger.warn("Failed to retrieve Stripe price for plan; using static label.", {
           planKey: plan.key,
           error:
-            error instanceof Error
-              ? { name: error.name, message: error.message }
-              : String(error),
+            error instanceof Error ? { name: error.name, message: error.message } : String(error),
         });
         return [plan.key, null] as const;
       }

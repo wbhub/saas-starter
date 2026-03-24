@@ -12,12 +12,7 @@ const MAX_ATTACHMENT_DATA_CHARS = 180_000;
 const MAX_TOTAL_ATTACHMENT_DATA_CHARS = 220_000;
 const MAX_MESSAGES_PER_REQUEST = 30;
 const MAX_MESSAGE_CONTENT_CHARS = 8_000;
-const SUPPORTED_IMAGE_MIME_TYPES = new Set([
-  "image/png",
-  "image/jpeg",
-  "image/webp",
-  "image/gif",
-]);
+const SUPPORTED_IMAGE_MIME_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
 const SUPPORTED_FILE_MIME_TYPES = new Set(["application/pdf", "text/plain", "text/csv"]);
 const EXTENSION_MIME_MAP: Record<string, string> = {
   png: "image/png",
@@ -37,13 +32,17 @@ function getMessageText(message: UIMessage) {
     .join("");
 }
 
-function toApiAttachment(part: { mediaType: string; filename?: string; url: string; providerMetadata?: unknown }) {
+function toApiAttachment(part: {
+  mediaType: string;
+  filename?: string;
+  url: string;
+  providerMetadata?: unknown;
+}) {
   const mimeType = part.mediaType.toLowerCase();
   const fileType = mimeType.startsWith("image/") ? "image" : "file";
   const source = (() => {
-    const openAiFileId = (
-      part.providerMetadata as { openai?: { fileId?: string } } | undefined
-    )?.openai?.fileId;
+    const openAiFileId = (part.providerMetadata as { openai?: { fileId?: string } } | undefined)
+      ?.openai?.fileId;
     if (typeof openAiFileId === "string" && openAiFileId.length > 0) {
       return { fileId: openAiFileId };
     }
@@ -274,10 +273,7 @@ export function AiChatCard() {
     let totalEncodedChars = 0;
     for (const file of files) {
       const mimeType = resolveMimeType(file);
-      if (
-        !SUPPORTED_IMAGE_MIME_TYPES.has(mimeType) &&
-        !SUPPORTED_FILE_MIME_TYPES.has(mimeType)
-      ) {
+      if (!SUPPORTED_IMAGE_MIME_TYPES.has(mimeType) && !SUPPORTED_FILE_MIME_TYPES.has(mimeType)) {
         return t("errors.unsupportedType", { mimeType: mimeType || file.name || "unknown" });
       }
       const encodedChars = estimateDataUrlLength(file.size, mimeType);
@@ -363,9 +359,7 @@ export function AiChatCard() {
               <div
                 key={message.id}
                 className={`max-w-[88%] rounded-lg px-3 py-2 text-sm ${
-                  isUser
-                    ? "ml-auto bg-btn-accent text-white"
-                    : "bg-surface text-foreground"
+                  isUser ? "ml-auto bg-btn-accent text-white" : "bg-surface text-foreground"
                 }`}
               >
                 {text}

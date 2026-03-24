@@ -12,14 +12,16 @@ function getOptionalEnv(getter: () => string): string | undefined {
 }
 
 export function isResendCustomEmailConfigured() {
-  return Boolean(getOptionalEnv(() => env.RESEND_API_KEY) && getOptionalEnv(() => env.RESEND_FROM_EMAIL));
+  return Boolean(
+    getOptionalEnv(() => env.RESEND_API_KEY) && getOptionalEnv(() => env.RESEND_FROM_EMAIL),
+  );
 }
 
 export function isResendSupportEmailConfigured() {
   return Boolean(
     getOptionalEnv(() => env.RESEND_API_KEY) &&
-      getOptionalEnv(() => env.RESEND_FROM_EMAIL) &&
-      getOptionalEnv(() => env.RESEND_SUPPORT_EMAIL),
+    getOptionalEnv(() => env.RESEND_FROM_EMAIL) &&
+    getOptionalEnv(() => env.RESEND_SUPPORT_EMAIL),
   );
 }
 

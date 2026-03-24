@@ -16,10 +16,7 @@ export default async function ResetPasswordPage() {
       <SiteHeader isLoggedIn={false} />
 
       <main className="flex flex-1 flex-col items-center justify-center px-4 py-12">
-        <ResetPasswordForm
-          hasRecoveryProof={hasRecoveryProof}
-          recoveryUserId={recoveryUserId}
-        />
+        <ResetPasswordForm hasRecoveryProof={hasRecoveryProof} recoveryUserId={recoveryUserId} />
       </main>
 
       <SiteFooter />

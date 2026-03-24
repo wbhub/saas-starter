@@ -166,9 +166,7 @@ describe("DELETE /api/team/members/[userId]", () => {
       error: null,
     });
     const membershipDeleteEqUser = vi.fn().mockResolvedValue({ error: null });
-    const syncTeamSeatQuantity = vi
-      .fn()
-      .mockRejectedValue(new Error("stripe seat sync failed"));
+    const syncTeamSeatQuantity = vi.fn().mockRejectedValue(new Error("stripe seat sync failed"));
 
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: async () => ({

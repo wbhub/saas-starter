@@ -52,7 +52,9 @@ async function sendPasswordResetEmailInBackground(email: string, locale: AppLoca
     const redirectTo = `${getAppUrl()}/auth/callback?next=/reset-password`;
 
     if (!isResendCustomEmailConfigured()) {
-      logger.warn("Forgot-password: Resend is not configured, falling back to Supabase-managed email");
+      logger.warn(
+        "Forgot-password: Resend is not configured, falling back to Supabase-managed email",
+      );
       const { error } = await supabaseAdmin.auth.resetPasswordForEmail(email, { redirectTo });
       if (error) {
         logger.error(
@@ -129,9 +131,7 @@ async function sendPasswordResetEmailInBackground(email: string, locale: AppLoca
           return;
         }
 
-        logger.warn(
-          "Forgot-password: Trigger enqueue failed, falling back to inline Resend send",
-        );
+        logger.warn("Forgot-password: Trigger enqueue failed, falling back to inline Resend send");
       }
 
       await sendResendEmail(emailPayload);
@@ -148,7 +148,8 @@ export async function POST(request: Request) {
   const t = await getLocaleTranslator("ApiForgotPassword", locale);
   const requestId = getOrCreateRequestId(request);
   const genericSuccessMessage = t("messages.genericSuccess");
-  const genericSuccess = () => withRequestId(NextResponse.json({ message: genericSuccessMessage }), requestId);
+  const genericSuccess = () =>
+    withRequestId(NextResponse.json({ message: genericSuccessMessage }), requestId);
 
   const csrfError = verifyCsrfProtection(request);
   if (csrfError) {

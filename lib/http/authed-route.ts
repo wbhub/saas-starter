@@ -27,10 +27,7 @@ type AuthedRouteOptions<TBody> = {
   unauthorizedMessage?: string;
   tooManyRequestsMessage?: string;
   onInvalidPayload?: (ctx: { userId: string }) => void;
-  rateLimits?: (ctx: {
-    request: Request;
-    userId: string;
-  }) => RateLimitDescriptor[];
+  rateLimits?: (ctx: { request: Request; userId: string }) => RateLimitDescriptor[];
   handler: (ctx: AuthedRouteContext<TBody>) => Promise<Response>;
 };
 
@@ -78,13 +75,18 @@ export async function withAuthedRoute<TBody = undefined>({
   if (rateLimits) {
     const descriptors = rateLimits({ request, userId: user.id });
     if (descriptors.length > 0) {
-      const results = await Promise.all(descriptors.map((descriptor) => checkRateLimit(descriptor)));
+      const results = await Promise.all(
+        descriptors.map((descriptor) => checkRateLimit(descriptor)),
+      );
       const deniedIndex = results.findIndex((result) => !result.allowed);
       if (deniedIndex >= 0) {
         const retryAfterSeconds = Math.max(...results.map((result) => result.retryAfterSeconds));
         return jsonWithRequestId(
           requestId,
-          { ok: false as const, error: descriptors[deniedIndex]?.message ?? tooManyRequestsMessage },
+          {
+            ok: false as const,
+            error: descriptors[deniedIndex]?.message ?? tooManyRequestsMessage,
+          },
           {
             status: 429,
             headers: { "Retry-After": String(retryAfterSeconds) },

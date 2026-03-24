@@ -42,7 +42,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
       ? cookieLocale
       : hasLocale(routing.locales, acceptLanguageLocale)
         ? acceptLanguageLocale
-      : routing.defaultLocale;
+        : routing.defaultLocale;
 
   return {
     locale,

@@ -1,8 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const CORE_ENV_KEYS = [
-  "SUPABASE_SERVICE_ROLE_KEY",
-] as const;
+const CORE_ENV_KEYS = ["SUPABASE_SERVICE_ROLE_KEY"] as const;
 
 const STRIPE_ENV_KEYS = [
   "STRIPE_SECRET_KEY",
@@ -18,7 +16,12 @@ function seedCoreRequiredEnv() {
 }
 
 function clearEnv() {
-  for (const key of [...CORE_ENV_KEYS, ...STRIPE_ENV_KEYS, "APP_FREE_PLAN_ENABLED", "BILLING_PROVIDER"]) {
+  for (const key of [
+    ...CORE_ENV_KEYS,
+    ...STRIPE_ENV_KEYS,
+    "APP_FREE_PLAN_ENABLED",
+    "BILLING_PROVIDER",
+  ]) {
     delete process.env[key];
   }
 }

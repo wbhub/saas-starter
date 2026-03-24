@@ -87,9 +87,7 @@ export async function POST(request: Request) {
         }
         const submittedBy = user.email ?? t("email.unknownEmail");
         const renderedSubject =
-          subject.length > 0
-            ? t("email.subjectWithInput", { subject })
-            : t("email.defaultSubject");
+          subject.length > 0 ? t("email.subjectWithInput", { subject }) : t("email.defaultSubject");
 
         const emailPayload = {
           from: fromEmail,
@@ -110,9 +108,12 @@ export async function POST(request: Request) {
         if (isTriggerConfigured()) {
           const triggered = await triggerSendEmailTask(emailPayload);
           if (!triggered) {
-            logger.warn("Support email Trigger enqueue failed, falling back to inline Resend send", {
-              userId: user.id,
-            });
+            logger.warn(
+              "Support email Trigger enqueue failed, falling back to inline Resend send",
+              {
+                userId: user.id,
+              },
+            );
             await sendResendEmail(emailPayload);
           }
         } else {

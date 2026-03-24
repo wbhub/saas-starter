@@ -43,14 +43,11 @@ export async function POST(request: Request) {
       }
 
       const admin = createAdminClient();
-      const { data: rpcData, error: rpcError } = await admin.rpc(
-        "transfer_team_ownership_atomic",
-        {
-          p_team_id: teamContext.teamId,
-          p_current_owner_user_id: user.id,
-          p_next_owner_user_id: nextOwnerUserId,
-        },
-      );
+      const { data: rpcData, error: rpcError } = await admin.rpc("transfer_team_ownership_atomic", {
+        p_team_id: teamContext.teamId,
+        p_current_owner_user_id: user.id,
+        p_next_owner_user_id: nextOwnerUserId,
+      });
       if (rpcError) {
         logger.error("Failed to transfer team ownership atomically", rpcError);
         logAuditEvent({
@@ -64,9 +61,9 @@ export async function POST(request: Request) {
         return jsonError(t("errors.unableToTransfer"), 500);
       }
 
-      const rpcRow = (Array.isArray(rpcData) ? rpcData[0] : rpcData) as
-        | TransferOwnershipRpcResult
-        | null;
+      const rpcRow = (
+        Array.isArray(rpcData) ? rpcData[0] : rpcData
+      ) as TransferOwnershipRpcResult | null;
       if (!rpcRow || !rpcRow.ok) {
         const code = rpcRow?.error_code;
         if (code === "target_not_found") {

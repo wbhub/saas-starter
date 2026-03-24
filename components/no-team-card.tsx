@@ -41,12 +41,8 @@ export function NoTeamCard() {
 
   return (
     <section className="mx-auto mt-16 max-w-xl rounded-xl border app-border-subtle app-surface p-6 shadow-sm">
-      <h1 className="text-xl font-semibold text-foreground">
-        {t("title")}
-      </h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        {t("description")}
-      </p>
+      <h1 className="text-xl font-semibold text-foreground">{t("title")}</h1>
+      <p className="mt-2 text-sm text-muted-foreground">{t("description")}</p>
       <button
         type="button"
         onClick={recoverTeam}

@@ -24,9 +24,7 @@ const STORAGE_KEY = "saas-starter-theme";
 
 function getSystemTheme(): "light" | "dark" {
   if (typeof window !== "undefined" && window.matchMedia) {
-    return window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   }
 
   // Safe fallback when media query API isn't available.
@@ -101,4 +99,3 @@ export function useTheme() {
   }
   return ctx;
 }
-
