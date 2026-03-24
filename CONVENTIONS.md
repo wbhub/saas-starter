@@ -8,7 +8,7 @@ Copy an existing route as your starting template. `app/api/auth/signup/route.ts`
 
 ### Standalone route structure
 
-Every route handler follows the same validation order:
+Most JSON API routes should follow this validation order:
 
 ```ts
 export async function POST(request: Request) {
@@ -35,11 +35,11 @@ export async function POST(request: Request) {
 }
 ```
 
-Do not reorder these checks. CSRF and content-type validation must happen before body parsing. Authentication must happen before rate limiting (so you can key rate limits on the user ID). Rate limiting must happen before any database writes.
+Use this as the default order for new JSON endpoints. CSRF and content-type validation should happen before body parsing. Authentication should happen before rate limiting (so you can key limits on user ID), and rate limiting should happen before database writes. Some routes intentionally differ (for example, Stripe endpoints).
 
 ### Using `withTeamRoute`
 
-For routes that require team membership, use the `withTeamRoute` helper from `lib/http/team-route.ts`. It handles steps 1-5 for you:
+For routes that require team membership, use the `withTeamRoute` helper from `lib/http/team-route.ts`. It handles CSRF, content-type checks, auth, team membership/role checks, rate limits, and optional body parsing for you:
 
 ```ts
 import { withTeamRoute } from "@/lib/http/team-route";
@@ -127,14 +127,14 @@ If your new utility is only used by one domain, put it in that domain's director
 3. Add a getter to the `envBase` object in `lib/env.ts`:
    - Use `ensureEnv("KEY")` for required variables (throws if missing).
    - Use `optionalEnv("KEY")` for optional variables (returns `undefined`).
-4. Access the variable everywhere else via `env.MY_KEY`, never via `process.env` directly.
+4. For application/business logic, prefer `env.MY_KEY` over direct `process.env` reads.
 
 ### The `env` proxy pattern
 
 The `env` object uses lazy property getters. Each `get FOO()` only reads `process.env.FOO` when the property is first accessed. This means:
 
 - Missing required variables only throw when the code path that needs them runs.
-- `validateRequiredEnvAtBoot()` (called at startup in `instrumentation.ts`) forces all critical getters to run, failing fast if configuration is wrong.
+- `validateRequiredEnvAtBoot()` (called from `instrumentation.ts` in production Node runtime) forces critical getters to run, failing fast if configuration is wrong.
 - The `void env.someKey` pattern in `validateRequiredEnvAtBoot` triggers the getter for its side effect (validation). It looks like a no-op but it is intentional.
 
 ## Error Handling
@@ -149,13 +149,14 @@ Common status codes used in this codebase:
 |--------|---------|-------------|
 | 400 | Bad Request | Invalid payload, failed Zod validation |
 | 401 | Unauthorized | No authenticated user |
-| 402 | Payment Required | AI budget exceeded |
+| 402 | Payment Required | AI budget exceeded or paid plan required |
 | 403 | Forbidden | CSRF failure, insufficient role, missing team membership |
 | 404 | Not Found | Resource doesn't exist |
 | 409 | Conflict | Already exists, duplicate, same-state change |
 | 410 | Gone | Expired resource (e.g., expired invite) |
 | 413 | Payload Too Large | Request body exceeds size limit |
-| 429 | Too Many Requests | Rate limited (always include `Retry-After` header) |
+| 415 | Unsupported Media Type | Missing/invalid `Content-Type` for JSON endpoints |
+| 429 | Too Many Requests | Rate limited (include `Retry-After` for local rate-limit responses) |
 | 503 | Service Unavailable | Required service not configured or down |
 
 Never expose internal error details to the client. Log the full error server-side with `logger.error()`, return a generic message to the user.
@@ -170,7 +171,7 @@ The codebase uses both patterns depending on context:
 
 - **Throw** when the caller cannot reasonably recover and the error represents a bug or infrastructure failure (e.g., `syncTeamSeatQuantity` throws when a subscription has no items).
 - **Return null** when the absence of data is a normal, expected case (e.g., `resolveTeamIdFromStripeCustomer` returns null when a customer mapping doesn't exist yet).
-- **Return an error response** in route handlers. Never throw from a route handler -- return a `NextResponse` with the appropriate status.
+- **Return an error response** in route handlers whenever possible. If lower-level code throws, catch and convert it to an appropriate `NextResponse`.
 
 ## Tests
 
@@ -181,7 +182,7 @@ Tests are co-located with their source files:
 ```
 lib/ai/access.ts          -> lib/ai/access.test.ts
 app/api/auth/signup/route.ts -> app/api/auth/signup/route.test.ts
-app/dashboard/page.tsx    -> app/dashboard/page.test.tsx
+lib/dashboard/server.ts   -> lib/dashboard/server.test.ts
 ```
 
 ### Test runner
@@ -189,7 +190,7 @@ app/dashboard/page.tsx    -> app/dashboard/page.test.tsx
 - **Unit tests**: Vitest (`vitest.config.ts`). Run with `npm test`.
 - **E2E tests**: Playwright (`playwright.config.ts`). Located in `e2e/`. Run with `npx playwright test`.
 
-Both use the `@/` path alias.
+Unit tests commonly use the `@/` path alias. E2E tests in `e2e/` usually use relative imports between fixture/spec files.
 
 ## Translations (i18n)
 
@@ -215,7 +216,7 @@ return <p>{t("greeting")}</p>;
 
 ## Imports
 
-All local imports use the `@/` path alias. Never use relative imports (`../`, `./`).
+For app and shared runtime code, prefer the `@/` path alias for local imports. Relative imports (`./`, `../`) are acceptable in tightly co-located files (for example, nearby UI components, tests, and e2e fixtures).
 
 Group imports in this order:
 
@@ -232,7 +233,7 @@ import { type TeamContext, type TeamRole } from "@/lib/team-context";
 
 ## Audit Logging
 
-Use `logAuditEvent()` from `lib/audit.ts` for any action that changes state (creates, updates, or deletes a resource). Every audit event has:
+Use `logAuditEvent()` from `lib/audit.ts` for any action that changes state (creates, updates, or deletes a resource). Every audit event includes `action` and `outcome`, and commonly includes:
 
 - `action`: a dot-separated name like `"team.invite.create"` or `"ai.chat.stream"`
 - `outcome`: `"success"`, `"failure"`, or `"denied"`

@@ -1,6 +1,6 @@
 # Magic Numbers
 
-Every hardcoded constant in this codebase, what it controls, and why it was chosen.
+Key hardcoded constants in this codebase, what they control, and why they were chosen.
 
 ## Rate Limiting
 
@@ -36,7 +36,7 @@ Defined in `lib/constants/rate-limits.ts`. All values use `MINUTE_MS` (60,000) a
 | `supportByUser` | 5 | 10 min | Prevents a user from flooding the support inbox. |
 | `supportByClient` | 20 | 10 min | Higher per-client to allow shared networks. |
 | `teamRecoveryByUser` | 10 | 10 min | Recovery is a safety valve, not a normal operation. |
-| `cronByClientIp` | 30 | 1 min | Cron endpoints are called by Vercel Cron (single IP). 30/min handles retries and concurrent jobs. |
+| `cronByClientIp` | 30 | 1 min | Cron endpoints should see low request volume. 30/min leaves room for retries/concurrency while limiting abuse. |
 
 ### Rate Limit Infrastructure
 
@@ -177,7 +177,7 @@ Configured via `STRIPE_SEAT_PRORATION_BEHAVIOR` env var, defaults to `"create_pr
 
 | Set | Types | Why |
 |-----|-------|-----|
-| `SUPPORTED_IMAGE_MIME_TYPES` | `image/png`, `image/jpeg`, `image/webp`, `image/gif` | The four image formats universally supported by OpenAI, Anthropic, and Google vision models. |
+| `SUPPORTED_IMAGE_MIME_TYPES` | `image/png`, `image/jpeg`, `image/webp`, `image/gif` | The image formats this app currently accepts in its attachment validation pipeline. |
 | `SUPPORTED_FILE_MIME_TYPES` | `application/pdf`, `text/plain`, `text/csv` | Document formats that can be meaningfully parsed by language models. |
 
 ### AI Budget Finalize Retries (`lib/ai/budget-finalize-retries.ts`)
@@ -229,8 +229,8 @@ The logger redacts secrets from all output (console + Sentry). Patterns are defi
 
 | Pattern | What it catches |
 |---------|----------------|
-| `sk_(?:test\|live)_...` | Stripe secret keys |
-| `pk_(?:test\|live)_...` | Stripe publishable keys |
+| `sk_(?:test|live)_...` | Stripe secret keys |
+| `pk_(?:test|live)_...` | Stripe publishable keys |
 | `whsec_...` | Stripe webhook secrets |
 | `re_...` | Resend API keys |
 | `sk-proj-...` | OpenAI API keys |
@@ -260,5 +260,5 @@ Used as raw strings in various places:
 
 | Code | Meaning | Where used |
 |------|---------|------------|
-| `23505` | Unique violation | `app/api/team/invites/route.ts` -- caught when inserting a duplicate invite for the same team+email combination. The code catches the DB constraint rather than pre-checking because the check-then-insert pattern has a race condition. |
-| `P0010` | Custom raise (last owner guard) | `app/api/team/members/[userId]/route.ts` -- raised by a database trigger that prevents removing the last owner of a team. Caught to return a 409 instead of a 500. |
+| `23505` | Unique violation | Used in `app/api/team/invites/route.ts` (duplicate invite insert race-safe handling) and `app/api/stripe/webhook/event-claim.ts` (idempotent duplicate-claim handling). |
+| `P0010` | Custom raise (last owner guard) | Raised by a DB trigger that prevents removing the last owner of a team. Caught in `app/api/team/members/[userId]/route.ts` and `app/dashboard/actions.ts` to return a user-safe error instead of a 500. |
