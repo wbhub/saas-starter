@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
+import { jsonError, jsonSuccess } from "@/lib/http/api-json";
+import { getOrCreateRequestId, withRequestId } from "@/lib/http/request-id";
 import { createClient } from "@/lib/supabase/server";
 import { getStripeServerClient } from "@/lib/stripe/server";
 import { getAppUrl } from "@/lib/env";
@@ -30,21 +31,19 @@ async function isOwnedStripeCustomer(teamId: string, customerId: string) {
 }
 
 export async function POST(request: Request) {
+  const requestId = getOrCreateRequestId(request);
+  const err = (error: string, status: number, init?: ResponseInit) =>
+    withRequestId(jsonError(error, status, init), requestId);
+
   const t = await getRouteTranslator("ApiStripePortal", request);
 
   if (!isBillingEnabled()) {
-    return NextResponse.json(
-      { error: t("errors.billingNotConfigured") },
-      { status: 503 },
-    );
+    return err(t("errors.billingNotConfigured"), 503);
   }
 
   const stripe = getStripeServerClient();
   if (!stripe) {
-    return NextResponse.json(
-      { error: t("errors.billingNotConfigured") },
-      { status: 503 },
-    );
+    return err(t("errors.billingNotConfigured"), 503);
   }
 
   const csrfError = verifyCsrfProtection(request, {
@@ -53,14 +52,14 @@ export async function POST(request: Request) {
     invalidToken: t("errors.invalidCsrfToken"),
   });
   if (csrfError) {
-    return csrfError;
+    return withRequestId(csrfError, requestId);
   }
 
   const contentTypeError = requireJsonContentType(request, {
     errorMessage: t("errors.invalidContentType"),
   });
   if (contentTypeError) {
-    return contentTypeError;
+    return withRequestId(contentTypeError, requestId);
   }
 
   const supabase = await createClient();
@@ -69,21 +68,15 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.json({ error: t("errors.unauthorized") }, { status: 401 });
+    return err(t("errors.unauthorized"), 401);
   }
 
   const teamContext = await getCachedTeamContextForUser(supabase, user.id);
   if (!teamContext) {
-    return NextResponse.json(
-      { error: t("errors.noTeamMembership") },
-      { status: 403 },
-    );
+    return err(t("errors.noTeamMembership"), 403);
   }
   if (!canManageTeamBilling(teamContext.role)) {
-    return NextResponse.json(
-      { error: t("errors.forbidden") },
-      { status: 403 },
-    );
+    return err(t("errors.forbidden"), 403);
   }
 
   const rateLimit = await checkRateLimit({
@@ -91,13 +84,9 @@ export async function POST(request: Request) {
     ...RATE_LIMITS.stripePortalByTeam,
   });
   if (!rateLimit.allowed) {
-    return NextResponse.json(
-      { error: t("errors.rateLimited") },
-      {
-        status: 429,
-        headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
-      },
-    );
+    return err(t("errors.rateLimited"), 429, {
+      headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
+    });
   }
 
   const { data: customerRow, error: customerRowError } = await supabase
@@ -107,28 +96,17 @@ export async function POST(request: Request) {
     .maybeSingle<StripeCustomerRow>();
 
   if (customerRowError) {
-    return NextResponse.json(
-      { error: t("errors.couldNotLoadStripeCustomer") },
-      { status: 500 },
-    );
+    return err(t("errors.couldNotLoadStripeCustomer"), 500);
   }
 
   if (!customerRow?.stripe_customer_id) {
-    return NextResponse.json(
-      { error: t("errors.noCustomerRecord") },
-      { status: 404 },
-    );
+    return err(t("errors.noCustomerRecord"), 404);
   }
 
   try {
     const isOwned = await isOwnedStripeCustomer(teamContext.teamId, customerRow.stripe_customer_id);
     if (!isOwned) {
-      return NextResponse.json(
-        {
-          error: t("errors.billingIdentityMismatch"),
-        },
-        { status: 409 },
-      );
+      return err(t("errors.billingIdentityMismatch"), 409);
     }
 
     const session = await stripe.billingPortal.sessions.create({
@@ -136,12 +114,9 @@ export async function POST(request: Request) {
       return_url: `${getAppUrl()}/dashboard`,
     });
 
-    return NextResponse.json({ url: session.url });
+    return withRequestId(jsonSuccess({ url: session.url }), requestId);
   } catch (error) {
     logger.error("Failed to create Stripe billing portal session", error);
-    return NextResponse.json(
-      { error: t("errors.unableToOpenPortal") },
-      { status: 500 },
-    );
+    return err(t("errors.unableToOpenPortal"), 500);
   }
 }

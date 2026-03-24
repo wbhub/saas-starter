@@ -1,9 +1,12 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { env } from "@/lib/env";
 import { getStripeServerClient } from "@/lib/stripe/server";
 import { isBillingEnabled } from "@/lib/billing/capabilities";
+import { jsonError } from "@/lib/http/api-json";
 import { requireJsonContentType } from "@/lib/http/content-type";
+import { getOrCreateRequestId, withRequestId } from "@/lib/http/request-id";
 import { getRouteTranslator } from "@/lib/i18n/locale";
 import { logger } from "@/lib/logger";
 import {
@@ -15,45 +18,42 @@ import { isTriggerConfigured } from "@/lib/trigger/config";
 import { triggerStripeWebhookProcessTask } from "@/lib/trigger/dispatch";
 
 export async function POST(req: Request) {
+  const requestId = getOrCreateRequestId(req);
+  const err = (error: string, status: number) =>
+    withRequestId(jsonError(error, status), requestId);
+
   const t = await getRouteTranslator("ApiStripeWebhook", req);
 
   if (!isBillingEnabled()) {
-    return NextResponse.json(
-      { error: t("errors.webhooksNotConfigured") },
-      { status: 503 },
-    );
+    return err(t("errors.webhooksNotConfigured"), 503);
   }
 
   const stripe = getStripeServerClient();
   if (!stripe) {
-    return NextResponse.json(
-      { error: t("errors.webhooksNotConfigured") },
-      { status: 503 },
-    );
+    return err(t("errors.webhooksNotConfigured"), 503);
   }
 
   const contentTypeError = requireJsonContentType(req, {
     errorMessage: t("errors.invalidContentType"),
   });
   if (contentTypeError) {
-    return contentTypeError;
+    return withRequestId(contentTypeError, requestId);
   }
 
   const signature = (await headers()).get("stripe-signature");
   if (!signature) {
-    return NextResponse.json(
-      { error: t("errors.missingSignature") },
-      { status: 400 },
-    );
+    return err(t("errors.missingSignature"), 400);
   }
 
   const body = await req.text();
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
+  let webhookSecret: string | undefined;
+  try {
+    webhookSecret = env.STRIPE_WEBHOOK_SECRET;
+  } catch {
+    webhookSecret = undefined;
+  }
   if (!webhookSecret) {
-    return NextResponse.json(
-      { error: t("errors.webhooksNotConfigured") },
-      { status: 503 },
-    );
+    return err(t("errors.webhooksNotConfigured"), 503);
   }
 
   let event: Stripe.Event;
@@ -66,10 +66,7 @@ export async function POST(req: Request) {
     );
   } catch (error) {
     logger.error("Stripe webhook signature verification failed", error);
-    return NextResponse.json(
-      { error: t("errors.signatureVerificationFailed") },
-      { status: 400 },
-    );
+    return err(t("errors.signatureVerificationFailed"), 400);
   }
 
   try {
@@ -78,7 +75,7 @@ export async function POST(req: Request) {
         eventId: event.id,
       });
       if (triggered) {
-        return NextResponse.json({ received: true });
+        return withRequestId(NextResponse.json({ received: true }), requestId);
       }
 
       logger.warn("Falling back to inline Stripe webhook processing after Trigger enqueue failure", {
@@ -90,15 +87,12 @@ export async function POST(req: Request) {
       pruneSampleRate: WEBHOOK_PRUNE_SAMPLE_RATE,
     });
     if (!processed.processed) {
-      return NextResponse.json({ received: true });
+      return withRequestId(NextResponse.json({ received: true }), requestId);
     }
   } catch (error) {
     logger.error("Stripe webhook handling failed", error);
-    return NextResponse.json(
-      { error: t("errors.webhookHandlingFailed") },
-      { status: 500 },
-    );
+    return err(t("errors.webhookHandlingFailed"), 500);
   }
 
-  return NextResponse.json({ received: true });
+  return withRequestId(NextResponse.json({ received: true }), requestId);
 }

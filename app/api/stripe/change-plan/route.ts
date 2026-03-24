@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { logAuditEvent } from "@/lib/audit";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { createClient } from "@/lib/supabase/server";
@@ -7,6 +6,8 @@ import { getStripeServerClient } from "@/lib/stripe/server";
 import { syncSubscription } from "@/lib/stripe/sync";
 import { isBillingEnabled } from "@/lib/billing/capabilities";
 import { requireJsonContentType } from "@/lib/http/content-type";
+import { jsonError, jsonSuccess } from "@/lib/http/api-json";
+import { getOrCreateRequestId, withRequestId } from "@/lib/http/request-id";
 import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
 import { getRouteTranslator } from "@/lib/i18n/locale";
 import { checkRateLimit } from "@/lib/security/rate-limit";
@@ -62,21 +63,18 @@ async function isLocalSubscriptionSynced(
 }
 
 export async function POST(req: Request) {
+  const requestId = getOrCreateRequestId(req);
+  const err = (error: string, status: number, init?: ResponseInit) =>
+    withRequestId(jsonError(error, status, init), requestId);
   const t = await getRouteTranslator("ApiStripeChangePlan", req);
 
   if (!isBillingEnabled()) {
-    return NextResponse.json(
-      { error: t("errors.billingNotConfigured") },
-      { status: 503 },
-    );
+    return err(t("errors.billingNotConfigured"), 503);
   }
 
   const stripe = getStripeServerClient();
   if (!stripe) {
-    return NextResponse.json(
-      { error: t("errors.billingNotConfigured") },
-      { status: 503 },
-    );
+    return err(t("errors.billingNotConfigured"), 503);
   }
 
   const csrfError = verifyCsrfProtection(req, {
@@ -85,14 +83,14 @@ export async function POST(req: Request) {
     invalidToken: t("errors.invalidCsrfToken"),
   });
   if (csrfError) {
-    return csrfError;
+    return withRequestId(csrfError, requestId);
   }
 
   const contentTypeError = requireJsonContentType(req, {
     errorMessage: t("errors.invalidContentType"),
   });
   if (contentTypeError) {
-    return contentTypeError;
+    return withRequestId(contentTypeError, requestId);
   }
 
   const supabase = await createClient();
@@ -101,21 +99,15 @@ export async function POST(req: Request) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.json({ error: t("errors.unauthorized") }, { status: 401 });
+    return err(t("errors.unauthorized"), 401);
   }
 
   const teamContext = await getCachedTeamContextForUser(supabase, user.id);
   if (!teamContext) {
-    return NextResponse.json(
-      { error: t("errors.noTeamMembership") },
-      { status: 403 },
-    );
+    return err(t("errors.noTeamMembership"), 403);
   }
   if (!canManageTeamBilling(teamContext.role)) {
-    return NextResponse.json(
-      { error: t("errors.forbidden") },
-      { status: 403 },
-    );
+    return err(t("errors.forbidden"), 403);
   }
 
   const rateLimit = await checkRateLimit({
@@ -123,33 +115,26 @@ export async function POST(req: Request) {
     ...RATE_LIMITS.stripeChangePlanByTeam,
   });
   if (!rateLimit.allowed) {
-    return NextResponse.json(
-      { error: t("errors.rateLimited") },
-      {
-        status: 429,
-        headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
-      },
-    );
+    return err(t("errors.rateLimited"), 429, {
+      headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
+    });
   }
 
   const bodyParse = await parseJsonWithSchema(req, changePlanPayloadSchema);
   if (!bodyParse.success && bodyParse.tooLarge) {
-    return NextResponse.json({ error: t("errors.payloadTooLarge") }, { status: 413 });
+    return err(t("errors.payloadTooLarge"), 413);
   }
   const planKey = bodyParse.success ? parsePlanKey(bodyParse.data) : null;
   if (!planKey) {
-    return NextResponse.json({ error: t("errors.invalidPayload") }, { status: 400 });
+    return err(t("errors.invalidPayload"), 400);
   }
 
   const plan = getPlanByKey(planKey);
   if (!plan) {
-    return NextResponse.json({ error: t("errors.invalidTargetPlan") }, { status: 400 });
+    return err(t("errors.invalidTargetPlan"), 400);
   }
   if (!plan.priceId) {
-    return NextResponse.json(
-      { error: t("errors.billingPlansNotConfigured") },
-      { status: 503 },
-    );
+    return err(t("errors.billingPlansNotConfigured"), 503);
   }
   const idempotencyKey = getChangePlanIdempotencyKey(req, teamContext.teamId, plan.key);
 
@@ -163,17 +148,11 @@ export async function POST(req: Request) {
     .maybeSingle<ExistingSubscriptionRow>();
 
   if (subscriptionRowError) {
-    return NextResponse.json(
-      { error: t("errors.couldNotLoadSubscription") },
-      { status: 500 },
-    );
+    return err(t("errors.couldNotLoadSubscription"), 500);
   }
 
   if (!subscriptionRow?.stripe_subscription_id) {
-    return NextResponse.json(
-      { error: t("errors.noActiveSubscription") },
-      { status: 404 },
-    );
+    return err(t("errors.noActiveSubscription"), 404);
   }
 
   try {
@@ -189,28 +168,17 @@ export async function POST(req: Request) {
     const customer = await stripe.customers.retrieve(customerId);
 
     if ("deleted" in customer || customer.metadata?.supabase_team_id !== teamContext.teamId) {
-      return NextResponse.json(
-        {
-          error: t("errors.billingIdentityMismatch"),
-        },
-        { status: 409 },
-      );
+      return err(t("errors.billingIdentityMismatch"), 409);
     }
 
     const firstItem = stripeSubscription.items.data[0];
 
     if (!firstItem) {
-      return NextResponse.json(
-        { error: t("errors.subscriptionItemNotFound") },
-        { status: 400 },
-      );
+      return err(t("errors.subscriptionItemNotFound"), 400);
     }
 
     if (firstItem.price.id === plan.priceId) {
-      return NextResponse.json(
-        { error: t("errors.alreadyOnPlan") },
-        { status: 409 },
-      );
+      return err(t("errors.alreadyOnPlan"), 409);
     }
 
     const updated = await stripe.subscriptions.update(
@@ -242,7 +210,7 @@ export async function POST(req: Request) {
         teamId: teamContext.teamId,
         metadata: { targetPlanKey: plan.key, stripeSubscriptionId: stripeSubscription.id },
       });
-      return NextResponse.json({ ok: true });
+      return withRequestId(jsonSuccess(), requestId);
     } catch (syncError) {
       logger.error("Plan changed in Stripe but local sync failed", syncError);
       try {
@@ -268,13 +236,9 @@ export async function POST(req: Request) {
           reason: "post_change_sync_failed",
         },
       });
-      return NextResponse.json(
-        {
-          ok: true,
-          warning: t("errors.postChangeSyncFailed"),
-          planChanged: true,
-        },
-        { status: 200 },
+      return withRequestId(
+        jsonSuccess({ warning: t("errors.postChangeSyncFailed"), planChanged: true }),
+        requestId,
       );
     }
   } catch (error) {
@@ -286,9 +250,6 @@ export async function POST(req: Request) {
       teamId: teamContext.teamId,
       metadata: { targetPlanKey: plan.key },
     });
-    return NextResponse.json(
-      { error: t("errors.unableToChangePlan") },
-      { status: 500 },
-    );
+    return err(t("errors.unableToChangePlan"), 500);
   }
 }

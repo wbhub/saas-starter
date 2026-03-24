@@ -1,9 +1,14 @@
-import { PLAN_CATALOG, getStripePriceIdEnvKey, type PlanKey } from "@/lib/stripe/plans";
+import { env } from "@/lib/env";
+import { PLAN_CATALOG, type PlanKey } from "@/lib/stripe/plans";
 
 let cachedPlanKeyByPriceIdMap: ReadonlyMap<string, PlanKey> | null = null;
 
 export function readConfiguredPriceIdForPlan(planKey: PlanKey): string | null {
-  return process.env[getStripePriceIdEnvKey(planKey)]?.trim() || null;
+  try {
+    return env.getStripePriceId(planKey);
+  } catch {
+    return null;
+  }
 }
 
 export function getPlanKeyByPriceIdMap(): ReadonlyMap<string, PlanKey> {

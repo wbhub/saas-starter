@@ -1,5 +1,6 @@
 import { env } from "@/lib/env";
 import { jsonError, jsonSuccess } from "@/lib/http/api-json";
+import { getOrCreateRequestId, withRequestId } from "@/lib/http/request-id";
 import { pruneStripeWebhookEventRows } from "@/lib/stripe/webhook-event-prune";
 import { timingSafeEqual } from "crypto";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
@@ -33,15 +34,18 @@ function safeCompare(a: string, b: string) {
  */
 export async function GET(request: Request) {
   const t = await getRouteTranslator("ApiCronPruneStripeWebhookEvents", request);
+  const requestId = getOrCreateRequestId(request);
+  const err = (error: string, status: number, init?: ResponseInit) =>
+    withRequestId(jsonError(error, status, init), requestId);
 
   const secret = env.CRON_SECRET?.trim();
   if (!secret) {
-    return jsonError(t("errors.cronNotConfigured"), 503);
+    return err(t("errors.cronNotConfigured"), 503);
   }
 
   const token = bearerToken(request);
   if (!token || !safeCompare(token, secret)) {
-    return jsonError(t("errors.unauthorized"), 401);
+    return err(t("errors.unauthorized"), 401);
   }
 
   const clientId = getClientRateLimitIdentifier(request);
@@ -50,7 +54,7 @@ export async function GET(request: Request) {
     ...RATE_LIMITS.cronByClientIp,
   });
   if (!rateLimit.allowed) {
-    return jsonError(t("errors.rateLimited"), 429, {
+    return err(t("errors.rateLimited"), 429, {
       headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
     });
   }
@@ -58,14 +62,11 @@ export async function GET(request: Request) {
   if (isTriggerConfigured()) {
     const triggered = await triggerPruneStripeWebhookEventsTask();
     if (triggered) {
-      return jsonSuccess({
-        queued: true,
-        mode: "trigger",
-      });
+      return withRequestId(jsonSuccess({ queued: true, mode: "trigger" }), requestId);
     }
     logger.warn("Falling back to inline cron prune after Trigger enqueue failure");
   }
 
   await pruneStripeWebhookEventRows();
-  return jsonSuccess();
+  return withRequestId(jsonSuccess(), requestId);
 }

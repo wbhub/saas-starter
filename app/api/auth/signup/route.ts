@@ -1,14 +1,16 @@
-import { NextResponse } from "next/server";
 import { getAppUrl } from "@/lib/env";
-import { createClient } from "@/lib/supabase/server";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
+import { jsonError, jsonSuccess } from "@/lib/http/api-json";
 import { getClientRateLimitIdentifier } from "@/lib/http/client-ip";
 import { requireJsonContentType } from "@/lib/http/content-type";
+import { getOrCreateRequestId, withRequestId } from "@/lib/http/request-id";
 import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
 import { getRouteTranslator } from "@/lib/i18n/locale";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { rotateCsrfTokenOnResponse, verifyCsrfProtection } from "@/lib/security/csrf";
+import { createClient } from "@/lib/supabase/server";
 import { isValidEmail, validatePasswordComplexity } from "@/lib/validation";
+
 const signupPayloadSchema = z.object({
   email: z.string().trim().toLowerCase(),
   password: z.string(),
@@ -16,6 +18,7 @@ const signupPayloadSchema = z.object({
 
 export async function POST(request: Request) {
   const t = await getRouteTranslator("ApiAuthSignup", request);
+  const requestId = getOrCreateRequestId(request);
 
   const csrfError = verifyCsrfProtection(request, {
     invalidOrigin: t("errors.invalidOrigin"),
@@ -23,22 +26,22 @@ export async function POST(request: Request) {
     invalidToken: t("errors.invalidCsrfToken"),
   });
   if (csrfError) {
-    return csrfError;
+    return withRequestId(csrfError, requestId);
   }
 
   const contentTypeError = requireJsonContentType(request, {
     errorMessage: t("errors.invalidContentType"),
   });
   if (contentTypeError) {
-    return contentTypeError;
+    return withRequestId(contentTypeError, requestId);
   }
 
   const bodyParse = await parseJsonWithSchema(request, signupPayloadSchema);
   if (!bodyParse.success) {
     if (bodyParse.tooLarge) {
-      return NextResponse.json({ error: t("errors.payloadTooLarge") }, { status: 413 });
+      return withRequestId(jsonError(t("errors.payloadTooLarge"), 413), requestId);
     }
-    return NextResponse.json({ error: t("errors.invalidEmailOrPassword") }, { status: 400 });
+    return withRequestId(jsonError(t("errors.invalidEmailOrPassword"), 400), requestId);
   }
   const { email, password } = bodyParse.data;
   const clientId = getClientRateLimitIdentifier(request);
@@ -65,24 +68,24 @@ export async function POST(request: Request) {
       ipRateLimit.retryAfterSeconds,
       emailRateLimit.retryAfterSeconds,
     );
-    return NextResponse.json(
-      { error: t("errors.rateLimited") },
-      {
-        status: 429,
+    return withRequestId(
+      jsonError(t("errors.rateLimited"), 429, {
         headers: { "Retry-After": String(retryAfterSeconds) },
-      },
+      }),
+      requestId,
     );
   }
 
   const passwordValidation = validatePasswordComplexity(password);
   if (!isValidEmail(email) || !passwordValidation.valid) {
-    return NextResponse.json(
-      {
-        error: passwordValidation.valid
+    return withRequestId(
+      jsonError(
+        passwordValidation.valid
           ? t("errors.invalidEmailOrPassword")
           : t("errors.passwordComplexity"),
-      },
-      { status: 400 },
+        400,
+      ),
+      requestId,
     );
   }
 
@@ -96,15 +99,15 @@ export async function POST(request: Request) {
   });
 
   if (error) {
-    return NextResponse.json({ error: t("errors.unableToCreateAccount") }, { status: 400 });
+    return withRequestId(jsonError(t("errors.unableToCreateAccount"), 400), requestId);
   }
 
-  const response = NextResponse.json({
-    ok: true,
-    sessionCreated: Boolean(data.session),
-    message: data.session
-      ? undefined
-      : t("messages.accountCreated"),
-  });
+  const response = withRequestId(
+    jsonSuccess({
+      sessionCreated: Boolean(data.session),
+      message: data.session ? undefined : t("messages.accountCreated"),
+    }),
+    requestId,
+  );
   return rotateCsrfTokenOnResponse(response, request);
 }

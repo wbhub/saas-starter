@@ -6,36 +6,60 @@ Patterns to follow when adding features to this codebase.
 
 Copy an existing route as your starting template. `app/api/auth/signup/route.ts` is a good reference for standalone routes; `app/api/team/invites/route.ts` shows how to use the `withTeamRoute` helper.
 
-### Standalone route structure
+### Using `withAuthedRoute`
 
-Most JSON API routes should follow this validation order:
+For routes that require an authenticated user but not team membership (e.g., invite acceptance, personal team recovery, support email), use the `withAuthedRoute` helper from `lib/http/authed-route.ts`:
 
 ```ts
+import { withAuthedRoute } from "@/lib/http/authed-route";
+
 export async function POST(request: Request) {
-  // 1. CSRF protection
-  const csrfError = verifyCsrfProtection(request, { ... });
-  if (csrfError) return csrfError;
-
-  // 2. Content-Type check (for routes that accept JSON)
-  const contentTypeError = requireJsonContentType(request, { ... });
-  if (contentTypeError) return contentTypeError;
-
-  // 3. Parse and validate body with Zod schema
-  const bodyParse = await parseJsonWithSchema(request, mySchema);
-  if (!bodyParse.success) {
-    if (bodyParse.tooLarge) return NextResponse.json({ error: ... }, { status: 413 });
-    return NextResponse.json({ error: ... }, { status: 400 });
-  }
-
-  // 4. Authenticate (Supabase getUser)
-  // 5. Rate limit (checkRateLimit with descriptors from lib/constants/rate-limits.ts)
-  // 6. Business logic
-  // 7. Audit logging (logAuditEvent)
-  // 8. Return response
+  return withAuthedRoute({
+    request,
+    schema: myZodSchema,               // optional: parse + validate JSON body
+    rateLimits: ({ userId }) => [
+      {
+        key: `my-feature:${userId}`,
+        ...RATE_LIMITS.myFeatureByUser,
+        message: t("errors.tooManyRequests"),
+      },
+    ],
+    handler: async ({ user, supabase, body, requestId }) => {
+      // Your business logic here.
+      // user and body are already validated.
+    },
+  });
 }
 ```
 
-Use this as the default order for new JSON endpoints. CSRF and content-type validation should happen before body parsing. Authentication should happen before rate limiting (so you can key limits on user ID), and rate limiting should happen before database writes. Some routes intentionally differ (for example, Stripe endpoints).
+The middleware runs in this order: CSRF -> Content-Type -> Auth -> Rate limits -> Body parsing -> Your handler.
+
+### Standalone route structure
+
+For the rare case where neither `withTeamRoute` nor `withAuthedRoute` fits (e.g., unauthenticated endpoints like forgot-password, or Stripe webhook), follow this validation order:
+
+```ts
+export async function POST(request: Request) {
+  const requestId = getOrCreateRequestId(request);
+
+  // 1. CSRF protection
+  const csrfError = verifyCsrfProtection(request, { ... });
+  if (csrfError) return withRequestId(csrfError, requestId);
+
+  // 2. Content-Type check (for routes that accept JSON)
+  const contentTypeError = requireJsonContentType(request, { ... });
+  if (contentTypeError) return withRequestId(contentTypeError, requestId);
+
+  // 3. Parse and validate body with Zod schema
+  // 4. Authenticate (Supabase getUser) if needed
+  // 5. Rate limit (checkRateLimit)
+  // 6. Business logic
+  // 7. Audit logging (logAuditEvent)
+  // 8. Return response with withRequestId(jsonSuccess(...), requestId)
+}
+```
+
+Prefer `withAuthedRoute` or `withTeamRoute` over manual pipelines. Use standalone structure only for documented exceptions. CSRF and content-type validation should happen before body parsing. Authentication should happen before rate limiting (so you can key limits on user ID), and rate limiting should happen before database writes.
 
 ### Using `withTeamRoute`
 
@@ -127,7 +151,7 @@ If your new utility is only used by one domain, put it in that domain's director
 3. Add a getter to the `envBase` object in `lib/env.ts`:
    - Use `ensureEnv("KEY")` for required variables (throws if missing).
    - Use `optionalEnv("KEY")` for optional variables (returns `undefined`).
-4. For application/business logic, prefer `env.MY_KEY` over direct `process.env` reads.
+4. For application/business logic, always use `env.MY_KEY` over direct `process.env` reads.
 
 ### The `env` proxy pattern
 
@@ -137,13 +161,46 @@ The `env` object uses lazy property getters. Each `get FOO()` only reads `proces
 - `validateRequiredEnvAtBoot()` (called from `instrumentation.ts` in production Node runtime) forces critical getters to run, failing fast if configuration is wrong.
 - The `void env.someKey` pattern in `validateRequiredEnvAtBoot` triggers the getter for its side effect (validation). It looks like a no-op but it is intentional.
 
+### `process.env` allowlist
+
+Direct `process.env` reads are **only** permitted in the following locations. All other application/business code must use `env.*` from `lib/env.ts`.
+
+| Location | Reason |
+|----------|--------|
+| `lib/env.ts` | The gateway itself -- reads `process.env` and exposes typed getters. |
+| `lib/billing/provider.ts` | Lightweight billing-provider detection imported by `lib/env.ts` (avoids circular dependency). |
+| `instrumentation.ts`, `instrumentation-client.ts` | Sentry boot runs before the app is fully initialized. |
+| `next.config.ts` | Build-time configuration -- `lib/env.ts` is not available. |
+| `proxy.ts` | Middleware/proxy-level boot checks. |
+| `sentry.*.config.ts` | Sentry SDK init files. |
+| `trigger.config.ts` | Trigger.dev SDK config runs in its own process. |
+| `playwright.config.ts`, `e2e/**` | Test infrastructure. |
+| `*.test.ts` | Unit tests manipulating `process.env` for isolation. |
+| `lib/audit.ts` | Reads tuning parameters (`AUDIT_*`) with fallbacks; lightweight config, not business secrets. |
+| `app/dashboard/error.tsx`, `app/global-error.tsx` | Client components that check `NEXT_PUBLIC_SENTRY_DSN` (inlined by Next.js). |
+| `app/dashboard/actions.ts` | `NODE_ENV` check for CSRF cookie options. |
+| `lib/stripe/client.ts` | Client-side module; reads `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` which is inlined by Next.js at build time. |
+| `scripts/` | CI enforcement scripts that scan the file system — not application code. |
+| `NODE_ENV` in `lib/security/csrf.ts`, `lib/security/rate-limit.ts`, `lib/logger.ts` | Framework-level environment detection, not business config. |
+
 ## Error Handling
 
 ### In API routes
 
-**Minimum contract:** JSON error responses must include an `error` string and an appropriate HTTP status. Use the route's i18n translator `t()` for user-facing error messages. For example: `NextResponse.json({ error: string }, { status: number })`.
+**Canonical JSON contract:** All JSON API responses use a typed envelope produced by `jsonSuccess` and `jsonError` from `lib/http/api-json.ts`:
 
-**Helpers:** Prefer `jsonError` and `jsonSuccess` from `lib/http/api-json.ts` for new or refactored JSON API handlers. They wrap payloads with `ok: false` / `ok: true` so success and error bodies share a consistent, typed envelope (`jsonError` still includes `error`; `jsonSuccess` spreads your success fields next to `ok: true`). A plain `NextResponse.json({ error }, { status })` without `ok` remains valid and matches the minimum contract.
+- **Success**: `{ ...data, ok: true }` with an appropriate 2xx status. The `ok` field is always set last to prevent accidental override.
+- **Error**: `{ ok: false, error: string }` with an appropriate 4xx/5xx status. `jsonError` accepts an optional third argument with `code` (machine-readable string) and `data` (extra diagnostic fields merged into the body).
+- **Optional fields**: `code` (e.g. `"budget_exceeded"`), `data` (diagnostic details on error responses, e.g. partial-failure summaries), `warning` (soft failure detail when the primary action succeeded but a side-effect failed, e.g. seat sync after member removal).
+- All responses include an `x-request-id` header. Route wrappers (`withTeamRoute`, `withAuthedRoute`) attach this automatically; standalone routes should use `getOrCreateRequestId` / `withRequestId` from `lib/http/request-id.ts`.
+
+Use the route's i18n translator `t()` for user-facing error messages. Do **not** use raw `NextResponse.json({ error }, { status })` in new or refactored code.
+
+**Documented exceptions** (routes that intentionally deviate from the canonical envelope):
+
+- **Stripe webhook** (`/api/stripe/webhook`): Returns `{ received: true }` on success -- Stripe expects this acknowledgment shape. Error responses still use `{ ok: false, error }`.
+- **AI chat** (`/api/ai/chat`): Returns a streaming `text/plain` response on success. Error responses use the standard `{ ok: false, error, code }` envelope.
+- **Forgot password** (`/api/auth/forgot-password`): Always returns `{ message }` (no `ok`) to avoid leaking whether the email exists.
 
 Common status codes used in this codebase:
 
@@ -206,7 +263,7 @@ Unit tests commonly use the `@/` path alias. E2E tests in `e2e/` usually use rel
 
 ```ts
 const t = await getRouteTranslator("MyNamespace", request);
-return NextResponse.json({ error: t("errors.invalidPayload") }, { status: 400 });
+return jsonError(t("errors.invalidPayload"), 400);
 ```
 
 ### Using translations in components

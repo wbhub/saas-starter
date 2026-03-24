@@ -64,7 +64,10 @@ describe("withTeamRoute", () => {
   }
 
   it("rejects requests that fail CSRF validation", async () => {
-    const csrfError = new Response("csrf denied", { status: 403 });
+    const csrfError = new Response(JSON.stringify({ ok: false, error: "csrf denied" }), {
+      status: 403,
+      headers: { "Content-Type": "application/json" },
+    });
     const { withTeamRoute } = await loadWithTeamRoute({ csrfError });
 
     const response = await withTeamRoute({
@@ -73,6 +76,36 @@ describe("withTeamRoute", () => {
     });
 
     expect(response.status).toBe(403);
+    expect(response.headers.get("x-request-id")).toBeTruthy();
+  });
+
+  it("passes csrfMessages through to verifyCsrfProtection", async () => {
+    const csrfError = new Response(
+      JSON.stringify({ ok: false, error: "Origen no valido" }),
+      { status: 403, headers: { "Content-Type": "application/json" } },
+    );
+    vi.resetModules();
+    const verifyCsrfProtection = vi.fn().mockReturnValue(csrfError);
+    vi.doMock("@/lib/security/csrf", () => ({ verifyCsrfProtection }));
+    vi.doMock("@/lib/http/content-type", () => ({ requireJsonContentType: vi.fn().mockReturnValue(null) }));
+    vi.doMock("@/lib/http/request-validation", () => ({ parseJsonWithSchema: vi.fn() }));
+    vi.doMock("@/lib/security/rate-limit", () => ({ checkRateLimit: vi.fn() }));
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({ auth: { getUser: async () => ({ data: { user: { id: "u1" } } }) } }),
+    }));
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({ teamId: "t1", teamName: "A", role: "owner" }),
+    }));
+    const { withTeamRoute } = await import("./team-route");
+
+    const msgs = { invalidOrigin: "Origen no valido", missingToken: "Falta token" };
+    await withTeamRoute({
+      request: new Request("http://localhost/api/team", { method: "POST" }),
+      csrfMessages: msgs,
+      handler: async () => jsonResponse({ ok: true }),
+    });
+
+    expect(verifyCsrfProtection).toHaveBeenCalledWith(expect.anything(), msgs);
   });
 
   it("rejects unauthenticated requests with 401", async () => {
@@ -84,7 +117,7 @@ describe("withTeamRoute", () => {
     });
 
     expect(response.status).toBe(401);
-    await expect(response.json()).resolves.toEqual(expect.objectContaining({ error: "Unauthorized" }));
+    await expect(response.json()).resolves.toEqual(expect.objectContaining({ ok: false, error: "Unauthorized" }));
   });
 
   it("rejects missing team membership with 403", async () => {
@@ -96,6 +129,9 @@ describe("withTeamRoute", () => {
     });
 
     expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual(
+      expect.objectContaining({ ok: false, error: "No team membership found for this account." }),
+    );
   });
 
   it("rejects disallowed roles with 403", async () => {
@@ -110,6 +146,9 @@ describe("withTeamRoute", () => {
     });
 
     expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual(
+      expect.objectContaining({ ok: false, error: "You do not have permission to perform this action." }),
+    );
   });
 
   it("applies all configured rate limits and denies on the first failed descriptor", async () => {
@@ -132,7 +171,7 @@ describe("withTeamRoute", () => {
     expect(response.status).toBe(429);
     expect(response.headers.get("Retry-After")).toBe("12");
     await expect(response.json()).resolves.toEqual(
-      expect.objectContaining({ error: "Burst limit exceeded" }),
+      expect.objectContaining({ ok: false, error: "Burst limit exceeded" }),
     );
   });
 
@@ -152,6 +191,9 @@ describe("withTeamRoute", () => {
     });
 
     expect(response.status).toBe(413);
+    await expect(response.json()).resolves.toEqual(
+      expect.objectContaining({ ok: false, error: "Request payload is too large." }),
+    );
   });
 
   it("returns 400 for schema validation failure and calls onInvalidPayload", async () => {

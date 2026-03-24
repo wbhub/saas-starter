@@ -34,6 +34,7 @@ describe("POST /api/resend/support", () => {
 
     expect(response.status).toBe(415);
     await expect(response.json()).resolves.toEqual({
+      ok: false,
       error: "Content-Type must be application/json.",
     });
   });
@@ -82,6 +83,7 @@ describe("POST /api/resend/support", () => {
     expect(response.status).toBe(429);
     expect(response.headers.get("Retry-After")).toBe("12");
     await expect(response.json()).resolves.toEqual({
+      ok: false,
       error: "Too many requests. Please try again shortly.",
     });
   });
@@ -126,6 +128,7 @@ describe("POST /api/resend/support", () => {
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
+      ok: false,
       error: "Subject must be 120 characters or less.",
     });
   });
@@ -170,6 +173,7 @@ describe("POST /api/resend/support", () => {
 
     expect(response.status).toBe(413);
     await expect(response.json()).resolves.toEqual({
+      ok: false,
       error: "Request payload is too large.",
     });
   });
@@ -214,6 +218,7 @@ describe("POST /api/resend/support", () => {
 
     expect(response.status).toBe(503);
     await expect(response.json()).resolves.toEqual({
+      ok: false,
       error: "Support email is currently unavailable for this deployment.",
     });
   });

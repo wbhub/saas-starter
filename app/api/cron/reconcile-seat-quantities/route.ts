@@ -1,7 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
-import { NextResponse } from "next/server";
 import { env } from "@/lib/env";
 import { jsonError, jsonSuccess } from "@/lib/http/api-json";
+import { getOrCreateRequestId, withRequestId } from "@/lib/http/request-id";
 import { getClientRateLimitIdentifier } from "@/lib/http/client-ip";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { checkRateLimit } from "@/lib/security/rate-limit";
@@ -32,15 +32,18 @@ function safeCompare(a: string, b: string) {
 
 export async function GET(request: Request) {
   const t = await getRouteTranslator("ApiCronReconcileSeatQuantities", request);
+  const requestId = getOrCreateRequestId(request);
+  const err = (error: string, status: number, init?: ResponseInit) =>
+    withRequestId(jsonError(error, status, init), requestId);
 
   const secret = env.CRON_SECRET?.trim();
   if (!secret) {
-    return jsonError(t("errors.cronNotConfigured"), 503);
+    return err(t("errors.cronNotConfigured"), 503);
   }
 
   const token = bearerToken(request);
   if (!token || !safeCompare(token, secret)) {
-    return jsonError(t("errors.unauthorized"), 401);
+    return err(t("errors.unauthorized"), 401);
   }
 
   const clientId = getClientRateLimitIdentifier(request);
@@ -49,7 +52,7 @@ export async function GET(request: Request) {
     ...RATE_LIMITS.cronByClientIp,
   });
   if (!rateLimit.allowed) {
-    return jsonError(t("errors.rateLimited"), 429, {
+    return err(t("errors.rateLimited"), 429, {
       headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
     });
   }
@@ -65,10 +68,7 @@ export async function GET(request: Request) {
     aiRetriesQueuedInTrigger = Boolean(aiTask);
 
     if (reconcileQueuedInTrigger && aiRetriesQueuedInTrigger) {
-      return jsonSuccess({
-        queued: true,
-        mode: "trigger",
-      });
+      return withRequestId(jsonSuccess({ queued: true, mode: "trigger" }), requestId);
     }
 
     logger.warn(
@@ -127,15 +127,11 @@ export async function GET(request: Request) {
   }
 
   if (seatReconcileFailed || aiBudgetFinalizeRetriesFailed) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: t("errors.partialFailure"),
-        ...responsePayload,
-      },
-      { status: 500 },
+    return withRequestId(
+      jsonError(t("errors.partialFailure"), 500, { data: responsePayload }),
+      requestId,
     );
   }
 
-  return jsonSuccess(responsePayload);
+  return withRequestId(jsonSuccess(responsePayload), requestId);
 }

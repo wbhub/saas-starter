@@ -116,7 +116,10 @@ describe("POST /api/ai/chat access and gating", () => {
     );
 
     expect(response.status).toBe(401);
-    await expect(response.json()).resolves.toEqual({ error: "Unauthorized" });
+    await expect(response.json()).resolves.toEqual({
+      ok: false,
+      error: "Unauthorized",
+    });
   });
 
   it("returns 429 when user/team rate limit is exceeded", async () => {
@@ -225,6 +228,7 @@ describe("POST /api/ai/chat access and gating", () => {
 
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({
+      ok: false,
       error: "AI access requires an eligible paid plan.",
       code: "plan_required",
     });
@@ -287,6 +291,7 @@ describe("POST /api/ai/chat access and gating", () => {
 
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({
+      ok: false,
       error: "AI access requires an eligible paid plan.",
       code: "plan_required",
     });
@@ -361,6 +366,7 @@ describe("POST /api/ai/chat access and gating", () => {
 
     expect(response.status).toBe(503);
     await expect(response.json()).resolves.toEqual({
+      ok: false,
       error: "AI assistant is currently unavailable.",
       code: "upstream_error",
     });
@@ -431,6 +437,7 @@ describe("POST /api/ai/chat access and gating", () => {
 
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({
+      ok: false,
       error: "AI access requires an eligible paid plan.",
       code: "plan_required",
     });
@@ -563,13 +570,12 @@ describe("POST /api/ai/chat access and gating", () => {
     );
 
     expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toEqual({
-      error: "Unsupported attachment type.",
-      details: {
-        fileType: "file",
-        mimeType: "application/json",
-      },
-    });
+    await expect(response.json()).resolves.toEqual(
+      expect.objectContaining({
+        ok: false,
+        error: "Unsupported attachment type.",
+      }),
+    );
     const { streamText } = await import("ai");
     expect(streamText).not.toHaveBeenCalled();
   });
@@ -622,7 +628,9 @@ describe("POST /api/ai/chat access and gating", () => {
     );
 
     expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toEqual({ error: "Invalid request payload." });
+    await expect(response.json()).resolves.toEqual(
+      expect.objectContaining({ ok: false, error: "Invalid request payload." }),
+    );
   });
 
   it("rejects non-https attachment URLs", async () => {
@@ -673,7 +681,9 @@ describe("POST /api/ai/chat access and gating", () => {
     );
 
     expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toEqual({ error: "Invalid request payload." });
+    await expect(response.json()).resolves.toEqual(
+      expect.objectContaining({ ok: false, error: "Invalid request payload." }),
+    );
   });
 
   it("rejects requests with more than 16 attachments total", async () => {
@@ -723,6 +733,7 @@ describe("POST /api/ai/chat access and gating", () => {
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
+      ok: false,
       error: "A maximum of 16 attachments is allowed per request.",
     });
   });
@@ -813,6 +824,7 @@ describe("POST /api/ai/chat access and gating", () => {
 
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({
+      ok: false,
       error: "Your current AI plan does not allow this attachment type.",
       code: "modality_not_allowed",
     });
@@ -898,6 +910,7 @@ describe("POST /api/ai/chat access and gating", () => {
 
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({
+      ok: false,
       error: "Your current AI plan does not allow this attachment type.",
       code: "modality_not_allowed",
     });

@@ -17,10 +17,10 @@ describe("GET /api/intercom/boot", () => {
     }));
 
     const { GET } = await import("./route");
-    const res = await GET();
+    const res = await GET(new Request("http://localhost/api/intercom/boot"));
 
     expect(res.status).toBe(200);
-    await expect(res.json()).resolves.toEqual({ user: null });
+    await expect(res.json()).resolves.toEqual({ ok: true, user: null });
   });
 
   it("returns null user when identity secret is not configured", async () => {
@@ -47,10 +47,10 @@ describe("GET /api/intercom/boot", () => {
     }));
 
     const { GET } = await import("./route");
-    const res = await GET();
+    const res = await GET(new Request("http://localhost/api/intercom/boot"));
 
     expect(res.status).toBe(200);
-    await expect(res.json()).resolves.toEqual({ user: null });
+    await expect(res.json()).resolves.toEqual({ ok: true, user: null });
   });
 
   it("returns signed user payload when authenticated", async () => {
@@ -85,10 +85,11 @@ describe("GET /api/intercom/boot", () => {
     }));
 
     const { GET } = await import("./route");
-    const res = await GET();
+    const res = await GET(new Request("http://localhost/api/intercom/boot"));
 
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({
+      ok: true,
       user: {
         id: "user_1",
         email: "member@example.com",

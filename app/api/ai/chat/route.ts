@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import {
   streamText,
   type AssistantModelMessage,
@@ -9,6 +8,8 @@ import {
 import {
   maybeProcessAiBudgetFinalizeRetries,
 } from "@/lib/ai/budget-finalize-retries";
+import { jsonError } from "@/lib/http/api-json";
+import { getOrCreateRequestId, withRequestId } from "@/lib/http/request-id";
 import {
   claimTeamAiBudget,
   finalizeTeamAiBudgetClaimWithRetry,
@@ -133,15 +134,14 @@ function aiErrorResponse({
   error,
   code,
   status,
+  requestId,
 }: {
   error: string;
   code: string;
   status: number;
+  requestId: string;
 }) {
-  return NextResponse.json(
-    { error, code },
-    { status },
-  );
+  return withRequestId(jsonError(error, status, { code }), requestId);
 }
 
 function getRequestModalities(messages: ChatMessage[]): AiModality[] {
@@ -336,6 +336,9 @@ async function insertAiUsageRow({
 
 export async function POST(request: Request) {
   const t = await getRouteTranslator("ApiAiChat", request);
+  const requestId = getOrCreateRequestId(request);
+  const err = (error: string, status: number, init?: ResponseInit & { code?: string; data?: Record<string, unknown> }) =>
+    withRequestId(jsonError(error, status, init), requestId);
   const aiUnavailableMessage = t("errors.unavailable");
   const planRequiredMessage = t("errors.planRequired");
   const budgetExceededMessage = t("errors.budgetExceeded");
@@ -349,14 +352,14 @@ export async function POST(request: Request) {
     invalidToken: t("errors.invalidCsrfToken"),
   });
   if (csrfError) {
-    return csrfError;
+    return withRequestId(csrfError, requestId);
   }
 
   const contentTypeError = requireJsonContentType(request, {
     errorMessage: t("errors.invalidContentType"),
   });
   if (contentTypeError) {
-    return contentTypeError;
+    return withRequestId(contentTypeError, requestId);
   }
 
   const supabase = await createClient();
@@ -365,15 +368,12 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.json({ error: t("errors.unauthorized") }, { status: 401 });
+    return err(t("errors.unauthorized"), 401);
   }
 
   const teamContext = await getCachedTeamContextForUser(supabase, user.id);
   if (!teamContext) {
-    return NextResponse.json(
-      { error: t("errors.noTeamMembership") },
-      { status: 403 },
-    );
+    return err(t("errors.noTeamMembership"), 403);
   }
 
   const userRateLimitPromise = checkRateLimit({
@@ -393,47 +393,36 @@ export async function POST(request: Request) {
       userRateLimit.retryAfterSeconds,
       teamRateLimit.retryAfterSeconds,
     );
-    return NextResponse.json(
-      { error: t("errors.rateLimited") },
-      {
-        status: 429,
-        headers: { "Retry-After": String(retryAfterSeconds) },
-      },
-    );
+    return err(t("errors.rateLimited"), 429, {
+      headers: { "Retry-After": String(retryAfterSeconds) },
+    });
   }
 
   const bodyParse = await parseJsonWithSchema(request, chatPayloadSchema);
   if (!bodyParse.success) {
     if (bodyParse.tooLarge) {
-      return NextResponse.json({ error: t("errors.payloadTooLarge") }, { status: 413 });
+      return err(t("errors.payloadTooLarge"), 413);
     }
-    return NextResponse.json({ error: t("errors.invalidPayload") }, { status: 400 });
+    return err(t("errors.invalidPayload"), 400);
   }
   const requestModalities = getRequestModalities(bodyParse.data.messages);
   const attachmentCounts = getAttachmentCounts(bodyParse.data.messages);
   if (attachmentCounts.total > MAX_ATTACHMENTS_PER_REQUEST) {
-    return NextResponse.json(
-      {
-        error: t("errors.maxAttachments", { max: MAX_ATTACHMENTS_PER_REQUEST }),
-      },
-      { status: 400 },
-    );
+    return err(t("errors.maxAttachments", { max: MAX_ATTACHMENTS_PER_REQUEST }), 400);
   }
   const unsupportedAttachment = validateAttachmentTypes(bodyParse.data.messages);
   if (unsupportedAttachment) {
     if (unsupportedAttachment.reason === "unsupported_attachment_source") {
-      return NextResponse.json({ error: t("errors.invalidPayload") }, { status: 400 });
+      return err(t("errors.invalidPayload"), 400);
     }
-    return NextResponse.json(
-      {
-        error: t("errors.unsupportedAttachmentType"),
+    return err(t("errors.unsupportedAttachmentType"), 400, {
+      data: {
         details: {
           fileType: unsupportedAttachment.fileType,
           mimeType: unsupportedAttachment.mimeType,
         },
       },
-      { status: 400 },
-    );
+    });
   }
 
   const aiAccessMode = getAiAccessMode();
@@ -452,10 +441,7 @@ export async function POST(request: Request) {
           attachmentCounts,
         },
       });
-      return NextResponse.json(
-        { error: planRequiredMessage, code: "plan_required" },
-        { status: AI_FORBIDDEN_STATUS },
-      );
+      return err(planRequiredMessage, AI_FORBIDDEN_STATUS, { code: "plan_required" });
     }
   }
 
@@ -482,10 +468,7 @@ export async function POST(request: Request) {
         userId: user.id,
         accessMode: aiAccessMode,
       });
-      return NextResponse.json(
-        { error: aiUnavailableMessage, code: "upstream_error" },
-        { status: AI_UNAVAILABLE_STATUS },
-      );
+      return err(aiUnavailableMessage, AI_UNAVAILABLE_STATUS, { code: "upstream_error" });
     }
 
     subscriptionRow = data;
@@ -508,13 +491,7 @@ export async function POST(request: Request) {
         attachmentCounts,
       },
     });
-    return NextResponse.json(
-      {
-        error: planRequiredMessage,
-        code: "plan_required",
-      },
-      { status: AI_FORBIDDEN_STATUS },
-    );
+    return err(planRequiredMessage, AI_FORBIDDEN_STATUS, { code: "plan_required" });
   }
 
   if (!isAiProviderConfigured) {
@@ -533,10 +510,7 @@ export async function POST(request: Request) {
         attachmentCounts,
       },
     });
-    return NextResponse.json(
-      { error: aiUnavailableMessage, code: "upstream_error" },
-      { status: AI_UNAVAILABLE_STATUS },
-    );
+    return err(aiUnavailableMessage, AI_UNAVAILABLE_STATUS, { code: "upstream_error" });
   }
 
   const model = aiAccess.model;
@@ -560,10 +534,7 @@ export async function POST(request: Request) {
         attachmentCounts,
       },
     });
-    return NextResponse.json(
-      { error: modalityNotAllowedMessage, code: "modality_not_allowed" },
-      { status: AI_FORBIDDEN_STATUS },
-    );
+    return err(modalityNotAllowedMessage, AI_FORBIDDEN_STATUS, { code: "modality_not_allowed" });
   }
   if (!providerSupportsModalities(model, requestModalities)) {
     logAuditEvent({
@@ -580,10 +551,7 @@ export async function POST(request: Request) {
         attachmentCounts,
       },
     });
-    return NextResponse.json(
-      { error: modalityNotAllowedMessage, code: "modality_not_allowed" },
-      { status: AI_FORBIDDEN_STATUS },
-    );
+    return err(modalityNotAllowedMessage, AI_FORBIDDEN_STATUS, { code: "modality_not_allowed" });
   }
   const monthlyTokenBudget = aiAccess.monthlyTokenBudget;
   const estimatedPromptTokens = estimatePromptTokens(bodyParse.data.messages);
@@ -605,10 +573,7 @@ export async function POST(request: Request) {
         monthlyTokenBudget,
         projectedRequestTokens,
       });
-      return NextResponse.json(
-        { error: aiUnavailableMessage, code: "upstream_error" },
-        { status: AI_UNAVAILABLE_STATUS },
-      );
+      return err(aiUnavailableMessage, AI_UNAVAILABLE_STATUS, { code: "upstream_error" });
     }
 
     if (!budgetClaim) {
@@ -627,10 +592,7 @@ export async function POST(request: Request) {
           attachmentCounts,
         },
       });
-      return NextResponse.json(
-        { error: budgetExceededMessage, code: "budget_exceeded" },
-        { status: AI_PAYMENT_REQUIRED_STATUS },
-      );
+      return err(budgetExceededMessage, AI_PAYMENT_REQUIRED_STATUS, { code: "budget_exceeded" });
     }
   }
 
@@ -656,6 +618,7 @@ export async function POST(request: Request) {
         error: aiUnavailableMessage,
         code: "upstream_error",
         status: AI_UNAVAILABLE_STATUS,
+        requestId,
       });
     }
     const aiResult = streamText({
@@ -785,13 +748,16 @@ export async function POST(request: Request) {
       },
     });
 
-    return new Response(body, {
-      status: 200,
-      headers: {
-        "Content-Type": "text/plain; charset=utf-8",
-        "Cache-Control": "no-store",
-      },
-    });
+    return withRequestId(
+      new Response(body, {
+        status: 200,
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "no-store",
+        },
+      }),
+      requestId,
+    );
   } catch (error) {
     if (budgetClaim) {
       await finalizeTeamAiBudgetClaimWithRetry({
@@ -840,6 +806,7 @@ export async function POST(request: Request) {
       error: upstreamMessage,
       code: upstreamError.code,
       status: upstreamError.status,
+      requestId,
     });
   }
 }

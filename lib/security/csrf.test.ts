@@ -40,7 +40,7 @@ describe("csrf helpers", () => {
 
     const response = verifyCsrfProtection(request);
     expect(response?.status).toBe(403);
-    await expect(response?.json()).resolves.toEqual({ error: "Missing CSRF token." });
+    await expect(response?.json()).resolves.toEqual({ ok: false, error: "Missing CSRF token." });
   });
 
   it("rejects api request when csrf header is missing", async () => {
@@ -55,7 +55,7 @@ describe("csrf helpers", () => {
 
     const response = verifyCsrfProtection(request);
     expect(response?.status).toBe(403);
-    await expect(response?.json()).resolves.toEqual({ error: "Missing CSRF token." });
+    await expect(response?.json()).resolves.toEqual({ ok: false, error: "Missing CSRF token." });
   });
 
   it("rejects api request when csrf cookie and header tokens mismatch", async () => {
@@ -71,7 +71,7 @@ describe("csrf helpers", () => {
 
     const response = verifyCsrfProtection(request);
     expect(response?.status).toBe(403);
-    await expect(response?.json()).resolves.toEqual({ error: "Invalid CSRF token." });
+    await expect(response?.json()).resolves.toEqual({ ok: false, error: "Invalid CSRF token." });
   });
 
   it("rejects api request from mismatched origin", async () => {
@@ -88,7 +88,7 @@ describe("csrf helpers", () => {
 
     const response = verifyCsrfProtection(request);
     expect(response?.status).toBe(403);
-    await expect(response?.json()).resolves.toEqual({ error: "Invalid request origin." });
+    await expect(response?.json()).resolves.toEqual({ ok: false, error: "Invalid request origin." });
   });
 
   it("rejects malformed csrf token shapes before token comparison", async () => {
@@ -107,7 +107,7 @@ describe("csrf helpers", () => {
 
     const response = verifyCsrfProtection(request);
     expect(response?.status).toBe(403);
-    await expect(response?.json()).resolves.toEqual({ error: "Missing CSRF token." });
+    await expect(response?.json()).resolves.toEqual({ ok: false, error: "Missing CSRF token." });
   });
 
   it("verifies server action csrf token from form data", async () => {

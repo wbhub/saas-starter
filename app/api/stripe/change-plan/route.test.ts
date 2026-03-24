@@ -29,6 +29,7 @@ describe("POST /api/stripe/change-plan", () => {
 
     expect(response.status).toBe(503);
     await expect(response.json()).resolves.toEqual({
+      ok: false,
       error: "Billing is not configured for this deployment.",
     });
   });
@@ -107,6 +108,7 @@ describe("POST /api/stripe/change-plan", () => {
 
     expect(response.status).toBe(409);
     await expect(response.json()).resolves.toEqual({
+      ok: false,
       error:
         "Billing identity mismatch detected. Start a new checkout to re-link your account.",
     });
