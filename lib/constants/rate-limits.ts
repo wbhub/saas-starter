@@ -1,6 +1,7 @@
 import { HOUR_MS, MINUTE_MS } from "@/lib/constants/durations";
 
 export const RATE_LIMITS = {
+  dashboardSettingsUpdateByUser: { limit: 20, windowMs: 10 * MINUTE_MS },
   authSignupByClient: { limit: 10, windowMs: 10 * MINUTE_MS },
   authSignupByEmail: { limit: 3, windowMs: HOUR_MS },
   authLoginByClient: { limit: 20, windowMs: 10 * MINUTE_MS },
