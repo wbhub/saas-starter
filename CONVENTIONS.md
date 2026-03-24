@@ -141,7 +141,9 @@ The `env` object uses lazy property getters. Each `get FOO()` only reads `proces
 
 ### In API routes
 
-Return a `NextResponse.json({ error: string }, { status: number })` with an appropriate HTTP status. Use the route's i18n translator `t()` for user-facing error messages.
+**Minimum contract:** JSON error responses must include an `error` string and an appropriate HTTP status. Use the route's i18n translator `t()` for user-facing error messages. For example: `NextResponse.json({ error: string }, { status: number })`.
+
+**Helpers:** Prefer `jsonError` and `jsonSuccess` from `lib/http/api-json.ts` for new or refactored JSON API handlers. They wrap payloads with `ok: false` / `ok: true` so success and error bodies share a consistent, typed envelope (`jsonError` still includes `error`; `jsonSuccess` spreads your success fields next to `ok: true`). A plain `NextResponse.json({ error }, { status })` without `ok` remains valid and matches the minimum contract.
 
 Common status codes used in this codebase:
 
