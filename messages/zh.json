@@ -8,6 +8,12 @@
     "description": "通用、生产就绪的 SaaS 入门程序，具有 Next.js、Supabase auth 和 Stripe 订阅。",
     "openGraphImageAlt": "SaaS 入门预览图像"
   },
+  "NotFound": {
+    "title": "页面未找到",
+    "description": "您查找的页面不存在或已被移动。",
+    "goHome": "返回首页",
+    "goDashboard": "前往控制台"
+  },
   "LocaleSwitcher": {
     "label": "语言",
     "english": "英语",

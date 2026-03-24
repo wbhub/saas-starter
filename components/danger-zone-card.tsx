@@ -62,7 +62,7 @@ export function DangerZoneCard({ email, csrfToken }: DangerZoneCardProps) {
             name="confirmDelete"
             required
             autoComplete="off"
-            className="w-full rounded-lg border border-rose-300/80 bg-white px-3 py-2 text-sm text-slate-900 outline-none ring-rose-400/50 placeholder:text-slate-500 focus:ring-2 dark:border-rose-800 dark:bg-rose-950/30 dark:text-slate-50 dark:placeholder:text-slate-400"
+            className="w-full rounded-lg border border-rose-300/80 bg-white px-3 py-2 text-sm text-foreground outline-none ring-rose-400/50 placeholder:text-muted-foreground focus:ring-2 dark:border-rose-800 dark:bg-rose-950/30"
             placeholder={t("fields.deleteToken")}
           />
         </label>
@@ -76,7 +76,7 @@ export function DangerZoneCard({ email, csrfToken }: DangerZoneCardProps) {
             required
             autoComplete="off"
             placeholder={email ?? t("fields.confirmEmailPlaceholder")}
-            className="w-full rounded-lg border border-rose-300/80 bg-white px-3 py-2 text-sm text-slate-900 outline-none ring-rose-400/50 placeholder:text-slate-500 focus:ring-2 dark:border-rose-800 dark:bg-rose-950/30 dark:text-slate-50 dark:placeholder:text-slate-400"
+            className="w-full rounded-lg border border-rose-300/80 bg-white px-3 py-2 text-sm text-foreground outline-none ring-rose-400/50 placeholder:text-muted-foreground focus:ring-2 dark:border-rose-800 dark:bg-rose-950/30"
           />
         </label>
         <label className="flex items-start gap-2 rounded-lg border border-rose-300/80 p-3 text-sm text-rose-800 dark:border-rose-800 dark:text-rose-100">

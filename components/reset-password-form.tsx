@@ -181,7 +181,7 @@ export function ResetPasswordForm({ hasRecoveryProof, recoveryUserId }: ResetPas
         </p>
         <Link
           href="/forgot-password"
-          className="mt-5 inline-flex rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500"
+          className="mt-5 inline-flex rounded-lg bg-btn-accent px-4 py-2 text-sm font-medium text-white hover:bg-btn-accent-hover"
         >
           {t("requestNewLink")}
         </Link>
@@ -233,7 +233,7 @@ export function ResetPasswordForm({ hasRecoveryProof, recoveryUserId }: ResetPas
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+          className="w-full rounded-lg bg-btn-accent px-4 py-2 font-medium text-white hover:bg-btn-accent-hover disabled:opacity-60"
         >
           {loading ? t("saving") : t("updatePassword")}
         </button>

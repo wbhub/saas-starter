@@ -8,6 +8,12 @@
     "description": "Plantilla SaaS genérica y lista para producción con Next.js, autenticación Supabase y suscripciones Stripe.",
     "openGraphImageAlt": "Imagen de vista previa de SaaS Starter"
   },
+  "NotFound": {
+    "title": "Página no encontrada",
+    "description": "La página que busca no existe o ha sido trasladada.",
+    "goHome": "Volver al inicio",
+    "goDashboard": "Ir al panel"
+  },
   "LocaleSwitcher": {
     "label": "Idioma",
     "english": "Inglés",

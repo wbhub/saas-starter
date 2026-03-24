@@ -29,7 +29,7 @@ function SaveButton({ pendingLabel, idleLabel }: { pendingLabel: string; idleLab
     <button
       type="submit"
       disabled={pending}
-      className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
+      className="rounded-lg bg-btn-primary px-4 py-2 text-sm font-medium text-btn-primary-text hover:bg-btn-primary-hover disabled:opacity-60"
     >
       {pending ? pendingLabel : idleLabel}
     </button>
@@ -107,8 +107,8 @@ export function DashboardSettingsCard({
 
   return (
     <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
-      <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">{t("title")}</h2>
-      <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+      <h2 className="text-lg font-semibold text-foreground">{t("title")}</h2>
+      <p className="mt-2 text-sm text-muted-foreground">
         {t("description")}
       </p>
 
@@ -117,9 +117,9 @@ export function DashboardSettingsCard({
         <input type="hidden" name="avatarUrl" value={avatarUrl} />
 
         <div className="rounded-lg border app-border-subtle p-3">
-          <p className="text-sm font-medium text-slate-800 dark:text-slate-100">{t("upload.profilePhoto")}</p>
+          <p className="text-sm font-medium text-foreground">{t("upload.profilePhoto")}</p>
           <div className="mt-3 flex flex-wrap items-center gap-3">
-            <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-slate-100 text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+            <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-surface-subtle text-xs text-muted-foreground">
               {avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={avatarUrl} alt={t("upload.profileAvatarAlt")} className="h-full w-full object-cover" />
@@ -131,13 +131,13 @@ export function DashboardSettingsCard({
               type="file"
               accept="image/png,image/jpeg,image/webp,image/gif"
               onChange={handleFileSelection}
-              className="block text-sm text-slate-700 file:mr-3 file:rounded-md file:border file:border-slate-300 file:bg-slate-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-slate-700 hover:file:bg-slate-100 dark:text-slate-200 dark:file:border-slate-700 dark:file:bg-slate-900 dark:file:text-slate-200 dark:hover:file:bg-slate-800"
+              className="block text-sm text-muted-foreground file:mr-3 file:rounded-md file:border file:border-border-subtle file:bg-surface-subtle file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-muted-foreground hover:file:bg-surface-hover"
             />
             <button
               type="button"
               onClick={uploadAvatar}
               disabled={isUploading}
-              className="rounded-lg border app-border-subtle px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-60 dark:text-slate-200 dark:hover:bg-slate-800"
+              className="rounded-lg border app-border-subtle px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-surface-hover disabled:opacity-60"
             >
               {isUploading ? t("upload.uploading") : t("upload.uploadPhoto")}
             </button>
@@ -145,20 +145,20 @@ export function DashboardSettingsCard({
               <button
                 type="button"
                 onClick={() => setAvatarUrl("")}
-                className="rounded-lg border app-border-subtle px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                className="rounded-lg border app-border-subtle px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-surface-hover"
               >
                 {t("upload.removePhoto")}
               </button>
             ) : null}
           </div>
           {uploadMessage ? (
-            <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">{uploadMessage}</p>
+            <p className="mt-2 text-xs text-muted-foreground">{uploadMessage}</p>
           ) : null}
           {uploadError ? <p className="mt-2 text-xs text-rose-600">{uploadError}</p> : null}
         </div>
 
         <label className="block">
-          <span className="mb-1 block text-sm font-medium text-slate-800 dark:text-slate-100">
+          <span className="mb-1 block text-sm font-medium text-foreground">
             {t("fields.displayName")}
           </span>
           <input
@@ -166,22 +166,22 @@ export function DashboardSettingsCard({
             name="fullName"
             maxLength={80}
             defaultValue={fullName ?? ""}
-            className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-sm text-slate-900 outline-none ring-[color:var(--ring)] placeholder:text-slate-500 focus:ring-2 dark:text-slate-50 dark:placeholder:text-slate-400"
+            className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-sm text-foreground outline-none ring-ring placeholder:text-muted-foreground focus:ring-2"
             placeholder={t("fields.displayNamePlaceholder")}
           />
         </label>
 
         <label className="block">
-          <span className="mb-1 block text-sm font-medium text-slate-800 dark:text-slate-100">
+          <span className="mb-1 block text-sm font-medium text-foreground">
             {t("fields.email")}
           </span>
           <input
             type="email"
             value={email ?? ""}
             readOnly
-            className="w-full rounded-lg border app-border-subtle app-surface-subtle px-3 py-2 text-sm text-slate-600 outline-none dark:text-slate-300"
+            className="w-full rounded-lg border app-border-subtle app-surface-subtle px-3 py-2 text-sm text-muted-foreground outline-none"
           />
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-xs text-muted-foreground">
             {t("fields.emailHint")}
           </p>
         </label>
@@ -194,7 +194,7 @@ export function DashboardSettingsCard({
           className={`mt-3 rounded-lg px-3 py-2 text-sm ${
             state.status === "error"
               ? "border border-rose-300/60 bg-rose-50 text-rose-700 dark:border-rose-700/60 dark:bg-rose-950/30 dark:text-rose-200"
-              : "app-surface-subtle text-slate-700 dark:text-slate-200"
+              : "app-surface-subtle text-muted-foreground"
           }`}
         >
           {state.message}

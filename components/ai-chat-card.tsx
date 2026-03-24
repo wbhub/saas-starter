@@ -344,13 +344,13 @@ export function AiChatCard() {
   return (
     <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
       <header>
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">{t("title")}</h2>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{t("description")}</p>
+        <h2 className="text-lg font-semibold text-foreground">{t("title")}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{t("description")}</p>
       </header>
 
       <div className="mt-4 max-h-[460px] space-y-3 overflow-y-auto rounded-lg app-surface-subtle p-3">
         {messages.length === 0 ? (
-          <p className="text-sm text-slate-600 dark:text-slate-300">{t("emptyState")}</p>
+          <p className="text-sm text-muted-foreground">{t("emptyState")}</p>
         ) : (
           messages.map((message) => {
             const text = getMessageText(message);
@@ -364,8 +364,8 @@ export function AiChatCard() {
                 key={message.id}
                 className={`max-w-[88%] rounded-lg px-3 py-2 text-sm ${
                   isUser
-                    ? "ml-auto bg-indigo-600 text-white"
-                    : "bg-white text-slate-800 dark:bg-slate-900 dark:text-slate-100"
+                    ? "ml-auto bg-btn-accent text-white"
+                    : "bg-surface text-foreground"
                 }`}
               >
                 {text}
@@ -393,10 +393,10 @@ export function AiChatCard() {
           rows={4}
           placeholder={t("placeholder")}
           disabled={isSending}
-          className="w-full rounded-lg border app-border-subtle app-surface px-3 py-2 text-sm text-slate-800 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-400 disabled:opacity-60 dark:text-slate-100 dark:focus:ring-slate-500"
+          className="w-full rounded-lg border app-border-subtle app-surface px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
         />
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
+          <label className="block text-sm font-medium text-muted-foreground">
             {t("attachments.label")}
           </label>
           <input
@@ -406,10 +406,10 @@ export function AiChatCard() {
             disabled={isSending}
             onChange={handleFileChange}
             accept="image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain,text/csv"
-            className="block w-full text-sm text-slate-700 file:mr-3 file:rounded-md file:border file:border-slate-300 file:bg-white file:px-3 file:py-1.5 file:text-sm file:font-medium hover:file:bg-slate-50 disabled:opacity-60 dark:text-slate-200 dark:file:border-slate-600 dark:file:bg-slate-900 dark:hover:file:bg-slate-800"
+            className="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border file:border-border-subtle file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium hover:file:bg-surface-hover disabled:opacity-60"
           />
           {pendingFiles.length > 0 ? (
-            <p className="text-xs text-slate-600 dark:text-slate-300">
+            <p className="text-xs text-muted-foreground">
               {t("attachments.selected", { count: pendingFiles.length })}
             </p>
           ) : null}
@@ -418,7 +418,7 @@ export function AiChatCard() {
           <button
             type="submit"
             disabled={isSending || input.trim().length === 0}
-            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
+            className="rounded-lg bg-btn-primary px-4 py-2 text-sm font-medium text-btn-primary-text hover:bg-btn-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSending ? t("actions.sending") : t("actions.send")}
           </button>
@@ -426,7 +426,7 @@ export function AiChatCard() {
             <button
               type="button"
               onClick={() => void stop()}
-              className="rounded-lg border app-border-subtle px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800"
+              className="rounded-lg border app-border-subtle px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-surface-hover"
             >
               {t("actions.stop")}
             </button>

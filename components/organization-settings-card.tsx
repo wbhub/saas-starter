@@ -116,16 +116,16 @@ export function OrganizationSettingsCard({
 
   return (
     <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
-      <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+      <h2 className="text-lg font-semibold text-foreground">
         {t("title")}
       </h2>
-      <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+      <p className="mt-2 text-sm text-muted-foreground">
         {t("description")}
       </p>
 
       <form className="mt-4 space-y-3" onSubmit={saveTeamName}>
         <label className="block">
-          <span className="mb-1 block text-sm font-medium text-slate-800 dark:text-slate-100">
+          <span className="mb-1 block text-sm font-medium text-foreground">
             {t("fields.teamName")}
           </span>
           <input
@@ -135,13 +135,13 @@ export function OrganizationSettingsCard({
             maxLength={80}
             minLength={2}
             disabled={currentUserRole === "member" || savingName}
-            className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-sm text-slate-900 outline-none ring-[color:var(--ring)] focus:ring-2 disabled:opacity-60 dark:text-slate-50"
+            className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-sm text-foreground outline-none ring-ring focus:ring-2 disabled:opacity-60"
           />
         </label>
         <button
           type="submit"
           disabled={currentUserRole === "member" || savingName}
-          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
+          className="rounded-lg bg-btn-primary px-4 py-2 text-sm font-medium text-btn-primary-text hover:bg-btn-primary-hover disabled:opacity-60"
         >
           {savingName ? t("actions.saving") : t("actions.saveOrganization")}
         </button>
@@ -149,18 +149,18 @@ export function OrganizationSettingsCard({
 
       {currentUserRole === "owner" ? (
         <form className="mt-6 space-y-3 border-t app-border-subtle pt-5" onSubmit={transferOwnership}>
-          <h3 className="text-sm font-medium text-slate-900 dark:text-slate-100">
+          <h3 className="text-sm font-medium text-foreground">
             {t("ownership.title")}
           </h3>
           <label className="block">
-            <span className="mb-1 block text-sm text-slate-700 dark:text-slate-200">
+            <span className="mb-1 block text-sm text-muted-foreground">
               {t("ownership.newOwner")}
             </span>
             <select
               value={nextOwnerUserId}
               onChange={(event) => setNextOwnerUserId(event.target.value)}
               disabled={transferring || ownershipCandidates.length === 0}
-              className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-sm text-slate-900 outline-none ring-[color:var(--ring)] focus:ring-2 disabled:opacity-60 dark:text-slate-50"
+              className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-sm text-foreground outline-none ring-ring focus:ring-2 disabled:opacity-60"
             >
               <option value="">{t("ownership.selectTeammate")}</option>
               {ownershipCandidates.map((member) => (
@@ -181,7 +181,7 @@ export function OrganizationSettingsCard({
       ) : null}
 
       {feedback ? (
-        <p className="mt-3 rounded-lg app-surface-subtle px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
+        <p className="mt-3 rounded-lg app-surface-subtle px-3 py-2 text-sm text-muted-foreground">
           {feedback}
         </p>
       ) : null}

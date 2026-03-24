@@ -187,10 +187,10 @@ export function BillingActions({
 
   return (
     <div className="space-y-4 rounded-xl border app-border-subtle app-surface p-5">
-      <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+      <h3 className="text-lg font-semibold text-foreground">
         {t("title")}
       </h3>
-      <p className="text-sm text-slate-600 dark:text-slate-300">
+      <p className="text-sm text-muted-foreground">
         {!billingEnabled
           ? t("description.billingDisabled")
           : !canManageBilling
@@ -207,7 +207,7 @@ export function BillingActions({
                 key={key}
                 onClick={() => startCheckout(key)}
                 disabled={loadingAction !== null}
-                className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+                className="rounded-lg bg-btn-accent px-4 py-2 text-sm font-medium text-white hover:bg-btn-accent-hover disabled:opacity-60"
               >
                 {loadingAction === `checkout-${key}`
                   ? t("actions.opening")
@@ -219,7 +219,7 @@ export function BillingActions({
                 key={key}
                 onClick={() => changePlan(key)}
                 disabled={loadingAction !== null}
-                className="rounded-lg border app-border-subtle px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800 disabled:opacity-60"
+                className="rounded-lg border app-border-subtle px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-surface-hover disabled:opacity-60"
               >
                 {loadingAction === `change-${key}`
                   ? t("actions.updating")
@@ -231,7 +231,7 @@ export function BillingActions({
           <button
             onClick={openPortal}
             disabled={loadingAction !== null}
-            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
+            className="rounded-lg bg-btn-primary px-4 py-2 text-sm font-medium text-btn-primary-text hover:bg-btn-primary-hover disabled:opacity-60"
           >
             {loadingAction === "portal" ? t("actions.opening") : t("actions.manageBilling")}
           </button>
@@ -239,12 +239,12 @@ export function BillingActions({
       </div>
 
       {message ? (
-        <p className="rounded-lg app-surface-subtle px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
+        <p className="rounded-lg app-surface-subtle px-3 py-2 text-sm text-muted-foreground">
           {message}
         </p>
       ) : null}
       {!billingEnabled ? (
-        <p className="rounded-lg app-surface-subtle px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
+        <p className="rounded-lg app-surface-subtle px-3 py-2 text-sm text-muted-foreground">
           {t("messages.billingDisabled")}
         </p>
       ) : null}

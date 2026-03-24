@@ -61,11 +61,11 @@ export default async function DashboardAiPage() {
       csrfToken={csrfToken}
     >
       <header className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm sm:p-6">
-        <p className="text-sm text-slate-500 dark:text-slate-400">{t("header.eyebrow")}</p>
-        <h1 className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-50">
+        <p className="text-sm text-muted-foreground">{t("header.eyebrow")}</p>
+        <h1 className="mt-1 text-2xl font-semibold text-foreground">
           {t("header.title")}
         </h1>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+        <p className="mt-1 text-sm text-muted-foreground">
           {t("header.description")}
         </p>
       </header>
@@ -74,13 +74,13 @@ export default async function DashboardAiPage() {
         <AiChatCard />
       ) : (
         <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+          <h2 className="text-lg font-semibold text-foreground">
             {t("unavailable.title")}
           </h2>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+          <p className="mt-1 text-sm text-muted-foreground">
             {t("unavailable.description")}
           </p>
-          <p className="mt-3 rounded-lg app-surface-subtle px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
+          <p className="mt-3 rounded-lg app-surface-subtle px-3 py-2 text-sm text-muted-foreground">
             {aiUiGate.reason === "plan_not_allowed"
               ? t("unavailable.reason.planRequired")
               : aiUiGate.reason === "ai_not_configured"
@@ -93,7 +93,7 @@ export default async function DashboardAiPage() {
             <div className="mt-4">
               <Link
                 href="/dashboard/billing"
-                className="inline-flex rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
+                className="inline-flex rounded-lg bg-btn-primary px-4 py-2 text-sm font-medium text-btn-primary-text hover:bg-btn-primary-hover"
               >
                 {t("unavailable.actions.goToBilling")}
               </Link>
