@@ -79,9 +79,7 @@ describe("dashboard actions hardening", () => {
     const formData = new FormData();
     formData.set("newEmail", "next@example.com");
 
-    await expect(
-      requestEmailChange({ status: "idle", message: null }, formData),
-    ).resolves.toEqual({
+    await expect(requestEmailChange({ status: "idle", message: null }, formData)).resolves.toEqual({
       status: "error",
       message: "Too many email change requests. Please wait 42 seconds and try again.",
     });
