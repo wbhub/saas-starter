@@ -21,8 +21,9 @@
     "localeNames": {
       "en": "英语",
       "es": "西班牙语",
-      "fr": "法语",
       "pt": "葡萄牙语",
+      "fr": "法语",
+      "de": "德语",
       "zh": "中文",
       "ja": "日语",
       "ko": "韩语"
@@ -98,7 +99,7 @@
       "feature3": "AI 令牌预算",
       "feature4": "三层速率限制",
       "feature5": "幂等 Webhook",
-      "feature6": "7 种语言 i18n",
+      "feature6": "8 种语言 i18n",
       "shipNowTitle": "第一天就能交付的功能",
       "shipNowDescription": "生产级深度流程，而非样板桩代码。",
       "shipItem1": "完整的身份验证生命周期 — 注册、登录、OAuth（Google + Microsoft）、密码重置和带会话刷新中间件的受保护控制台",
@@ -125,7 +126,7 @@
       "stat1Label": "Postgres 表、触发器和 RPC",
       "stat1Value": "20+",
       "stat2Label": "无前缀路由的语言",
-      "stat2Value": "7",
+      "stat2Value": "8",
       "stat3Label": "带熔断器的速率限制层",
       "stat3Value": "3"
     },
@@ -185,7 +186,7 @@
       "comparePlans": "比较计划",
       "faqTitle": "常见问题",
       "q1": "开箱即用包含什么？",
-      "a1": "完整的 SaaS 基础：Supabase 身份验证支持 OAuth（Google + Microsoft），多租户团队支持基于角色的访问和邀请流程，按席位的 Stripe 计费搭配幂等 Webhook 和调和 cron，流式 AI 聊天搭配数据库级令牌预算，通过 Resend 发送的支持邮件，审计日志，7 种语言 i18n，以及涵盖 CSRF、CSP、速率限制和请求追踪的安全管道。",
+      "a1": "完整的 SaaS 基础：Supabase 身份验证支持 OAuth（Google + Microsoft），多租户团队支持基于角色的访问和邀请流程，按席位的 Stripe 计费搭配幂等 Webhook 和调和 cron，流式 AI 聊天搭配数据库级令牌预算，通过 Resend 发送的支持邮件，审计日志，8 种语言 i18n，以及涵盖 CSRF、CSP、速率限制和请求追踪的安全管道。",
       "q2": "集成的深度如何 — 是桩代码还是生产就绪？",
       "a2": "生产就绪。Stripe Webhook 使用 claims 表实现幂等性，可选卸载到 Trigger.dev。团队邀请通过原子化 Postgres RPC 解析并同步席位数量。AI 预算在数据库中以 claim/finalize 语义和重试队列执行。速率限制在三层之间级联并配备熔断器。这些是您在运营真实产品后才会形成的模式。",
       "q3": "团队、角色和权限如何管理？",

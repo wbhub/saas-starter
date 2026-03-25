@@ -256,7 +256,7 @@ Unit tests commonly use the `@/` path alias. E2E tests in `e2e/` usually use rel
 ### Adding a new translation key
 
 1. Add the key to `messages/en.json` under the appropriate namespace.
-2. Add the same key to all other locale files (`es.json`, `fr.json`, `pt.json`, `zh.json`, `ja.json`, `ko.json`).
+2. Add the same key to all other locale files (`es.json`, `pt.json`, `fr.json`, `de.json`, `zh.json`, `ja.json`, `ko.json`).
 3. Namespaces match their usage context: `"ApiAuthSignup"` for the signup route, `"DashboardSettings"` for the settings page, etc.
 
 Run `npm run lint:locales` after editing message catalogs to catch missing keys, type drift, or placeholder mismatches.

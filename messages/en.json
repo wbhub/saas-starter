@@ -21,8 +21,9 @@
     "localeNames": {
       "en": "English",
       "es": "Spanish",
-      "fr": "French",
       "pt": "Portuguese",
+      "fr": "French",
+      "de": "German",
       "zh": "Chinese",
       "ja": "Japanese",
       "ko": "Korean"
@@ -98,7 +99,7 @@
       "feature3": "AI with token budgets",
       "feature4": "3-layer rate limiting",
       "feature5": "Webhook idempotency",
-      "feature6": "i18n in 7 languages",
+      "feature6": "i18n in 8 languages",
       "shipNowTitle": "What you ship on day one",
       "shipNowDescription": "Production-depth flows, not boilerplate stubs.",
       "shipItem1": "Full auth lifecycle — signup, login, OAuth (Google + Microsoft), password reset, and protected dashboard with session refresh middleware",
@@ -125,7 +126,7 @@
       "stat1Label": "Postgres tables, triggers, and RPCs",
       "stat1Value": "20+",
       "stat2Label": "Languages with locale-free routing",
-      "stat2Value": "7",
+      "stat2Value": "8",
       "stat3Label": "Rate-limit layers with circuit breaker",
       "stat3Value": "3"
     },
@@ -185,7 +186,7 @@
       "comparePlans": "Compare plans",
       "faqTitle": "FAQ",
       "q1": "What is included out of the box?",
-      "a1": "A complete SaaS foundation: Supabase auth with OAuth (Google + Microsoft), multi-tenant teams with role-based access and invite flows, seat-based Stripe billing with idempotent webhooks and reconciliation crons, streaming AI chat with DB-enforced token budgets, support email via Resend, audit logging, i18n in 7 languages, and a security pipeline covering CSRF, CSP, rate limiting, and request tracing.",
+      "a1": "A complete SaaS foundation: Supabase auth with OAuth (Google + Microsoft), multi-tenant teams with role-based access and invite flows, seat-based Stripe billing with idempotent webhooks and reconciliation crons, streaming AI chat with DB-enforced token budgets, support email via Resend, audit logging, i18n in 8 languages, and a security pipeline covering CSRF, CSP, rate limiting, and request tracing.",
       "q2": "How deep are the integrations — stubs or production-ready?",
       "a2": "Production-ready. Stripe webhooks use a claims table for idempotency with optional Trigger.dev offload. Team invites resolve through atomic Postgres RPCs that sync seat quantities. AI budgets are enforced in the database with claim/finalize semantics and retry queues. Rate limiting cascades through three layers with a circuit breaker. These are patterns you'd arrive at after operating a real product.",
       "q3": "How are teams, roles, and permissions handled?",

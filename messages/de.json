@@ -1,0 +1,957 @@
+{
+  "Common": {
+    "brandName": "SaaS Starter",
+    "myTeam": "Mein Team"
+  },
+  "Metadata": {
+    "title": "SaaS Starter | Produktionsreife Next.js-SaaS-Basis",
+    "description": "Veröffentliche ein teambasiertes SaaS mit Auth, Rollen, sitzplatzbasierter Stripe-Abrechnung, KI-Budgets, i18n und einer gehärteten Sicherheitspipeline – alles bereits auf Next.js 16, Supabase und React 19 vorverdrahtet.",
+    "openGraphImageAlt": "Überblick über die SaaS-Starter-Architektur"
+  },
+  "NotFound": {
+    "title": "Seite nicht gefunden",
+    "description": "Die Seite, die du suchst, existiert nicht oder wurde verschoben.",
+    "goHome": "Zur Startseite",
+    "goDashboard": "Zum Dashboard"
+  },
+  "LocaleSwitcher": {
+    "label": "Sprache",
+    "english": "Englisch",
+    "spanish": "Spanisch",
+    "localeNames": {
+      "en": "Englisch",
+      "es": "Spanisch",
+      "pt": "Portugiesisch",
+      "fr": "Französisch",
+      "de": "Deutsch",
+      "zh": "Chinesisch",
+      "ja": "Japanisch",
+      "ko": "Koreanisch"
+    }
+  },
+  "SiteHeader": {
+    "dashboard": "Dashboard",
+    "login": "Anmelden",
+    "openApp": "App öffnen",
+    "startFree": "Kostenlos starten"
+  },
+  "SiteFooter": {
+    "companyPlaceholder": "[Firmenname]",
+    "privacyPolicy": "Datenschutzerklärung",
+    "termsOfUse": "Nutzungsbedingungen"
+  },
+  "AuthPages": {
+    "backHome": "Zurück zur Startseite",
+    "backLogin": "Zurück zur Anmeldung"
+  },
+  "AuthForm": {
+    "errors": {
+      "unableToLogIn": "Anmeldung nicht möglich.",
+      "unableToCreateAccount": "Konto konnte nicht erstellt werden.",
+      "unexpected": "Unerwarteter Fehler",
+      "unableSocialLogin": "Fortfahren mit Social-Login nicht möglich."
+    },
+    "messages": {
+      "accountCreated": "Konto erstellt. Prüfe deinen Posteingang, um deine E-Mail zu bestätigen, falls die Bestätigung aktiviert ist."
+    },
+    "title": {
+      "login": "Willkommen zurück",
+      "signup": "Erstelle dein Konto"
+    },
+    "description": {
+      "login": "Melde dich in deinem Dashboard an.",
+      "signup": "Starte mit produktionsreifer Auth, Teams und Abrechnung."
+    },
+    "socialAuthLabel": "Social-Login",
+    "pleaseWait": "Bitte warten...",
+    "continueWith": "Weiter mit {provider}",
+    "lastUsed": "Zuletzt verwendet",
+    "orContinueWithEmail": "oder mit E-Mail fortfahren",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "passwordHint": "Verwende 12-128 Zeichen. Passphrasen sind willkommen.",
+    "submit": {
+      "login": "Anmelden",
+      "signup": "Konto erstellen"
+    },
+    "needAccount": "Noch kein Konto?",
+    "signUp": "Registrieren",
+    "forgotPassword": "Passwort vergessen?",
+    "alreadyHaveAccount": "Du hast bereits ein Konto?",
+    "logIn": "Anmelden"
+  },
+  "Landing": {
+    "header": {
+      "dashboard": "Dashboard",
+      "login": "Anmelden",
+      "openApp": "App öffnen",
+      "startFree": "Kostenlos starten"
+    },
+    "hero": {
+      "badge": "Liefere dein Produkt, nicht deine Plattform",
+      "title": "Die SaaS-Infrastruktur, für die du sonst Monate brauchen würdest, ist bereits fertig.",
+      "description": "Auth, mandantenfähige Teams, sitzplatzbasierte Stripe-Abrechnung, KI mit in der Datenbank erzwungenen Token-Budgets, Audit-Logging und eine gehärtete Sicherheitspipeline – Ende zu Ende auf Next.js 16, Supabase und React 19 verdrahtet, damit du dich vollständig auf das konzentrieren kannst, was dein Produkt einzigartig macht.",
+      "goDashboard": "Zum Dashboard",
+      "startFreeNow": "Jetzt kostenlos starten",
+      "viewPricing": "Preise ansehen",
+      "feature1": "Mandantenfähige Teamrollen",
+      "feature2": "Sitzplatzbasierte Stripe-Abrechnung",
+      "feature3": "KI mit Token-Budgets",
+      "feature4": "3-stufiges Rate Limiting",
+      "feature5": "Idempotente Webhooks",
+      "feature6": "i18n in 8 Sprachen",
+      "shipNowTitle": "Was du ab Tag eins auslieferst",
+      "shipNowDescription": "Produktionsreife Abläufe, keine Boilerplate-Stubs.",
+      "shipItem1": "Vollständiger Auth-Lifecycle – Registrierung, Anmeldung, OAuth (Google + Microsoft), Passwort-Reset und geschütztes Dashboard mit Session-Refresh-Middleware",
+      "shipItem2": "Mandantenfähige Teams mit Einladungsflows, rollenbasiertem Zugriff (owner/admin/member), atomarer Eigentumsübertragung und Datenbank-Schutzmechanismen für den letzten Owner",
+      "shipItem3": "Stripe-Checkout, Billing-Portal, Planwechsel und idempotente Webhook-Verarbeitung mit einer Claims-Tabelle und optionalem Trigger.dev-Offloading",
+      "shipItem4": "Seat-Abgleich per Cron mit Retry-Queue, automatische Mengensynchronisierung bei Einladungannahme und Nachverfolgung des Abo-Status",
+      "shipItem5": "KI-Chat mit Streaming-Antworten, planabhängiger Zugriffskontrolle und monatlichen Token-Budgets, die in Postgres mit Claim/Finalize-Semantik und Retry-Queues durchgesetzt werden",
+      "shipItem6": "CSRF-Double-Submit-Cookies, CSP mit Nonces, typisierte Env-Prüfung beim Start, Request-IDs, Audit-Logging und mehrschichtiges Rate Limiting mit Circuit Breaker"
+    },
+    "gettingStarted": {
+      "title": "In Minuten startklar, nicht erst in Wochen",
+      "description": "Drei Schritte vom Klonen zu einem funktionierenden SaaS mit echter Auth, Teams, Abrechnung und Sicherheit – unterstützt durch vier detaillierte Architekturleitfäden.",
+      "step1Title": "1. Klonen & konfigurieren",
+      "step1Text": "Installiere Abhängigkeiten, kopiere .env.example und setze deine Schlüssel. Die typisierte Env-Validierung erkennt Fehlkonfigurationen beim Start, nicht erst zur Laufzeit.",
+      "step2Title": "2. Anbieter anbinden",
+      "step2Text": "Führe schema.sql in Supabase aus (20+ Tabellen, RLS-Policies, Trigger und RPCs sind vorbereitet), füge deine Stripe-Preis-IDs hinzu und richte deine Resend-Domain ein.",
+      "step3Title": "3. Produkt bauen",
+      "step3Text": "Auth, Teams, Abrechnung, KI und Sicherheit sind erledigt. Passe das Branding an, ergänze deine Produktlogik und deploye – Redis, Trigger.dev und Sentry sind optional, wenn du skalieren musst."
+    },
+    "whyStarter": {
+      "label": "Warum dieses Starter-Kit",
+      "title": "Produktionsreife Muster statt Demo-Scaffolding.",
+      "description": "Jede Integration ist so umgesetzt, wie du sie nach den harten Lektionen eines echten Produkts bauen würdest – atomare DB-Operationen, Retry-Queues, idempotente Webhooks und durchgängig saubere Fallbacks.",
+      "stat1Label": "Postgres-Tabellen, Trigger und RPCs",
+      "stat1Value": "20+",
+      "stat2Label": "Sprachen mit locale-freiem Routing",
+      "stat2Value": "8",
+      "stat3Label": "Rate-Limit-Ebenen mit Circuit Breaker",
+      "stat3Value": "3"
+    },
+    "bestPractices": {
+      "title": "Standardmäßig gehärtet",
+      "description": "Sicherheit, Datenintegrität und operative Resilienz sind in jede Schicht eingebaut – nicht nachträglich angeflanscht.",
+      "securityDefaultsTitle": "Defense-in-depth-Sicherheit",
+      "securityDefaultsText": "CSRF-Double-Submit-Cookies, CSP mit Nonces, strikte API-Content-Type-Prüfung, Request-IDs in jeder Antwort und kombinierbare Auth-/Rollen-Middleware auf jeder Route.",
+      "teamBillingTitle": "Muster für Datenintegrität",
+      "teamBillingText": "Atomare RPCs für Einladungannahme, Eigentumsübertragung und Abonnement-Synchronisierung. Datenbank-Trigger verhindern das Löschen des letzten Team-Owners und reparieren verwaiste Team-Kontexte automatisch.",
+      "operationalTitle": "Operative Resilienz",
+      "operationalText": "Mehrschichtiges Rate Limiting (Redis, Supabase RPC, In-Memory) mit Circuit-Breaker-Fallback, Cronjobs für Seat-Abgleich mit Retry-Queues und idempotente Stripe-Webhook-Verarbeitung."
+    },
+    "stack": {
+      "title": "Im Stack",
+      "description": "Next.js 16 App Router mit React 19, TypeScript im Strict Mode und klaren Grenzen zwischen UI-Routen, API-Handlern und gemeinsam genutzten Plattformbibliotheken.",
+      "authTitle": "Auth und mandantenfähige Teams",
+      "authText": "Supabase-SSR-Auth mit Google- und Microsoft-OAuth, Team-Context-Caching (Redis + In-Memory + DB), rollenbasierte API-Wrapper, Einladungannahme mit atomarem Seat-Sync und vollständigem Account-Lifecycle-Management.",
+      "billingTitle": "Abrechnung und Webhook-Zuverlässigkeit",
+      "billingText": "Stripe-Checkout, Portal und Planwechsel-APIs, abgesichert durch idempotente Webhook-Verarbeitung via Claims-Tabelle, Subscription-Sync-RPCs, Seat-Abgleich-Crons und optionales Trigger.dev-Offloading.",
+      "opsTitle": "KI, Beobachtbarkeit und Support",
+      "opsText": "Streaming-KI-Chat mit DB-erzwungenen monatlichen Token-Budgets, Resend-Support-E-Mail mit Absenderkontext, gebündeltes Audit-Logging sowie optionale Intercom- und Sentry-Integrationen – alles hinter Feature-Flags."
+    },
+    "pricing": {
+      "title": "Live-Preise direkt aus Stripe synchronisiert",
+      "description": "Preise werden beim Rendern direkt aus deinem Stripe-Konto abgerufen. Konfiguriere deine Preis-IDs einmal, und Landingpage, Checkout und Billing-Portal bleiben automatisch synchron.",
+      "mostPopular": "Am beliebtesten",
+      "managePlan": "Plan verwalten",
+      "choosePlan": "{name} wählen",
+      "priceSuffix": {
+        "month": "/Monat",
+        "year": "/Jahr",
+        "week": "/Woche",
+        "day": "/Tag",
+        "other": "/{interval}"
+      },
+      "plans": {
+        "starter": {
+          "name": "Starter",
+          "description": "Auth, Teams und Abrechnung für Gründer, die ein neues Produkt validieren."
+        },
+        "growth": {
+          "name": "Growth",
+          "description": "Erweitere um KI-Zugriff, Seat-Skalierung und Usage-Tracking, wenn dein Team wächst."
+        },
+        "pro": {
+          "name": "Pro",
+          "description": "Vollständige Plattform mit priorisiertem Support, Audit-Logging und erweiterten Integrationen."
+        }
+      }
+    },
+    "ctaFaq": {
+      "title": "Hör auf, Infrastruktur neu zu bauen. Fang an, Produkt zu liefern.",
+      "description": "Jedes SaaS braucht Auth, Teams, Abrechnung und Sicherheit. Starte mit der Version, in die tausende Zeilen produktionsorientierter Code geflossen sind, und investiere deine Zeit in das, wofür Kunden tatsächlich bezahlen.",
+      "openDashboard": "Dashboard öffnen",
+      "createAccount": "Konto erstellen",
+      "comparePlans": "Pläne vergleichen",
+      "faqTitle": "FAQ",
+      "q1": "Was ist sofort enthalten?",
+      "a1": "Eine vollständige SaaS-Basis: Supabase-Auth mit OAuth (Google + Microsoft), mandantenfähige Teams mit rollenbasiertem Zugriff und Einladungsflows, sitzplatzbasierte Stripe-Abrechnung mit idempotenten Webhooks und Abgleich-Crons, Streaming-KI-Chat mit in der DB erzwungenen Token-Budgets, Support-E-Mail über Resend, Audit-Logging, i18n in 8 Sprachen und eine Sicherheitspipeline mit CSRF, CSP, Rate Limiting und Request-Tracing.",
+      "q2": "Wie tief sind die Integrationen – Stubs oder produktionsreif?",
+      "a2": "Produktionsreif. Stripe-Webhooks verwenden eine Claims-Tabelle für Idempotenz mit optionalem Trigger.dev-Offloading. Team-Einladungen laufen über atomare Postgres-RPCs, die Seat-Mengen synchronisieren. KI-Budgets werden mit Claim/Finalize-Semantik und Retry-Queues in der Datenbank durchgesetzt. Rate Limiting kaskadiert über drei Ebenen mit einem Circuit Breaker. Das sind Muster, zu denen du nach dem Betrieb eines echten Produkts kommst.",
+      "q3": "Wie werden Teams, Rollen und Berechtigungen gehandhabt?",
+      "a3": "Jeder Nutzer erhält bei der Registrierung über einen Datenbank-Trigger ein persönliches Team. Teams unterstützen die Rollen owner, admin und member sowie Einladungsflows, tokenbasierte Annahme und atomare Eigentumsübertragung. Datenbank-Trigger verhindern das Löschen des letzten Owners und reparieren verwaiste Team-Kontexte automatisch. Alle Team-API-Routen nutzen kombinierbare Middleware, die Auth, Team-Mitgliedschaft und Rolle in einer Pipeline auflöst.",
+      "q4": "Was kann ich später hochskalieren, ohne neu zu entwerfen?",
+      "a4": "Redis für Rate-Limit- und Team-Context-Caching (mit sauberem Fallback ohne Redis), Trigger.dev für die Auslagerung der Webhook-Verarbeitung in Hintergrundjobs und Sentry für Fehlerüberwachung – alles optional hinter Feature-Flags. Das Postgres-Schema, die RLS-Policies und die API-Pipeline sind so ausgelegt, dass sie das ohne strukturelle Änderungen tragen."
+    }
+  },
+  "DashboardSidebar": {
+    "appDashboard": "App-Dashboard",
+    "soloWorkspace": "Mein Workspace",
+    "team": "Team",
+    "inviteTeammates": "Teammitglieder einladen",
+    "switch": "Wechseln",
+    "overview": "Übersicht",
+    "ai": "KI-Chat",
+    "billing": "Abrechnung",
+    "usage": "Nutzung",
+    "settings": "Einstellungen",
+    "home": "Startseite",
+    "logout": "Abmelden"
+  },
+  "DashboardPage": {
+    "overview": "Übersicht",
+    "welcome": "Willkommen, {name}",
+    "navigate": "Navigiere nach Bereich zu Abrechnung, Teamverwaltung, Nutzung und Einstellungen.",
+    "account": "Konto",
+    "userId": "Benutzer-ID",
+    "team": "Team",
+    "role": "Rolle",
+    "memberSince": "Mitglied seit",
+    "subscriptionSnapshot": "Abo-Status",
+    "currentPlan": "Aktueller Plan",
+    "unknown": "Unbekannt",
+    "status": "Status",
+    "seats": "Sitzplätze",
+    "currentPlanFree": "Aktueller Plan: Kostenlos",
+    "visitBillingUpgrade": "Gehe jederzeit zur Abrechnung, um upzugraden.",
+    "noActiveSubscription": "Kein aktives Abonnement. Gehe zur Abrechnung, um einen Plan zu starten.",
+    "ai": "KI-Chat",
+    "billing": "Abrechnung",
+    "teamNav": "Team",
+    "inviteTeammates": "Teammitglieder einladen",
+    "usage": "Nutzung",
+    "settings": "Einstellungen"
+  },
+  "DashboardAiPage": {
+    "header": {
+      "eyebrow": "KI",
+      "title": "Team-KI-Chat",
+      "description": "Chatte mit deinem konfigurierten Modell unter Verwendung der Abrechnung und Nutzungslimits deines Teams."
+    },
+    "unavailable": {
+      "title": "KI-Chat ist nicht verfügbar",
+      "description": "Dieser Workspace kann KI-Chat derzeit nicht nutzen.",
+      "reason": {
+        "planRequired": "Für den KI-Zugriff ist ein berechtigter kostenpflichtiger Plan erforderlich.",
+        "notConfigured": "KI ist für diese App noch nicht konfiguriert.",
+        "teamMissing": "KI benötigt einen aktiven Team-Workspace.",
+        "accessMisconfigured": "Die KI-Zugriffseinstellungen sind derzeit fehlerhaft konfiguriert."
+      },
+      "actions": {
+        "goToBilling": "Zur Abrechnung"
+      }
+    }
+  },
+  "AiChatCard": {
+    "title": "Assistent",
+    "description": "Nachrichten werden in Echtzeit gestreamt und die Nutzung automatisch erfasst.",
+    "placeholder": "Frage alles zu deinem Produkt, deinen Docs oder deinem Workflow...",
+    "emptyState": "Starte, indem du eine Nachricht sendest.",
+    "attachments": {
+      "label": "Anhänge",
+      "selected": "{count} ausgewählt"
+    },
+    "actions": {
+      "send": "Senden",
+      "sending": "Wird gesendet...",
+      "stop": "Stopp"
+    },
+    "errors": {
+      "requestFailed": "KI-Anfrage fehlgeschlagen.",
+      "budgetExceeded": "Monatliches KI-Token-Budget erreicht. Upgrade durchführen oder auf den nächsten Zyklus warten.",
+      "modalityNotAllowed": "Dein aktueller KI-Plan erlaubt diesen Anhangstyp nicht.",
+      "planRequired": "Für den KI-Zugriff ist ein berechtigter kostenpflichtiger Plan erforderlich.",
+      "upstreamRateLimited": "Der KI-Anbieter ist derzeit rate-limitiert. Bitte versuche es in Kürze erneut.",
+      "upstreamBadRequest": "Diese KI-Anfrage konnte nicht verarbeitet werden. Passe deine Eingabe an und versuche es erneut.",
+      "upstreamError": "Der KI-Assistent ist derzeit nicht verfügbar.",
+      "maxAttachments": "Maximal {max} Anhänge sind pro Nachricht erlaubt.",
+      "unsupportedType": "Nicht unterstützter Anhangstyp: {mimeType}",
+      "fileTooLarge": "Der Anhang ist zu groß. Halte Dateien unter ca. 180.000 codierten Zeichen.",
+      "totalAttachmentsTooLarge": "Die Gesamtgröße der Anhänge ist für eine Nachricht zu groß. Verwende weniger oder kleinere Dateien."
+    }
+  },
+  "BillingActions": {
+    "title": "Abrechnungsaktionen",
+    "description": {
+      "noPermission": "Nur Team-Owner und Admins können die Abrechnung verwalten.",
+      "hasSubscription": "Upgrade, Downgrade oder Stripe Billing Portal öffnen.",
+      "noSubscription": "Wähle einen Plan, um dein Abonnement zu starten.",
+      "billingDisabled": "Die Abrechnung ist für dieses Deployment deaktiviert. Konfiguriere Stripe, um kostenpflichtige Pläne zu aktivieren."
+    },
+    "actions": {
+      "opening": "Wird geöffnet...",
+      "updating": "Wird aktualisiert...",
+      "manageBilling": "Abrechnung verwalten",
+      "subscribe": "{name} abonnieren",
+      "switchTo": "Zu {name} wechseln"
+    },
+    "messages": {
+      "syncPending": "Plan in Stripe aktualisiert. Synchronisierung läuft. In Kürze wird aktualisiert...",
+      "planUpdated": "Plan aktualisiert. Abrechnungsdetails werden neu geladen...",
+      "billingDisabled": "Stripe-Abrechnung ist derzeit deaktiviert."
+    },
+    "errors": {
+      "checkoutFailed": "Checkout fehlgeschlagen",
+      "planChangeFailed": "Planwechsel fehlgeschlagen",
+      "portalUnavailable": "Portal nicht verfügbar",
+      "missingCheckoutUrl": "Checkout-URL fehlt",
+      "missingPortalUrl": "Portal-URL fehlt",
+      "requestFailed": "Anfrage fehlgeschlagen"
+    }
+  },
+  "DashboardBillingPage": {
+    "header": {
+      "eyebrow": "Abrechnung",
+      "title": "Verwalte dein Abonnement",
+      "description": "Aktualisiere Pläne, öffne das Stripe-Portal und prüfe deinen Abonnementstatus."
+    },
+    "currentSubscription": {
+      "title": "Aktuelles Abonnement",
+      "currentPlan": "Aktueller Plan",
+      "unknown": "Unbekannt",
+      "status": "Status",
+      "seats": "Sitzplätze",
+      "perSeatCost": "Kosten pro Sitzplatz",
+      "periodEnd": "Laufzeitende",
+      "notAvailable": "k. A.",
+      "currentPlanFree": "Aktueller Plan: Kostenlos",
+      "upgradeHint": "Führe unten ein Upgrade durch, um kostenpflichtige Funktionen freizuschalten.",
+      "noSubscription": "Noch kein Abonnement. Wähle unten einen Plan, um zu starten."
+    },
+    "freeMode": {
+      "title": "Premium-Funktionen freischalten",
+      "description": "Wähle einen kostenpflichtigen Plan, um erweiterte Funktionen freizuschalten. Team-Zusammenarbeit ist enthalten und Sitzplätze werden pro Teammitglied berechnet.",
+      "perSeat": "Jedes Teammitglied kostet {amount}.",
+      "collaborationIncluded": "Team-Zusammenarbeit ist in allen kostenpflichtigen Plänen enthalten."
+    },
+    "billingDisabled": {
+      "title": "Abrechnung ist deaktiviert",
+      "description": "Dieses Deployment läuft im Nur-Kostenlos-Modus. Füge später Stripe-Umgebungsvariablen hinzu, um kostenpflichtige Abos zu aktivieren."
+    },
+    "paidSolo": {
+      "title": "Lade Teammitglieder ein, wenn du bereit bist",
+      "description": "Zusammenarbeit ist optional. Lade jederzeit Teammitglieder für {amount} pro Sitzplatz und Monat ein.",
+      "action": "Teammitglieder einladen"
+    },
+    "paidTeam": {
+      "breakdown": "{seats} Sitzplätze x {seatCost} = {monthlyTotal}/Monat"
+    }
+  },
+  "DashboardSettingsPage": {
+    "header": {
+      "eyebrow": "Einstellungen",
+      "title": "Kontoeinstellungen",
+      "description": "Aktualisiere die Grundlagen deines Profils und prüfe kontobezogene Einstellungen."
+    },
+    "inviteTeammates": {
+      "title": "Zusammenarbeit",
+      "description": "Lade Teammitglieder ein, wenn du bereit bist. Jeder Sitzplatz erhöht deine monatliche Rechnung.",
+      "action": "Teammitglieder einladen"
+    }
+  },
+  "DashboardTeamPage": {
+    "header": {
+      "eyebrow": "Team",
+      "title": "Teamzugriff und Einladungen",
+      "description": "Verwalte Mitglieder, Rollen und Einladungslinks für deinen Workspace."
+    }
+  },
+  "DashboardUsagePage": {
+    "header": {
+      "eyebrow": "Nutzung",
+      "title": "KI-Nutzung und Monatssummen",
+      "description": "Verfolge die aktuelle Token-Nutzung deines Teams."
+    },
+    "table": {
+      "title": "Letzte 6 Monate",
+      "noUsage": "Noch keine Nutzungsdaten.",
+      "month": "Monat",
+      "usedTokens": "Verbrauchte Tokens",
+      "reservedTokens": "Reservierte Tokens"
+    }
+  },
+  "DashboardSettingsCard": {
+    "title": "Einstellungen",
+    "description": "Aktualisiere deine grundlegenden Kontoeinstellungen.",
+    "actions": {
+      "saving": "Wird gespeichert...",
+      "saveSettings": "Einstellungen speichern"
+    },
+    "fields": {
+      "displayName": "Anzeigename",
+      "displayNamePlaceholder": "Dein Name",
+      "email": "E-Mail",
+      "emailHint": "Die E-Mail wird von deinem Authentifizierungsanbieter verwaltet."
+    },
+    "upload": {
+      "profilePhoto": "Profilfoto",
+      "profileAvatarAlt": "Profilavatar",
+      "noPhoto": "Kein Foto",
+      "uploading": "Wird hochgeladen...",
+      "uploadPhoto": "Foto hochladen",
+      "removePhoto": "Foto entfernen",
+      "ready": "Bereit zum Hochladen: {name}",
+      "success": "Foto hochgeladen. Klicke auf Einstellungen speichern, um es dauerhaft zu übernehmen.",
+      "errors": {
+        "selectImage": "Wähle vor dem Hochladen ein Bild aus.",
+        "imageOnly": "Es werden nur Bilddateien unterstützt.",
+        "maxSize": "Das Bild muss 2 MB oder kleiner sein.",
+        "failed": "Das Bild konnte nicht hochgeladen werden. Bitte versuche es erneut."
+      }
+    }
+  },
+  "TeamInviteCard": {
+    "title": "Teammitglieder",
+    "description": "Verwalte, wer Zugriff auf {teamName} hat.",
+    "roles": {
+      "owner": "Owner",
+      "admin": "Admin",
+      "member": "Mitglied"
+    },
+    "actions": {
+      "saving": "Wird gespeichert...",
+      "makeMember": "Zum Mitglied machen",
+      "makeAdmin": "Zum Admin machen",
+      "remove": "Entfernen",
+      "removing": "Wird entfernt...",
+      "resend": "Erneut senden",
+      "resending": "Wird erneut gesendet...",
+      "revoke": "Widerrufen",
+      "revoking": "Wird widerrufen...",
+      "sending": "Wird gesendet...",
+      "sendInvite": "Einladung senden"
+    },
+    "inviteForm": {
+      "teamNameLabel": "Teamname",
+      "teamNamePlaceholder": "Acme Team",
+      "teamNameHint": "Lege deinen Teamnamen fest, bevor du deine erste Einladung sendest.",
+      "emailLabel": "Einladungs-E-Mail",
+      "emailPlaceholder": "teammate@example.com",
+      "roleLabel": "Rolle"
+    },
+    "pricing": {
+      "perSeat": "Jedes Teammitglied kostet {amount}."
+    },
+    "pending": {
+      "title": "Ausstehende Einladungen",
+      "none": "Keine ausstehenden Einladungen.",
+      "expires": "Läuft ab {date}"
+    },
+    "permissions": {
+      "onlyOwnersAdmins": "Nur Owner und Admins können Teammitglieder einladen."
+    },
+    "confirmations": {
+      "removeMember": "Dieses Mitglied aus dem Team entfernen? Es verliert sofort den Zugriff.",
+      "revokeInvite": "Diese Einladung widerrufen?"
+    },
+    "feedback": {
+      "inviteEmailSent": "Einladungs-E-Mail gesendet.",
+      "inviteCreatedEmailFailed": "Einladung erstellt, aber der E-Mail-Versand ist fehlgeschlagen. Verwende später Erneut senden, um es nochmals zu versuchen.",
+      "memberRemoved": "Mitglied entfernt.",
+      "roleUpdated": "Mitgliederrolle aktualisiert.",
+      "inviteRevoked": "Einladung widerrufen.",
+      "inviteResent": "Einladung erneut gesendet.",
+      "inviteResentEmailFailed": "Einladungstoken rotiert, aber der E-Mail-Versand ist fehlgeschlagen."
+    },
+    "errors": {
+      "sendInvite": "Einladung konnte nicht gesendet werden.",
+      "teamNameRequired": "Gib einen Teamnamen ein, bevor du deine erste Einladung sendest.",
+      "updateTeamName": "Teamname konnte nicht gespeichert werden.",
+      "removeMember": "Mitglied konnte nicht entfernt werden.",
+      "updateRole": "Mitgliederrolle konnte nicht aktualisiert werden.",
+      "revokeInvite": "Einladung konnte nicht widerrufen werden.",
+      "resendInvite": "Einladung konnte nicht erneut gesendet werden."
+    }
+  },
+  "ForgotPasswordForm": {
+    "title": "Passwort vergessen?",
+    "description": "Gib deine E-Mail ein, und wir senden dir einen Link zum Zurücksetzen des Passworts.",
+    "email": "E-Mail",
+    "sending": "Wird gesendet...",
+    "sendResetLink": "Link zum Zurücksetzen senden",
+    "messages": {
+      "resetLinkSentIfAccountExists": "Falls für diese E-Mail ein Konto existiert, wurde ein Link zum Zurücksetzen gesendet."
+    },
+    "errors": {
+      "unableToSendResetLink": "Link zum Zurücksetzen konnte nicht gesendet werden.",
+      "unexpected": "Unerwarteter Fehler"
+    }
+  },
+  "ResetPasswordForm": {
+    "checking": "Dein Reset-Link wird überprüft...",
+    "invalidTitle": "Reset-Link ist ungültig oder abgelaufen",
+    "invalidDescription": "Fordere eine neue E-Mail zum Zurücksetzen des Passworts an, um fortzufahren.",
+    "requestNewLink": "Neuen Link anfordern",
+    "title": "Neues Passwort festlegen",
+    "description": "Wähle ein starkes Passwort mit mindestens 12 Zeichen.",
+    "newPassword": "Neues Passwort",
+    "confirmPassword": "Passwort bestätigen",
+    "passwordHint": "Verwende 12-128 Zeichen. Passphrasen sind willkommen.",
+    "saving": "Wird gespeichert...",
+    "updatePassword": "Passwort aktualisieren",
+    "messages": {
+      "passwordUpdated": "Passwort aktualisiert. Weiterleitung zur Anmeldung..."
+    },
+    "errors": {
+      "passwordsDoNotMatch": "Die Passwörter stimmen nicht überein.",
+      "invalidOrExpired": "Der Reset-Link ist ungültig oder abgelaufen. Bitte fordere einen neuen Link an.",
+      "unableToUpdatePassword": "Das Passwort konnte nicht aktualisiert werden. Bitte versuche es erneut.",
+      "unexpected": "Unerwarteter Fehler"
+    }
+  },
+  "NoTeamCard": {
+    "title": "Kein Teamzugriff gefunden",
+    "description": "Du gehörst derzeit zu keinem aktiven Team. Stelle ein persönliches Team wieder her, um fortzufahren.",
+    "actions": {
+      "recovering": "Wird wiederhergestellt...",
+      "recover": "Persönliches Team wiederherstellen"
+    },
+    "messages": {
+      "recovered": "Persönliches Team wiederhergestellt."
+    },
+    "errors": {
+      "recoverFailed": "Team konnte nicht wiederhergestellt werden."
+    }
+  },
+  "TeamContextErrorCard": {
+    "title": "Teamzugriff konnte nicht geladen werden",
+    "description": "Beim Laden deines Team-Kontexts ist ein vorübergehendes Problem aufgetreten. Bitte aktualisiere die Seite und versuche es erneut."
+  },
+  "NotificationPreferencesCard": {
+    "title": "Benachrichtigungseinstellungen",
+    "description": "Wähle aus, welche Konto-E-Mails du erhalten möchtest.",
+    "actions": {
+      "saving": "Wird gespeichert...",
+      "savePreferences": "Einstellungen speichern"
+    },
+    "items": {
+      "securityAlerts": {
+        "label": "Sicherheitswarnungen",
+        "description": "Anmeldungen, Passwort-Resets und wichtige Kontoaktivitäten."
+      },
+      "productUpdates": {
+        "label": "Produktupdates",
+        "description": "Funktionsankündigungen und Release Notes."
+      },
+      "marketingEmails": {
+        "label": "Marketing-E-Mails",
+        "description": "Tipps, Angebote und gelegentliche Produkthighlights."
+      }
+    }
+  },
+  "EmailSettingsCard": {
+    "title": "E-Mail-Adresse",
+    "description": "Fordere eine E-Mail-Änderung an. Wir senden dir Bestätigungsanweisungen basierend auf deinen Auth-Sicherheitseinstellungen.",
+    "fields": {
+      "currentEmail": "Aktuelle E-Mail",
+      "newEmail": "Neue E-Mail",
+      "newEmailPlaceholder": "name@company.com"
+    },
+    "actions": {
+      "sending": "Wird gesendet...",
+      "requestEmailChange": "E-Mail-Änderung anfordern"
+    }
+  },
+  "DangerZoneCard": {
+    "title": "Gefahrenbereich",
+    "description": "Die Deaktivierung meldet dich aus allen Sitzungen ab. Das Löschen entfernt dein Konto dauerhaft.",
+    "fields": {
+      "confirmDelete": "Tippe DELETE zur Bestätigung",
+      "deleteToken": "DELETE",
+      "confirmEmail": "Bestätige deine E-Mail-Adresse",
+      "confirmEmailPlaceholder": "you@example.com",
+      "confirmPermanent": "Ich verstehe, dass diese Aktion dauerhaft ist und nicht rückgängig gemacht werden kann."
+    },
+    "actions": {
+      "deactivate": "Vorübergehend deaktivieren (überall abmelden)",
+      "deleting": "Wird gelöscht...",
+      "deletePermanently": "Konto dauerhaft löschen"
+    }
+  },
+  "SecuritySettingsCard": {
+    "title": "Sitzung und Sicherheit",
+    "description": "Verwalte Kontositzungen und setze dein Passwort zurück.",
+    "actions": {
+      "signOutAll": "Alle Sitzungen abmelden",
+      "resetPassword": "Passwort zurücksetzen"
+    }
+  },
+  "OrganizationSettingsCard": {
+    "title": "Organisationseinstellungen",
+    "description": "Benenne deinen Workspace um und übertrage bei Bedarf den Besitz.",
+    "fields": {
+      "teamName": "Teamname"
+    },
+    "ownership": {
+      "title": "Besitz übertragen",
+      "newOwner": "Neuer Owner",
+      "selectTeammate": "Teammitglied auswählen..."
+    },
+    "actions": {
+      "saving": "Wird gespeichert...",
+      "saveOrganization": "Organisation speichern",
+      "transferring": "Wird übertragen...",
+      "transferOwnership": "Besitz übertragen"
+    },
+    "confirm": {
+      "transferOwnership": "Besitz übertragen? Nach dieser Aktion wirst du Admin."
+    },
+    "feedback": {
+      "nameUpdated": "Organisationsname aktualisiert.",
+      "ownershipTransferred": "Besitz übertragen."
+    },
+    "errors": {
+      "updateName": "Teamname konnte nicht aktualisiert werden.",
+      "selectTeammate": "Wähle ein Teammitglied aus, um den Besitz zu übertragen.",
+      "transferOwnership": "Besitz konnte nicht übertragen werden."
+    }
+  },
+  "SupportEmailCard": {
+    "title": "Support per E-Mail (Resend)",
+    "description": "Sende mit Resend direkt eine Nachricht an dein Support-Postfach.",
+    "fields": {
+      "subject": "Betreff (optional)",
+      "subjectPlaceholder": "Frage zur Abrechnung",
+      "message": "Nachricht",
+      "messagePlaceholder": "Sag uns, wobei du Hilfe brauchst..."
+    },
+    "actions": {
+      "sending": "Wird gesendet...",
+      "sendSupportEmail": "Support-E-Mail senden"
+    },
+    "feedback": {
+      "sent": "Nachricht gesendet. Wir melden uns in Kürze."
+    },
+    "errors": {
+      "sendFailed": "Support-E-Mail konnte nicht gesendet werden."
+    }
+  },
+  "InviteAcceptCard": {
+    "title": "Teameinladung",
+    "description": "Akzeptiere diese Einladung, um dem gemeinsamen Workspace beizutreten.",
+    "loginFirst": "Melde dich zuerst an und kehre dann zu dieser Seite zurück, um die Einladung anzunehmen.",
+    "actions": {
+      "accepting": "Wird angenommen...",
+      "acceptInvite": "Einladung annehmen"
+    },
+    "messages": {
+      "joined": "{teamName} erfolgreich beigetreten.",
+      "defaultTeamName": "Team"
+    },
+    "errors": {
+      "unableToAccept": "Einladung konnte nicht angenommen werden."
+    }
+  },
+  "ApiTeamInvites": {
+    "errors": {
+      "unauthorized": "Nicht autorisiert",
+      "noTeamMembership": "Für dieses Konto wurde keine Teammitgliedschaft gefunden.",
+      "payloadTooLarge": "Die Nutzlast der Anfrage ist zu groß.",
+      "forbidden": "Nur Team-Owner und Admins können Einladungen senden.",
+      "invalidPayload": "Ungültige Anfrage-Nutzlast.",
+      "rateLimited": "Zu viele Einladungen gesendet. Bitte warte und versuche es erneut.",
+      "invalidEmail": "Bitte gib eine gültige E-Mail-Adresse an.",
+      "invalidRole": "Die Rolle muss admin oder member sein.",
+      "alreadyInTeam": "Du bist bereits Teil dieses Teams.",
+      "paidPlanRequired": "Für das Einladen von Teammitgliedern ist ein kostenpflichtiger Plan erforderlich. Gehe zuerst zur Abrechnung, um upzugraden.",
+      "unableToCreateInvite": "Einladung kann derzeit nicht erstellt werden.",
+      "teamMemberLimitReached": "Mitgliederlimit des Teams erreicht. Widerrufe zuerst ausstehende Einladungen oder entferne Mitglieder.",
+      "pendingInviteExists": "Für diese E-Mail existiert bereits eine ausstehende Einladung."
+    },
+    "email": {
+      "defaultTeamName": "ein Team",
+      "subject": "Du wurdest eingeladen, {teamName} beizutreten",
+      "line1": "Du wurdest eingeladen, {teamName} auf SaaS Starter beizutreten.",
+      "role": "Rolle: {role}",
+      "acceptInvite": "Einladung annehmen: {inviteUrl}",
+      "expiresIn7Days": "Diese Einladung läuft in 7 Tagen ab."
+    }
+  },
+  "ApiTeamInviteResend": {
+    "errors": {
+      "unauthorized": "Nicht autorisiert",
+      "noTeamMembership": "Für dieses Konto wurde keine Teammitgliedschaft gefunden.",
+      "payloadTooLarge": "Die Nutzlast der Anfrage ist zu groß.",
+      "forbidden": "Nur Team-Owner und Admins können Einladungen erneut senden.",
+      "rateLimited": "Zu viele Anfragen zur Einladungsverwaltung. Bitte versuche es in Kürze erneut.",
+      "invalidInviteId": "Ungültige Einladungs-ID.",
+      "unableToResendInvite": "Einladung konnte nicht erneut gesendet werden.",
+      "pendingInviteNotFound": "Ausstehende Einladung nicht gefunden."
+    },
+    "email": {
+      "defaultTeamName": "ein Team",
+      "subject": "Erinnerung: tritt {teamName} bei",
+      "line1": "Du wurdest eingeladen, {teamName} auf SaaS Starter beizutreten.",
+      "role": "Rolle: {role}",
+      "acceptInvite": "Einladung annehmen: {inviteUrl}",
+      "expiresIn7Days": "Diese Einladung läuft in 7 Tagen ab."
+    }
+  },
+  "ApiTeamInviteRevoke": {
+    "errors": {
+      "unauthorized": "Nicht autorisiert",
+      "noTeamMembership": "Für dieses Konto wurde keine Teammitgliedschaft gefunden.",
+      "forbidden": "Nur Team-Owner und Admins können Einladungen widerrufen.",
+      "rateLimited": "Zu viele Anfragen zur Einladungsverwaltung. Bitte versuche es in Kürze erneut.",
+      "invalidInviteId": "Ungültige Einladungs-ID.",
+      "unableToRevokeInvite": "Einladung konnte nicht widerrufen werden.",
+      "pendingInviteNotFound": "Ausstehende Einladung nicht gefunden."
+    }
+  },
+  "ApiTeamInviteAccept": {
+    "defaults": {
+      "teamName": "Team"
+    },
+    "errors": {
+      "unauthorized": "Nicht autorisiert",
+      "payloadTooLarge": "Die Nutzlast der Anfrage ist zu groß.",
+      "invalidInviteToken": "Ungültiges Einladungstoken.",
+      "noEmailOnAccount": "Für dieses Konto wurde keine E-Mail gefunden.",
+      "rateLimited": "Zu viele Versuche, Einladungen anzunehmen. Bitte versuche es in Kürze erneut.",
+      "unableToAcceptInvite": "Einladung konnte nicht angenommen werden.",
+      "teamMemberLimitReached": "Mitgliederlimit des Teams erreicht. Bitte einen Owner/Admin, zuerst die Kapazität zu erhöhen.",
+      "inviteNotFound": "Einladung nicht gefunden.",
+      "inviteAlreadyAccepted": "Die Einladung wurde bereits angenommen.",
+      "inviteExpired": "Die Einladung ist abgelaufen.",
+      "inviteEmailMismatch": "Diese Einladung wurde an eine andere E-Mail-Adresse gesendet.",
+      "billingSyncFailedAfterAccept": "Einladung angenommen, aber die Abrechnungssynchronisierung ist fehlgeschlagen. Bitte versuche es in Kürze erneut."
+    }
+  },
+  "ApiSupport": {
+    "errors": {
+      "unauthorized": "Nicht autorisiert",
+      "rateLimited": "Zu viele Anfragen. Bitte versuche es in Kürze erneut.",
+      "payloadTooLarge": "Die Nutzlast der Anfrage ist zu groß.",
+      "subjectTooLong": "Der Betreff darf höchstens 120 Zeichen lang sein.",
+      "messageTooShort": "Die Nachricht muss mindestens 10 Zeichen lang sein.",
+      "messageTooLong": "Die Nachricht darf höchstens 2000 Zeichen lang sein.",
+      "invalidPayload": "Ungültige Support-Anfrage-Nutzlast.",
+      "featureDisabled": "Support-E-Mail ist für dieses Deployment derzeit nicht verfügbar.",
+      "unableToSend": "Support-E-Mail kann derzeit nicht gesendet werden. Bitte versuche es erneut."
+    },
+    "email": {
+      "unknownEmail": "Unbekannte E-Mail",
+      "subjectWithInput": "[Dashboard Support] {subject}",
+      "defaultSubject": "[Dashboard Support] Neue Nachricht",
+      "line1": "Neue Support-Nachricht aus deinem SaaS-Starter-Dashboard.",
+      "userId": "Benutzer-ID: {userId}",
+      "email": "E-Mail: {email}",
+      "messageLabel": "Nachricht:"
+    }
+  },
+  "ApiForgotPassword": {
+    "messages": {
+      "genericSuccess": "Falls für diese E-Mail ein Konto existiert, wurde ein Link zum Zurücksetzen gesendet."
+    },
+    "errors": {
+      "payloadTooLarge": "Die Nutzlast der Anfrage ist zu groß."
+    },
+    "email": {
+      "subject": "Setze dein Passwort zurück",
+      "line1": "Wir haben eine Anfrage zum Zurücksetzen deines Passworts erhalten.",
+      "useLink": "Verwende diesen Link, um fortzufahren:",
+      "ignoreIfNotRequested": "Wenn du dies nicht angefordert hast, kannst du diese E-Mail ignorieren."
+    }
+  },
+  "ApiTeamMembers": {
+    "errors": {
+      "unauthorized": "Nicht autorisiert",
+      "noTeamMembership": "Für dieses Konto wurde keine Teammitgliedschaft gefunden.",
+      "removeForbidden": "Nur Team-Owner und Admins können Mitglieder entfernen.",
+      "updateRoleForbidden": "Nur Team-Owner und Admins können Mitgliederrollen aktualisieren.",
+      "rateLimited": "Zu viele Anfragen zur Mitgliederverwaltung. Bitte versuche es in Kürze erneut.",
+      "invalidMemberId": "Ungültige Mitglieder-ID.",
+      "selfRemovalNotSupported": "Das Entfernen der eigenen Person wird von dieser Aktion nicht unterstützt.",
+      "unableToRemoveMember": "Mitglied konnte nicht entfernt werden.",
+      "memberNotFound": "Mitglied in diesem Team nicht gefunden.",
+      "adminRemoveLimit": "Admins können nur Mitglieder entfernen.",
+      "cannotRemoveLastOwner": "Der letzte Team-Owner kann nicht entfernt werden.",
+      "billingSyncFailedAfterRemoval": "Mitglied entfernt, aber die Abrechnungssynchronisierung ist fehlgeschlagen. Bitte versuche es in Kürze erneut.",
+      "useOwnershipTransferForSelf": "Verwende die Besitzübertragung, um deine eigene Owner-Rolle zu ändern.",
+      "payloadTooLarge": "Die Nutzlast der Anfrage ist zu groß.",
+      "invalidRolePayload": "Ungültige Nutzlast für Rollenaktualisierung.",
+      "unableToUpdateMemberRole": "Mitgliederrolle konnte nicht aktualisiert werden.",
+      "useOwnershipTransferForOwner": "Verwende die Besitzübertragung, um die Owner-Rolle zu aktualisieren.",
+      "adminUpdateRoleLimit": "Admins können nur Mitgliederrollen aktualisieren."
+    }
+  },
+  "ApiTeamOwnershipTransfer": {
+    "errors": {
+      "unauthorized": "Nicht autorisiert",
+      "noTeamMembership": "Für dieses Konto wurde keine Teammitgliedschaft gefunden.",
+      "forbidden": "Nur Owner können den Besitz übertragen.",
+      "rateLimited": "Zu viele Versuche zur Besitzübertragung. Bitte versuche es später erneut.",
+      "payloadTooLarge": "Die Nutzlast der Anfrage ist zu groß.",
+      "invalidPayload": "Ungültige Nutzlast für Besitzübertragung.",
+      "alreadyOwner": "Du bist bereits der Owner.",
+      "unableToTransfer": "Besitz konnte nicht übertragen werden.",
+      "targetNotFound": "Zielbenutzer ist kein Teammitglied.",
+      "targetAlreadyOwner": "Zielbenutzer ist bereits Owner."
+    }
+  },
+  "ApiTeamSettings": {
+    "errors": {
+      "unauthorized": "Nicht autorisiert",
+      "noTeamMembership": "Für dieses Konto wurde keine Teammitgliedschaft gefunden.",
+      "forbidden": "Nur Team-Owner und Admins können Organisationseinstellungen aktualisieren.",
+      "rateLimited": "Zu viele Einstellungsänderungen. Bitte versuche es in Kürze erneut.",
+      "payloadTooLarge": "Die Nutzlast der Anfrage ist zu groß.",
+      "invalidPayload": "Ungültige Nutzlast für Organisationseinstellungen.",
+      "unableToUpdate": "Organisationseinstellungen konnten nicht aktualisiert werden."
+    }
+  },
+  "ApiTeamRecoverPersonal": {
+    "errors": {
+      "unauthorized": "Nicht autorisiert",
+      "rateLimited": "Zu viele Wiederherstellungsanfragen. Bitte versuche es in Kürze erneut.",
+      "noEmailOnAccount": "Für dieses Konto wurde keine E-Mail gefunden.",
+      "unableToRecover": "Ein Team kann derzeit nicht wiederhergestellt werden."
+    }
+  },
+  "ApiAuthLogin": {
+    "errors": {
+      "invalidOrigin": "Ungültige Request-Origin.",
+      "missingCsrfToken": "CSRF-Token fehlt.",
+      "invalidCsrfToken": "Ungültiges CSRF-Token.",
+      "invalidContentType": "Content-Type muss application/json sein.",
+      "payloadTooLarge": "Die Nutzlast der Anfrage ist zu groß.",
+      "invalidCredentials": "Ungültige E-Mail oder ungültiges Passwort.",
+      "rateLimited": "Zu viele Anmeldeversuche. Bitte versuche es später erneut."
+    }
+  },
+  "ApiAuthSignup": {
+    "messages": {
+      "accountCreated": "Konto erstellt. Prüfe deinen Posteingang, um deine E-Mail zu bestätigen, falls die Bestätigung aktiviert ist."
+    },
+    "errors": {
+      "invalidOrigin": "Ungültige Request-Origin.",
+      "missingCsrfToken": "CSRF-Token fehlt.",
+      "invalidCsrfToken": "Ungültiges CSRF-Token.",
+      "invalidContentType": "Content-Type muss application/json sein.",
+      "payloadTooLarge": "Die Nutzlast der Anfrage ist zu groß.",
+      "invalidEmailOrPassword": "Bitte gib eine gültige E-Mail und ein gültiges Passwort an.",
+      "passwordComplexity": "Das Passwort muss zwischen 12 und 128 Zeichen lang sein.",
+      "rateLimited": "Zu viele Registrierungsversuche. Bitte versuche es später erneut.",
+      "unableToCreateAccount": "Dein Konto konnte nicht erstellt werden."
+    }
+  },
+  "ApiAiChat": {
+    "errors": {
+      "invalidOrigin": "Ungültige Request-Origin.",
+      "missingCsrfToken": "CSRF-Token fehlt.",
+      "invalidCsrfToken": "Ungültiges CSRF-Token.",
+      "invalidContentType": "Content-Type muss application/json sein.",
+      "unauthorized": "Nicht autorisiert",
+      "noTeamMembership": "Für dieses Konto wurde keine Teammitgliedschaft gefunden.",
+      "rateLimited": "Zu viele KI-Anfragen. Bitte warte und versuche es erneut.",
+      "payloadTooLarge": "Die Nutzlast der Anfrage ist zu groß.",
+      "invalidPayload": "Ungültige Anfrage-Nutzlast.",
+      "maxAttachments": "Maximal {max} Anhänge sind pro Anfrage erlaubt.",
+      "unsupportedAttachmentType": "Nicht unterstützter Anhangstyp.",
+      "budgetExceeded": "Monatliches KI-Token-Budget erreicht. Führe ein Upgrade durch oder warte auf den nächsten Zyklus.",
+      "modalityNotAllowed": "Dein aktueller KI-Plan erlaubt diesen Anhangstyp nicht.",
+      "planRequired": "Für den KI-Zugriff ist ein berechtigter kostenpflichtiger Plan erforderlich.",
+      "upstreamRateLimited": "Der KI-Anbieter ist derzeit rate-limitiert. Bitte versuche es in Kürze erneut.",
+      "upstreamBadRequest": "Diese KI-Anfrage konnte nicht verarbeitet werden. Passe deine Eingabe an und versuche es erneut.",
+      "unavailable": "Der KI-Assistent ist derzeit nicht verfügbar."
+    }
+  },
+  "ApiStripeCheckout": {
+    "errors": {
+      "invalidOrigin": "Ungültige Request-Origin.",
+      "missingCsrfToken": "CSRF-Token fehlt.",
+      "invalidCsrfToken": "Ungültiges CSRF-Token.",
+      "invalidContentType": "Content-Type muss application/json sein.",
+      "billingNotConfigured": "Die Abrechnung ist für dieses Deployment nicht konfiguriert.",
+      "unauthorized": "Nicht autorisiert",
+      "noTeamMembership": "Für dieses Konto wurde keine Teammitgliedschaft gefunden.",
+      "forbidden": "Nur Team-Owner und Admins können die Abrechnung verwalten.",
+      "rateLimited": "Zu viele Anfragen. Bitte warte und versuche es erneut.",
+      "payloadTooLarge": "Die Nutzlast der Anfrage ist zu groß.",
+      "invalidPayload": "Ungültige Anfrage-Nutzlast",
+      "invalidPlan": "Ungültiger ausgewählter Plan",
+      "billingPlansNotConfigured": "Abrechnungspläne sind für dieses Deployment nicht vollständig konfiguriert.",
+      "checkoutInProgress": "Checkout läuft bereits. Bitte warte und versuche es erneut.",
+      "couldNotVerifySubscription": "Der aktuelle Abonnementstatus konnte nicht verifiziert werden.",
+      "activeSubscriptionExists": "Du hast bereits ein aktives Abonnement.",
+      "couldNotLoadStripeCustomer": "Der Stripe-Kundendatensatz konnte nicht geladen werden.",
+      "unableToStartCheckout": "Checkout kann derzeit nicht gestartet werden. Bitte versuche es erneut."
+    }
+  },
+  "ApiStripeChangePlan": {
+    "errors": {
+      "invalidOrigin": "Ungültige Request-Origin.",
+      "missingCsrfToken": "CSRF-Token fehlt.",
+      "invalidCsrfToken": "Ungültiges CSRF-Token.",
+      "invalidContentType": "Content-Type muss application/json sein.",
+      "billingNotConfigured": "Die Abrechnung ist für dieses Deployment nicht konfiguriert.",
+      "unauthorized": "Nicht autorisiert",
+      "noTeamMembership": "Für dieses Konto wurde keine Teammitgliedschaft gefunden.",
+      "forbidden": "Nur Team-Owner und Admins können die Abrechnung verwalten.",
+      "rateLimited": "Zu viele Anfragen. Bitte warte und versuche es erneut.",
+      "payloadTooLarge": "Die Nutzlast der Anfrage ist zu groß.",
+      "invalidPayload": "Ungültige Anfrage-Nutzlast",
+      "invalidTargetPlan": "Ungültiger Zielplan",
+      "billingPlansNotConfigured": "Abrechnungspläne sind für dieses Deployment nicht vollständig konfiguriert.",
+      "couldNotLoadSubscription": "Der aktuelle Abonnementstatus konnte nicht geladen werden.",
+      "noActiveSubscription": "Kein aktives Abonnement gefunden. Starte zuerst einen neuen Checkout.",
+      "billingIdentityMismatch": "Es wurde eine Abrechnungsidentitäts-Abweichung erkannt. Starte einen neuen Checkout, um dein Konto erneut zu verknüpfen.",
+      "subscriptionItemNotFound": "Abonnement-Element nicht gefunden.",
+      "alreadyOnPlan": "Dein Abonnement ist bereits auf diesem Plan.",
+      "postChangeSyncFailed": "Plan geändert, aber die lokale Abrechnungssynchronisierung ist fehlgeschlagen. Bitte versuche es in Kürze erneut.",
+      "unableToChangePlan": "Dein Plan kann derzeit nicht geändert werden. Bitte versuche es erneut."
+    }
+  },
+  "ApiStripePortal": {
+    "errors": {
+      "invalidOrigin": "Ungültige Request-Origin.",
+      "missingCsrfToken": "CSRF-Token fehlt.",
+      "invalidCsrfToken": "Ungültiges CSRF-Token.",
+      "invalidContentType": "Content-Type muss application/json sein.",
+      "billingNotConfigured": "Die Abrechnung ist für dieses Deployment nicht konfiguriert.",
+      "unauthorized": "Nicht autorisiert",
+      "noTeamMembership": "Für dieses Konto wurde keine Teammitgliedschaft gefunden.",
+      "forbidden": "Nur Team-Owner und Admins können die Abrechnung verwalten.",
+      "rateLimited": "Zu viele Anfragen. Bitte warte und versuche es erneut.",
+      "couldNotLoadStripeCustomer": "Der Stripe-Kundendatensatz konnte nicht geladen werden.",
+      "noCustomerRecord": "Für dieses Konto wurde kein Kundendatensatz gefunden.",
+      "billingIdentityMismatch": "Es wurde eine Abrechnungsidentitäts-Abweichung erkannt. Starte einen neuen Checkout, um dein Konto erneut zu verknüpfen.",
+      "unableToOpenPortal": "Das Billing-Portal kann derzeit nicht geöffnet werden. Bitte versuche es erneut."
+    }
+  },
+  "ApiStripeWebhook": {
+    "errors": {
+      "invalidContentType": "Content-Type muss application/json sein.",
+      "webhooksNotConfigured": "Billing-Webhooks sind für dieses Deployment nicht konfiguriert.",
+      "missingSignature": "Stripe-Signatur fehlt",
+      "signatureVerificationFailed": "Verifizierung der Webhook-Signatur fehlgeschlagen.",
+      "webhookHandlingFailed": "Webhook-Verarbeitung fehlgeschlagen."
+    }
+  },
+  "ApiCronReconcileSeatQuantities": {
+    "errors": {
+      "cronNotConfigured": "Cron ist nicht konfiguriert.",
+      "unauthorized": "Nicht autorisiert.",
+      "rateLimited": "Zu viele Anfragen.",
+      "partialFailure": "Cron-Lauf mit einem oder mehreren internen Jobfehlern abgeschlossen."
+    }
+  },
+  "ApiCronPruneStripeWebhookEvents": {
+    "errors": {
+      "cronNotConfigured": "Cron ist nicht konfiguriert.",
+      "unauthorized": "Nicht autorisiert.",
+      "rateLimited": "Zu viele Anfragen."
+    }
+  }
+}
