@@ -128,7 +128,10 @@ export const supportsOpenAiFileIds = provider === "openai";
 export const isAiProviderConfigured = Boolean(providerApiKey);
 const customModelModalityMap = parseModelModalityMap(env.AI_MODEL_MODALITIES_MAP_JSON);
 
-type AiProviderClient = ReturnType<typeof createAnthropic> | ReturnType<typeof createGoogleGenerativeAI> | ReturnType<typeof createOpenAI>;
+type AiProviderClient =
+  | ReturnType<typeof createAnthropic>
+  | ReturnType<typeof createGoogleGenerativeAI>
+  | ReturnType<typeof createOpenAI>;
 
 let aiProviderClient: AiProviderClient | null | undefined;
 

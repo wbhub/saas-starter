@@ -103,9 +103,7 @@ async function isLastOwnerOfAnyTeam(userId: string): Promise<boolean> {
   });
 
   if (error) {
-    throw new Error(
-      `Failed to check last-owner status before account deletion: ${error.message}`,
-    );
+    throw new Error(`Failed to check last-owner status before account deletion: ${error.message}`);
   }
 
   return data === true;
