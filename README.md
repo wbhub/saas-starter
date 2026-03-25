@@ -108,7 +108,7 @@ Open `http://localhost:3000`.
 - Optional pages: `/dashboard/billing`, `/dashboard/ai`
 - Team invite flow: `/invite/[token]`
 - API routes for auth, teams, billing, AI, support email, and cron tasks
-- Built-in localization (7 bundled locales) via `next-intl`
+- Built-in localization (8 bundled locales) via `next-intl`
 - Theme toggle with system, light, and dark modes
 
 ## Optional Setup

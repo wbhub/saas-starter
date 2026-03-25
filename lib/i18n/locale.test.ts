@@ -33,10 +33,20 @@ describe("resolveRequestLocale", () => {
     expect(resolveRequestLocale(request)).toBe("ja");
   });
 
+  it("supports German locale detection from Accept-Language", () => {
+    const request = new Request("https://example.com", {
+      headers: {
+        "accept-language": "de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7",
+      },
+    });
+
+    expect(resolveRequestLocale(request)).toBe("de");
+  });
+
   it("falls back to the default locale when no supported locale is present", () => {
     const request = new Request("https://example.com", {
       headers: {
-        "accept-language": "de-DE,de;q=0.9",
+        "accept-language": "it-IT,it;q=0.9",
       },
     });
 
