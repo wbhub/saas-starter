@@ -15,7 +15,7 @@ export function LandingPage() {
     <div className="min-h-screen bg-[color:var(--background)] text-[color:var(--foreground)]">
       <LandingHeader />
 
-      <main className="mx-auto max-w-6xl px-6 py-14 md:py-20">
+      <main className="mx-auto max-w-7xl px-6 py-14 md:py-20">
         <div className="space-y-16 md:space-y-20">
           <HeroSection />
           <GettingStartedSection />
