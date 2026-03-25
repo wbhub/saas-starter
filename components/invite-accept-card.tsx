@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -9,6 +10,7 @@ type AcceptInviteResponse = {
   ok?: boolean;
   error?: string;
   teamName?: string;
+  warning?: string;
 };
 
 export function InviteAcceptCard({
@@ -19,9 +21,11 @@ export function InviteAcceptCard({
   isAuthenticated: boolean;
 }) {
   const t = useTranslations("InviteAcceptCard");
+  const tNotFound = useTranslations("NotFound");
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [inviteAccepted, setInviteAccepted] = useState(false);
 
   async function acceptInvite() {
     setSubmitting(true);
@@ -38,9 +42,16 @@ export function InviteAcceptCard({
         throw new Error(payload?.error ?? t("errors.unableToAccept"));
       }
 
-      setMessage(
-        t("messages.joined", { teamName: payload?.teamName ?? t("messages.defaultTeamName") }),
-      );
+      const joinedMessage = t("messages.joined", {
+        teamName: payload?.teamName ?? t("messages.defaultTeamName"),
+      });
+      if (payload?.warning) {
+        setInviteAccepted(true);
+        setMessage([joinedMessage, payload.warning].join(" "));
+        return;
+      }
+
+      setMessage(joinedMessage);
       router.push("/dashboard");
       router.refresh();
     } catch (error) {
@@ -59,6 +70,13 @@ export function InviteAcceptCard({
         <p className="mt-4 rounded-lg app-surface-subtle px-3 py-2 text-sm text-muted-foreground">
           {t("loginFirst")}
         </p>
+      ) : inviteAccepted ? (
+        <Link
+          href="/dashboard"
+          className="mt-5 inline-flex rounded-lg bg-btn-primary px-4 py-2 text-sm font-medium text-btn-primary-text hover:bg-btn-primary-hover"
+        >
+          {tNotFound("goDashboard")}
+        </Link>
       ) : (
         <button
           type="button"

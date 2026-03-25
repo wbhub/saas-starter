@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 function clearEnv() {
+  delete process.env.NEXT_PUBLIC_APP_URL;
+  delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+  delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   delete process.env.BILLING_PROVIDER;
   delete process.env.APP_FREE_PLAN_ENABLED;
   delete process.env.STRIPE_SECRET_KEY;
@@ -16,6 +19,9 @@ function clearEnv() {
 }
 
 function seedCoreRequiredEnv() {
+  process.env.NEXT_PUBLIC_APP_URL = "https://app.example.com";
+  process.env.NEXT_PUBLIC_SUPABASE_URL = "https://project.supabase.co";
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "sb_publishable_test";
   process.env.SUPABASE_SERVICE_ROLE_KEY = "service_role";
   process.env.RESEND_API_KEY = "re_test";
   process.env.RESEND_FROM_EMAIL = "Test <test@example.com>";

@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const CORE_ENV_KEYS = ["SUPABASE_SERVICE_ROLE_KEY"] as const;
+const PUBLIC_RUNTIME_ENV_KEYS = [
+  "NEXT_PUBLIC_APP_URL",
+  "NEXT_PUBLIC_SUPABASE_URL",
+  "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+] as const;
 
 const STRIPE_ENV_KEYS = [
   "STRIPE_SECRET_KEY",
@@ -15,9 +20,16 @@ function seedCoreRequiredEnv() {
   process.env.SUPABASE_SERVICE_ROLE_KEY = "service_role";
 }
 
+function seedPublicRuntimeEnv() {
+  process.env.NEXT_PUBLIC_APP_URL = "https://app.example.com";
+  process.env.NEXT_PUBLIC_SUPABASE_URL = "https://project.supabase.co";
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "sb_publishable_test";
+}
+
 function clearEnv() {
   for (const key of [
     ...CORE_ENV_KEYS,
+    ...PUBLIC_RUNTIME_ENV_KEYS,
     ...STRIPE_ENV_KEYS,
     "APP_FREE_PLAN_ENABLED",
     "BILLING_PROVIDER",
@@ -31,6 +43,7 @@ describe("validateRequiredEnvAtBoot", () => {
     vi.resetModules();
     clearEnv();
     seedCoreRequiredEnv();
+    seedPublicRuntimeEnv();
   });
 
   afterEach(() => {
@@ -95,6 +108,24 @@ describe("validateRequiredEnvAtBoot", () => {
     const { validateRequiredEnvAtBoot } = await import("./env");
     expect(() => validateRequiredEnvAtBoot()).toThrow(
       "Invalid billing configuration: STRIPE_SECRET_KEY is set but BILLING_PROVIDER is not 'stripe'.",
+    );
+  });
+
+  it("fails when public runtime env vars are missing", async () => {
+    delete process.env.NEXT_PUBLIC_APP_URL;
+
+    const { validateRequiredEnvAtBoot } = await import("./env");
+    expect(() => validateRequiredEnvAtBoot()).toThrow(
+      "Missing required public runtime environment variables: NEXT_PUBLIC_APP_URL",
+    );
+  });
+
+  it("fails when public runtime URL env vars are invalid", async () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "not a url";
+
+    const { validateRequiredEnvAtBoot } = await import("./env");
+    expect(() => validateRequiredEnvAtBoot()).toThrow(
+      "Invalid URL environment variable: NEXT_PUBLIC_SUPABASE_URL",
     );
   });
 });
