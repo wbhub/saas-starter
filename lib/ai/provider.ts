@@ -1,7 +1,7 @@
 import "server-only";
-import { createAnthropic } from "@ai-sdk/anthropic";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { createOpenAI } from "@ai-sdk/openai";
+import type { createAnthropic } from "@ai-sdk/anthropic";
+import type { createGoogleGenerativeAI } from "@ai-sdk/google";
+import type { createOpenAI } from "@ai-sdk/openai";
 import { type AiModality } from "@/lib/ai/config";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
@@ -128,26 +128,40 @@ export const supportsOpenAiFileIds = provider === "openai";
 export const isAiProviderConfigured = Boolean(providerApiKey);
 const customModelModalityMap = parseModelModalityMap(env.AI_MODEL_MODALITIES_MAP_JSON);
 
-const aiProviderClient = (() => {
+type AiProviderClient =
+  | ReturnType<typeof createAnthropic>
+  | ReturnType<typeof createGoogleGenerativeAI>
+  | ReturnType<typeof createOpenAI>;
+
+let aiProviderClient: AiProviderClient | null | undefined;
+
+async function getAiProviderClient(): Promise<AiProviderClient | null> {
+  if (aiProviderClient !== undefined) {
+    return aiProviderClient;
+  }
   if (!isAiProviderConfigured) {
+    aiProviderClient = null;
     return null;
   }
   if (provider === "anthropic") {
-    return createAnthropic({ apiKey: providerApiKey });
+    const { createAnthropic } = await import("@ai-sdk/anthropic");
+    aiProviderClient = createAnthropic({ apiKey: providerApiKey });
+  } else if (provider === "google") {
+    const { createGoogleGenerativeAI } = await import("@ai-sdk/google");
+    aiProviderClient = createGoogleGenerativeAI({ apiKey: providerApiKey });
+  } else {
+    const { createOpenAI } = await import("@ai-sdk/openai");
+    aiProviderClient = createOpenAI({ apiKey: providerApiKey });
   }
-  if (provider === "google") {
-    return createGoogleGenerativeAI({ apiKey: providerApiKey });
-  }
-  return createOpenAI({
-    apiKey: providerApiKey,
-  });
-})();
+  return aiProviderClient;
+}
 
-export function getAiLanguageModel(model: string) {
-  if (!aiProviderClient) {
+export async function getAiLanguageModel(model: string) {
+  const client = await getAiProviderClient();
+  if (!client) {
     return null;
   }
-  return aiProviderClient(model);
+  return client(model);
 }
 
 export function providerSupportsModalities(model: string, modalities: AiModality[]) {

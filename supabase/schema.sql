@@ -1126,6 +1126,101 @@ revoke execute on function public.recover_personal_team_if_missing(uuid, text, t
 revoke execute on function public.recover_personal_team_if_missing(uuid, text, text) from authenticated;
 grant execute on function public.recover_personal_team_if_missing(uuid, text, text) to service_role;
 
+-- Atomically checks whether a user is the last owner of any team they own.
+-- Returns true if removing this user would leave at least one team with no owners.
+create or replace function public.is_last_owner_of_any_team(p_user_id uuid)
+returns boolean
+language sql
+stable
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.team_memberships tm
+    where tm.user_id = p_user_id
+      and tm.role = 'owner'
+      and (
+        select count(*)
+        from public.team_memberships other
+        where other.team_id = tm.team_id
+          and other.role = 'owner'
+      ) = 1
+  );
+$$;
+
+revoke execute on function public.is_last_owner_of_any_team(uuid) from public;
+revoke execute on function public.is_last_owner_of_any_team(uuid) from anon;
+revoke execute on function public.is_last_owner_of_any_team(uuid) from authenticated;
+grant execute on function public.is_last_owner_of_any_team(uuid) to service_role;
+
+-- Resolves a user's active team context in a single round trip.
+-- Returns the membership for the user's active_team_id (from profiles),
+-- falling back to their oldest membership if the active team is stale or null.
+-- Also repairs a stale active_team_id as a side effect.
+create or replace function public.resolve_team_context(p_user_id uuid)
+returns table(team_id uuid, team_name text, role text, repaired boolean)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_active_team_id uuid;
+  v_team_id uuid;
+  v_team_name text;
+  v_role text;
+  v_repaired boolean := false;
+begin
+  -- Authenticated users may only resolve their own team context.
+  -- service_role (auth.uid() is null) is allowed for any user.
+  if auth.uid() is not null and auth.uid() is distinct from p_user_id then
+    raise exception 'access denied: cannot resolve team context for another user';
+  end if;
+
+  select p.active_team_id into v_active_team_id
+  from public.profiles p
+  where p.id = p_user_id;
+
+  if v_active_team_id is not null then
+    select tm.team_id, t.name, tm.role
+    into v_team_id, v_team_name, v_role
+    from public.team_memberships tm
+    join public.teams t on t.id = tm.team_id
+    where tm.user_id = p_user_id
+      and tm.team_id = v_active_team_id
+    limit 1;
+  end if;
+
+  if v_team_id is null then
+    select tm.team_id, t.name, tm.role
+    into v_team_id, v_team_name, v_role
+    from public.team_memberships tm
+    join public.teams t on t.id = tm.team_id
+    where tm.user_id = p_user_id
+    order by tm.created_at asc
+    limit 1;
+
+    if v_active_team_id is not null then
+      update public.profiles
+      set active_team_id = v_team_id
+      where id = p_user_id
+        and active_team_id = v_active_team_id;
+      v_repaired := true;
+    end if;
+  end if;
+
+  if v_team_id is null then
+    return;
+  end if;
+
+  return query select v_team_id, v_team_name, v_role, v_repaired;
+end;
+$$;
+
+revoke execute on function public.resolve_team_context(uuid) from public;
+revoke execute on function public.resolve_team_context(uuid) from anon;
+grant execute on function public.resolve_team_context(uuid) to authenticated;
+grant execute on function public.resolve_team_context(uuid) to service_role;
+
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
