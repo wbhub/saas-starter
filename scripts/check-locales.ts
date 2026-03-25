@@ -163,6 +163,14 @@ if (issues.length === 0) {
       continue;
     }
 
+    for (const localeNameKey of Object.keys(localeNames).sort()) {
+      if (!expectedLocaleSet.has(localeNameKey)) {
+        issues.push(
+          `${locale}: LocaleSwitcher.localeNames.${localeNameKey} is declared but not routed.`,
+        );
+      }
+    }
+
     for (const routedLocale of expectedLocales) {
       if (!(routedLocale in localeNames)) {
         issues.push(`${locale}: LocaleSwitcher.localeNames.${routedLocale} is missing.`);

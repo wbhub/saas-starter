@@ -15,7 +15,7 @@ How the pieces of this codebase fit together.
 - **Caching**: Upstash Redis (optional)
 - **Error Monitoring**: Sentry (optional)
 - **In-app Messaging**: Intercom (optional)
-- **i18n**: next-intl (6 locales: en, es, fr, pt, zh, ko)
+- **i18n**: next-intl (7 locales: en, es, fr, pt, zh, ja, ko)
 
 ## Directory Map
 
@@ -55,7 +55,7 @@ lib/                          # Shared business logic (organized by domain)
 
 e2e/                          # Playwright end-to-end tests
 i18n/                         # next-intl routing and request config
-messages/                     # Translation JSON files (en, es, fr, pt, zh, ko)
+messages/                     # Translation JSON files (en, es, fr, pt, zh, ja, ko)
 supabase/                     # Database migrations and seed data
 ```
 
