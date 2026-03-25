@@ -272,6 +272,7 @@ const CORE_REQUIRED_ENV_GETTERS: Readonly<
 > = {
   SUPABASE_SERVICE_ROLE_KEY: true,
 };
+const PRODUCTION_REQUIRED_PUBLIC_RUNTIME_ENV_KEYS = SOFT_REQUIRED_KEYS;
 
 const BILLING_REQUIRED_ENV_GETTERS: Readonly<
   Record<
@@ -299,7 +300,35 @@ function hasValue(key: string) {
   return (process.env[key]?.trim() || "").length > 0;
 }
 
+function ensureAbsoluteUrlAtBoot(key: "NEXT_PUBLIC_APP_URL" | "NEXT_PUBLIC_SUPABASE_URL") {
+  const value = process.env[key]?.trim();
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${key}`);
+  }
+
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      throw new Error("URL must use http or https.");
+    }
+  } catch {
+    throw new Error(`Invalid URL environment variable: ${key}`);
+  }
+}
+
 export function validateRequiredEnvAtBoot() {
+  const missingPublicRuntimeKeys = PRODUCTION_REQUIRED_PUBLIC_RUNTIME_ENV_KEYS.filter(
+    (key) => !hasValue(key),
+  );
+  if (missingPublicRuntimeKeys.length > 0) {
+    throw new Error(
+      `Missing required public runtime environment variables: ${missingPublicRuntimeKeys.join(", ")}`,
+    );
+  }
+
+  ensureAbsoluteUrlAtBoot("NEXT_PUBLIC_APP_URL");
+  ensureAbsoluteUrlAtBoot("NEXT_PUBLIC_SUPABASE_URL");
+
   for (const key of Object.keys(CORE_REQUIRED_ENV_GETTERS) as Array<
     keyof typeof CORE_REQUIRED_ENV_GETTERS
   >) {

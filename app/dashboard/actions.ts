@@ -83,12 +83,7 @@ function extractProfilePhotoPath(url: string, expectedStorageOrigin: string): st
   }
 }
 
-function isAllowedAvatarUrl(url: string, expectedStorageOrigin: string, userId: string): boolean {
-  const profilePhotoPath = extractProfilePhotoPath(url, expectedStorageOrigin);
-  if (!profilePhotoPath) {
-    return false;
-  }
-
+function isOwnedProfilePhotoPath(profilePhotoPath: string, userId: string): boolean {
   const pathSegments = profilePhotoPath.split("/").filter((segment) => segment.length > 0);
   if (pathSegments.length < 2) {
     return false;
@@ -99,6 +94,15 @@ function isAllowedAvatarUrl(url: string, expectedStorageOrigin: string, userId: 
   }
 
   return pathSegments[0] === userId;
+}
+
+function isAllowedAvatarUrl(url: string, expectedStorageOrigin: string, userId: string): boolean {
+  const profilePhotoPath = extractProfilePhotoPath(url, expectedStorageOrigin);
+  if (!profilePhotoPath) {
+    return false;
+  }
+
+  return isOwnedProfilePhotoPath(profilePhotoPath, userId);
 }
 
 async function isLastOwnerOfAnyTeam(userId: string): Promise<boolean> {
@@ -338,7 +342,7 @@ export async function updateDashboardSettings(
 
   if (previousAvatarUrl && previousAvatarUrl !== sanitizedAvatarUrl) {
     const previousPhotoPath = extractProfilePhotoPath(previousAvatarUrl, storageOrigin);
-    if (previousPhotoPath) {
+    if (previousPhotoPath && isOwnedProfilePhotoPath(previousPhotoPath, user.id)) {
       const adminClient = createAdminClient();
       const { error: removeError } = await adminClient.storage
         .from("profile-photos")
@@ -349,6 +353,11 @@ export async function updateDashboardSettings(
           path: previousPhotoPath,
         });
       }
+    } else if (previousPhotoPath) {
+      logger.warn("Skipping cleanup for non-owned profile photo path", {
+        userId: user.id,
+        path: previousPhotoPath,
+      });
     }
   }
 
@@ -377,6 +386,18 @@ export async function requestEmailChange(
     return {
       status: "error",
       message: "You must be logged in to request an email change.",
+    };
+  }
+
+  const rateLimit = await checkRateLimit({
+    key: `email-change:user:${user.id}`,
+    ...RATE_LIMITS.emailChangeRequestByUser,
+  });
+  if (!rateLimit.allowed) {
+    const waitSeconds = Math.max(1, rateLimit.retryAfterSeconds);
+    return {
+      status: "error",
+      message: `Too many email change requests. Please wait ${waitSeconds} seconds and try again.`,
     };
   }
 

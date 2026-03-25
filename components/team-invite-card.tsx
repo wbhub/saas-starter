@@ -27,12 +27,14 @@ type InviteApiResponse = {
   ok?: boolean;
   error?: string;
   emailSent?: boolean;
+  warning?: string;
 };
 
 type TeamMutationResponse = {
   ok?: boolean;
   error?: string;
   emailSent?: boolean;
+  warning?: string;
 };
 
 type TeamInviteState = {
@@ -216,15 +218,15 @@ export function TeamInviteCard({
         method: "DELETE",
         headers: getCsrfHeaders(),
       });
-      const payload = (await response.json().catch(() => null)) as {
-        error?: string;
-        ok?: boolean;
-      } | null;
+      const payload = (await response.json().catch(() => null)) as TeamMutationResponse | null;
       if (!response.ok) {
         throw new Error(payload?.error ?? t("errors.removeMember"));
       }
 
-      dispatch({ type: "REMOVE_MEMBER_END", feedback: t("feedback.memberRemoved") });
+      dispatch({
+        type: "REMOVE_MEMBER_END",
+        feedback: payload?.warning ?? t("feedback.memberRemoved"),
+      });
       router.refresh();
     } catch (error) {
       dispatch({

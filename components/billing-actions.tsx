@@ -38,6 +38,8 @@ async function postJson(path: string, body: Record<string, string>, options?: Po
     url?: string;
     ok?: boolean;
     syncPending?: boolean;
+    warning?: string;
+    planChanged?: boolean;
   };
 }
 
@@ -138,6 +140,18 @@ export function BillingActions({
         window.setTimeout(() => {
           window.location.reload();
         }, SYNC_PENDING_RELOAD_DELAY_MS);
+        return;
+      }
+
+      if (payload.warning) {
+        if (payload.planChanged) {
+          waitForSyncRefresh = true;
+          setLoadingAction("sync-pending");
+          window.setTimeout(() => {
+            window.location.reload();
+          }, SYNC_PENDING_RELOAD_DELAY_MS);
+        }
+        setMessage(payload.warning);
         return;
       }
 
