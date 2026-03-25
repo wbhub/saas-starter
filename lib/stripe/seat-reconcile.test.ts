@@ -13,6 +13,9 @@ describe("reconcileTeamSeatQuantities", () => {
     vi.doMock("@/lib/billing/capabilities", () => ({
       isBillingEnabled: () => false,
     }));
+    vi.doMock("@/lib/supabase/admin", () => ({
+      createAdminClient: vi.fn(),
+    }));
 
     const { reconcileTeamSeatQuantities } = await import("./seat-reconcile");
     const result = await reconcileTeamSeatQuantities();
