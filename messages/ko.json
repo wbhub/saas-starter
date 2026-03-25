@@ -1,0 +1,957 @@
+{
+  "Common": {
+    "brandName": "SaaS Starter",
+    "myTeam": "내 팀"
+  },
+  "Metadata": {
+    "title": "SaaS Starter | 프로덕션급 Next.js SaaS 기반",
+    "description": "인증, 역할, 좌석 기반 Stripe 결제, AI 예산, i18n, 강화된 보안 파이프라인을 갖춘 팀 기반 SaaS를 Next.js 16, Supabase, React 19 위에 바로 출시하세요.",
+    "openGraphImageAlt": "SaaS Starter 아키텍처 개요"
+  },
+  "NotFound": {
+    "title": "페이지를 찾을 수 없습니다",
+    "description": "찾으시는 페이지가 없거나 이동되었습니다.",
+    "goHome": "홈으로 돌아가기",
+    "goDashboard": "대시보드로 이동"
+  },
+  "LocaleSwitcher": {
+    "label": "언어",
+    "english": "영어",
+    "spanish": "스페인어",
+    "localeNames": {
+      "en": "영어",
+      "es": "스페인어",
+      "fr": "프랑스어",
+      "zh": "중국어",
+      "ja": "일본어",
+      "ko": "한국어",
+      "pt": "포르투갈어",
+      "de": "독일어"
+    }
+  },
+  "SiteHeader": {
+    "dashboard": "대시보드",
+    "login": "로그인",
+    "openApp": "앱 열기",
+    "startFree": "무료로 시작"
+  },
+  "SiteFooter": {
+    "companyPlaceholder": "[회사 이름]",
+    "privacyPolicy": "개인정보 처리방침",
+    "termsOfUse": "이용약관"
+  },
+  "AuthPages": {
+    "backHome": "홈으로 돌아가기",
+    "backLogin": "로그인으로 돌아가기"
+  },
+  "AuthForm": {
+    "errors": {
+      "unableToLogIn": "로그인할 수 없습니다.",
+      "unableToCreateAccount": "계정을 만들 수 없습니다.",
+      "unexpected": "예기치 않은 오류",
+      "unableSocialLogin": "소셜 로그인으로 계속할 수 없습니다."
+    },
+    "messages": {
+      "accountCreated": "계정이 생성되었습니다. 확인이 활성화된 경우 받은편지함에서 이메일을 확인하세요."
+    },
+    "title": {
+      "login": "다시 오신 것을 환영합니다",
+      "signup": "계정 만들기"
+    },
+    "description": {
+      "login": "대시보드에 로그인하세요.",
+      "signup": "프로덕션 준비가 된 인증, 팀, 결제로 시작하세요."
+    },
+    "socialAuthLabel": "소셜 인증",
+    "pleaseWait": "잠시만 기다려 주세요...",
+    "continueWith": "{provider}로 계속하기",
+    "lastUsed": "최근 사용",
+    "orContinueWithEmail": "또는 이메일로 계속하기",
+    "email": "이메일",
+    "password": "비밀번호",
+    "passwordHint": "12-128자를 사용하세요. 구문형 비밀번호도 가능합니다.",
+    "submit": {
+      "login": "로그인",
+      "signup": "계정 만들기"
+    },
+    "needAccount": "계정이 필요하신가요?",
+    "signUp": "가입하기",
+    "forgotPassword": "비밀번호를 잊으셨나요?",
+    "alreadyHaveAccount": "이미 계정이 있으신가요?",
+    "logIn": "로그인"
+  },
+  "Landing": {
+    "header": {
+      "dashboard": "대시보드",
+      "login": "로그인",
+      "openApp": "앱 열기",
+      "startFree": "무료로 시작"
+    },
+    "hero": {
+      "badge": "플랫폼이 아니라 제품을 출시하세요",
+      "title": "몇 달은 걸릴 SaaS 인프라 구축이 이미 끝나 있습니다.",
+      "description": "인증, 멀티테넌트 팀, 좌석 기반 Stripe 결제, DB 수준에서 강제되는 예산을 갖춘 AI, 감사 로그, 강화된 보안 파이프라인까지 Next.js 16, Supabase, React 19 위에 종단 간으로 연결되어 있으므로 제품 고유의 가치에만 집중할 수 있습니다.",
+      "goDashboard": "대시보드로 이동",
+      "startFreeNow": "지금 무료로 시작",
+      "viewPricing": "요금 보기",
+      "feature1": "멀티테넌트 팀 역할",
+      "feature2": "좌석 기반 Stripe 결제",
+      "feature3": "토큰 예산이 있는 AI",
+      "feature4": "3단계 속도 제한",
+      "feature5": "Webhook 멱등성",
+      "feature6": "6개 언어 i18n",
+      "shipNowTitle": "첫날 바로 제공되는 것",
+      "shipNowDescription": "빈 껍데기 보일러플레이트가 아니라, 프로덕션 깊이의 플로우입니다.",
+      "shipItem1": "회원가입, 로그인, OAuth (Google + Microsoft), 비밀번호 재설정, 세션 새로고침 미들웨어가 적용된 보호된 대시보드까지 전체 인증 라이프사이클",
+      "shipItem2": "초대 플로우, 역할 기반 접근 (owner/admin/member), 원자적 소유권 이전, 마지막 소유자 보호 데이터베이스 가드를 갖춘 멀티테넌트 팀",
+      "shipItem3": "claims 테이블과 선택적 Trigger.dev 오프로딩을 사용한 Stripe 체크아웃, 결제 포털, 요금제 변경, 멱등 Webhook 처리",
+      "shipItem4": "재시도 큐가 있는 cron 기반 좌석 수량 정산, 초대 수락 시 자동 수량 동기화, 구독 상태 추적",
+      "shipItem5": "스트리밍 응답, 요금제 기반 접근 제어, Postgres에서 claim/finalize와 재시도 큐로 강제되는 월간 토큰 예산을 갖춘 AI 채팅",
+      "shipItem6": "CSRF 이중 제출 쿠키, nonce 기반 CSP, 부팅 시 검증되는 타입드 env, 요청 ID, 감사 로그, 회로 차단기를 포함한 다층 속도 제한"
+    },
+    "gettingStarted": {
+      "title": "몇 주가 아니라 몇 분 만에 실행",
+      "description": "클론부터 실제 인증, 팀, 결제, 보안이 갖춰진 SaaS까지 3단계, 그리고 자세한 아키텍처 가이드 4종으로 뒷받침됩니다.",
+      "step1Title": "1. 클론 & 설정",
+      "step1Text": "의존성을 설치하고 .env.example을 복사한 뒤 키를 설정하세요. 타입드 env 검증이 런타임이 아니라 부팅 시점에 설정 오류를 잡아냅니다.",
+      "step2Title": "2. 제공자 연결",
+      "step2Text": "Supabase에서 schema.sql을 실행하세요 (20개 이상의 테이블, RLS 정책, 트리거, RPC가 준비되어 있습니다), Stripe 가격 ID를 추가하고 Resend 도메인을 설정하세요.",
+      "step3Title": "3. 제품 개발",
+      "step3Text": "인증, 팀, 결제, AI, 보안은 이미 처리되어 있습니다. 브랜딩을 커스터마이즈하고 제품 로직을 추가한 뒤 배포하세요. Redis, Trigger.dev, Sentry는 규모가 필요할 때 선택적으로 켤 수 있습니다."
+    },
+    "whyStarter": {
+      "label": "이 스타터를 선택하는 이유",
+      "title": "데모 수준 스캐폴딩이 아니라 프로덕션급 패턴.",
+      "description": "모든 통합은 힘든 교훈을 겪고 난 뒤 만들 법한 방식으로 구성되어 있습니다. 원자적 DB 작업, 재시도 큐, 멱등 Webhook, 전반에 걸친 우아한 폴백까지 포함합니다.",
+      "stat1Label": "Postgres 테이블, 트리거, RPC",
+      "stat1Value": "20+",
+      "stat2Label": "로케일 프리 라우팅을 지원하는 언어",
+      "stat2Value": "6",
+      "stat3Label": "회로 차단기를 포함한 속도 제한 계층",
+      "stat3Value": "3"
+    },
+    "bestPractices": {
+      "title": "기본부터 강화됨",
+      "description": "보안, 데이터 무결성, 운영 복원력은 모든 계층에 내장되어 있으며 나중에 덧붙인 요소가 아닙니다.",
+      "securityDefaultsTitle": "심층 방어 보안",
+      "securityDefaultsText": "CSRF 이중 제출 쿠키, nonce 기반 CSP, 엄격한 API content-type 검사, 모든 응답의 요청 ID, 그리고 모든 라우트에 적용되는 조합 가능한 인증/권한 미들웨어.",
+      "teamBillingTitle": "데이터 무결성 패턴",
+      "teamBillingText": "초대 수락, 소유권 이전, 구독 동기화를 위한 원자적 RPC. 데이터베이스 트리거가 마지막 팀 소유자 삭제를 방지하고 고아 팀 컨텍스트를 자동 복구합니다.",
+      "operationalTitle": "운영 복원력",
+      "operationalText": "회로 차단기 폴백이 있는 다층 속도 제한 (Redis, Supabase RPC, 인메모리), 재시도 큐가 있는 좌석 정산 cron, 멱등 Stripe Webhook 처리."
+    },
+    "stack": {
+      "title": "스택 내부",
+      "description": "React 19 기반 Next.js 16 App Router, TypeScript strict 모드, 그리고 UI 라우트, API 핸들러, 공유 플랫폼 라이브러리 사이의 명확한 경계.",
+      "authTitle": "인증 및 멀티테넌트 팀",
+      "authText": "Google 및 Microsoft OAuth를 지원하는 Supabase SSR 인증, 팀 컨텍스트 캐싱 (Redis + 인메모리 + DB), 역할 기반 API 래퍼, 원자적 좌석 동기화를 포함한 초대 수락, 전체 계정 라이프사이클 관리.",
+      "billingTitle": "결제 및 Webhook 신뢰성",
+      "billingText": "claims 테이블을 통한 멱등 Webhook 처리, 구독 동기화 RPC, 좌석 정산 cron, 선택적 Trigger.dev 오프로딩을 기반으로 한 Stripe 체크아웃, 포털, 요금제 변경 API.",
+      "opsTitle": "AI, 관찰성, 지원",
+      "opsText": "DB에서 강제되는 월간 토큰 예산이 있는 스트리밍 AI 채팅, 발신자 컨텍스트를 포함한 Resend 지원 메일, 배치 감사 로그, 선택적 Intercom 및 Sentry 통합까지 모두 feature flag 뒤에 배치했습니다."
+    },
+    "pricing": {
+      "title": "Stripe와 동기화되는 실시간 가격",
+      "description": "가격은 렌더 시점에 Stripe 계정에서 직접 가져옵니다. 가격 ID를 한 번만 설정하면 랜딩 페이지, 체크아웃, 결제 포털이 자동으로 동기화됩니다.",
+      "mostPopular": "가장 인기",
+      "managePlan": "요금제 관리",
+      "choosePlan": "{name} 선택",
+      "priceSuffix": {
+        "month": "/월",
+        "year": "/년",
+        "week": "/주",
+        "day": "/일",
+        "other": "/{interval}"
+      },
+      "plans": {
+        "starter": {
+          "name": "Starter",
+          "description": "새 제품을 검증하는 창업자를 위한 인증, 팀, 결제."
+        },
+        "growth": {
+          "name": "Growth",
+          "description": "팀이 성장함에 따라 AI 접근, 좌석 확장, 사용량 추적을 추가하세요."
+        },
+        "pro": {
+          "name": "Pro",
+          "description": "우선 지원, 감사 로그, 고급 통합까지 포함한 전체 플랫폼."
+        }
+      }
+    },
+    "ctaFaq": {
+      "title": "인프라를 다시 만들지 말고 제품을 출시하세요.",
+      "description": "모든 SaaS에는 인증, 팀, 결제, 보안이 필요합니다. 수천 줄의 프로덕션 지향 코드로 다듬어진 버전에서 시작하고, 고객이 실제로 비용을 지불하는 가치에 시간을 쓰세요.",
+      "openDashboard": "대시보드 열기",
+      "createAccount": "계정 만들기",
+      "comparePlans": "요금제 비교",
+      "faqTitle": "자주 묻는 질문",
+      "q1": "기본으로 무엇이 포함되나요?",
+      "a1": "완전한 SaaS 기반입니다. OAuth (Google + Microsoft)를 포함한 Supabase 인증, 역할 기반 접근과 초대 플로우를 갖춘 멀티테넌트 팀, 멱등 Webhook과 정산 cron이 포함된 좌석 기반 Stripe 결제, DB에서 강제되는 토큰 예산을 갖춘 스트리밍 AI 채팅, Resend 기반 지원 이메일, 감사 로그, 6개 언어 i18n, 그리고 CSRF, CSP, 속도 제한, 요청 추적을 포괄하는 보안 파이프라인이 포함됩니다.",
+      "q2": "통합 깊이는 어느 정도인가요? 스텁인가요, 프로덕션 준비가 되었나요?",
+      "a2": "프로덕션 준비가 되어 있습니다. Stripe Webhook은 선택적 Trigger.dev 오프로딩과 함께 claims 테이블로 멱등성을 보장합니다. 팀 초대는 좌석 수량을 동기화하는 원자적 Postgres RPC를 통해 처리됩니다. AI 예산은 claim/finalize 시맨틱과 재시도 큐로 데이터베이스에서 강제됩니다. 속도 제한은 회로 차단기와 함께 세 계층으로 연쇄 적용됩니다. 실제 제품을 운영하며 도달하게 되는 패턴들입니다.",
+      "q3": "팀, 역할, 권한은 어떻게 처리되나요?",
+      "a3": "모든 사용자는 가입 시 데이터베이스 트리거를 통해 개인 팀을 받습니다. 팀은 owner, admin, member 역할과 초대 플로우, 토큰 기반 수락, 원자적 소유권 이전을 지원합니다. 데이터베이스 트리거는 마지막 소유자 삭제를 방지하고 고아 팀 컨텍스트를 자동 복구합니다. 모든 팀 API 라우트는 인증, 팀 멤버십, 역할을 하나의 파이프라인에서 해석하는 조합 가능한 미들웨어를 사용합니다.",
+      "q4": "나중에 재설계 없이 무엇을 확장할 수 있나요?",
+      "a4": "Redis는 속도 제한 및 팀 컨텍스트 캐싱용으로 (없어도 우아하게 폴백), Trigger.dev는 Webhook 처리를 백그라운드 작업으로 오프로딩하기 위해, Sentry는 오류 모니터링을 위해 모두 feature flag 뒤에서 선택적으로 켤 수 있습니다. Postgres 스키마, RLS 정책, API 파이프라인은 구조 변경 없이 이를 지원하도록 설계되어 있습니다."
+    }
+  },
+  "DashboardSidebar": {
+    "appDashboard": "앱 대시보드",
+    "soloWorkspace": "내 작업공간",
+    "team": "팀",
+    "inviteTeammates": "팀원 초대",
+    "switch": "전환",
+    "overview": "개요",
+    "ai": "AI 채팅",
+    "billing": "결제",
+    "usage": "사용량",
+    "settings": "설정",
+    "home": "홈",
+    "logout": "로그아웃"
+  },
+  "DashboardPage": {
+    "overview": "개요",
+    "welcome": "환영합니다, {name}",
+    "navigate": "결제, 팀 관리, 사용량, 설정 섹션으로 이동하세요.",
+    "account": "계정",
+    "userId": "사용자 ID",
+    "team": "팀",
+    "role": "역할",
+    "memberSince": "가입일",
+    "subscriptionSnapshot": "구독 스냅샷",
+    "currentPlan": "현재 요금제",
+    "unknown": "알 수 없음",
+    "status": "상태",
+    "seats": "좌석 수",
+    "currentPlanFree": "현재 요금제: 무료",
+    "visitBillingUpgrade": "언제든 업그레이드하려면 결제로 이동하세요.",
+    "noActiveSubscription": "활성 구독이 없습니다. 요금제를 시작하려면 결제로 이동하세요.",
+    "ai": "AI 채팅",
+    "billing": "결제",
+    "teamNav": "팀",
+    "inviteTeammates": "팀원 초대",
+    "usage": "사용량",
+    "settings": "설정"
+  },
+  "DashboardAiPage": {
+    "header": {
+      "eyebrow": "AI",
+      "title": "팀 AI 채팅",
+      "description": "팀의 결제 및 사용량 한도 안에서 구성된 모델과 채팅하세요."
+    },
+    "unavailable": {
+      "title": "AI 채팅을 사용할 수 없습니다",
+      "description": "이 작업공간에서는 현재 AI 채팅을 사용할 수 없습니다.",
+      "reason": {
+        "planRequired": "AI 접근은 적격 유료 요금제가 필요합니다.",
+        "notConfigured": "이 앱에는 아직 AI가 구성되지 않았습니다.",
+        "teamMissing": "AI는 활성 팀 작업공간이 필요합니다.",
+        "accessMisconfigured": "AI 접근 설정이 현재 잘못 구성되어 있습니다."
+      },
+      "actions": {
+        "goToBilling": "결제로 이동"
+      }
+    }
+  },
+  "AiChatCard": {
+    "title": "어시스턴트",
+    "description": "메시지가 실시간으로 스트리밍되고 사용량이 자동으로 추적됩니다.",
+    "placeholder": "제품, 문서, 워크플로에 대해 무엇이든 물어보세요...",
+    "emptyState": "메시지를 보내며 시작하세요.",
+    "attachments": {
+      "label": "첨부파일",
+      "selected": "{count}개 선택됨"
+    },
+    "actions": {
+      "send": "보내기",
+      "sending": "전송 중...",
+      "stop": "중지"
+    },
+    "errors": {
+      "requestFailed": "AI 요청에 실패했습니다.",
+      "budgetExceeded": "월간 AI 토큰 예산에 도달했습니다. 업그레이드하거나 다음 주기를 기다리세요.",
+      "modalityNotAllowed": "현재 AI 요금제에서는 이 첨부 형식을 지원하지 않습니다.",
+      "planRequired": "AI 접근은 적격 유료 요금제가 필요합니다.",
+      "upstreamRateLimited": "AI 제공자에 현재 속도 제한이 적용되고 있습니다. 잠시 후 다시 시도하세요.",
+      "upstreamBadRequest": "이 AI 요청을 처리할 수 없습니다. 입력을 조정하고 다시 시도하세요.",
+      "upstreamError": "AI 어시스턴트를 현재 사용할 수 없습니다.",
+      "maxAttachments": "메시지당 최대 {max}개의 첨부만 허용됩니다.",
+      "unsupportedType": "지원되지 않는 첨부 형식: {mimeType}",
+      "fileTooLarge": "첨부파일이 너무 큽니다. 파일 크기를 약 180,000개의 인코딩 문자 이하로 유지하세요.",
+      "totalAttachmentsTooLarge": "한 메시지에 대한 전체 첨부 크기가 너무 큽니다. 더 적거나 더 작은 파일을 사용하세요."
+    }
+  },
+  "BillingActions": {
+    "title": "결제 작업",
+    "description": {
+      "noPermission": "팀 소유자와 관리자만 결제를 관리할 수 있습니다.",
+      "hasSubscription": "업그레이드, 다운그레이드하거나 Stripe 결제 포털을 여세요.",
+      "noSubscription": "구독을 시작할 요금제를 선택하세요.",
+      "billingDisabled": "이 배포에서는 결제가 비활성화되어 있습니다. Stripe를 구성해 유료 요금제를 활성화하세요."
+    },
+    "actions": {
+      "opening": "여는 중...",
+      "updating": "업데이트 중...",
+      "manageBilling": "결제 관리",
+      "subscribe": "{name} 구독",
+      "switchTo": "{name}로 변경"
+    },
+    "messages": {
+      "syncPending": "Stripe에서 요금제가 업데이트되었습니다. 동기화가 진행 중입니다. 곧 새로고침합니다...",
+      "planUpdated": "요금제가 업데이트되었습니다. 결제 상세 정보를 새로고침합니다...",
+      "billingDisabled": "Stripe 결제가 현재 비활성화되어 있습니다."
+    },
+    "errors": {
+      "checkoutFailed": "체크아웃 실패",
+      "planChangeFailed": "요금제 변경 실패",
+      "portalUnavailable": "포털을 사용할 수 없습니다",
+      "missingCheckoutUrl": "체크아웃 URL이 없습니다",
+      "missingPortalUrl": "포털 URL이 없습니다",
+      "requestFailed": "요청 실패"
+    }
+  },
+  "DashboardBillingPage": {
+    "header": {
+      "eyebrow": "결제",
+      "title": "구독 관리",
+      "description": "요금제를 업데이트하고 Stripe 포털을 열며 구독 상태를 검토하세요."
+    },
+    "currentSubscription": {
+      "title": "현재 구독",
+      "currentPlan": "현재 요금제",
+      "unknown": "알 수 없음",
+      "status": "상태",
+      "seats": "좌석 수",
+      "perSeatCost": "좌석당 비용",
+      "periodEnd": "기간 종료",
+      "notAvailable": "N/A",
+      "currentPlanFree": "현재 요금제: 무료",
+      "upgradeHint": "유료 기능을 사용하려면 아래에서 업그레이드하세요.",
+      "noSubscription": "아직 구독이 없습니다. 시작하려면 아래에서 요금제를 선택하세요."
+    },
+    "freeMode": {
+      "title": "프리미엄 기능 잠금 해제",
+      "description": "고급 기능을 사용하려면 유료 요금제를 선택하세요. 팀 협업은 모든 유료 요금제에 포함되며 좌석은 팀원당 청구됩니다.",
+      "perSeat": "각 팀원은 {amount}입니다.",
+      "collaborationIncluded": "팀 협업은 모든 유료 요금제에 포함됩니다."
+    },
+    "billingDisabled": {
+      "title": "결제가 비활성화되어 있습니다",
+      "description": "이 배포는 무료 전용 모드로 실행 중입니다. 나중에 유료 구독을 활성화하려면 Stripe 환경 변수를 추가하세요."
+    },
+    "paidSolo": {
+      "title": "준비되면 팀원을 초대하세요",
+      "description": "협업은 선택 사항입니다. 월 {amount}의 좌석 요금으로 언제든 팀원을 초대할 수 있습니다.",
+      "action": "팀원 초대"
+    },
+    "paidTeam": {
+      "breakdown": "{seats}개 좌석 x {seatCost} = {monthlyTotal}/월"
+    }
+  },
+  "DashboardSettingsPage": {
+    "header": {
+      "eyebrow": "설정",
+      "title": "계정 환경설정",
+      "description": "프로필 기본 정보를 업데이트하고 계정 수준 환경설정을 검토하세요."
+    },
+    "inviteTeammates": {
+      "title": "협업",
+      "description": "준비되면 팀원을 초대하세요. 각 좌석은 월 청구액에 추가됩니다.",
+      "action": "팀원 초대"
+    }
+  },
+  "DashboardTeamPage": {
+    "header": {
+      "eyebrow": "팀",
+      "title": "팀 접근 및 초대",
+      "description": "작업공간의 멤버, 역할, 초대 링크를 관리하세요."
+    }
+  },
+  "DashboardUsagePage": {
+    "header": {
+      "eyebrow": "사용량",
+      "title": "AI 사용량 및 월간 합계",
+      "description": "팀의 최근 토큰 사용량을 추적하세요."
+    },
+    "table": {
+      "title": "최근 6개월",
+      "noUsage": "아직 사용량 데이터가 없습니다.",
+      "month": "월",
+      "usedTokens": "사용된 토큰",
+      "reservedTokens": "예약된 토큰"
+    }
+  },
+  "DashboardSettingsCard": {
+    "title": "설정",
+    "description": "기본 계정 설정을 업데이트하세요.",
+    "actions": {
+      "saving": "저장 중...",
+      "saveSettings": "설정 저장"
+    },
+    "fields": {
+      "displayName": "표시 이름",
+      "displayNamePlaceholder": "이름",
+      "email": "이메일",
+      "emailHint": "이메일은 인증 제공자에서 관리됩니다."
+    },
+    "upload": {
+      "profilePhoto": "프로필 사진",
+      "profileAvatarAlt": "프로필 아바타",
+      "noPhoto": "사진 없음",
+      "uploading": "업로드 중...",
+      "uploadPhoto": "사진 업로드",
+      "removePhoto": "사진 제거",
+      "ready": "{name} 업로드 준비 완료",
+      "success": "사진이 업로드되었습니다. 저장하려면 설정 저장을 클릭하세요.",
+      "errors": {
+        "selectImage": "업로드 전에 이미지를 선택하세요.",
+        "imageOnly": "이미지 파일만 지원됩니다.",
+        "maxSize": "이미지는 2MB 이하여야 합니다.",
+        "failed": "이미지를 업로드할 수 없습니다. 다시 시도하세요."
+      }
+    }
+  },
+  "TeamInviteCard": {
+    "title": "팀 멤버",
+    "description": "{teamName}에 접근할 수 있는 사용자를 관리하세요.",
+    "roles": {
+      "owner": "소유자",
+      "admin": "관리자",
+      "member": "멤버"
+    },
+    "actions": {
+      "saving": "저장 중...",
+      "makeMember": "멤버로 변경",
+      "makeAdmin": "관리자로 변경",
+      "remove": "제거",
+      "removing": "제거 중...",
+      "resend": "재전송",
+      "resending": "재전송 중...",
+      "revoke": "철회",
+      "revoking": "철회 중...",
+      "sending": "전송 중...",
+      "sendInvite": "초대 보내기"
+    },
+    "inviteForm": {
+      "teamNameLabel": "팀 이름",
+      "teamNamePlaceholder": "Acme Team",
+      "teamNameHint": "첫 초대를 보내기 전에 팀 이름을 설정하세요.",
+      "emailLabel": "초대 이메일",
+      "emailPlaceholder": "teammate@example.com",
+      "roleLabel": "역할"
+    },
+    "pricing": {
+      "perSeat": "각 팀원은 {amount}입니다."
+    },
+    "pending": {
+      "title": "대기 중인 초대",
+      "none": "대기 중인 초대가 없습니다.",
+      "expires": "{date} 만료"
+    },
+    "permissions": {
+      "onlyOwnersAdmins": "팀 소유자와 관리자만 팀원을 초대할 수 있습니다."
+    },
+    "confirmations": {
+      "removeMember": "이 멤버를 팀에서 제거하시겠습니까? 즉시 접근 권한을 잃게 됩니다.",
+      "revokeInvite": "이 초대를 철회하시겠습니까?"
+    },
+    "feedback": {
+      "inviteEmailSent": "초대 이메일을 보냈습니다.",
+      "inviteCreatedEmailFailed": "초대는 생성되었지만 이메일 전송에 실패했습니다. 나중에 재전송으로 다시 시도하세요.",
+      "memberRemoved": "멤버가 제거되었습니다.",
+      "roleUpdated": "멤버 역할이 업데이트되었습니다.",
+      "inviteRevoked": "초대가 철회되었습니다.",
+      "inviteResent": "초대를 다시 보냈습니다.",
+      "inviteResentEmailFailed": "초대 토큰은 갱신되었지만 이메일 전송에 실패했습니다."
+    },
+    "errors": {
+      "sendInvite": "초대 전송에 실패했습니다.",
+      "teamNameRequired": "첫 초대를 보내기 전에 팀 이름을 입력하세요.",
+      "updateTeamName": "팀 이름 저장에 실패했습니다.",
+      "removeMember": "멤버 제거에 실패했습니다.",
+      "updateRole": "멤버 역할 업데이트에 실패했습니다.",
+      "revokeInvite": "초대 철회에 실패했습니다.",
+      "resendInvite": "초대 재전송에 실패했습니다."
+    }
+  },
+  "ForgotPasswordForm": {
+    "title": "비밀번호를 잊으셨나요?",
+    "description": "이메일을 입력하면 비밀번호 재설정 링크를 보내드립니다.",
+    "email": "이메일",
+    "sending": "전송 중...",
+    "sendResetLink": "재설정 링크 보내기",
+    "messages": {
+      "resetLinkSentIfAccountExists": "해당 이메일에 대한 계정이 있으면 재설정 링크가 전송되었습니다."
+    },
+    "errors": {
+      "unableToSendResetLink": "재설정 링크를 보낼 수 없습니다.",
+      "unexpected": "예기치 않은 오류"
+    }
+  },
+  "ResetPasswordForm": {
+    "checking": "재설정 링크를 확인하는 중...",
+    "invalidTitle": "재설정 링크가 잘못되었거나 만료되었습니다",
+    "invalidDescription": "계속하려면 새로운 비밀번호 재설정 이메일을 요청하세요.",
+    "requestNewLink": "새 링크 요청",
+    "title": "새 비밀번호 설정",
+    "description": "최소 12자의 강력한 비밀번호를 선택하세요.",
+    "newPassword": "새 비밀번호",
+    "confirmPassword": "비밀번호 확인",
+    "passwordHint": "12-128자를 사용하세요. 구문형 비밀번호도 가능합니다.",
+    "saving": "저장 중...",
+    "updatePassword": "비밀번호 업데이트",
+    "messages": {
+      "passwordUpdated": "비밀번호가 업데이트되었습니다. 로그인으로 이동합니다..."
+    },
+    "errors": {
+      "passwordsDoNotMatch": "비밀번호가 일치하지 않습니다.",
+      "invalidOrExpired": "재설정 링크가 잘못되었거나 만료되었습니다. 새 링크를 요청하세요.",
+      "unableToUpdatePassword": "비밀번호를 업데이트할 수 없습니다. 다시 시도하세요.",
+      "unexpected": "예기치 않은 오류"
+    }
+  },
+  "NoTeamCard": {
+    "title": "팀 접근 권한을 찾을 수 없습니다",
+    "description": "현재 활성 팀에 속해 있지 않습니다. 계속하려면 개인 팀을 복구하세요.",
+    "actions": {
+      "recovering": "복구 중...",
+      "recover": "개인 팀 복구"
+    },
+    "messages": {
+      "recovered": "개인 팀이 복구되었습니다."
+    },
+    "errors": {
+      "recoverFailed": "팀 복구에 실패했습니다."
+    }
+  },
+  "TeamContextErrorCard": {
+    "title": "팀 접근 권한을 불러올 수 없습니다",
+    "description": "팀 컨텍스트를 불러오는 중 일시적인 문제가 발생했습니다. 새로고침 후 다시 시도하세요."
+  },
+  "NotificationPreferencesCard": {
+    "title": "알림 환경설정",
+    "description": "받고 싶은 계정 이메일을 선택하세요.",
+    "actions": {
+      "saving": "저장 중...",
+      "savePreferences": "환경설정 저장"
+    },
+    "items": {
+      "securityAlerts": {
+        "label": "보안 알림",
+        "description": "로그인, 비밀번호 재설정, 중요한 계정 활동."
+      },
+      "productUpdates": {
+        "label": "제품 업데이트",
+        "description": "기능 공지 및 릴리스 노트."
+      },
+      "marketingEmails": {
+        "label": "마케팅 이메일",
+        "description": "팁, 혜택, 가끔 오는 제품 하이라이트."
+      }
+    }
+  },
+  "EmailSettingsCard": {
+    "title": "이메일 주소",
+    "description": "이메일 변경을 요청하세요. 인증 보안 설정에 따라 확인 안내를 보내드립니다.",
+    "fields": {
+      "currentEmail": "현재 이메일",
+      "newEmail": "새 이메일",
+      "newEmailPlaceholder": "name@company.com"
+    },
+    "actions": {
+      "sending": "전송 중...",
+      "requestEmailChange": "이메일 변경 요청"
+    }
+  },
+  "DangerZoneCard": {
+    "title": "위험 구역",
+    "description": "비활성화하면 모든 세션에서 로그아웃됩니다. 삭제하면 계정이 영구적으로 제거됩니다.",
+    "fields": {
+      "confirmDelete": "확인하려면 DELETE를 입력하세요",
+      "deleteToken": "DELETE",
+      "confirmEmail": "이메일 주소를 확인하세요",
+      "confirmEmailPlaceholder": "you@example.com",
+      "confirmPermanent": "이 작업이 영구적이며 되돌릴 수 없음을 이해합니다."
+    },
+    "actions": {
+      "deactivate": "지금 비활성화하기 (모든 세션에서 로그아웃)",
+      "deleting": "삭제 중...",
+      "deletePermanently": "계정 영구 삭제"
+    }
+  },
+  "SecuritySettingsCard": {
+    "title": "세션 및 보안",
+    "description": "계정 세션을 관리하고 비밀번호를 재설정하세요.",
+    "actions": {
+      "signOutAll": "모든 세션 로그아웃",
+      "resetPassword": "비밀번호 재설정"
+    }
+  },
+  "OrganizationSettingsCard": {
+    "title": "조직 설정",
+    "description": "필요할 때 작업공간 이름을 변경하고 소유권을 이전하세요.",
+    "fields": {
+      "teamName": "팀 이름"
+    },
+    "ownership": {
+      "title": "소유권 이전",
+      "newOwner": "새 소유자",
+      "selectTeammate": "팀원을 선택하세요..."
+    },
+    "actions": {
+      "saving": "저장 중...",
+      "saveOrganization": "조직 저장",
+      "transferring": "이전 중...",
+      "transferOwnership": "소유권 이전"
+    },
+    "confirm": {
+      "transferOwnership": "소유권을 이전하시겠습니까? 이 작업 후에는 관리자가 됩니다."
+    },
+    "feedback": {
+      "nameUpdated": "조직 이름이 업데이트되었습니다.",
+      "ownershipTransferred": "소유권이 이전되었습니다."
+    },
+    "errors": {
+      "updateName": "팀 이름 업데이트에 실패했습니다.",
+      "selectTeammate": "소유권을 이전할 팀원을 선택하세요.",
+      "transferOwnership": "소유권 이전에 실패했습니다."
+    }
+  },
+  "SupportEmailCard": {
+    "title": "이메일 지원 (Resend)",
+    "description": "Resend를 사용해 지원 받은편지함으로 직접 메시지를 보내세요.",
+    "fields": {
+      "subject": "제목 (선택 사항)",
+      "subjectPlaceholder": "결제 문의",
+      "message": "메시지",
+      "messagePlaceholder": "도움이 필요한 내용을 알려주세요..."
+    },
+    "actions": {
+      "sending": "전송 중...",
+      "sendSupportEmail": "지원 이메일 보내기"
+    },
+    "feedback": {
+      "sent": "메시지가 전송되었습니다. 곧 후속 답변을 드리겠습니다."
+    },
+    "errors": {
+      "sendFailed": "지원 이메일 전송에 실패했습니다."
+    }
+  },
+  "InviteAcceptCard": {
+    "title": "팀 초대",
+    "description": "공유 작업공간에 참여하려면 이 초대를 수락하세요.",
+    "loginFirst": "먼저 로그인한 뒤 이 페이지로 돌아와 초대를 수락하세요.",
+    "actions": {
+      "accepting": "수락 중...",
+      "acceptInvite": "초대 수락"
+    },
+    "messages": {
+      "joined": "{teamName}에 성공적으로 참여했습니다.",
+      "defaultTeamName": "팀"
+    },
+    "errors": {
+      "unableToAccept": "초대를 수락할 수 없습니다."
+    }
+  },
+  "ApiTeamInvites": {
+    "errors": {
+      "unauthorized": "인증되지 않음",
+      "noTeamMembership": "이 계정의 팀 멤버십을 찾을 수 없습니다.",
+      "payloadTooLarge": "요청 본문이 너무 큽니다.",
+      "forbidden": "팀 소유자와 관리자만 초대를 보낼 수 있습니다.",
+      "invalidPayload": "잘못된 요청 본문입니다.",
+      "rateLimited": "너무 많은 초대를 보냈습니다. 잠시 후 다시 시도하세요.",
+      "invalidEmail": "유효한 이메일을 입력하세요.",
+      "invalidRole": "역할은 admin 또는 member여야 합니다.",
+      "alreadyInTeam": "이미 이 팀의 구성원입니다.",
+      "paidPlanRequired": "팀원을 초대하려면 유료 요금제가 필요합니다. 먼저 결제로 이동해 업그레이드하세요.",
+      "unableToCreateInvite": "지금은 초대를 만들 수 없습니다.",
+      "teamMemberLimitReached": "팀 멤버 한도에 도달했습니다. 먼저 대기 중인 초대를 철회하거나 멤버를 제거하세요.",
+      "pendingInviteExists": "이 이메일에는 이미 대기 중인 초대가 있습니다."
+    },
+    "email": {
+      "defaultTeamName": "한 팀",
+      "subject": "{teamName} 참여 초대",
+      "line1": "SaaS Starter에서 {teamName}에 초대되었습니다.",
+      "role": "역할: {role}",
+      "acceptInvite": "초대 수락: {inviteUrl}",
+      "expiresIn7Days": "이 초대는 7일 후 만료됩니다."
+    }
+  },
+  "ApiTeamInviteResend": {
+    "errors": {
+      "unauthorized": "인증되지 않음",
+      "noTeamMembership": "이 계정의 팀 멤버십을 찾을 수 없습니다.",
+      "payloadTooLarge": "요청 본문이 너무 큽니다.",
+      "forbidden": "팀 소유자와 관리자만 초대를 다시 보낼 수 있습니다.",
+      "rateLimited": "초대 관리 요청이 너무 많습니다. 잠시 후 다시 시도하세요.",
+      "invalidInviteId": "잘못된 초대 id입니다.",
+      "unableToResendInvite": "초대를 다시 보낼 수 없습니다.",
+      "pendingInviteNotFound": "대기 중인 초대를 찾을 수 없습니다."
+    },
+    "email": {
+      "defaultTeamName": "한 팀",
+      "subject": "알림: {teamName} 참여",
+      "line1": "SaaS Starter에서 {teamName} 참여 초대를 받았습니다.",
+      "role": "역할: {role}",
+      "acceptInvite": "초대 수락: {inviteUrl}",
+      "expiresIn7Days": "이 초대는 7일 후 만료됩니다."
+    }
+  },
+  "ApiTeamInviteRevoke": {
+    "errors": {
+      "unauthorized": "인증되지 않음",
+      "noTeamMembership": "이 계정의 팀 멤버십을 찾을 수 없습니다.",
+      "forbidden": "팀 소유자와 관리자만 초대를 철회할 수 있습니다.",
+      "rateLimited": "초대 관리 요청이 너무 많습니다. 잠시 후 다시 시도하세요.",
+      "invalidInviteId": "잘못된 초대 id입니다.",
+      "unableToRevokeInvite": "초대를 철회할 수 없습니다.",
+      "pendingInviteNotFound": "대기 중인 초대를 찾을 수 없습니다."
+    }
+  },
+  "ApiTeamInviteAccept": {
+    "defaults": {
+      "teamName": "팀"
+    },
+    "errors": {
+      "unauthorized": "인증되지 않음",
+      "payloadTooLarge": "요청 본문이 너무 큽니다.",
+      "invalidInviteToken": "잘못된 초대 토큰입니다.",
+      "noEmailOnAccount": "이 계정에서 이메일을 찾을 수 없습니다.",
+      "rateLimited": "초대 수락 시도가 너무 많습니다. 잠시 후 다시 시도하세요.",
+      "unableToAcceptInvite": "초대를 수락할 수 없습니다.",
+      "teamMemberLimitReached": "팀 멤버 한도에 도달했습니다. 먼저 소유자/관리자에게 용량을 늘려 달라고 요청하세요.",
+      "inviteNotFound": "초대를 찾을 수 없습니다.",
+      "inviteAlreadyAccepted": "이 초대는 이미 수락되었습니다.",
+      "inviteExpired": "초대가 만료되었습니다.",
+      "inviteEmailMismatch": "이 초대는 다른 이메일 주소로 전송되었습니다.",
+      "billingSyncFailedAfterAccept": "초대는 수락되었지만 결제 동기화에 실패했습니다. 잠시 후 다시 시도하세요."
+    }
+  },
+  "ApiSupport": {
+    "errors": {
+      "unauthorized": "인증되지 않음",
+      "rateLimited": "요청이 너무 많습니다. 잠시 후 다시 시도하세요.",
+      "payloadTooLarge": "요청 본문이 너무 큽니다.",
+      "subjectTooLong": "제목은 120자 이하여야 합니다.",
+      "messageTooShort": "메시지는 10자 이상이어야 합니다.",
+      "messageTooLong": "메시지는 2000자 이하여야 합니다.",
+      "invalidPayload": "잘못된 지원 요청 본문입니다.",
+      "featureDisabled": "이 배포에서는 현재 지원 이메일을 사용할 수 없습니다.",
+      "unableToSend": "지금은 지원 이메일을 보낼 수 없습니다. 다시 시도하세요."
+    },
+    "email": {
+      "unknownEmail": "알 수 없는 이메일",
+      "subjectWithInput": "[대시보드 지원] {subject}",
+      "defaultSubject": "[대시보드 지원] 새 메시지",
+      "line1": "SaaS Starter 대시보드에서 새 지원 메시지가 도착했습니다.",
+      "userId": "사용자 ID: {userId}",
+      "email": "이메일: {email}",
+      "messageLabel": "메시지:"
+    }
+  },
+  "ApiForgotPassword": {
+    "messages": {
+      "genericSuccess": "해당 이메일의 계정이 있으면 재설정 링크가 전송되었습니다."
+    },
+    "errors": {
+      "payloadTooLarge": "요청 본문이 너무 큽니다."
+    },
+    "email": {
+      "subject": "비밀번호 재설정",
+      "line1": "비밀번호 재설정 요청을 받았습니다.",
+      "useLink": "계속하려면 이 링크를 사용하세요:",
+      "ignoreIfNotRequested": "본인이 요청한 것이 아니라면 이 이메일을 무시하셔도 됩니다."
+    }
+  },
+  "ApiTeamMembers": {
+    "errors": {
+      "unauthorized": "인증되지 않음",
+      "noTeamMembership": "이 계정의 팀 멤버십을 찾을 수 없습니다.",
+      "removeForbidden": "팀 소유자와 관리자만 멤버를 제거할 수 있습니다.",
+      "updateRoleForbidden": "팀 소유자와 관리자만 멤버 역할을 업데이트할 수 있습니다.",
+      "rateLimited": "멤버 관리 요청이 너무 많습니다. 잠시 후 다시 시도하세요.",
+      "invalidMemberId": "잘못된 멤버 id입니다.",
+      "selfRemovalNotSupported": "이 작업에서는 본인 제거가 지원되지 않습니다.",
+      "unableToRemoveMember": "멤버를 제거할 수 없습니다.",
+      "memberNotFound": "이 팀에서 멤버를 찾을 수 없습니다.",
+      "adminRemoveLimit": "관리자는 멤버만 제거할 수 있습니다.",
+      "cannotRemoveLastOwner": "마지막 팀 소유자는 제거할 수 없습니다.",
+      "billingSyncFailedAfterRemoval": "멤버는 제거되었지만 결제 동기화에 실패했습니다. 잠시 후 다시 시도하세요.",
+      "useOwnershipTransferForSelf": "본인의 owner 역할을 변경하려면 소유권 이전을 사용하세요.",
+      "payloadTooLarge": "요청 본문이 너무 큽니다.",
+      "invalidRolePayload": "잘못된 역할 업데이트 본문입니다.",
+      "unableToUpdateMemberRole": "멤버 역할을 업데이트할 수 없습니다.",
+      "useOwnershipTransferForOwner": "owner 역할을 업데이트하려면 소유권 이전을 사용하세요.",
+      "adminUpdateRoleLimit": "관리자는 멤버 역할만 업데이트할 수 있습니다."
+    }
+  },
+  "ApiTeamOwnershipTransfer": {
+    "errors": {
+      "unauthorized": "인증되지 않음",
+      "noTeamMembership": "이 계정의 팀 멤버십을 찾을 수 없습니다.",
+      "forbidden": "소유자만 소유권을 이전할 수 있습니다.",
+      "rateLimited": "소유권 이전 시도가 너무 많습니다. 나중에 다시 시도하세요.",
+      "payloadTooLarge": "요청 본문이 너무 큽니다.",
+      "invalidPayload": "잘못된 소유권 이전 본문입니다.",
+      "alreadyOwner": "이미 소유자입니다.",
+      "unableToTransfer": "소유권을 이전할 수 없습니다.",
+      "targetNotFound": "대상 사용자는 팀 멤버가 아닙니다.",
+      "targetAlreadyOwner": "대상 사용자는 이미 소유자입니다."
+    }
+  },
+  "ApiTeamSettings": {
+    "errors": {
+      "unauthorized": "인증되지 않음",
+      "noTeamMembership": "이 계정의 팀 멤버십을 찾을 수 없습니다.",
+      "forbidden": "팀 소유자와 관리자만 조직 설정을 업데이트할 수 있습니다.",
+      "rateLimited": "설정 업데이트가 너무 많습니다. 잠시 후 다시 시도하세요.",
+      "payloadTooLarge": "요청 본문이 너무 큽니다.",
+      "invalidPayload": "잘못된 조직 설정 본문입니다.",
+      "unableToUpdate": "조직 설정을 업데이트할 수 없습니다."
+    }
+  },
+  "ApiTeamRecoverPersonal": {
+    "errors": {
+      "unauthorized": "인증되지 않음",
+      "rateLimited": "복구 요청이 너무 많습니다. 잠시 후 다시 시도하세요.",
+      "noEmailOnAccount": "이 계정에서 이메일을 찾을 수 없습니다.",
+      "unableToRecover": "지금은 팀을 복구할 수 없습니다."
+    }
+  },
+  "ApiAuthLogin": {
+    "errors": {
+      "invalidOrigin": "잘못된 요청 origin입니다.",
+      "missingCsrfToken": "CSRF 토큰이 없습니다.",
+      "invalidCsrfToken": "잘못된 CSRF 토큰입니다.",
+      "invalidContentType": "Content-Type은 application/json이어야 합니다.",
+      "payloadTooLarge": "요청 본문이 너무 큽니다.",
+      "invalidCredentials": "이메일 또는 비밀번호가 잘못되었습니다.",
+      "rateLimited": "로그인 시도가 너무 많습니다. 나중에 다시 시도하세요."
+    }
+  },
+  "ApiAuthSignup": {
+    "messages": {
+      "accountCreated": "계정이 생성되었습니다. 확인이 활성화된 경우 받은편지함에서 이메일을 확인하세요."
+    },
+    "errors": {
+      "invalidOrigin": "잘못된 요청 origin입니다.",
+      "missingCsrfToken": "CSRF 토큰이 없습니다.",
+      "invalidCsrfToken": "잘못된 CSRF 토큰입니다.",
+      "invalidContentType": "Content-Type은 application/json이어야 합니다.",
+      "payloadTooLarge": "요청 본문이 너무 큽니다.",
+      "invalidEmailOrPassword": "유효한 이메일과 비밀번호를 입력하세요.",
+      "passwordComplexity": "비밀번호는 12자 이상 128자 이하여야 합니다.",
+      "rateLimited": "가입 시도가 너무 많습니다. 나중에 다시 시도하세요.",
+      "unableToCreateAccount": "계정을 만들 수 없습니다."
+    }
+  },
+  "ApiAiChat": {
+    "errors": {
+      "invalidOrigin": "잘못된 요청 origin입니다.",
+      "missingCsrfToken": "CSRF 토큰이 없습니다.",
+      "invalidCsrfToken": "잘못된 CSRF 토큰입니다.",
+      "invalidContentType": "Content-Type은 application/json이어야 합니다.",
+      "unauthorized": "인증되지 않음",
+      "noTeamMembership": "이 계정의 팀 멤버십을 찾을 수 없습니다.",
+      "rateLimited": "AI 요청이 너무 많습니다. 잠시 후 다시 시도하세요.",
+      "payloadTooLarge": "요청 본문이 너무 큽니다.",
+      "invalidPayload": "잘못된 요청 본문입니다.",
+      "maxAttachments": "요청당 최대 {max}개의 첨부만 허용됩니다.",
+      "unsupportedAttachmentType": "지원되지 않는 첨부 형식입니다.",
+      "budgetExceeded": "월간 AI 토큰 예산에 도달했습니다. 업그레이드하거나 다음 주기를 기다리세요.",
+      "modalityNotAllowed": "현재 AI 요금제에서는 이 첨부 형식을 지원하지 않습니다.",
+      "planRequired": "AI 접근은 적격 유료 요금제가 필요합니다.",
+      "upstreamRateLimited": "AI 제공자에 현재 속도 제한이 적용되고 있습니다. 잠시 후 다시 시도하세요.",
+      "upstreamBadRequest": "이 AI 요청을 처리할 수 없습니다. 입력을 조정하고 다시 시도하세요.",
+      "unavailable": "AI 어시스턴트를 현재 사용할 수 없습니다."
+    }
+  },
+  "ApiStripeCheckout": {
+    "errors": {
+      "invalidOrigin": "잘못된 요청 origin입니다.",
+      "missingCsrfToken": "CSRF 토큰이 없습니다.",
+      "invalidCsrfToken": "잘못된 CSRF 토큰입니다.",
+      "invalidContentType": "Content-Type은 application/json이어야 합니다.",
+      "billingNotConfigured": "이 배포에는 결제가 구성되어 있지 않습니다.",
+      "unauthorized": "인증되지 않음",
+      "noTeamMembership": "이 계정의 팀 멤버십을 찾을 수 없습니다.",
+      "forbidden": "팀 소유자와 관리자만 결제를 관리할 수 있습니다.",
+      "rateLimited": "요청이 너무 많습니다. 잠시 후 다시 시도하세요.",
+      "payloadTooLarge": "요청 본문이 너무 큽니다.",
+      "invalidPayload": "잘못된 요청 본문입니다",
+      "invalidPlan": "잘못된 요금제가 선택되었습니다",
+      "billingPlansNotConfigured": "이 배포의 결제 요금제가 완전히 구성되지 않았습니다.",
+      "checkoutInProgress": "체크아웃이 이미 진행 중입니다. 잠시 후 다시 시도하세요.",
+      "couldNotVerifySubscription": "현재 구독 상태를 확인할 수 없습니다.",
+      "activeSubscriptionExists": "이미 활성 구독이 있습니다.",
+      "couldNotLoadStripeCustomer": "Stripe 고객 정보를 불러올 수 없습니다.",
+      "unableToStartCheckout": "지금은 체크아웃을 시작할 수 없습니다. 다시 시도하세요."
+    }
+  },
+  "ApiStripeChangePlan": {
+    "errors": {
+      "invalidOrigin": "잘못된 요청 origin입니다.",
+      "missingCsrfToken": "CSRF 토큰이 없습니다.",
+      "invalidCsrfToken": "잘못된 CSRF 토큰입니다.",
+      "invalidContentType": "Content-Type은 application/json이어야 합니다.",
+      "billingNotConfigured": "이 배포에는 결제가 구성되어 있지 않습니다.",
+      "unauthorized": "인증되지 않음",
+      "noTeamMembership": "이 계정의 팀 멤버십을 찾을 수 없습니다.",
+      "forbidden": "팀 소유자와 관리자만 결제를 관리할 수 있습니다.",
+      "rateLimited": "요청이 너무 많습니다. 잠시 후 다시 시도하세요.",
+      "payloadTooLarge": "요청 본문이 너무 큽니다.",
+      "invalidPayload": "잘못된 요청 본문입니다",
+      "invalidTargetPlan": "잘못된 대상 요금제입니다",
+      "billingPlansNotConfigured": "이 배포의 결제 요금제가 완전히 구성되지 않았습니다.",
+      "couldNotLoadSubscription": "현재 구독 상태를 불러올 수 없습니다.",
+      "noActiveSubscription": "활성 구독을 찾을 수 없습니다. 먼저 새 체크아웃을 시작하세요.",
+      "billingIdentityMismatch": "결제 식별자 불일치가 감지되었습니다. 계정을 다시 연결하려면 새 체크아웃을 시작하세요.",
+      "subscriptionItemNotFound": "구독 항목을 찾을 수 없습니다.",
+      "alreadyOnPlan": "이미 이 요금제를 사용 중입니다.",
+      "postChangeSyncFailed": "요금제는 변경되었지만 로컬 결제 동기화에 실패했습니다. 잠시 후 다시 시도하세요.",
+      "unableToChangePlan": "지금은 요금제를 변경할 수 없습니다. 다시 시도하세요."
+    }
+  },
+  "ApiStripePortal": {
+    "errors": {
+      "invalidOrigin": "잘못된 요청 origin입니다.",
+      "missingCsrfToken": "CSRF 토큰이 없습니다.",
+      "invalidCsrfToken": "잘못된 CSRF 토큰입니다.",
+      "invalidContentType": "Content-Type은 application/json이어야 합니다.",
+      "billingNotConfigured": "이 배포에는 결제가 구성되어 있지 않습니다.",
+      "unauthorized": "인증되지 않음",
+      "noTeamMembership": "이 계정의 팀 멤버십을 찾을 수 없습니다.",
+      "forbidden": "팀 소유자와 관리자만 결제를 관리할 수 있습니다.",
+      "rateLimited": "요청이 너무 많습니다. 잠시 후 다시 시도하세요.",
+      "couldNotLoadStripeCustomer": "Stripe 고객 정보를 불러올 수 없습니다.",
+      "noCustomerRecord": "이 계정에 대한 고객 정보를 찾을 수 없습니다.",
+      "billingIdentityMismatch": "결제 식별자 불일치가 감지되었습니다. 계정을 다시 연결하려면 새 체크아웃을 시작하세요.",
+      "unableToOpenPortal": "지금은 결제 포털을 열 수 없습니다. 다시 시도하세요."
+    }
+  },
+  "ApiStripeWebhook": {
+    "errors": {
+      "invalidContentType": "Content-Type은 application/json이어야 합니다.",
+      "webhooksNotConfigured": "이 배포에는 결제 Webhook이 구성되어 있지 않습니다.",
+      "missingSignature": "Stripe 서명이 없습니다",
+      "signatureVerificationFailed": "Webhook 서명 검증에 실패했습니다.",
+      "webhookHandlingFailed": "Webhook 처리에 실패했습니다."
+    }
+  },
+  "ApiCronReconcileSeatQuantities": {
+    "errors": {
+      "cronNotConfigured": "Cron이 구성되어 있지 않습니다.",
+      "unauthorized": "인증되지 않음.",
+      "rateLimited": "요청이 너무 많습니다.",
+      "partialFailure": "Cron 실행은 완료되었지만 하나 이상의 내부 작업이 실패했습니다."
+    }
+  },
+  "ApiCronPruneStripeWebhookEvents": {
+    "errors": {
+      "cronNotConfigured": "Cron이 구성되어 있지 않습니다.",
+      "unauthorized": "인증되지 않음.",
+      "rateLimited": "요청이 너무 많습니다."
+    }
+  }
+}

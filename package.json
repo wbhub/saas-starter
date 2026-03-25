@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "lint:locales": "tsx scripts/check-locales.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -16,7 +17,7 @@
     "test:coverage": "vitest run --coverage",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "lint:conventions": "tsx scripts/check-env-usage.ts && tsx scripts/check-response-helpers.ts && tsx scripts/check-route-wrappers.ts"
+    "lint:conventions": "tsx scripts/check-env-usage.ts && tsx scripts/check-response-helpers.ts && tsx scripts/check-route-wrappers.ts && tsx scripts/check-locales.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.31",
