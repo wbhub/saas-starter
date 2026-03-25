@@ -11,7 +11,7 @@ export function SiteHeader({ isLoggedIn }: { isLoggedIn: boolean }) {
 
   return (
     <header className="border-b app-border-subtle">
-      <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
+      <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
         <Link
           href="/"
           className="flex items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring)]"
