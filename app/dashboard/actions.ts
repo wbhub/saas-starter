@@ -42,15 +42,6 @@ export type DeleteAccountState = {
   message: string | null;
 };
 
-type OwnedTeamMembershipRow = {
-  team_id: string;
-};
-
-type TeamOwnerMembershipRow = {
-  team_id: string;
-  user_id: string;
-};
-
 type TeamMembershipRow = {
   team_id: string;
 };
@@ -107,46 +98,17 @@ function isAllowedAvatarUrl(url: string, expectedStorageOrigin: string, userId: 
 
 async function isLastOwnerOfAnyTeam(userId: string): Promise<boolean> {
   const adminClient = createAdminClient();
-  const { data: ownedMemberships, error: ownedMembershipsError } = await adminClient
-    .from("team_memberships")
-    .select("team_id")
-    .eq("user_id", userId)
-    .eq("role", "owner")
-    .returns<OwnedTeamMembershipRow[]>();
+  const { data, error } = await adminClient.rpc("is_last_owner_of_any_team", {
+    p_user_id: userId,
+  });
 
-  if (ownedMembershipsError) {
+  if (error) {
     throw new Error(
-      `Failed to load owned team memberships before account deletion: ${ownedMembershipsError.message}`,
+      `Failed to check last-owner status before account deletion: ${error.message}`,
     );
   }
 
-  if (!ownedMemberships || ownedMemberships.length === 0) {
-    return false;
-  }
-
-  const ownedTeamIds = Array.from(
-    new Set(ownedMemberships.map((membership) => membership.team_id)),
-  );
-  const { data: ownerMemberships, error: ownerMembershipsError } = await adminClient
-    .from("team_memberships")
-    .select("team_id,user_id")
-    .in("team_id", ownedTeamIds)
-    .eq("role", "owner")
-    .returns<TeamOwnerMembershipRow[]>();
-
-  if (ownerMembershipsError) {
-    throw new Error(
-      `Failed to load owner memberships for teams before account deletion: ${ownerMembershipsError.message}`,
-    );
-  }
-
-  const ownerCountsByTeam = new Map<string, number>();
-  for (const membership of ownerMemberships ?? []) {
-    const currentCount = ownerCountsByTeam.get(membership.team_id) ?? 0;
-    ownerCountsByTeam.set(membership.team_id, currentCount + 1);
-  }
-
-  return ownedTeamIds.some((teamId) => (ownerCountsByTeam.get(teamId) ?? 0) <= 1);
+  return data === true;
 }
 
 async function getTeamIdsForUserMemberships(userId: string): Promise<string[]> {

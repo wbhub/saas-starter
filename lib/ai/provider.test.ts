@@ -25,7 +25,7 @@ describe("lib/ai/provider", () => {
     const provider = await import("./provider");
     expect(provider.aiProviderName).toBe("openai");
     expect(provider.isAiProviderConfigured).toBe(true);
-    expect(provider.getAiLanguageModel("gpt-4.1-mini")).toBeTruthy();
+    expect(await provider.getAiLanguageModel("gpt-4.1-mini")).toBeTruthy();
   });
 
   it("uses Anthropic fallback key when AI_PROVIDER=anthropic", async () => {

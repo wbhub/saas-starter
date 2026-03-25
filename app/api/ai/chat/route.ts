@@ -614,7 +614,7 @@ export async function POST(request: Request) {
       { once: true },
     );
 
-    const languageModel = getAiLanguageModel(model);
+    const languageModel = await getAiLanguageModel(model);
     if (!languageModel) {
       return aiErrorResponse({
         error: aiUnavailableMessage,
