@@ -23,6 +23,16 @@ describe("resolveRequestLocale", () => {
     expect(resolveRequestLocale(request)).toBe("ko");
   });
 
+  it("supports Japanese locale detection from Accept-Language", () => {
+    const request = new Request("https://example.com", {
+      headers: {
+        "accept-language": "ja-JP,ja;q=0.9,en-US;q=0.8,en;q=0.7",
+      },
+    });
+
+    expect(resolveRequestLocale(request)).toBe("ja");
+  });
+
   it("falls back to the default locale when no supported locale is present", () => {
     const request = new Request("https://example.com", {
       headers: {

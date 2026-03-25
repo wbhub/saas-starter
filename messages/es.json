@@ -22,11 +22,10 @@
       "en": "Inglés",
       "es": "Español",
       "fr": "Francés",
+      "pt": "Portugués",
       "zh": "Chino",
       "ja": "Japonés",
-      "ko": "Coreano",
-      "pt": "Portugués",
-      "de": "Alemán"
+      "ko": "Coreano"
     }
   },
   "SiteHeader": {
@@ -99,7 +98,7 @@
       "feature3": "AI con presupuestos de tokens",
       "feature4": "Rate limiting en 3 capas",
       "feature5": "Webhooks idempotentes",
-      "feature6": "i18n en 6 idiomas",
+      "feature6": "i18n en 7 idiomas",
       "shipNowTitle": "Lo que lanzas desde el día uno",
       "shipNowDescription": "Flujos con profundidad de producción, no stubs de boilerplate.",
       "shipItem1": "Ciclo completo de auth — registro, login, OAuth (Google + Microsoft), reset de contraseña y panel protegido con middleware de refresco de sesión",
@@ -126,7 +125,7 @@
       "stat1Label": "Tablas, triggers y RPCs en Postgres",
       "stat1Value": "20+",
       "stat2Label": "Idiomas con routing sin prefijo",
-      "stat2Value": "6",
+      "stat2Value": "7",
       "stat3Label": "Capas de rate-limit con circuit breaker",
       "stat3Value": "3"
     },
@@ -186,7 +185,7 @@
       "comparePlans": "Comparar planes",
       "faqTitle": "Preguntas frecuentes",
       "q1": "¿Qué incluye de base?",
-      "a1": "Una base SaaS completa: auth Supabase con OAuth (Google + Microsoft), equipos multi-tenant con acceso por roles y flujos de invitación, facturación Stripe por asientos con webhooks idempotentes y crons de reconciliación, chat AI con streaming y presupuestos de tokens aplicados en BD, email de soporte vía Resend, auditoría, i18n en 6 idiomas y un pipeline de seguridad que cubre CSRF, CSP, rate limiting y trazabilidad de peticiones.",
+      "a1": "Una base SaaS completa: auth Supabase con OAuth (Google + Microsoft), equipos multi-tenant con acceso por roles y flujos de invitación, facturación Stripe por asientos con webhooks idempotentes y crons de reconciliación, chat AI con streaming y presupuestos de tokens aplicados en BD, email de soporte vía Resend, auditoría, i18n en 7 idiomas y un pipeline de seguridad que cubre CSRF, CSP, rate limiting y trazabilidad de peticiones.",
       "q2": "¿Qué tan profundas son las integraciones — stubs o listas para producción?",
       "a2": "Listas para producción. Los webhooks de Stripe usan una tabla de claims para idempotencia con offload opcional a Trigger.dev. Las invitaciones de equipo se resuelven mediante RPCs atómicos de Postgres que sincronizan cantidades de asientos. Los presupuestos de AI se aplican en la base de datos con semántica claim/finalize y colas de reintentos. El rate limiting desciende en cascada por tres capas con un circuit breaker. Son patrones a los que llegarías después de operar un producto real.",
       "q3": "¿Cómo se gestionan equipos, roles y permisos?",

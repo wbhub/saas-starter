@@ -22,11 +22,10 @@
       "en": "영어",
       "es": "스페인어",
       "fr": "프랑스어",
+      "pt": "포르투갈어",
       "zh": "중국어",
       "ja": "일본어",
-      "ko": "한국어",
-      "pt": "포르투갈어",
-      "de": "독일어"
+      "ko": "한국어"
     }
   },
   "SiteHeader": {
@@ -99,7 +98,7 @@
       "feature3": "토큰 예산이 있는 AI",
       "feature4": "3단계 속도 제한",
       "feature5": "Webhook 멱등성",
-      "feature6": "6개 언어 i18n",
+      "feature6": "7개 언어 i18n",
       "shipNowTitle": "첫날 바로 제공되는 것",
       "shipNowDescription": "빈 껍데기 보일러플레이트가 아니라, 프로덕션 깊이의 플로우입니다.",
       "shipItem1": "회원가입, 로그인, OAuth (Google + Microsoft), 비밀번호 재설정, 세션 새로고침 미들웨어가 적용된 보호된 대시보드까지 전체 인증 라이프사이클",
@@ -126,7 +125,7 @@
       "stat1Label": "Postgres 테이블, 트리거, RPC",
       "stat1Value": "20+",
       "stat2Label": "로케일 프리 라우팅을 지원하는 언어",
-      "stat2Value": "6",
+      "stat2Value": "7",
       "stat3Label": "회로 차단기를 포함한 속도 제한 계층",
       "stat3Value": "3"
     },
@@ -186,7 +185,7 @@
       "comparePlans": "요금제 비교",
       "faqTitle": "자주 묻는 질문",
       "q1": "기본으로 무엇이 포함되나요?",
-      "a1": "완전한 SaaS 기반입니다. OAuth (Google + Microsoft)를 포함한 Supabase 인증, 역할 기반 접근과 초대 플로우를 갖춘 멀티테넌트 팀, 멱등 Webhook과 정산 cron이 포함된 좌석 기반 Stripe 결제, DB에서 강제되는 토큰 예산을 갖춘 스트리밍 AI 채팅, Resend 기반 지원 이메일, 감사 로그, 6개 언어 i18n, 그리고 CSRF, CSP, 속도 제한, 요청 추적을 포괄하는 보안 파이프라인이 포함됩니다.",
+      "a1": "완전한 SaaS 기반입니다. OAuth (Google + Microsoft)를 포함한 Supabase 인증, 역할 기반 접근과 초대 플로우를 갖춘 멀티테넌트 팀, 멱등 Webhook과 정산 cron이 포함된 좌석 기반 Stripe 결제, DB에서 강제되는 토큰 예산을 갖춘 스트리밍 AI 채팅, Resend 기반 지원 이메일, 감사 로그, 7개 언어 i18n, 그리고 CSRF, CSP, 속도 제한, 요청 추적을 포괄하는 보안 파이프라인이 포함됩니다.",
       "q2": "통합 깊이는 어느 정도인가요? 스텁인가요, 프로덕션 준비가 되었나요?",
       "a2": "프로덕션 준비가 되어 있습니다. Stripe Webhook은 선택적 Trigger.dev 오프로딩과 함께 claims 테이블로 멱등성을 보장합니다. 팀 초대는 좌석 수량을 동기화하는 원자적 Postgres RPC를 통해 처리됩니다. AI 예산은 claim/finalize 시맨틱과 재시도 큐로 데이터베이스에서 강제됩니다. 속도 제한은 회로 차단기와 함께 세 계층으로 연쇄 적용됩니다. 실제 제품을 운영하며 도달하게 되는 패턴들입니다.",
       "q3": "팀, 역할, 권한은 어떻게 처리되나요?",
