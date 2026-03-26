@@ -31,8 +31,8 @@ Defined in `lib/constants/rate-limits.ts`. All values use `MINUTE_MS` (60,000) a
 | `emailChangeRequestByUser`      | 5     | 10 min | Email change requests trigger confirmation email flows. This is intentionally stricter than generic settings updates to reduce inbox spam and abuse from a signed-in account. |
 | `aiChatByUser`                  | 30    | 10 min | Roughly 3 messages/minute. Prevents a single user from monopolizing AI resources.                                                                                             |
 | `aiChatByTeam`                  | 120   | 10 min | 4x the per-user limit so a 4-person team can all use AI concurrently.                                                                                                         |
-| `aiObjectByUser`                | 30    | 10 min | Same as chat. Object requests are typically cheaper but share the same risk profile.                                                                                           |
-| `aiObjectByTeam`                | 120   | 10 min | Same as chat team limit. Note: chat and object limits are independent -- a user can make 30 chat AND 30 object requests in the same window.                                    |
+| `aiObjectByUser`                | 30    | 10 min | Same as chat. Object requests are typically cheaper but share the same risk profile.                                                                                          |
+| `aiObjectByTeam`                | 120   | 10 min | Same as chat team limit. Note: chat and object limits are independent -- a user can make 30 chat AND 30 object requests in the same window.                                   |
 | `stripeCheckoutByTeam`          | 10    | 1 min  | Checkout is expensive (creates Stripe sessions). Short window prevents runaway retry loops.                                                                                   |
 | `stripeChangePlanByTeam`        | 10    | 1 min  | Plan changes mutate subscriptions. Same reasoning as checkout.                                                                                                                |
 | `stripePortalByTeam`            | 20    | 1 min  | Portal sessions are cheaper to create than checkouts, so slightly more generous.                                                                                              |
@@ -178,11 +178,11 @@ Configured via `STRIPE_SEAT_PRORATION_BEHAVIOR` env var, defaults to `"create_pr
 
 ### AI Structured Output (`app/api/ai/object/route.ts`)
 
-| Constant                    | Value       | Why                                                                                                                                                                      |
-| --------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `AI_OBJECT_MAX_TOKENS`      | 2,048       | Maximum output tokens for a structured object response. Lower than chat (4,096) because structured JSON is typically more compact than freeform text.                    |
-| `schemaName` max length     | 100 chars   | Schema registry key limit. Prevents excessively long keys.                                                                                                               |
-| `prompt` max length         | 8,000 chars | Same as chat message content limit.                                                                                                                                      |
+| Constant                | Value       | Why                                                                                                                                                   |
+| ----------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AI_OBJECT_MAX_TOKENS`  | 2,048       | Maximum output tokens for a structured object response. Lower than chat (4,096) because structured JSON is typically more compact than freeform text. |
+| `schemaName` max length | 100 chars   | Schema registry key limit. Prevents excessively long keys.                                                                                            |
+| `prompt` max length     | 8,000 chars | Same as chat message content limit.                                                                                                                   |
 
 The object route uses `skipTools: true` when calling `resolveAiRequestContext`, which forces `maxSteps = 1` and skips loading the tool registry. This ensures the budget projection is not inflated by the global `AI_MAX_STEPS` setting.
 

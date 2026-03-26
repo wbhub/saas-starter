@@ -1,6 +1,11 @@
 import "server-only";
 import { type LanguageModel } from "ai";
-import { type AiAccessMode, type AiModality, getAiAccessMode, getAiAllowedSubscriptionStatuses } from "@/lib/ai/config";
+import {
+  type AiAccessMode,
+  type AiModality,
+  getAiAccessMode,
+  getAiAllowedSubscriptionStatuses,
+} from "@/lib/ai/config";
 import {
   claimTeamAiBudget,
   finalizeTeamAiBudgetClaimWithRetry,
