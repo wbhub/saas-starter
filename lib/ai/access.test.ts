@@ -49,7 +49,7 @@ describe("resolveAiAccess", () => {
       model: null,
       monthlyTokenBudget: 0,
       allowedModalities: ["text"],
-      maxSteps: 1,
+      maxSteps: 5,
       denialReason: "default_model_missing",
     });
   });
@@ -67,7 +67,7 @@ describe("resolveAiAccess", () => {
       model: "gpt-5-mini",
       monthlyTokenBudget: 12000,
       allowedModalities: ["text"],
-      maxSteps: 1,
+      maxSteps: 5,
     });
   });
 
@@ -93,7 +93,7 @@ describe("resolveAiAccess", () => {
       model: null,
       monthlyTokenBudget: 0,
       allowedModalities: ["text", "image"],
-      maxSteps: 1,
+      maxSteps: 5,
       denialReason: "plan_disabled",
     });
   });
@@ -120,7 +120,7 @@ describe("resolveAiAccess", () => {
       model: "gpt-5-mini",
       monthlyTokenBudget: 2500,
       allowedModalities: ["text", "image", "file"],
-      maxSteps: 1,
+      maxSteps: 5,
     });
   });
 
@@ -150,7 +150,7 @@ describe("resolveAiAccess", () => {
       model: null,
       monthlyTokenBudget: 0,
       allowedModalities: ["text"],
-      maxSteps: 1,
+      maxSteps: 5,
       denialReason: "plan_not_allowed",
     });
   });
@@ -181,7 +181,7 @@ describe("resolveAiAccess", () => {
       model: "gpt-5",
       monthlyTokenBudget: 9000,
       allowedModalities: ["text", "image", "file"],
-      maxSteps: 1,
+      maxSteps: 5,
     });
   });
 
@@ -211,7 +211,7 @@ describe("resolveAiAccess", () => {
       model: null,
       monthlyTokenBudget: 0,
       allowedModalities: ["text", "file"],
-      maxSteps: 1,
+      maxSteps: 5,
       denialReason: "plan_not_allowed",
     });
   });

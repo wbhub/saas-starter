@@ -36,7 +36,7 @@ const DEFAULT_AI_PLAN_MONTHLY_TOKEN_BUDGET_MAP: AiPlanMonthlyTokenBudgetMap = Ob
 ) as AiPlanMonthlyTokenBudgetMap;
 const DEFAULT_AI_ALLOWED_MODALITIES: readonly AiModality[] = ["text"];
 
-const DEFAULT_AI_MAX_STEPS = 1;
+const DEFAULT_AI_MAX_STEPS = 5;
 const MAX_AI_STEPS_CAP = 25;
 
 const DEFAULT_AI_BY_PLAN_RULES: AiByPlanRules = Object.fromEntries(
