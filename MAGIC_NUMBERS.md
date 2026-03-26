@@ -174,6 +174,15 @@ Configured via `STRIPE_SEAT_PRORATION_BEHAVIOR` env var, defaults to `"create_pr
 | Attachment `name` max length     | 255 chars     | Standard filesystem path component limit.                                                                                                                                              |
 | Attachment `mimeType` max length | 255 chars     | Generous for any valid MIME type.                                                                                                                                                      |
 
+### Agent / Tool-Calling Defaults (`lib/ai/config.ts`)
+
+| Constant               | Value                         | Why                                                                                                                                                                                                                |
+| ---------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `DEFAULT_AI_MAX_STEPS` | 1                             | Default maximum model steps per request. 1 = single-turn (no agent loop). Higher values enable multi-step tool-calling when `AI_TOOLS_ENABLED=true`. Configurable via `AI_MAX_STEPS` env var.                      |
+| Budget projection      | `singleStepTokens * maxSteps` | When tools are enabled, the budget claim is scaled by the number of allowed steps. Conservative: claims worst-case to avoid mid-stream budget exhaustion. `onStepFinish` aborts if actual usage exceeds the claim. |
+
+Per-plan `maxSteps` can be set via `AI_PLAN_RULES_JSON` (e.g., `{"pro":{"enabled":true,"maxSteps":5}}`). Plans using the legacy model/budget maps inherit the global `AI_MAX_STEPS` default.
+
 ### Supported File Types
 
 | Set                          | Types                                                | Why                                                                                 |
