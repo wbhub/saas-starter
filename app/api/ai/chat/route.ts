@@ -14,7 +14,11 @@ import {
   finalizeTeamAiBudgetClaimWithRetry,
   type BudgetClaim,
 } from "@/lib/ai/chat-budget";
-import { getAiAccessMode, getAiAllowedSubscriptionStatuses, getAiToolsEnabled } from "@/lib/ai/config";
+import {
+  getAiAccessMode,
+  getAiAllowedSubscriptionStatuses,
+  getAiToolsEnabled,
+} from "@/lib/ai/config";
 import { AI_TOOL_MAP } from "@/lib/ai/tools";
 import { type AiModality } from "@/lib/ai/config";
 import { estimatePromptTokens } from "@/lib/ai/token-estimation";
@@ -721,8 +725,7 @@ export async function POST(request: Request) {
           }
 
           if (budgetClaim) {
-            const actualTokens =
-              accumulatedUsage.promptTokens + accumulatedUsage.completionTokens;
+            const actualTokens = accumulatedUsage.promptTokens + accumulatedUsage.completionTokens;
             if (actualTokens >= projectedRequestTokens) {
               upstreamAbortController.abort("budget_exhausted");
             }
@@ -735,8 +738,8 @@ export async function POST(request: Request) {
             "success",
           );
         },
-        onError: async () => {
-          logger.error("Agent stream error", undefined, {
+        onError: async ({ error }) => {
+          logger.error("Agent stream error", error, {
             teamId: resolvedTeamId,
             userId: resolvedUserId,
             model,

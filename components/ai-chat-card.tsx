@@ -429,9 +429,7 @@ export function AiChatCard() {
                       <div
                         key={partIndex}
                         className={`max-w-[88%] rounded-lg px-3 py-2 text-sm ${
-                          isUser
-                            ? "ml-auto bg-btn-accent text-white"
-                            : "bg-surface text-foreground"
+                          isUser ? "ml-auto bg-btn-accent text-white" : "bg-surface text-foreground"
                         }`}
                       >
                         {part.text}
