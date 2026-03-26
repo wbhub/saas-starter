@@ -3,11 +3,14 @@ import type { createAnthropic } from "@ai-sdk/anthropic";
 import type { createGoogleGenerativeAI } from "@ai-sdk/google";
 import type { createOpenAI } from "@ai-sdk/openai";
 import { type AiModality } from "@/lib/ai/config";
+import {
+  AI_PROVIDER_NAMES,
+  parseAiProviderName,
+  type AiProviderName,
+} from "@/lib/ai/provider-name";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 
-const AI_PROVIDERS = ["openai", "anthropic", "google"] as const;
-type AiProvider = (typeof AI_PROVIDERS)[number];
 const KNOWN_TEXT_ONLY_MODEL_PREFIXES = ["gpt-3.5"] as const;
 const ALL_MODALITIES = ["text", "image", "file"] as const satisfies readonly AiModality[];
 
@@ -16,7 +19,10 @@ type ModelModalityMapEntry = {
   modalities: readonly AiModality[];
 };
 
-const DEFAULT_MODEL_MODALITIES_BY_PROVIDER: Record<AiProvider, readonly ModelModalityMapEntry[]> = {
+const DEFAULT_MODEL_MODALITIES_BY_PROVIDER: Record<
+  AiProviderName,
+  readonly ModelModalityMapEntry[]
+> = {
   openai: [
     { key: "gpt-3.5*", modalities: ["text"] },
     { key: "gpt-4.1*", modalities: ["text", "image", "file"] },
@@ -93,22 +99,20 @@ function parseModelModalityMap(rawValue: string | undefined): ModelModalityMapEn
   return result;
 }
 
-function parseAiProvider(rawValue: string | undefined): AiProvider {
-  if (!rawValue) {
-    return "openai";
+function resolveAiProvider(rawValue: string | undefined) {
+  const parsed = parseAiProviderName(rawValue);
+  if (rawValue && parsed === "openai" && rawValue !== "openai") {
+    logger.warn(`Invalid AI_PROVIDER "${rawValue}"; defaulting to "openai".`, {
+      envKey: "AI_PROVIDER",
+      invalidValue: rawValue,
+      fallbackBehavior: "openai",
+    });
   }
-  if ((AI_PROVIDERS as readonly string[]).includes(rawValue)) {
-    return rawValue as AiProvider;
-  }
-  logger.warn(`Invalid AI_PROVIDER "${rawValue}"; defaulting to "openai".`, {
-    envKey: "AI_PROVIDER",
-    invalidValue: rawValue,
-    fallbackBehavior: "openai",
-  });
-  return "openai";
+  return parsed;
 }
 
-const provider = parseAiProvider(env.AI_PROVIDER);
+const provider = resolveAiProvider(env.AI_PROVIDER);
+
 const providerApiKey = (() => {
   const genericKey = (env.AI_PROVIDER_API_KEY || "").trim();
   if (genericKey) {

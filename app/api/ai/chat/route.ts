@@ -45,10 +45,7 @@ import { LIVE_SUBSCRIPTION_STATUSES, type SubscriptionStatus } from "@/lib/strip
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getCachedTeamContextForUser } from "@/lib/team-context-cache";
-import {
-  SUPPORTED_IMAGE_MIME_TYPES,
-  isSupportedFileMimeType,
-} from "@/lib/ai/attachments";
+import { SUPPORTED_IMAGE_MIME_TYPES, isSupportedFileMimeType } from "@/lib/ai/attachments";
 
 const AI_COMPLETION_MAX_TOKENS = 4_096;
 const AI_UNAVAILABLE_STATUS = 503;

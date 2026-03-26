@@ -186,9 +186,9 @@ Per-plan `maxSteps` can be set via `AI_PLAN_RULES_JSON` (e.g., `{"pro":{"enabled
 
 ### Supported File Types
 
-| Set                          | Types                                                | Why                                                                                 |
-| ---------------------------- | ---------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `SUPPORTED_IMAGE_MIME_TYPES` | `image/png`, `image/jpeg`, `image/webp`, `image/gif` | The image formats this app currently accepts in its attachment validation pipeline. |
+| Set                                   | Types                                                                                                                      | Why                                                                                 |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `SUPPORTED_IMAGE_MIME_TYPES`          | `image/png`, `image/jpeg`, `image/webp`, `image/gif`                                                                       | The image formats this app currently accepts in its attachment validation pipeline. |
 | `getSupportedFileMimeTypes(provider)` | OpenAI: `application/pdf`; Anthropic: `application/pdf`, `text/plain`; Google: `application/pdf`, `text/plain`, `text/csv` | Keeps the client and route aligned with the active AI provider's file-part support. |
 
 ### AI Budget Finalize Retries (`lib/ai/budget-finalize-retries.ts`)

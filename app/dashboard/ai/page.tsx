@@ -4,7 +4,7 @@ import { AiChatCard } from "@/components/ai-chat-card";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { NoTeamCard } from "@/components/no-team-card";
 import { TeamContextErrorCard } from "@/components/team-context-error-card";
-import { aiProviderName } from "@/lib/ai/provider";
+import { parseAiProviderName } from "@/lib/ai/provider-name";
 import {
   getDashboardAiUiGate,
   getDashboardBaseData,
@@ -12,6 +12,7 @@ import {
 } from "@/lib/dashboard/server";
 
 export default async function DashboardAiPage() {
+  const aiProviderName = parseAiProviderName(process.env.AI_PROVIDER?.trim());
   const t = await getTranslations("DashboardAiPage");
   const {
     supabase,
