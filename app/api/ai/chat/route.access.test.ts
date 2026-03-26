@@ -1,6 +1,73 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LIVE_SUBSCRIPTION_STATUSES } from "@/lib/stripe/plans";
 
+const aiMockState = vi.hoisted(() => ({
+  streamText: vi.fn(),
+}));
+
+const providerMockState = vi.hoisted(() => ({
+  aiProviderName: "openai" as "openai" | "anthropic" | "google",
+  supportsOpenAiFileIds: true,
+  providerSupportsModalities: vi.fn(),
+  getAiLanguageModel: vi.fn(),
+}));
+
+vi.mock("ai", async () => {
+  const actual = await vi.importActual<typeof import("ai")>("ai");
+  return {
+    ...actual,
+    streamText: aiMockState.streamText,
+  };
+});
+
+vi.mock("@/lib/ai/provider", () => ({
+  get aiProviderName() {
+    return providerMockState.aiProviderName;
+  },
+  isAiProviderConfigured: true,
+  get supportsOpenAiFileIds() {
+    return providerMockState.supportsOpenAiFileIds;
+  },
+  providerSupportsModalities: providerMockState.providerSupportsModalities,
+  getAiLanguageModel: providerMockState.getAiLanguageModel,
+}));
+
+function mockAiUnavailableResponse() {
+  aiMockState.streamText.mockReset();
+  aiMockState.streamText.mockImplementation(() => {
+    throw { status: 503 };
+  });
+}
+
+function mockAiTextResponse(text: string) {
+  aiMockState.streamText.mockReset();
+  aiMockState.streamText.mockReturnValue({
+    fullStream: {
+      async *[Symbol.asyncIterator]() {
+        yield { type: "text-delta", text };
+        yield { type: "finish", totalUsage: { inputTokens: 7, outputTokens: 2 } };
+      },
+    },
+  });
+}
+
+function mockProviderModule({
+  aiProviderName = "openai",
+  supportsOpenAiFileIds = aiProviderName === "openai",
+}: {
+  aiProviderName?: "openai" | "anthropic" | "google";
+  supportsOpenAiFileIds?: boolean;
+} = {}) {
+  providerMockState.aiProviderName = aiProviderName;
+  providerMockState.supportsOpenAiFileIds = supportsOpenAiFileIds;
+  providerMockState.providerSupportsModalities.mockReset();
+  providerMockState.providerSupportsModalities.mockImplementation(
+    (model: string) => !model.startsWith("gpt-3.5"),
+  );
+  providerMockState.getAiLanguageModel.mockReset();
+  providerMockState.getAiLanguageModel.mockReturnValue("provider-model");
+}
+
 describe("POST /api/ai/chat access and gating", () => {
   beforeEach(() => {
     vi.resetModules();
@@ -47,24 +114,8 @@ describe("POST /api/ai/chat access and gating", () => {
       getAiAllowedModalities: vi.fn().mockReturnValue(["text", "image", "file"]),
       getAiAllowedModalitiesForPlan: vi.fn().mockReturnValue(["text", "image", "file"]),
     }));
-    vi.doMock("@/lib/ai/provider", () => ({
-      aiProviderName: "openai",
-      isAiProviderConfigured: true,
-      supportsOpenAiFileIds: true,
-      providerSupportsModalities: vi
-        .fn()
-        .mockImplementation((model: string) => !model.startsWith("gpt-3.5")),
-      getAiLanguageModel: vi.fn().mockReturnValue("provider-model"),
-    }));
-    vi.doMock("ai", async () => {
-      const actual = await vi.importActual<typeof import("ai")>("ai");
-      return {
-        ...actual,
-        streamText: vi.fn(() => {
-          throw { status: 503 };
-        }),
-      };
-    });
+    mockProviderModule();
+    mockAiUnavailableResponse();
     vi.doMock("@/lib/ai/budget-finalize-retries", () => ({
       enqueueAiBudgetFinalizeRetry: vi.fn().mockResolvedValue(undefined),
       maybeProcessAiBudgetFinalizeRetries: vi.fn().mockResolvedValue({ ran: false }),
@@ -661,27 +712,11 @@ describe("POST /api/ai/chat access and gating", () => {
   });
 
   it("accepts text file attachments for anthropic provider", async () => {
-    vi.doMock("ai", async () => {
-      const actual = await vi.importActual<typeof import("ai")>("ai");
-      return {
-        ...actual,
-        streamText: vi.fn().mockReturnValue({
-          fullStream: {
-            async *[Symbol.asyncIterator]() {
-              yield { type: "text-delta", text: "anthropic-ok" };
-              yield { type: "finish", totalUsage: { inputTokens: 7, outputTokens: 2 } };
-            },
-          },
-        }),
-      };
-    });
-    vi.doMock("@/lib/ai/provider", () => ({
+    mockAiTextResponse("anthropic-ok");
+    mockProviderModule({
       aiProviderName: "anthropic",
-      isAiProviderConfigured: true,
       supportsOpenAiFileIds: false,
-      providerSupportsModalities: vi.fn().mockReturnValue(true),
-      getAiLanguageModel: vi.fn().mockReturnValue("provider-model"),
-    }));
+    });
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: async () => ({
         auth: {
