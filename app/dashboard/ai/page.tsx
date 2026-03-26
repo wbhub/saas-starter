@@ -4,6 +4,7 @@ import { AiChatCard } from "@/components/ai-chat-card";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { NoTeamCard } from "@/components/no-team-card";
 import { TeamContextErrorCard } from "@/components/team-context-error-card";
+import { env } from "@/lib/env";
 import { parseAiProviderName } from "@/lib/ai/provider-name";
 import {
   getDashboardAiUiGate,
@@ -12,7 +13,8 @@ import {
 } from "@/lib/dashboard/server";
 
 export default async function DashboardAiPage() {
-  const aiProviderName = parseAiProviderName(process.env.AI_PROVIDER?.trim());
+  const aiProviderName = parseAiProviderName(env.AI_PROVIDER);
+  const aiToolsEnabled = env.NEXT_PUBLIC_AI_TOOLS_ENABLED === "true";
   const t = await getTranslations("DashboardAiPage");
   const {
     supabase,
@@ -69,7 +71,7 @@ export default async function DashboardAiPage() {
       </header>
 
       {aiUiGate.isVisibleInUi ? (
-        <AiChatCard providerName={aiProviderName} />
+        <AiChatCard providerName={aiProviderName} toolsEnabled={aiToolsEnabled} />
       ) : (
         <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-foreground">{t("unavailable.title")}</h2>

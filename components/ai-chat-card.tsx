@@ -20,8 +20,6 @@ import {
   SUPPORTED_IMAGE_MIME_TYPES,
 } from "@/lib/ai/attachments";
 
-const AI_TOOLS_ENABLED = process.env.NEXT_PUBLIC_AI_TOOLS_ENABLED === "true";
-
 const MAX_ATTACHMENTS_PER_MESSAGE = 8;
 const MAX_ATTACHMENTS_PER_REQUEST = 16;
 const MAX_ATTACHMENT_DATA_CHARS = 180_000;
@@ -245,7 +243,13 @@ function ToolCallCard({
   );
 }
 
-export function AiChatCard({ providerName }: { providerName: AttachmentProviderName }) {
+export function AiChatCard({
+  providerName,
+  toolsEnabled,
+}: {
+  providerName: AttachmentProviderName;
+  toolsEnabled: boolean;
+}) {
   const t = useTranslations("AiChatCard");
   const [input, setInput] = useState("");
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
@@ -270,7 +274,7 @@ export function AiChatCard({ providerName }: { providerName: AttachmentProviderN
       },
     });
 
-    if (AI_TOOLS_ENABLED) {
+    if (toolsEnabled) {
       return new DefaultChatTransport({
         api: "/api/ai/chat",
         headers: getCsrfHeaders,
@@ -280,9 +284,9 @@ export function AiChatCard({ providerName }: { providerName: AttachmentProviderN
     return new TextStreamChatTransport({
       api: "/api/ai/chat",
       headers: getCsrfHeaders,
-      prepareSendMessagesRequest,
-    });
-  }, []);
+        prepareSendMessagesRequest,
+      });
+  }, [toolsEnabled]);
 
   const { messages, sendMessage, status, stop, error, clearError } = useChat({
     transport,

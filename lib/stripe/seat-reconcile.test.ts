@@ -1,19 +1,19 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("reconcileTeamSeatQuantities", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
-    vi.doMock("@/lib/billing/capabilities", () => ({
-      isBillingEnabled: () => true,
-    }));
+    vi.stubEnv("BILLING_PROVIDER", "stripe");
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it("returns no-op summary when billing is disabled", async () => {
     vi.resetModules();
-    vi.doMock("@/lib/billing/capabilities", () => ({
-      isBillingEnabled: () => false,
-    }));
+    vi.stubEnv("BILLING_PROVIDER", "none");
 
     const { reconcileTeamSeatQuantities } = await import("./seat-reconcile");
     const result = await reconcileTeamSeatQuantities();

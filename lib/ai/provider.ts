@@ -3,11 +3,7 @@ import type { createAnthropic } from "@ai-sdk/anthropic";
 import type { createGoogleGenerativeAI } from "@ai-sdk/google";
 import type { createOpenAI } from "@ai-sdk/openai";
 import { type AiModality } from "@/lib/ai/config";
-import {
-  AI_PROVIDER_NAMES,
-  parseAiProviderName,
-  type AiProviderName,
-} from "@/lib/ai/provider-name";
+import { parseAiProviderName, type AiProviderName } from "@/lib/ai/provider-name";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 
