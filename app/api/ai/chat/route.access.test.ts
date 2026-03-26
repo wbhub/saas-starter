@@ -1,6 +1,73 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LIVE_SUBSCRIPTION_STATUSES } from "@/lib/stripe/plans";
 
+const aiMockState = vi.hoisted(() => ({
+  streamText: vi.fn(),
+}));
+
+const providerMockState = vi.hoisted(() => ({
+  aiProviderName: "openai" as "openai" | "anthropic" | "google",
+  supportsOpenAiFileIds: true,
+  providerSupportsModalities: vi.fn(),
+  getAiLanguageModel: vi.fn(),
+}));
+
+vi.mock("ai", async () => {
+  const actual = await vi.importActual<typeof import("ai")>("ai");
+  return {
+    ...actual,
+    streamText: aiMockState.streamText,
+  };
+});
+
+vi.mock("@/lib/ai/provider", () => ({
+  get aiProviderName() {
+    return providerMockState.aiProviderName;
+  },
+  isAiProviderConfigured: true,
+  get supportsOpenAiFileIds() {
+    return providerMockState.supportsOpenAiFileIds;
+  },
+  providerSupportsModalities: providerMockState.providerSupportsModalities,
+  getAiLanguageModel: providerMockState.getAiLanguageModel,
+}));
+
+function mockAiUnavailableResponse() {
+  aiMockState.streamText.mockReset();
+  aiMockState.streamText.mockImplementation(() => {
+    throw { status: 503 };
+  });
+}
+
+function mockAiTextResponse(text: string) {
+  aiMockState.streamText.mockReset();
+  aiMockState.streamText.mockReturnValue({
+    fullStream: {
+      async *[Symbol.asyncIterator]() {
+        yield { type: "text-delta", text };
+        yield { type: "finish", totalUsage: { inputTokens: 7, outputTokens: 2 } };
+      },
+    },
+  });
+}
+
+function mockProviderModule({
+  aiProviderName = "openai",
+  supportsOpenAiFileIds = aiProviderName === "openai",
+}: {
+  aiProviderName?: "openai" | "anthropic" | "google";
+  supportsOpenAiFileIds?: boolean;
+} = {}) {
+  providerMockState.aiProviderName = aiProviderName;
+  providerMockState.supportsOpenAiFileIds = supportsOpenAiFileIds;
+  providerMockState.providerSupportsModalities.mockReset();
+  providerMockState.providerSupportsModalities.mockImplementation(
+    (model: string) => !model.startsWith("gpt-3.5"),
+  );
+  providerMockState.getAiLanguageModel.mockReset();
+  providerMockState.getAiLanguageModel.mockReturnValue("provider-model");
+}
+
 describe("POST /api/ai/chat access and gating", () => {
   beforeEach(() => {
     vi.resetModules();
@@ -47,24 +114,8 @@ describe("POST /api/ai/chat access and gating", () => {
       getAiAllowedModalities: vi.fn().mockReturnValue(["text", "image", "file"]),
       getAiAllowedModalitiesForPlan: vi.fn().mockReturnValue(["text", "image", "file"]),
     }));
-    vi.doMock("@/lib/ai/provider", () => ({
-      aiProviderName: "openai",
-      isAiProviderConfigured: true,
-      supportsOpenAiFileIds: true,
-      providerSupportsModalities: vi
-        .fn()
-        .mockImplementation((model: string) => !model.startsWith("gpt-3.5")),
-      getAiLanguageModel: vi.fn().mockReturnValue("provider-model"),
-    }));
-    vi.doMock("ai", async () => {
-      const actual = await vi.importActual<typeof import("ai")>("ai");
-      return {
-        ...actual,
-        streamText: vi.fn(() => {
-          throw { status: 503 };
-        }),
-      };
-    });
+    mockProviderModule();
+    mockAiUnavailableResponse();
     vi.doMock("@/lib/ai/budget-finalize-retries", () => ({
       enqueueAiBudgetFinalizeRetry: vi.fn().mockResolvedValue(undefined),
       maybeProcessAiBudgetFinalizeRetries: vi.fn().mockResolvedValue({ ran: false }),
@@ -588,6 +639,144 @@ describe("POST /api/ai/chat access and gating", () => {
     );
     const { streamText } = await import("ai");
     expect(streamText).not.toHaveBeenCalled();
+  });
+
+  it("rejects text file attachments that the default provider path cannot handle", async () => {
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          getUser: async () => ({
+            data: { user: { id: "user_123" } },
+          }),
+        },
+        from: vi.fn(() => ({
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          in: vi.fn().mockReturnThis(),
+          order: vi.fn().mockReturnThis(),
+          limit: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({
+            data: { stripe_price_id: "price_growth", status: "active" },
+            error: null,
+          }),
+        })),
+      }),
+    }));
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
+        teamId: "team_123",
+        teamName: "Acme Team",
+        role: "owner",
+      }),
+    }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({
+        allowed: true,
+        retryAfterSeconds: 0,
+      }),
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: "user",
+              content: "Analyze this file",
+              attachments: [
+                {
+                  type: "file",
+                  mimeType: "text/plain",
+                  name: "notes.txt",
+                  data: "dGVzdA==",
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual(
+      expect.objectContaining({
+        ok: false,
+        error: "Unsupported attachment type.",
+      }),
+    );
+    const { streamText } = await import("ai");
+    expect(streamText).not.toHaveBeenCalled();
+  });
+
+  it("accepts text file attachments for anthropic provider", async () => {
+    mockAiTextResponse("anthropic-ok");
+    mockProviderModule({
+      aiProviderName: "anthropic",
+      supportsOpenAiFileIds: false,
+    });
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          getUser: async () => ({
+            data: { user: { id: "user_123" } },
+          }),
+        },
+        from: vi.fn(() => ({
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          in: vi.fn().mockReturnThis(),
+          order: vi.fn().mockReturnThis(),
+          limit: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({
+            data: { stripe_price_id: "price_growth", status: "active" },
+            error: null,
+          }),
+        })),
+      }),
+    }));
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
+        teamId: "team_123",
+        teamName: "Acme Team",
+        role: "owner",
+      }),
+    }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({
+        allowed: true,
+        retryAfterSeconds: 0,
+      }),
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: "user",
+              content: "Analyze this file",
+              attachments: [
+                {
+                  type: "file",
+                  mimeType: "text/plain",
+                  name: "notes.txt",
+                  data: "dGVzdA==",
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.text()).resolves.toBe("anthropic-ok");
   });
 
   it("rejects assistant-role attachments", async () => {

@@ -1,4 +1,5 @@
 import {
+  consumeStream,
   stepCountIs,
   streamText,
   type AssistantModelMessage,
@@ -44,6 +45,7 @@ import { LIVE_SUBSCRIPTION_STATUSES, type SubscriptionStatus } from "@/lib/strip
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getCachedTeamContextForUser } from "@/lib/team-context-cache";
+import { SUPPORTED_IMAGE_MIME_TYPES, isSupportedFileMimeType } from "@/lib/ai/attachments";
 
 const AI_COMPLETION_MAX_TOKENS = 4_096;
 const AI_UNAVAILABLE_STATUS = 503;
@@ -51,8 +53,6 @@ const AI_FORBIDDEN_STATUS = 403;
 const AI_PAYMENT_REQUIRED_STATUS = 402;
 const MAX_ATTACHMENTS_PER_MESSAGE = 8;
 const MAX_ATTACHMENTS_PER_REQUEST = 16;
-const SUPPORTED_IMAGE_MIME_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
-const SUPPORTED_FILE_MIME_TYPES = new Set(["application/pdf", "text/plain", "text/csv"]);
 
 function isHttpsUrl(value: string) {
   try {
@@ -184,7 +184,10 @@ function validateAttachmentTypes(messages: ChatMessage[]): AttachmentValidationF
           mimeType: attachment.mimeType,
         };
       }
-      if (attachment.type === "file" && !SUPPORTED_FILE_MIME_TYPES.has(attachment.mimeType)) {
+      if (
+        attachment.type === "file" &&
+        !isSupportedFileMimeType(attachment.mimeType, aiProviderName)
+      ) {
         return {
           reason: "unsupported_file_type",
           fileType: "file",
@@ -257,6 +260,13 @@ function toModelMessages(messages: ChatMessage[]): ModelMessage[] {
       content: toUserMessageContent(message),
     };
   });
+}
+
+function getAbortAuditReason(reason: unknown) {
+  if (typeof reason === "string" && reason.trim().length > 0) {
+    return reason;
+  }
+  return "stream_aborted";
 }
 
 function mapUpstreamError(error: unknown): UpstreamErrorInfo {
@@ -751,11 +761,20 @@ export async function POST(request: Request) {
             "stream_failed",
           );
         },
+        onAbort: async () => {
+          await finalizeAgentStream(
+            accumulatedUsage.promptTokens,
+            accumulatedUsage.completionTokens,
+            "failure",
+            getAbortAuditReason(upstreamAbortController.signal.reason),
+          );
+        },
       });
 
       return withRequestId(
         aiResult.toUIMessageStreamResponse({
           headers: { "Cache-Control": "no-store" },
+          consumeSseStream: consumeStream,
         }),
         requestId,
       );
