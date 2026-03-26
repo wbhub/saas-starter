@@ -134,6 +134,17 @@ Local webhook testing:
 stripe listen --forward-to localhost:3000/api/stripe/webhook
 ```
 
+### Social SSO (Google / Microsoft)
+
+- In Supabase Auth, enable the providers you want to offer:
+  - Google for Google SSO
+  - Azure for Microsoft SSO
+- Configure each provider's client ID/secret in Supabase and make sure the redirect URL points to `${NEXT_PUBLIC_APP_URL}/auth/callback` (for local dev: `http://localhost:3000/auth/callback`).
+- Enable the corresponding UI toggles in your env:
+  - `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true`
+  - `NEXT_PUBLIC_AUTH_MICROSOFT_ENABLED=true`
+- Only turn the UI flags on after the provider is configured in Supabase; the app does not auto-detect missing OAuth credentials.
+
 ### Vercel AI SDK (AI Chat + Structured Output)
 
 If you want `/dashboard/ai` and `/api/ai/chat`:
@@ -148,7 +159,7 @@ If you want `/dashboard/ai` and `/api/ai/chat`:
 - Note: attachment `fileId` sources are OpenAI-only; for other providers, use `url` or `data`.
 - (Recommended) Set `AI_MODEL_MODALITIES_MAP_JSON` so model capability checks are explicit per provider/model
 - Configure AI policy vars in `.env.example` (`AI_ACCESS_MODE`, plan/model/budget settings)
-- (Optional) Enable agent tool-calling: set `AI_TOOLS_ENABLED=true` and `NEXT_PUBLIC_AI_TOOLS_ENABLED=true`. Set `AI_MAX_STEPS` to control how many steps the agent loop can take per request (default 1 = single-turn). Tools are defined in `lib/ai/tools/`. Per-plan `maxSteps` can be configured via `AI_PLAN_RULES_JSON`.
+- (Optional) Enable agent tool-calling: set `AI_TOOLS_ENABLED=true` and `NEXT_PUBLIC_AI_TOOLS_ENABLED=true`. Set `AI_MAX_STEPS` to control how many steps the agent loop can take per request (default 5 when tools are enabled). When tools are disabled, chat remains single-turn. Tools are defined in `lib/ai/tools/`. Per-plan `maxSteps` can be configured via `AI_PLAN_RULES_JSON`.
 
 **Structured output (`/api/ai/object`):** A second AI endpoint streams typed JSON objects using `streamObject` + `useObject`. No extra env vars needed -- it inherits all AI config from the chat setup. Define schemas in `lib/ai/schemas/` and register them in `AI_SCHEMA_MAP`. An example sentiment-analysis schema is included. See `components/ai-object-card.tsx` for client usage.
 
