@@ -284,8 +284,8 @@ export function AiChatCard({
     return new TextStreamChatTransport({
       api: "/api/ai/chat",
       headers: getCsrfHeaders,
-        prepareSendMessagesRequest,
-      });
+      prepareSendMessagesRequest,
+    });
   }, [toolsEnabled]);
 
   const { messages, sendMessage, status, stop, error, clearError } = useChat({

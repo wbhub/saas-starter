@@ -401,4 +401,3 @@ describe("POST /api/stripe/checkout", () => {
     });
   });
 });
-
