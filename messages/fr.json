@@ -253,6 +253,30 @@
       }
     }
   },
+  "AiObjectCard": {
+    "title": "Sortie structurée IA",
+    "description": "Analysez du texte avec l'IA et recevez des résultats typés et structurés en temps réel.",
+    "placeholder": "Saisissez le texte à analyser...",
+    "actions": {
+      "analyze": "Analyser",
+      "analyzing": "Analyse en cours...",
+      "stop": "Arrêt"
+    },
+    "result": {
+      "sentiment": "Sentiment",
+      "confidence": "Confiance",
+      "reasoning": "Raisonnement"
+    },
+    "errors": {
+      "requestFailed": "L'analyse a échoué. Veuillez réessayer.",
+      "budgetExceeded": "Budget mensuel des jetons IA atteint.",
+      "planRequired": "L'accès à l'IA nécessite un forfait payant.",
+      "upstreamRateLimited": "Le fournisseur d'IA a actuellement un tarif limité. Veuillez réessayer sous peu.",
+      "upstreamBadRequest": "Impossible de traiter cette demande.",
+      "upstreamError": "Le service IA est temporairement indisponible.",
+      "unknownSchema": "Type d'analyse inconnu."
+    }
+  },
   "AiChatCard": {
     "title": "Assistant",
     "description": "Les messages sont diffusés en temps réel et l'utilisation est automatiquement suivie.",
@@ -844,6 +868,26 @@
       "passwordComplexity": "Le mot de passe doit comporter entre 12 et 128 caractères.",
       "rateLimited": "Trop de tentatives d'inscription. Veuillez réessayer plus tard.",
       "unableToCreateAccount": "Impossible de créer votre compte."
+    }
+  },
+  "ApiAiObject": {
+    "errors": {
+      "invalidOrigin": "Origine de la demande non valide.",
+      "missingCsrfToken": "Jeton CSRF manquant.",
+      "invalidCsrfToken": "Jeton CSRF invalide.",
+      "invalidContentType": "Le type de contenu doit être application/json.",
+      "unauthorized": "Non autorisé",
+      "noTeamMembership": "Aucune adhésion à l'équipe trouvée pour ce compte.",
+      "rateLimited": "Trop de demandes d'IA. Veuillez patienter et réessayer.",
+      "payloadTooLarge": "La charge utile de la demande est trop importante.",
+      "invalidPayload": "Charge utile de la demande non valide.",
+      "unknownSchema": "Nom de schéma inconnu. Vérifiez les schémas disponibles et réessayez.",
+      "budgetExceeded": "Budget mensuel des jetons IA atteint. Mettez à niveau ou attendez le prochain cycle.",
+      "modalityNotAllowed": "Votre plan AI actuel ne prend pas en charge cette opération.",
+      "planRequired": "L'accès à l'IA nécessite un forfait payant éligible.",
+      "upstreamRateLimited": "Le fournisseur d'IA a actuellement un tarif limité. Veuillez réessayer sous peu.",
+      "upstreamBadRequest": "Cette demande AI n'a pas pu être traitée. Ajustez votre saisie et réessayez.",
+      "unavailable": "L'assistant IA est actuellement indisponible."
     }
   },
   "ApiAiChat": {

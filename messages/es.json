@@ -253,6 +253,30 @@
       }
     }
   },
+  "AiObjectCard": {
+    "title": "Salida estructurada de AI",
+    "description": "Analiza texto con AI y recibe resultados tipados y estructurados en tiempo real.",
+    "placeholder": "Introduce texto para analizar...",
+    "actions": {
+      "analyze": "Analizar",
+      "analyzing": "Analizando...",
+      "stop": "Detener"
+    },
+    "result": {
+      "sentiment": "Sentimiento",
+      "confidence": "Confianza",
+      "reasoning": "Razonamiento"
+    },
+    "errors": {
+      "requestFailed": "El análisis falló. Inténtalo de nuevo.",
+      "budgetExceeded": "Se alcanzó el presupuesto mensual de tokens de AI.",
+      "planRequired": "El acceso a AI requiere un plan de pago.",
+      "upstreamRateLimited": "El proveedor de AI está limitado temporalmente. Inténtalo de nuevo en breve.",
+      "upstreamBadRequest": "No se pudo procesar esta solicitud.",
+      "upstreamError": "El servicio de AI no está disponible temporalmente.",
+      "unknownSchema": "Tipo de análisis desconocido."
+    }
+  },
   "AiChatCard": {
     "title": "Asistente",
     "description": "Los mensajes se transmiten en tiempo real y el uso se registra automáticamente.",
@@ -844,6 +868,26 @@
       "passwordComplexity": "La contraseña debe tener entre 12 y 128 caracteres.",
       "rateLimited": "Demasiados intentos de registro. Inténtalo de nuevo más tarde.",
       "unableToCreateAccount": "No se pudo crear tu cuenta."
+    }
+  },
+  "ApiAiObject": {
+    "errors": {
+      "invalidOrigin": "Origen de solicitud inválido.",
+      "missingCsrfToken": "Falta el token CSRF.",
+      "invalidCsrfToken": "Token CSRF inválido.",
+      "invalidContentType": "Content-Type debe ser application/json.",
+      "unauthorized": "No autorizado",
+      "noTeamMembership": "No se encontró membresía de equipo para esta cuenta.",
+      "rateLimited": "Demasiadas solicitudes de AI. Espera e inténtalo de nuevo.",
+      "payloadTooLarge": "El cuerpo de la solicitud es demasiado grande.",
+      "invalidPayload": "Cuerpo de solicitud inválido.",
+      "unknownSchema": "Nombre de esquema desconocido. Revisa los esquemas disponibles e inténtalo de nuevo.",
+      "budgetExceeded": "Se alcanzó el presupuesto mensual de tokens de AI. Mejora tu plan o espera al próximo ciclo.",
+      "modalityNotAllowed": "Tu plan actual de AI no permite esta operación.",
+      "planRequired": "El acceso a AI requiere un plan de pago elegible.",
+      "upstreamRateLimited": "El proveedor de AI está limitado temporalmente. Inténtalo de nuevo en breve.",
+      "upstreamBadRequest": "La solicitud de AI no se pudo procesar. Ajusta tu entrada e inténtalo nuevamente.",
+      "unavailable": "El asistente de AI no está disponible actualmente."
     }
   },
   "ApiAiChat": {

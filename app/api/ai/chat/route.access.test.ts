@@ -590,6 +590,17 @@ describe("POST /api/ai/chat access and gating", () => {
             data: { user: { id: "user_123" } },
           }),
         },
+        from: vi.fn(() => ({
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          in: vi.fn().mockReturnThis(),
+          order: vi.fn().mockReturnThis(),
+          limit: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({
+            data: { stripe_price_id: "price_growth", status: "active" },
+            error: null,
+          }),
+        })),
       }),
     }));
     vi.doMock("@/lib/team-context-cache", () => ({
@@ -893,6 +904,17 @@ describe("POST /api/ai/chat access and gating", () => {
             data: { user: { id: "user_123" } },
           }),
         },
+        from: vi.fn(() => ({
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          in: vi.fn().mockReturnThis(),
+          order: vi.fn().mockReturnThis(),
+          limit: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({
+            data: { stripe_price_id: "price_growth", status: "active" },
+            error: null,
+          }),
+        })),
       }),
     }));
     vi.doMock("@/lib/team-context-cache", () => ({

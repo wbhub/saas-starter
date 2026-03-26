@@ -11,6 +11,7 @@ import {
 } from "ai";
 import { useTranslations } from "next-intl";
 import { getCsrfHeaders } from "@/lib/http/csrf";
+import { resolveUserFacingErrorMessage } from "@/lib/ai/error-message";
 import {
   type AttachmentProviderName,
   EXTENSION_MIME_MAP,
@@ -78,35 +79,6 @@ function resolveMimeType(file: File) {
     return "";
   }
   return EXTENSION_MIME_MAP[extension] ?? "";
-}
-
-function resolveUserFacingErrorMessage(
-  error: unknown,
-  fallbackMessage: string,
-  codeMessages?: Record<string, string>,
-) {
-  if (error instanceof Error && typeof error.message === "string" && error.message.length > 0) {
-    const trimmed = error.message.trim();
-    if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
-      try {
-        const parsed = JSON.parse(trimmed) as { error?: unknown; code?: unknown };
-        if (
-          typeof parsed.code === "string" &&
-          parsed.code.length > 0 &&
-          codeMessages?.[parsed.code]
-        ) {
-          return codeMessages[parsed.code];
-        }
-        if (typeof parsed.error === "string" && parsed.error.length > 0) {
-          return parsed.error;
-        }
-      } catch {
-        // Ignore JSON parse failures and fall back to plain error text.
-      }
-    }
-    return trimmed;
-  }
-  return fallbackMessage;
 }
 
 function enforceRequestAttachmentBudget(

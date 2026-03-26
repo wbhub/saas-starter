@@ -253,6 +253,30 @@
       }
     }
   },
+  "AiObjectCard": {
+    "title": "AI Structured Output",
+    "description": "Analyze text with AI and receive typed, structured results in real time.",
+    "placeholder": "Enter text to analyze...",
+    "actions": {
+      "analyze": "Analyze",
+      "analyzing": "Analyzing...",
+      "stop": "Stop"
+    },
+    "result": {
+      "sentiment": "Sentiment",
+      "confidence": "Confidence",
+      "reasoning": "Reasoning"
+    },
+    "errors": {
+      "requestFailed": "Analysis failed. Please try again.",
+      "budgetExceeded": "Monthly AI token budget reached.",
+      "planRequired": "AI access requires a paid plan.",
+      "upstreamRateLimited": "AI provider is rate limited. Try again shortly.",
+      "upstreamBadRequest": "Could not process this request.",
+      "upstreamError": "AI service is temporarily unavailable.",
+      "unknownSchema": "Unknown analysis type."
+    }
+  },
   "AiChatCard": {
     "title": "Assistant",
     "description": "Messages stream in real time and usage is tracked automatically.",
@@ -844,6 +868,26 @@
       "passwordComplexity": "Password must be between 12 and 128 characters.",
       "rateLimited": "Too many signup attempts. Please try again later.",
       "unableToCreateAccount": "Unable to create your account."
+    }
+  },
+  "ApiAiObject": {
+    "errors": {
+      "invalidOrigin": "Invalid request origin.",
+      "missingCsrfToken": "Missing CSRF token.",
+      "invalidCsrfToken": "Invalid CSRF token.",
+      "invalidContentType": "Content-Type must be application/json.",
+      "unauthorized": "Unauthorized",
+      "noTeamMembership": "No team membership found for this account.",
+      "rateLimited": "Too many AI requests. Please wait and try again.",
+      "payloadTooLarge": "Request payload is too large.",
+      "invalidPayload": "Invalid request payload.",
+      "unknownSchema": "Unknown schema name. Check the available schemas and try again.",
+      "budgetExceeded": "Monthly AI token budget reached. Upgrade or wait for the next cycle.",
+      "modalityNotAllowed": "Your current AI plan does not support this operation.",
+      "planRequired": "AI access requires an eligible paid plan.",
+      "upstreamRateLimited": "The AI provider is currently rate limited. Please retry shortly.",
+      "upstreamBadRequest": "This AI request could not be processed. Adjust your input and try again.",
+      "unavailable": "AI assistant is currently unavailable."
     }
   },
   "ApiAiChat": {

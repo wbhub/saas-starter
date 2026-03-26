@@ -253,6 +253,30 @@
       }
     }
   },
+  "AiObjectCard": {
+    "title": "AI 结构化输出",
+    "description": "使用 AI 分析文本，实时接收类型化的结构化结果。",
+    "placeholder": "输入要分析的文本...",
+    "actions": {
+      "analyze": "分析",
+      "analyzing": "分析中...",
+      "stop": "停止"
+    },
+    "result": {
+      "sentiment": "情感",
+      "confidence": "置信度",
+      "reasoning": "推理"
+    },
+    "errors": {
+      "requestFailed": "分析失败。请重试。",
+      "budgetExceeded": "每月 AI 代币预算已达到。",
+      "planRequired": "AI 访问需要付费计划。",
+      "upstreamRateLimited": "AI 提供商受到费率限制。请稍后重试。",
+      "upstreamBadRequest": "无法处理此请求。",
+      "upstreamError": "AI 服务暂时不可用。",
+      "unknownSchema": "未知的分析类型。"
+    }
+  },
   "AiChatCard": {
     "title": "助手",
     "description": "消息实时传输并自动跟踪使用情况。",
@@ -844,6 +868,26 @@
       "passwordComplexity": "密码必须介于 12 到 128 个字符之间。",
       "rateLimited": "注册尝试次数过多。请稍后重试。",
       "unableToCreateAccount": "无法创建您的帐户。"
+    }
+  },
+  "ApiAiObject": {
+    "errors": {
+      "invalidOrigin": "请求来源无效。",
+      "missingCsrfToken": "缺少 CSRF 令牌。",
+      "invalidCsrfToken": "CSRF 令牌无效。",
+      "invalidContentType": "Content-Type 必须是 application/json。",
+      "unauthorized": "未经授权",
+      "noTeamMembership": "找不到此帐户的团队成员资格。",
+      "rateLimited": "AI 请求太多。请等待并重试。",
+      "payloadTooLarge": "请求负载太大。",
+      "invalidPayload": "请求负载无效。",
+      "unknownSchema": "未知的架构名称。请检查可用架构并重试。",
+      "budgetExceeded": "每月 AI 代币预算已达到。升级或者等待下一个周期。",
+      "modalityNotAllowed": "您当前的 AI 计划不支持此操作。",
+      "planRequired": "AI 访问需要符合条件的付费计划。",
+      "upstreamRateLimited": "AI 提供商目前受到费率限制。请稍后重试。",
+      "upstreamBadRequest": "无法处理此 AI 请求。调整您的输入并重试。",
+      "unavailable": "AI助手目前不可用。"
     }
   },
   "ApiAiChat": {

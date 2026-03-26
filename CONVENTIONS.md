@@ -61,6 +61,25 @@ export async function POST(request: Request) {
 
 Prefer `withAuthedRoute` or `withTeamRoute` over manual pipelines. Use standalone structure only for documented exceptions. CSRF and content-type validation should happen before body parsing. Authentication should happen before rate limiting (so you can key limits on user ID), and rate limiting should happen before database writes.
 
+### AI routes with `resolveAiRequestContext`
+
+AI routes (`/api/ai/chat`, `/api/ai/object`) share a custom pre-flight pipeline via `resolveAiRequestContext()` from `lib/ai/request-context.ts`. It handles CSRF, auth, team context, rate limiting, body parsing, subscription/plan resolution, AI access checks, modality validation, and budget claiming in one call. Use this instead of `withTeamRoute` for new AI endpoints:
+
+```ts
+const result = await resolveAiRequestContext(request, {
+  i18nNamespace: "ApiAiMyFeature",
+  bodySchema: myPayloadSchema,
+  rateLimitKeys: { user: "aiMyFeatureByUser", team: "aiMyFeatureByTeam", prefix: "ai-my-feature" },
+  auditAction: "ai.my_feature.request",
+  estimatePromptTokens: (body) => Math.ceil(body.prompt.length / 3),
+  maxCompletionTokens: 2_048,
+  skipTools: true, // set true if tools/maxSteps are not needed
+});
+
+if (!result.ok) return result.response;
+const { requestId, user, teamContext, body, languageModel, budgetClaim, ... } = result.ctx;
+```
+
 ### Using `withTeamRoute`
 
 For routes that require team membership, use the `withTeamRoute` helper from `lib/http/team-route.ts`. It handles CSRF, content-type checks, auth, team membership/role checks, rate limits, and optional body parsing for you:
@@ -200,6 +219,7 @@ Use the route's i18n translator `t()` for user-facing error messages. Do **not**
 
 - **Stripe webhook** (`/api/stripe/webhook`): Returns `{ received: true }` on success -- Stripe expects this acknowledgment shape. Error responses still use `{ ok: false, error }`.
 - **AI chat** (`/api/ai/chat`): Returns a streaming `text/plain` response on success (single-turn), or a UI message stream via `toUIMessageStreamResponse()` when agent tools are enabled. Error responses use the standard `{ ok: false, error, code }` envelope.
+- **AI object** (`/api/ai/object`): Returns a streaming partial-JSON response via `streamObject().toTextStreamResponse()`. Consumed by `useObject` on the client. Error responses use the standard `{ ok: false, error, code }` envelope.
 - **Forgot password** (`/api/auth/forgot-password`): Always returns `{ message }` (no `ok`) to avoid leaking whether the email exists.
 
 Common status codes used in this codebase:

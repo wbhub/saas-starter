@@ -24,6 +24,8 @@ export const RATE_LIMITS = {
   stripePortalByTeam: { limit: 20, windowMs: MINUTE_MS },
   aiChatByUser: { limit: 30, windowMs: 10 * MINUTE_MS },
   aiChatByTeam: { limit: 120, windowMs: 10 * MINUTE_MS },
+  aiObjectByUser: { limit: 30, windowMs: 10 * MINUTE_MS },
+  aiObjectByTeam: { limit: 120, windowMs: 10 * MINUTE_MS },
   cronByClientIp: { limit: 30, windowMs: MINUTE_MS },
   supportByUser: { limit: 5, windowMs: 10 * MINUTE_MS },
   supportByClient: { limit: 20, windowMs: 10 * MINUTE_MS },

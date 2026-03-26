@@ -25,7 +25,7 @@ app/                          # Next.js App Router
     auth/                     # signup, login, forgot-password
     team/                     # invites, members, settings, ownership
     stripe/                   # checkout, change-plan, portal, webhook
-    ai/                       # chat (streaming)
+    ai/                       # chat (streaming), object (structured output)
     cron/                     # reconcile-seat-quantities, prune-webhook-events
     resend/                   # support email
     intercom/                 # identity boot
@@ -38,6 +38,7 @@ components/                   # React components (flat structure)
 
 lib/                          # Shared business logic (organized by domain)
   ai/                         # AI access control, budgets, provider abstraction, token estimation
+    schemas/                  # Structured output schema registry (used by /api/ai/object)
     tools/                    # Agent tool registry (opt-in via AI_TOOLS_ENABLED)
   auth/                       # Social auth provider detection
   billing/                    # Plan capabilities, entitlements, effective plan resolution
@@ -248,6 +249,20 @@ A single `getAiLanguageModel(model)` function that returns a Vercel AI SDK model
    - On finalize failure: enqueue retry to ai_budget_claim_finalize_retries
 ```
 
+### AI Structured Output Request
+
+```
+1. POST /api/ai/object
+   - Shared pre-flight via resolveAiRequestContext():
+     CSRF + auth + team context + rate limit + body parse + plan/access/budget
+   - Look up schema by name from AI_SCHEMA_MAP (lib/ai/schemas/)
+   - streamObject() with Zod schema + prompt
+   - On stream finish: finalize budget claim with actual token usage
+   - On finalize failure: enqueue retry to ai_budget_claim_finalize_retries
+```
+
+Both `/api/ai/chat` and `/api/ai/object` share the same pre-flight pipeline via `resolveAiRequestContext()` in `lib/ai/request-context.ts`, which handles CSRF, auth, team context, rate limiting, body parsing, subscription/plan resolution, AI access checks, modality validation, and budget claiming.
+
 ### Seat Sync After Membership Change
 
 ```
@@ -276,7 +291,7 @@ Most features are toggled via environment variables, not code flags:
 | --------------------- | --------------------------------------------------------- | -------------------------------------------------------------- |
 | Stripe billing        | `BILLING_PROVIDER=stripe` + Stripe env vars set           | `isBillingEnabled()` in `lib/billing/capabilities.ts`          |
 | Free plan             | `APP_FREE_PLAN_ENABLED=true` (default)                    | `isFreePlanEnabled()` in `lib/billing/capabilities.ts`         |
-| AI chat               | AI provider env var set (e.g., `OPENAI_API_KEY`)          | `isAiProviderConfigured` in `lib/ai/provider.ts`               |
+| AI chat + object      | AI provider env var set (e.g., `OPENAI_API_KEY`)          | `isAiProviderConfigured` in `lib/ai/provider.ts`               |
 | AI access mode        | `AI_ACCESS_MODE` = `paid` / `all` / `by_plan`             | `getAiAccessMode()` in `lib/ai/config.ts`                      |
 | AI agent tools        | `AI_TOOLS_ENABLED=true` + tools registered in AI_TOOL_MAP | `getAiToolsEnabled()` in `lib/ai/config.ts`                    |
 | Email (Resend)        | `RESEND_API_KEY` + `RESEND_FROM_EMAIL` set                | `isResendCustomEmailConfigured()` in `lib/resend/server.ts`    |

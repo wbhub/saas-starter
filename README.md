@@ -63,7 +63,7 @@ Use `.env.example` as the source of truth for all available variables.
 ## Enable by Feature (Optional)
 
 - Billing: Stripe (`BILLING_PROVIDER=stripe` + Stripe env vars)
-- AI chat: Vercel AI SDK (`AI_PROVIDER` + provider keys)
+- AI chat + structured output: Vercel AI SDK (`AI_PROVIDER` + provider keys)
 - In-app messenger: Intercom (`NEXT_PUBLIC_INTERCOM_APP_ID`, `INTERCOM_IDENTITY_SECRET`)
 - Multi-instance rate limiting/cache: Redis via Upstash (`UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`)
 - Background job offloading: Trigger.dev (`TRIGGER_SECRET_KEY`, `TRIGGER_PROJECT_REF`)
@@ -134,7 +134,7 @@ Local webhook testing:
 stripe listen --forward-to localhost:3000/api/stripe/webhook
 ```
 
-### Vercel AI SDK (AI Chat)
+### Vercel AI SDK (AI Chat + Structured Output)
 
 If you want `/dashboard/ai` and `/api/ai/chat`:
 
@@ -149,6 +149,8 @@ If you want `/dashboard/ai` and `/api/ai/chat`:
 - (Recommended) Set `AI_MODEL_MODALITIES_MAP_JSON` so model capability checks are explicit per provider/model
 - Configure AI policy vars in `.env.example` (`AI_ACCESS_MODE`, plan/model/budget settings)
 - (Optional) Enable agent tool-calling: set `AI_TOOLS_ENABLED=true` and `NEXT_PUBLIC_AI_TOOLS_ENABLED=true`. Set `AI_MAX_STEPS` to control how many steps the agent loop can take per request (default 1 = single-turn). Tools are defined in `lib/ai/tools/`. Per-plan `maxSteps` can be configured via `AI_PLAN_RULES_JSON`.
+
+**Structured output (`/api/ai/object`):** A second AI endpoint streams typed JSON objects using `streamObject` + `useObject`. No extra env vars needed -- it inherits all AI config from the chat setup. Define schemas in `lib/ai/schemas/` and register them in `AI_SCHEMA_MAP`. An example sentiment-analysis schema is included. See `components/ai-object-card.tsx` for client usage.
 
 ### Intercom
 
