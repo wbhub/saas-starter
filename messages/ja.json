@@ -253,6 +253,30 @@
       }
     }
   },
+  "AiObjectCard": {
+    "title": "AI 構造化出力",
+    "description": "AI でテキストを分析し、型付きの構造化された結果をリアルタイムで受信します。",
+    "placeholder": "分析するテキストを入力...",
+    "actions": {
+      "analyze": "分析",
+      "analyzing": "分析中...",
+      "stop": "停止"
+    },
+    "result": {
+      "sentiment": "感情",
+      "confidence": "信頼度",
+      "reasoning": "根拠"
+    },
+    "errors": {
+      "requestFailed": "分析に失敗しました。もう一度お試しください。",
+      "budgetExceeded": "月間 AI トークン予算に達しました。",
+      "planRequired": "AI へのアクセスには有料プランが必要です。",
+      "upstreamRateLimited": "AI プロバイダーは現在レート制限中です。しばらくしてから再試行してください。",
+      "upstreamBadRequest": "このリクエストを処理できませんでした。",
+      "upstreamError": "AI サービスは一時的に利用できません。",
+      "unknownSchema": "不明な分析タイプです。"
+    }
+  },
   "AiChatCard": {
     "title": "アシスタント",
     "description": "メッセージはリアルタイムで配信され、使用量は自動で追跡されます。",
@@ -844,6 +868,26 @@
       "passwordComplexity": "パスワードは 12 文字以上 128 文字以下である必要があります。",
       "rateLimited": "サインアップ試行回数が多すぎます。後でもう一度お試しください。",
       "unableToCreateAccount": "アカウントを作成できません。"
+    }
+  },
+  "ApiAiObject": {
+    "errors": {
+      "invalidOrigin": "無効なリクエスト元です。",
+      "missingCsrfToken": "CSRF トークンがありません。",
+      "invalidCsrfToken": "無効な CSRF トークンです。",
+      "invalidContentType": "Content-Type は application/json である必要があります。",
+      "unauthorized": "認証されていません",
+      "noTeamMembership": "このアカウントのチームメンバーシップが見つかりません。",
+      "rateLimited": "AI リクエストが多すぎます。しばらく待ってから再試行してください。",
+      "payloadTooLarge": "リクエストペイロードが大きすぎます。",
+      "invalidPayload": "無効なリクエストペイロードです。",
+      "unknownSchema": "不明なスキーマ名です。利用可能なスキーマを確認して再試行してください。",
+      "budgetExceeded": "月間 AI トークン予算に達しました。アップグレードするか、次のサイクルまでお待ちください。",
+      "modalityNotAllowed": "現在の AI プランではこの操作はサポートされていません。",
+      "planRequired": "AI へのアクセスには対象の有料プランが必要です。",
+      "upstreamRateLimited": "AI プロバイダーは現在レート制限中です。しばらくしてから再試行してください。",
+      "upstreamBadRequest": "この AI リクエストは処理できませんでした。入力を調整して再試行してください。",
+      "unavailable": "AI アシスタントは現在利用できません。"
     }
   },
   "ApiAiChat": {

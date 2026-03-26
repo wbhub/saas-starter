@@ -7,52 +7,33 @@ import {
   type UserContent,
   type UserModelMessage,
 } from "ai";
-import { maybeProcessAiBudgetFinalizeRetries } from "@/lib/ai/budget-finalize-retries";
 import { jsonError } from "@/lib/http/api-json";
-import { getOrCreateRequestId, withRequestId } from "@/lib/http/request-id";
-import {
-  claimTeamAiBudget,
-  finalizeTeamAiBudgetClaimWithRetry,
-  type BudgetClaim,
-} from "@/lib/ai/chat-budget";
-import {
-  getAiAccessMode,
-  getAiAllowedSubscriptionStatuses,
-  getAiToolsEnabled,
-} from "@/lib/ai/config";
+import { withRequestId } from "@/lib/http/request-id";
+import { finalizeTeamAiBudgetClaimWithRetry } from "@/lib/ai/chat-budget";
 import { AI_TOOL_MAP } from "@/lib/ai/tools";
 import { type AiModality } from "@/lib/ai/config";
 import { estimatePromptTokens } from "@/lib/ai/token-estimation";
 import { logAuditEvent } from "@/lib/audit";
-import { resolveEffectivePlanKey } from "@/lib/billing/effective-plan";
-import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { resolveActualTokenUsage } from "@/lib/ai/usage";
-import { resolveAiAccess } from "@/lib/ai/access";
-import { requireJsonContentType } from "@/lib/http/content-type";
-import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
-import { getRouteTranslator } from "@/lib/i18n/locale";
+import { z } from "@/lib/http/request-validation";
 import { logger } from "@/lib/logger";
-import {
-  aiProviderName,
-  getAiLanguageModel,
-  isAiProviderConfigured,
-  providerSupportsModalities,
-  supportsOpenAiFileIds,
-} from "@/lib/ai/provider";
-import { checkRateLimit } from "@/lib/security/rate-limit";
-import { verifyCsrfProtection } from "@/lib/security/csrf";
-import { LIVE_SUBSCRIPTION_STATUSES, type SubscriptionStatus } from "@/lib/stripe/plans";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
-import { getCachedTeamContextForUser } from "@/lib/team-context-cache";
+import { aiProviderName, supportsOpenAiFileIds } from "@/lib/ai/provider";
 import { SUPPORTED_IMAGE_MIME_TYPES, isSupportedFileMimeType } from "@/lib/ai/attachments";
+import {
+  resolveAiRequestContext,
+  mapUpstreamError,
+  aiErrorResponse,
+  insertAiUsageRow,
+  type AttachmentCounts,
+} from "@/lib/ai/request-context";
 
 const AI_COMPLETION_MAX_TOKENS = 4_096;
-const AI_UNAVAILABLE_STATUS = 503;
-const AI_FORBIDDEN_STATUS = 403;
-const AI_PAYMENT_REQUIRED_STATUS = 402;
 const MAX_ATTACHMENTS_PER_MESSAGE = 8;
 const MAX_ATTACHMENTS_PER_REQUEST = 16;
+
+// ---------------------------------------------------------------------------
+// Chat-specific schemas and helpers
+// ---------------------------------------------------------------------------
 
 function isHttpsUrl(value: string) {
   try {
@@ -110,12 +91,6 @@ type UsageTotals = {
   completionTokens: number;
 };
 
-type UpstreamErrorInfo = {
-  auditReason: string;
-  code: "upstream_rate_limited" | "upstream_bad_request" | "upstream_error";
-  status: number;
-};
-
 type ChatMessage = z.infer<typeof messageSchema>;
 
 type AttachmentValidationFailure = {
@@ -124,26 +99,6 @@ type AttachmentValidationFailure = {
   mimeType: string;
   source?: "fileId";
 };
-
-type AttachmentCounts = {
-  image: number;
-  file: number;
-  total: number;
-};
-
-function aiErrorResponse({
-  error,
-  code,
-  status,
-  requestId,
-}: {
-  error: string;
-  code: string;
-  status: number;
-  requestId: string;
-}) {
-  return withRequestId(jsonError(error, status, { code }), requestId);
-}
 
 function getRequestModalities(messages: ChatMessage[]): AiModality[] {
   const modalities = new Set<AiModality>(["text"]);
@@ -269,359 +224,74 @@ function getAbortAuditReason(reason: unknown) {
   return "stream_aborted";
 }
 
-function mapUpstreamError(error: unknown): UpstreamErrorInfo {
-  const maybeError = error as {
-    status?: number;
-    code?: string;
-    type?: string;
-    name?: string;
-  } | null;
-  const status = maybeError?.status;
-  const code = maybeError?.code;
-  const name = maybeError?.name;
-
-  if (status === 429 || code === "rate_limit_exceeded") {
-    return {
-      auditReason: "provider_rate_limited",
-      code: "upstream_rate_limited",
-      status: 429,
-    };
-  }
-
-  if (status === 400 || status === 422) {
-    return {
-      auditReason: "provider_bad_request",
-      code: "upstream_bad_request",
-      status: 400,
-    };
-  }
-
-  if (status === 408 || status === 504 || name === "APIConnectionTimeoutError") {
-    return {
-      auditReason: "provider_timeout",
-      code: "upstream_error",
-      status: AI_UNAVAILABLE_STATUS,
-    };
-  }
-
-  if (status !== undefined && status >= 500) {
-    return {
-      auditReason: "provider_upstream_error",
-      code: "upstream_error",
-      status: AI_UNAVAILABLE_STATUS,
-    };
-  }
-
-  return {
-    auditReason: "provider_create_failed",
-    code: "upstream_error",
-    status: AI_UNAVAILABLE_STATUS,
-  };
-}
-
-async function insertAiUsageRow({
-  teamId,
-  userId,
-  model,
-  promptTokens,
-  completionTokens,
-}: {
-  teamId: string;
-  userId: string;
-  model: string;
-  promptTokens: number;
-  completionTokens: number;
-}) {
-  const supabase = createAdminClient();
-  const { error } = await supabase.from("ai_usage").insert({
-    team_id: teamId,
-    user_id: userId,
-    model,
-    prompt_tokens: promptTokens,
-    completion_tokens: completionTokens,
-  });
-
-  if (error) {
-    throw error;
-  }
-}
+// ---------------------------------------------------------------------------
+// Route handler
+// ---------------------------------------------------------------------------
 
 export async function POST(request: Request) {
-  const t = await getRouteTranslator("ApiAiChat", request);
-  const requestId = getOrCreateRequestId(request);
-  const err = (
-    error: string,
-    status: number,
-    init?: ResponseInit & { code?: string; data?: Record<string, unknown> },
-  ) => withRequestId(jsonError(error, status, init), requestId);
-  const aiUnavailableMessage = t("errors.unavailable");
-  const planRequiredMessage = t("errors.planRequired");
-  const budgetExceededMessage = t("errors.budgetExceeded");
-  const modalityNotAllowedMessage = t("errors.modalityNotAllowed");
-  const upstreamRateLimitedMessage = t("errors.upstreamRateLimited");
-  const upstreamBadRequestMessage = t("errors.upstreamBadRequest");
-
-  const csrfError = verifyCsrfProtection(request, {
-    invalidOrigin: t("errors.invalidOrigin"),
-    missingToken: t("errors.missingCsrfToken"),
-    invalidToken: t("errors.invalidCsrfToken"),
+  const result = await resolveAiRequestContext(request, {
+    i18nNamespace: "ApiAiChat",
+    bodySchema: chatPayloadSchema,
+    rateLimitKeys: { user: "aiChatByUser", team: "aiChatByTeam", prefix: "ai-chat" },
+    auditAction: "ai.chat.request",
+    getRequestModalities: (body) => getRequestModalities(body.messages),
+    getAttachmentCounts: (body) => getAttachmentCounts(body.messages),
+    estimatePromptTokens: (body) => estimatePromptTokens(body.messages),
+    maxCompletionTokens: AI_COMPLETION_MAX_TOKENS,
   });
-  if (csrfError) {
-    return withRequestId(csrfError, requestId);
+
+  if (!result.ok) {
+    return result.response;
   }
 
-  const contentTypeError = requireJsonContentType(request, {
-    errorMessage: t("errors.invalidContentType"),
-  });
-  if (contentTypeError) {
-    return withRequestId(contentTypeError, requestId);
-  }
-
-  const supabase = await createClient();
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    requestId,
+    user,
+    teamContext,
+    body,
+    model,
+    languageModel,
+    effectivePlanKey,
+    aiAccessMode,
+    budgetClaim,
+    projectedRequestTokens,
+    estimatedPromptTokens: estimatedTokens,
+    toolsEnabled,
+    maxSteps,
+    requestModalities,
+    attachmentCounts,
+    t,
+  } = result.ctx;
 
-  if (!user) {
-    return err(t("errors.unauthorized"), 401);
-  }
-
-  const teamContext = await getCachedTeamContextForUser(supabase, user.id);
-  if (!teamContext) {
-    return err(t("errors.noTeamMembership"), 403);
-  }
-
-  const userRateLimitPromise = checkRateLimit({
-    key: `ai-chat:user:${user.id}`,
-    ...RATE_LIMITS.aiChatByUser,
-  });
-  const teamRateLimitPromise = checkRateLimit({
-    key: `ai-chat:team:${teamContext.teamId}`,
-    ...RATE_LIMITS.aiChatByTeam,
-  });
-  const [userRateLimit, teamRateLimit] = await Promise.all([
-    userRateLimitPromise,
-    teamRateLimitPromise,
-  ]);
-  if (!userRateLimit.allowed || !teamRateLimit.allowed) {
-    const retryAfterSeconds = Math.max(
-      userRateLimit.retryAfterSeconds,
-      teamRateLimit.retryAfterSeconds,
-    );
-    return err(t("errors.rateLimited"), 429, {
-      headers: { "Retry-After": String(retryAfterSeconds) },
-    });
-  }
-
-  const bodyParse = await parseJsonWithSchema(request, chatPayloadSchema);
-  if (!bodyParse.success) {
-    if (bodyParse.tooLarge) {
-      return err(t("errors.payloadTooLarge"), 413);
-    }
-    return err(t("errors.invalidPayload"), 400);
-  }
-  const requestModalities = getRequestModalities(bodyParse.data.messages);
-  const attachmentCounts = getAttachmentCounts(bodyParse.data.messages);
+  // ── Chat-specific pre-flight: attachment validation ──
   if (attachmentCounts.total > MAX_ATTACHMENTS_PER_REQUEST) {
-    return err(t("errors.maxAttachments", { max: MAX_ATTACHMENTS_PER_REQUEST }), 400);
+    return withRequestId(
+      jsonError(t("errors.maxAttachments", { max: MAX_ATTACHMENTS_PER_REQUEST }), 400),
+      requestId,
+    );
   }
-  const unsupportedAttachment = validateAttachmentTypes(bodyParse.data.messages);
+  const unsupportedAttachment = validateAttachmentTypes(body.messages);
   if (unsupportedAttachment) {
     if (unsupportedAttachment.reason === "unsupported_attachment_source") {
-      return err(t("errors.invalidPayload"), 400);
+      return withRequestId(jsonError(t("errors.invalidPayload"), 400), requestId);
     }
-    return err(t("errors.unsupportedAttachmentType"), 400, {
-      data: {
-        details: {
-          fileType: unsupportedAttachment.fileType,
-          mimeType: unsupportedAttachment.mimeType,
+    return withRequestId(
+      jsonError(t("errors.unsupportedAttachmentType"), 400, {
+        data: {
+          details: {
+            fileType: unsupportedAttachment.fileType,
+            mimeType: unsupportedAttachment.mimeType,
+          },
         },
-      },
-    });
+      }),
+      requestId,
+    );
   }
 
-  const aiAccessMode = getAiAccessMode();
-  if (aiAccessMode === "paid") {
-    const allowedStatuses = getAiAllowedSubscriptionStatuses();
-    if (!allowedStatuses.length) {
-      logAuditEvent({
-        action: "ai.chat.request",
-        outcome: "denied",
-        actorUserId: user.id,
-        teamId: teamContext.teamId,
-        metadata: {
-          reason: "ai_statuses_not_configured",
-          accessMode: aiAccessMode,
-          requestModalities,
-          attachmentCounts,
-        },
-      });
-      return err(planRequiredMessage, AI_FORBIDDEN_STATUS, { code: "plan_required" });
-    }
-  }
-
-  let subscriptionRow: {
-    stripe_price_id: string | null;
-    status: SubscriptionStatus | null;
-  } | null = null;
-  if (aiAccessMode !== "all") {
-    let subscriptionQuery = supabase
-      .from("subscriptions")
-      .select("stripe_price_id,status")
-      .eq("team_id", teamContext.teamId)
-      .in("status", LIVE_SUBSCRIPTION_STATUSES);
-
-    if (aiAccessMode === "paid") {
-      subscriptionQuery = subscriptionQuery.in("status", getAiAllowedSubscriptionStatuses());
-    }
-
-    const { data, error: subscriptionError } = await subscriptionQuery
-      .order("current_period_end", { ascending: false })
-      .limit(1)
-      .maybeSingle<{ stripe_price_id: string | null; status: SubscriptionStatus | null }>();
-
-    if (subscriptionError) {
-      logger.error("Failed to load subscription for AI chat request", subscriptionError, {
-        teamId: teamContext.teamId,
-        userId: user.id,
-        accessMode: aiAccessMode,
-      });
-      return err(aiUnavailableMessage, AI_UNAVAILABLE_STATUS, { code: "upstream_error" });
-    }
-
-    subscriptionRow = data;
-  }
-
-  const effectivePlanKey = resolveEffectivePlanKey(subscriptionRow);
-  const aiAccess = resolveAiAccess({ effectivePlanKey });
-  if (!aiAccess.allowed || !aiAccess.model) {
-    logAuditEvent({
-      action: "ai.chat.request",
-      outcome: "denied",
-      actorUserId: user.id,
-      teamId: teamContext.teamId,
-      metadata: {
-        reason: aiAccess.denialReason ?? "plan_not_allowed",
-        accessMode: aiAccessMode,
-        effectivePlanKey,
-        stripePriceId: subscriptionRow?.stripe_price_id ?? null,
-        requestModalities,
-        attachmentCounts,
-      },
-    });
-    return err(planRequiredMessage, AI_FORBIDDEN_STATUS, { code: "plan_required" });
-  }
-
-  if (!isAiProviderConfigured) {
-    logAuditEvent({
-      action: "ai.chat.request",
-      outcome: "denied",
-      actorUserId: user.id,
-      teamId: teamContext.teamId,
-      metadata: {
-        reason: "ai_provider_not_configured",
-        planKey: effectivePlanKey,
-        accessMode: aiAccessMode,
-        model: aiAccess.model,
-        provider: aiProviderName,
-        requestModalities,
-        attachmentCounts,
-      },
-    });
-    return err(aiUnavailableMessage, AI_UNAVAILABLE_STATUS, { code: "upstream_error" });
-  }
-
-  const model = aiAccess.model;
-  const disallowedModality = requestModalities.find(
-    (modality) => !aiAccess.allowedModalities.includes(modality),
-  );
-  if (disallowedModality) {
-    logAuditEvent({
-      action: "ai.chat.request",
-      outcome: "denied",
-      actorUserId: user.id,
-      teamId: teamContext.teamId,
-      metadata: {
-        reason: "modality_not_allowed",
-        planKey: effectivePlanKey,
-        accessMode: aiAccessMode,
-        model,
-        requestModalities,
-        allowedModalities: aiAccess.allowedModalities,
-        blockedModality: disallowedModality,
-        attachmentCounts,
-      },
-    });
-    return err(modalityNotAllowedMessage, AI_FORBIDDEN_STATUS, { code: "modality_not_allowed" });
-  }
-  if (!providerSupportsModalities(model, requestModalities)) {
-    logAuditEvent({
-      action: "ai.chat.request",
-      outcome: "denied",
-      actorUserId: user.id,
-      teamId: teamContext.teamId,
-      metadata: {
-        reason: "model_modality_mismatch",
-        planKey: effectivePlanKey,
-        accessMode: aiAccessMode,
-        model,
-        requestModalities,
-        attachmentCounts,
-      },
-    });
-    return err(modalityNotAllowedMessage, AI_FORBIDDEN_STATUS, { code: "modality_not_allowed" });
-  }
-  const toolsEnabled = getAiToolsEnabled() && Object.keys(AI_TOOL_MAP).length > 0;
-  const maxSteps = toolsEnabled ? aiAccess.maxSteps : 1;
-  const monthlyTokenBudget = aiAccess.monthlyTokenBudget;
-  const estimatedPromptTokens = estimatePromptTokens(bodyParse.data.messages);
-  const singleStepTokens = estimatedPromptTokens + AI_COMPLETION_MAX_TOKENS;
-  const projectedRequestTokens = singleStepTokens * maxSteps;
-  let budgetClaim: BudgetClaim | null = null;
-  if (monthlyTokenBudget > 0) {
-    try {
-      budgetClaim = await claimTeamAiBudget({
-        teamId: teamContext.teamId,
-        tokenBudget: monthlyTokenBudget,
-        projectedTokens: projectedRequestTokens,
-      });
-    } catch (error) {
-      logger.error("Failed to atomically claim team AI budget", error, {
-        teamId: teamContext.teamId,
-        userId: user.id,
-        planKey: effectivePlanKey,
-        accessMode: aiAccessMode,
-        monthlyTokenBudget,
-        projectedRequestTokens,
-      });
-      return err(aiUnavailableMessage, AI_UNAVAILABLE_STATUS, { code: "upstream_error" });
-    }
-
-    if (!budgetClaim) {
-      logAuditEvent({
-        action: "ai.chat.request",
-        outcome: "denied",
-        actorUserId: user.id,
-        teamId: teamContext.teamId,
-        metadata: {
-          reason: "team_token_budget_exceeded",
-          planKey: effectivePlanKey,
-          accessMode: aiAccessMode,
-          monthlyTokenBudget,
-          projectedRequestTokens,
-          requestModalities,
-          attachmentCounts,
-        },
-      });
-      return err(budgetExceededMessage, AI_PAYMENT_REQUIRED_STATUS, { code: "budget_exceeded" });
-    }
-  }
-
-  // Best-effort queue healing so finalize retries do not depend solely on cron.
-  // Run only on the active AI execution path to avoid unnecessary background work.
-  if (budgetClaim) {
-    void maybeProcessAiBudgetFinalizeRetries();
-  }
+  // ── Upstream error message helpers ──
+  const aiUnavailableMessage = t("errors.unavailable");
+  const upstreamRateLimitedMessage = t("errors.upstreamRateLimited");
+  const upstreamBadRequestMessage = t("errors.upstreamBadRequest");
 
   try {
     const upstreamAbortController = new AbortController();
@@ -632,16 +302,6 @@ export async function POST(request: Request) {
       },
       { once: true },
     );
-
-    const languageModel = await getAiLanguageModel(model);
-    if (!languageModel) {
-      return aiErrorResponse({
-        error: aiUnavailableMessage,
-        code: "upstream_error",
-        status: AI_UNAVAILABLE_STATUS,
-        requestId,
-      });
-    }
 
     if (toolsEnabled) {
       // ── Agent path: tools + multi-step + UI message stream ──
@@ -664,7 +324,7 @@ export async function POST(request: Request) {
           promptTokens,
           completionTokens,
           projectedRequestTokens,
-          estimatedPromptTokens,
+          estimatedPromptTokens: estimatedTokens,
           streamedCompletionChars: 0,
         });
 
@@ -722,7 +382,7 @@ export async function POST(request: Request) {
 
       const aiResult = streamText({
         model: languageModel,
-        messages: toModelMessages(bodyParse.data.messages),
+        messages: toModelMessages(body.messages),
         tools: AI_TOOL_MAP,
         stopWhen: stepCountIs(maxSteps),
         abortSignal: upstreamAbortController.signal,
@@ -783,7 +443,7 @@ export async function POST(request: Request) {
     // ── Single-turn path: plain text stream (unchanged behavior) ──
     const aiResult = streamText({
       model: languageModel,
-      messages: toModelMessages(bodyParse.data.messages),
+      messages: toModelMessages(body.messages),
       abortSignal: upstreamAbortController.signal,
       maxOutputTokens: AI_COMPLETION_MAX_TOKENS,
     });
@@ -792,7 +452,7 @@ export async function POST(request: Request) {
     const usage: UsageTotals = { promptTokens: 0, completionTokens: 0 };
     let streamedCompletionChars = 0;
 
-    const body = new ReadableStream<Uint8Array>({
+    const responseBody = new ReadableStream<Uint8Array>({
       async start(controller) {
         let streamError: unknown | null = null;
 
@@ -822,7 +482,7 @@ export async function POST(request: Request) {
             promptTokens: usage.promptTokens,
             completionTokens: usage.completionTokens,
             projectedRequestTokens,
-            estimatedPromptTokens,
+            estimatedPromptTokens: estimatedTokens,
             streamedCompletionChars,
           });
           if (resolvedUsage.usedFallback && !streamError) {
@@ -909,7 +569,7 @@ export async function POST(request: Request) {
     });
 
     return withRequestId(
-      new Response(body, {
+      new Response(responseBody, {
         status: 200,
         headers: {
           "Content-Type": "text/plain; charset=utf-8",

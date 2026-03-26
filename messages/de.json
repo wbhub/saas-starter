@@ -253,6 +253,30 @@
       }
     }
   },
+  "AiObjectCard": {
+    "title": "KI-strukturierte Ausgabe",
+    "description": "Analysiere Text mit KI und erhalte typisierte, strukturierte Ergebnisse in Echtzeit.",
+    "placeholder": "Text zur Analyse eingeben...",
+    "actions": {
+      "analyze": "Analysieren",
+      "analyzing": "Wird analysiert...",
+      "stop": "Stopp"
+    },
+    "result": {
+      "sentiment": "Stimmung",
+      "confidence": "Konfidenz",
+      "reasoning": "Begründung"
+    },
+    "errors": {
+      "requestFailed": "Analyse fehlgeschlagen. Bitte versuche es erneut.",
+      "budgetExceeded": "Monatliches KI-Token-Budget erreicht.",
+      "planRequired": "Für den KI-Zugriff ist ein kostenpflichtiger Plan erforderlich.",
+      "upstreamRateLimited": "Der KI-Anbieter ist rate-limitiert. Versuche es in Kürze erneut.",
+      "upstreamBadRequest": "Diese Anfrage konnte nicht verarbeitet werden.",
+      "upstreamError": "Der KI-Dienst ist vorübergehend nicht verfügbar.",
+      "unknownSchema": "Unbekannter Analysetyp."
+    }
+  },
   "AiChatCard": {
     "title": "Assistent",
     "description": "Nachrichten werden in Echtzeit gestreamt und die Nutzung automatisch erfasst.",
@@ -844,6 +868,26 @@
       "passwordComplexity": "Das Passwort muss zwischen 12 und 128 Zeichen lang sein.",
       "rateLimited": "Zu viele Registrierungsversuche. Bitte versuche es später erneut.",
       "unableToCreateAccount": "Dein Konto konnte nicht erstellt werden."
+    }
+  },
+  "ApiAiObject": {
+    "errors": {
+      "invalidOrigin": "Ungültige Request-Origin.",
+      "missingCsrfToken": "CSRF-Token fehlt.",
+      "invalidCsrfToken": "Ungültiges CSRF-Token.",
+      "invalidContentType": "Content-Type muss application/json sein.",
+      "unauthorized": "Nicht autorisiert",
+      "noTeamMembership": "Für dieses Konto wurde keine Teammitgliedschaft gefunden.",
+      "rateLimited": "Zu viele KI-Anfragen. Bitte warte und versuche es erneut.",
+      "payloadTooLarge": "Die Nutzlast der Anfrage ist zu groß.",
+      "invalidPayload": "Ungültige Anfrage-Nutzlast.",
+      "unknownSchema": "Unbekannter Schema-Name. Prüfe die verfügbaren Schemas und versuche es erneut.",
+      "budgetExceeded": "Monatliches KI-Token-Budget erreicht. Führe ein Upgrade durch oder warte auf den nächsten Zyklus.",
+      "modalityNotAllowed": "Dein aktueller KI-Plan unterstützt diesen Vorgang nicht.",
+      "planRequired": "Für den KI-Zugriff ist ein berechtigter kostenpflichtiger Plan erforderlich.",
+      "upstreamRateLimited": "Der KI-Anbieter ist derzeit rate-limitiert. Bitte versuche es in Kürze erneut.",
+      "upstreamBadRequest": "Diese KI-Anfrage konnte nicht verarbeitet werden. Passe deine Eingabe an und versuche es erneut.",
+      "unavailable": "Der KI-Assistent ist derzeit nicht verfügbar."
     }
   },
   "ApiAiChat": {

@@ -253,6 +253,30 @@
       }
     }
   },
+  "AiObjectCard": {
+    "title": "Saída estruturada de IA",
+    "description": "Analise texto com IA e receba resultados tipados e estruturados em tempo real.",
+    "placeholder": "Digite o texto para analisar...",
+    "actions": {
+      "analyze": "Analisar",
+      "analyzing": "Analisando...",
+      "stop": "Parar"
+    },
+    "result": {
+      "sentiment": "Sentimento",
+      "confidence": "Confiança",
+      "reasoning": "Raciocínio"
+    },
+    "errors": {
+      "requestFailed": "A análise falhou. Tente novamente.",
+      "budgetExceeded": "Orçamento mensal de tokens de IA atingido.",
+      "planRequired": "O acesso à IA requer um plano pago.",
+      "upstreamRateLimited": "O provedor de IA está com taxa limitada. Tente novamente em breve.",
+      "upstreamBadRequest": "Não foi possível processar esta solicitação.",
+      "upstreamError": "O serviço de IA está temporariamente indisponível.",
+      "unknownSchema": "Tipo de análise desconhecido."
+    }
+  },
   "AiChatCard": {
     "title": "Assistente",
     "description": "As mensagens são transmitidas em tempo real e o uso é rastreado automaticamente.",
@@ -844,6 +868,26 @@
       "passwordComplexity": "A senha deve ter entre 12 e 128 caracteres.",
       "rateLimited": "Muitas tentativas de inscrição. Por favor, tente novamente mais tarde.",
       "unableToCreateAccount": "Não foi possível criar sua conta."
+    }
+  },
+  "ApiAiObject": {
+    "errors": {
+      "invalidOrigin": "Origem da solicitação inválida.",
+      "missingCsrfToken": "Token CSRF ausente.",
+      "invalidCsrfToken": "Token CSRF inválido.",
+      "invalidContentType": "O tipo de conteúdo deve ser application/json.",
+      "unauthorized": "Não autorizado",
+      "noTeamMembership": "Nenhuma associação de equipe encontrada para esta conta.",
+      "rateLimited": "Muitas solicitações de IA. Aguarde e tente novamente.",
+      "payloadTooLarge": "A carga útil da solicitação é muito grande.",
+      "invalidPayload": "Carga de solicitação inválida.",
+      "unknownSchema": "Nome de esquema desconhecido. Verifique os esquemas disponíveis e tente novamente.",
+      "budgetExceeded": "Orçamento mensal de tokens de IA atingido. Atualize ou aguarde o próximo ciclo.",
+      "modalityNotAllowed": "Seu plano de IA atual não suporta esta operação.",
+      "planRequired": "O acesso à IA requer um plano pago elegível.",
+      "upstreamRateLimited": "O provedor de IA está atualmente com taxa limitada. Tente novamente em breve.",
+      "upstreamBadRequest": "Esta solicitação de IA não pôde ser processada. Ajuste sua entrada e tente novamente.",
+      "unavailable": "O assistente de IA não está disponível no momento."
     }
   },
   "ApiAiChat": {

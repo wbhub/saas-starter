@@ -253,6 +253,30 @@
       }
     }
   },
+  "AiObjectCard": {
+    "title": "AI 구조화 출력",
+    "description": "AI로 텍스트를 분석하고 실시간으로 타입이 지정된 구조화된 결과를 받으세요.",
+    "placeholder": "분석할 텍스트를 입력하세요...",
+    "actions": {
+      "analyze": "분석",
+      "analyzing": "분석 중...",
+      "stop": "중지"
+    },
+    "result": {
+      "sentiment": "감정",
+      "confidence": "신뢰도",
+      "reasoning": "근거"
+    },
+    "errors": {
+      "requestFailed": "분석에 실패했습니다. 다시 시도하세요.",
+      "budgetExceeded": "월간 AI 토큰 예산에 도달했습니다.",
+      "planRequired": "AI 접근은 유료 요금제가 필요합니다.",
+      "upstreamRateLimited": "AI 제공자에 현재 속도 제한이 적용되고 있습니다. 잠시 후 다시 시도하세요.",
+      "upstreamBadRequest": "이 요청을 처리할 수 없습니다.",
+      "upstreamError": "AI 서비스가 일시적으로 사용할 수 없습니다.",
+      "unknownSchema": "알 수 없는 분석 유형입니다."
+    }
+  },
   "AiChatCard": {
     "title": "어시스턴트",
     "description": "메시지가 실시간으로 스트리밍되고 사용량이 자동으로 추적됩니다.",
@@ -844,6 +868,26 @@
       "passwordComplexity": "비밀번호는 12자 이상 128자 이하여야 합니다.",
       "rateLimited": "가입 시도가 너무 많습니다. 나중에 다시 시도하세요.",
       "unableToCreateAccount": "계정을 만들 수 없습니다."
+    }
+  },
+  "ApiAiObject": {
+    "errors": {
+      "invalidOrigin": "잘못된 요청 origin입니다.",
+      "missingCsrfToken": "CSRF 토큰이 없습니다.",
+      "invalidCsrfToken": "잘못된 CSRF 토큰입니다.",
+      "invalidContentType": "Content-Type은 application/json이어야 합니다.",
+      "unauthorized": "인증되지 않음",
+      "noTeamMembership": "이 계정의 팀 멤버십을 찾을 수 없습니다.",
+      "rateLimited": "AI 요청이 너무 많습니다. 잠시 후 다시 시도하세요.",
+      "payloadTooLarge": "요청 본문이 너무 큽니다.",
+      "invalidPayload": "잘못된 요청 본문입니다.",
+      "unknownSchema": "알 수 없는 스키마 이름입니다. 사용 가능한 스키마를 확인하고 다시 시도하세요.",
+      "budgetExceeded": "월간 AI 토큰 예산에 도달했습니다. 업그레이드하거나 다음 주기를 기다리세요.",
+      "modalityNotAllowed": "현재 AI 요금제에서는 이 작업을 지원하지 않습니다.",
+      "planRequired": "AI 접근은 적격 유료 요금제가 필요합니다.",
+      "upstreamRateLimited": "AI 제공자에 현재 속도 제한이 적용되고 있습니다. 잠시 후 다시 시도하세요.",
+      "upstreamBadRequest": "이 AI 요청을 처리할 수 없습니다. 입력을 조정하고 다시 시도하세요.",
+      "unavailable": "AI 어시스턴트를 현재 사용할 수 없습니다."
     }
   },
   "ApiAiChat": {
