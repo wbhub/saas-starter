@@ -11,6 +11,13 @@ import {
 } from "ai";
 import { useTranslations } from "next-intl";
 import { getCsrfHeaders } from "@/lib/http/csrf";
+import {
+  type AttachmentProviderName,
+  EXTENSION_MIME_MAP,
+  getSupportedAttachmentAccept,
+  isSupportedFileMimeType,
+  SUPPORTED_IMAGE_MIME_TYPES,
+} from "@/lib/ai/attachments";
 
 const AI_TOOLS_ENABLED = process.env.NEXT_PUBLIC_AI_TOOLS_ENABLED === "true";
 
@@ -20,18 +27,6 @@ const MAX_ATTACHMENT_DATA_CHARS = 180_000;
 const MAX_TOTAL_ATTACHMENT_DATA_CHARS = 220_000;
 const MAX_MESSAGES_PER_REQUEST = 30;
 const MAX_MESSAGE_CONTENT_CHARS = 8_000;
-const SUPPORTED_IMAGE_MIME_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
-const SUPPORTED_FILE_MIME_TYPES = new Set(["application/pdf", "text/plain", "text/csv"]);
-const EXTENSION_MIME_MAP: Record<string, string> = {
-  png: "image/png",
-  jpg: "image/jpeg",
-  jpeg: "image/jpeg",
-  webp: "image/webp",
-  gif: "image/gif",
-  pdf: "application/pdf",
-  txt: "text/plain",
-  csv: "text/csv",
-};
 
 function getMessageText(message: UIMessage) {
   return message.parts
@@ -278,12 +273,13 @@ function ToolCallCard({
   );
 }
 
-export function AiChatCard() {
+export function AiChatCard({ providerName }: { providerName: AttachmentProviderName }) {
   const t = useTranslations("AiChatCard");
   const [input, setInput] = useState("");
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const supportedAttachmentAccept = getSupportedAttachmentAccept(providerName);
 
   const transport = useMemo(() => {
     const prepareSendMessagesRequest = ({
@@ -337,7 +333,10 @@ export function AiChatCard() {
     let totalEncodedChars = 0;
     for (const file of files) {
       const mimeType = resolveMimeType(file);
-      if (!SUPPORTED_IMAGE_MIME_TYPES.has(mimeType) && !SUPPORTED_FILE_MIME_TYPES.has(mimeType)) {
+      if (
+        !SUPPORTED_IMAGE_MIME_TYPES.has(mimeType) &&
+        !isSupportedFileMimeType(mimeType, providerName)
+      ) {
         return t("errors.unsupportedType", { mimeType: mimeType || file.name || "unknown" });
       }
       const encodedChars = estimateDataUrlLength(file.size, mimeType);
@@ -485,7 +484,7 @@ export function AiChatCard() {
             multiple
             disabled={isSending}
             onChange={handleFileChange}
-            accept="image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain,text/csv"
+            accept={supportedAttachmentAccept}
             className="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border file:border-border-subtle file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium hover:file:bg-surface-hover disabled:opacity-60"
           />
           {pendingFiles.length > 0 ? (

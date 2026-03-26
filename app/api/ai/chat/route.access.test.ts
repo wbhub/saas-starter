@@ -590,6 +590,160 @@ describe("POST /api/ai/chat access and gating", () => {
     expect(streamText).not.toHaveBeenCalled();
   });
 
+  it("rejects text file attachments that the default provider path cannot handle", async () => {
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          getUser: async () => ({
+            data: { user: { id: "user_123" } },
+          }),
+        },
+        from: vi.fn(() => ({
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          in: vi.fn().mockReturnThis(),
+          order: vi.fn().mockReturnThis(),
+          limit: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({
+            data: { stripe_price_id: "price_growth", status: "active" },
+            error: null,
+          }),
+        })),
+      }),
+    }));
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
+        teamId: "team_123",
+        teamName: "Acme Team",
+        role: "owner",
+      }),
+    }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({
+        allowed: true,
+        retryAfterSeconds: 0,
+      }),
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: "user",
+              content: "Analyze this file",
+              attachments: [
+                {
+                  type: "file",
+                  mimeType: "text/plain",
+                  name: "notes.txt",
+                  data: "dGVzdA==",
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual(
+      expect.objectContaining({
+        ok: false,
+        error: "Unsupported attachment type.",
+      }),
+    );
+    const { streamText } = await import("ai");
+    expect(streamText).not.toHaveBeenCalled();
+  });
+
+  it("accepts text file attachments for anthropic provider", async () => {
+    vi.doMock("ai", async () => {
+      const actual = await vi.importActual<typeof import("ai")>("ai");
+      return {
+        ...actual,
+        streamText: vi.fn().mockReturnValue({
+          fullStream: {
+            async *[Symbol.asyncIterator]() {
+              yield { type: "text-delta", text: "anthropic-ok" };
+              yield { type: "finish", totalUsage: { inputTokens: 7, outputTokens: 2 } };
+            },
+          },
+        }),
+      };
+    });
+    vi.doMock("@/lib/ai/provider", () => ({
+      aiProviderName: "anthropic",
+      isAiProviderConfigured: true,
+      supportsOpenAiFileIds: false,
+      providerSupportsModalities: vi.fn().mockReturnValue(true),
+      getAiLanguageModel: vi.fn().mockReturnValue("provider-model"),
+    }));
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          getUser: async () => ({
+            data: { user: { id: "user_123" } },
+          }),
+        },
+        from: vi.fn(() => ({
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          in: vi.fn().mockReturnThis(),
+          order: vi.fn().mockReturnThis(),
+          limit: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({
+            data: { stripe_price_id: "price_growth", status: "active" },
+            error: null,
+          }),
+        })),
+      }),
+    }));
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
+        teamId: "team_123",
+        teamName: "Acme Team",
+        role: "owner",
+      }),
+    }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({
+        allowed: true,
+        retryAfterSeconds: 0,
+      }),
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: "user",
+              content: "Analyze this file",
+              attachments: [
+                {
+                  type: "file",
+                  mimeType: "text/plain",
+                  name: "notes.txt",
+                  data: "dGVzdA==",
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.text()).resolves.toBe("anthropic-ok");
+  });
+
   it("rejects assistant-role attachments", async () => {
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: async () => ({

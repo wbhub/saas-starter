@@ -4,6 +4,7 @@ import { AiChatCard } from "@/components/ai-chat-card";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { NoTeamCard } from "@/components/no-team-card";
 import { TeamContextErrorCard } from "@/components/team-context-error-card";
+import { aiProviderName } from "@/lib/ai/provider";
 import {
   getDashboardAiUiGate,
   getDashboardBaseData,
@@ -67,7 +68,7 @@ export default async function DashboardAiPage() {
       </header>
 
       {aiUiGate.isVisibleInUi ? (
-        <AiChatCard />
+        <AiChatCard providerName={aiProviderName} />
       ) : (
         <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-foreground">{t("unavailable.title")}</h2>
