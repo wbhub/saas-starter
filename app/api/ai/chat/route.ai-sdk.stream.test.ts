@@ -36,14 +36,18 @@ describe("POST /api/ai/chat AI SDK streaming", () => {
         error: null,
       });
 
-    vi.doMock("ai", () => ({
-      streamText: vi.fn().mockReturnValue({
-        fullStream: makeAsyncStream([
-          { type: "text-delta", text: "hello" },
-          { type: "finish", totalUsage: { inputTokens: 9, outputTokens: 4 } },
-        ]),
-      }),
-    }));
+    vi.doMock("ai", async () => {
+      const actual = await vi.importActual<typeof import("ai")>("ai");
+      return {
+        ...actual,
+        streamText: vi.fn().mockReturnValue({
+          fullStream: makeAsyncStream([
+            { type: "text-delta", text: "hello" },
+            { type: "finish", totalUsage: { inputTokens: 9, outputTokens: 4 } },
+          ]),
+        }),
+      };
+    });
     vi.doMock("@/lib/security/csrf", () => ({
       verifyCsrfProtection: vi.fn().mockReturnValue(null),
     }));
@@ -96,6 +100,8 @@ describe("POST /api/ai/chat AI SDK streaming", () => {
     }));
     vi.doMock("@/lib/ai/config", () => ({
       getAiAccessMode: vi.fn().mockReturnValue("paid"),
+      getAiToolsEnabled: vi.fn().mockReturnValue(false),
+      getAiMaxSteps: vi.fn().mockReturnValue(1),
       getAiAllowedSubscriptionStatuses: vi.fn().mockReturnValue(["trialing", "active", "past_due"]),
       getAiDefaultModel: vi.fn().mockReturnValue("gpt-4.1-mini"),
       getAiDefaultMonthlyTokenBudget: vi.fn().mockReturnValue(2_000_000),
@@ -104,6 +110,7 @@ describe("POST /api/ai/chat AI SDK streaming", () => {
         model: "gpt-4.1-mini",
         monthlyBudget: 2_000_000,
         allowedModalities: ["text", "image", "file"],
+        maxSteps: 1,
       }),
       getAiModelForPlan: vi.fn().mockReturnValue("gpt-4.1-mini"),
       getAiMonthlyTokenBudgetForPlan: vi.fn().mockReturnValue(2_000_000),

@@ -5,6 +5,7 @@ import {
   getAiAllowedModalitiesForPlan,
   getAiDefaultModel,
   getAiDefaultMonthlyTokenBudget,
+  getAiMaxSteps,
   getAiModelForPlan,
   getAiMonthlyTokenBudgetForPlan,
   getAiRuleForPlan,
@@ -16,6 +17,7 @@ export type AiAccessResolution = {
   model: string | null;
   monthlyTokenBudget: number;
   allowedModalities: readonly AiModality[];
+  maxSteps: number;
   denialReason?: string;
 };
 
@@ -26,6 +28,7 @@ export function resolveAiAccess({
 }): AiAccessResolution {
   const mode = getAiAccessMode();
   const allowedModalities = getAiAllowedModalities();
+  const maxSteps = getAiMaxSteps();
   if (mode === "all") {
     const model = getAiDefaultModel();
     if (!model) {
@@ -34,6 +37,7 @@ export function resolveAiAccess({
         model: null,
         monthlyTokenBudget: 0,
         allowedModalities,
+        maxSteps,
         denialReason: "default_model_missing",
       };
     }
@@ -42,6 +46,7 @@ export function resolveAiAccess({
       model,
       monthlyTokenBudget: getAiDefaultMonthlyTokenBudget(),
       allowedModalities,
+      maxSteps,
     };
   }
 
@@ -52,6 +57,7 @@ export function resolveAiAccess({
         model: null,
         monthlyTokenBudget: 0,
         allowedModalities,
+        maxSteps,
         denialReason: "plan_not_allowed",
       };
     }
@@ -62,6 +68,7 @@ export function resolveAiAccess({
         model: null,
         monthlyTokenBudget: 0,
         allowedModalities: rule.allowedModalities,
+        maxSteps: rule.maxSteps,
         denialReason: "plan_disabled",
       };
     }
@@ -71,6 +78,7 @@ export function resolveAiAccess({
         model: null,
         monthlyTokenBudget: 0,
         allowedModalities: rule.allowedModalities,
+        maxSteps: rule.maxSteps,
         denialReason: "plan_model_missing",
       };
     }
@@ -79,6 +87,7 @@ export function resolveAiAccess({
       model: rule.model,
       monthlyTokenBudget: rule.monthlyBudget,
       allowedModalities: rule.allowedModalities,
+      maxSteps: rule.maxSteps,
     };
   }
 
@@ -88,6 +97,7 @@ export function resolveAiAccess({
       model: null,
       monthlyTokenBudget: 0,
       allowedModalities,
+      maxSteps,
       denialReason: "plan_not_allowed",
     };
   }
@@ -98,6 +108,7 @@ export function resolveAiAccess({
       model: null,
       monthlyTokenBudget: 0,
       allowedModalities: getAiAllowedModalitiesForPlan(effectivePlanKey),
+      maxSteps,
       denialReason: "plan_not_allowed",
     };
   }
@@ -106,5 +117,6 @@ export function resolveAiAccess({
     model,
     monthlyTokenBudget: getAiMonthlyTokenBudgetForPlan(effectivePlanKey),
     allowedModalities: getAiAllowedModalitiesForPlan(effectivePlanKey),
+    maxSteps,
   };
 }

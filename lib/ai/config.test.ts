@@ -22,6 +22,7 @@ describe("lib/ai/config env parsing", () => {
       model: null,
       monthlyBudget: 0,
       allowedModalities: ["text"],
+      maxSteps: 1,
     });
     expect(config.getAiAllowedModalities()).toEqual(["text"]);
   });
@@ -95,18 +96,21 @@ describe("lib/ai/config env parsing", () => {
       model: "gpt-4.1-mini",
       monthlyBudget: 1000,
       allowedModalities: ["text", "image"],
+      maxSteps: 1,
     });
     expect(config.getAiRuleForPlan("growth")).toEqual({
       enabled: false,
       model: "gpt-4.1",
       monthlyBudget: 0,
       allowedModalities: ["text", "image", "file"],
+      maxSteps: 1,
     });
     expect(config.getAiRuleForPlan("pro")).toEqual({
       enabled: true,
       model: null,
       monthlyBudget: 9999,
       allowedModalities: ["text", "file"],
+      maxSteps: 1,
     });
     expect(config.getAiAllowedModalities()).toEqual(["text", "image", "file"]);
     expect(config.getAiAllowedModalitiesForPlan("growth")).toEqual(["text", "file"]);
