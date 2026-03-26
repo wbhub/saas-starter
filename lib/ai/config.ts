@@ -37,6 +37,7 @@ const DEFAULT_AI_PLAN_MONTHLY_TOKEN_BUDGET_MAP: AiPlanMonthlyTokenBudgetMap = Ob
 const DEFAULT_AI_ALLOWED_MODALITIES: readonly AiModality[] = ["text"];
 
 const DEFAULT_AI_MAX_STEPS = 1;
+const MAX_AI_STEPS_CAP = 25;
 
 const DEFAULT_AI_BY_PLAN_RULES: AiByPlanRules = Object.fromEntries(
   AI_POLICY_PLAN_KEYS.map((planKey) => [
@@ -316,12 +317,14 @@ function parseAiByPlanRules(
       `AI_PLAN_RULES_JSON.${planKey}.allowedModalities`,
       fallbackModalities,
     );
-    const maxSteps =
+    const maxSteps = Math.min(
       typeof maybeRule.maxSteps === "number" &&
-      Number.isFinite(maybeRule.maxSteps) &&
-      maybeRule.maxSteps >= 1
+        Number.isFinite(maybeRule.maxSteps) &&
+        maybeRule.maxSteps >= 1
         ? Math.floor(maybeRule.maxSteps)
-        : fallbackMaxSteps;
+        : fallbackMaxSteps,
+      MAX_AI_STEPS_CAP,
+    );
 
     configured[planKey] = { enabled, model, monthlyBudget, allowedModalities, maxSteps };
   }
@@ -346,7 +349,10 @@ const AI_DEFAULT_MONTHLY_TOKEN_BUDGET = parseNonNegativeInteger(
 );
 const AI_ALLOWED_MODALITIES = parseModalities(env.AI_ALLOWED_MODALITIES, "AI_ALLOWED_MODALITIES");
 const AI_TOOLS_ENABLED = parseBooleanEnv(env.AI_TOOLS_ENABLED);
-const AI_MAX_STEPS = parsePositiveInteger(env.AI_MAX_STEPS, "AI_MAX_STEPS", DEFAULT_AI_MAX_STEPS);
+const AI_MAX_STEPS = Math.min(
+  parsePositiveInteger(env.AI_MAX_STEPS, "AI_MAX_STEPS", DEFAULT_AI_MAX_STEPS),
+  MAX_AI_STEPS_CAP,
+);
 const AI_PLAN_RULES = parseAiByPlanRules(
   env.AI_PLAN_RULES_JSON,
   AI_ALLOWED_MODALITIES,
