@@ -148,6 +148,7 @@ If you want `/dashboard/ai` and `/api/ai/chat`:
 - Note: attachment `fileId` sources are OpenAI-only; for other providers, use `url` or `data`.
 - (Recommended) Set `AI_MODEL_MODALITIES_MAP_JSON` so model capability checks are explicit per provider/model
 - Configure AI policy vars in `.env.example` (`AI_ACCESS_MODE`, plan/model/budget settings)
+- (Optional) Enable agent tool-calling: set `AI_TOOLS_ENABLED=true` and `NEXT_PUBLIC_AI_TOOLS_ENABLED=true`. Set `AI_MAX_STEPS` to control how many steps the agent loop can take per request (default 1 = single-turn). Tools are defined in `lib/ai/tools/`. Per-plan `maxSteps` can be configured via `AI_PLAN_RULES_JSON`.
 
 ### Intercom
 

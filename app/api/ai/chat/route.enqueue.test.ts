@@ -90,6 +90,8 @@ describe("POST /api/ai/chat finalize retry enqueue", () => {
     }));
     vi.doMock("@/lib/ai/config", () => ({
       getAiAccessMode: vi.fn().mockReturnValue("paid"),
+      getAiToolsEnabled: vi.fn().mockReturnValue(false),
+      getAiMaxSteps: vi.fn().mockReturnValue(1),
       getAiAllowedSubscriptionStatuses: vi.fn().mockReturnValue(["trialing", "active", "past_due"]),
       getAiDefaultModel: vi.fn().mockReturnValue("gpt-4.1-mini"),
       getAiDefaultMonthlyTokenBudget: vi.fn().mockReturnValue(2_000_000),
@@ -97,6 +99,7 @@ describe("POST /api/ai/chat finalize retry enqueue", () => {
         enabled: true,
         model: "gpt-4.1-mini",
         monthlyBudget: 2_000_000,
+        maxSteps: 1,
       }),
       getAiModelForPlan: vi.fn().mockReturnValue("gpt-4.1-mini"),
       getAiMonthlyTokenBudgetForPlan: vi.fn().mockReturnValue(2_000_000),
@@ -110,11 +113,15 @@ describe("POST /api/ai/chat finalize retry enqueue", () => {
       providerSupportsModalities: vi.fn().mockReturnValue(true),
       getAiLanguageModel: vi.fn().mockReturnValue("provider-model"),
     }));
-    vi.doMock("ai", () => ({
-      streamText: vi.fn(() => {
-        throw { status: 503 };
-      }),
-    }));
+    vi.doMock("ai", async () => {
+      const actual = await vi.importActual<typeof import("ai")>("ai");
+      return {
+        ...actual,
+        streamText: vi.fn(() => {
+          throw { status: 503 };
+        }),
+      };
+    });
     vi.doMock("@/lib/audit", () => ({
       logAuditEvent: vi.fn(),
     }));

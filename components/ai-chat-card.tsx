@@ -2,9 +2,17 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
-import { TextStreamChatTransport, type UIMessage } from "ai";
+import {
+  DefaultChatTransport,
+  getToolName,
+  isToolUIPart,
+  TextStreamChatTransport,
+  type UIMessage,
+} from "ai";
 import { useTranslations } from "next-intl";
 import { getCsrfHeaders } from "@/lib/http/csrf";
+
+const AI_TOOLS_ENABLED = process.env.NEXT_PUBLIC_AI_TOOLS_ENABLED === "true";
 
 const MAX_ATTACHMENTS_PER_MESSAGE = 8;
 const MAX_ATTACHMENTS_PER_REQUEST = 16;
@@ -229,6 +237,47 @@ function toApiChatMessages(messages: UIMessage[]) {
   return enforceRequestAttachmentBudget(pruneHistoricalAttachments(recentMessages));
 }
 
+function ToolCallCard({
+  toolName,
+  args,
+  result,
+  state,
+}: {
+  toolName: string;
+  args: unknown;
+  result: unknown;
+  state: string;
+}) {
+  return (
+    <details className="max-w-[88%] rounded-lg border app-border-subtle bg-surface px-3 py-2 text-sm text-foreground">
+      <summary className="flex cursor-pointer items-center gap-2 font-medium">
+        <span className="inline-block rounded bg-surface-hover px-1.5 py-0.5 font-mono text-xs">
+          {toolName}
+        </span>
+        {state !== "output-available" && state !== "output-error" ? (
+          <span className="text-xs text-muted-foreground">running…</span>
+        ) : null}
+      </summary>
+      <div className="mt-2 space-y-2">
+        <div>
+          <p className="text-xs font-medium text-muted-foreground">Input</p>
+          <pre className="mt-0.5 overflow-x-auto rounded bg-surface-hover p-2 font-mono text-xs">
+            {JSON.stringify(args, null, 2)}
+          </pre>
+        </div>
+        {result !== undefined ? (
+          <div>
+            <p className="text-xs font-medium text-muted-foreground">Output</p>
+            <pre className="mt-0.5 overflow-x-auto rounded bg-surface-hover p-2 font-mono text-xs">
+              {JSON.stringify(result, null, 2)}
+            </pre>
+          </div>
+        ) : null}
+      </div>
+    </details>
+  );
+}
+
 export function AiChatCard() {
   const t = useTranslations("AiChatCard");
   const [input, setInput] = useState("");
@@ -236,21 +285,36 @@ export function AiChatCard() {
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const transport = useMemo(
-    () =>
-      new TextStreamChatTransport({
+  const transport = useMemo(() => {
+    const prepareSendMessagesRequest = ({
+      body,
+      messages,
+      ...request
+    }: {
+      body: Record<string, unknown> | undefined;
+      messages: UIMessage[];
+      [key: string]: unknown;
+    }) => ({
+      ...request,
+      body: {
+        ...body,
+        messages: toApiChatMessages(messages),
+      },
+    });
+
+    if (AI_TOOLS_ENABLED) {
+      return new DefaultChatTransport({
         api: "/api/ai/chat",
         headers: getCsrfHeaders,
-        prepareSendMessagesRequest: ({ body, messages, ...request }) => ({
-          ...request,
-          body: {
-            ...body,
-            messages: toApiChatMessages(messages),
-          },
-        }),
-      }),
-    [],
-  );
+        prepareSendMessagesRequest,
+      });
+    }
+    return new TextStreamChatTransport({
+      api: "/api/ai/chat",
+      headers: getCsrfHeaders,
+      prepareSendMessagesRequest,
+    });
+  }, []);
 
   const { messages, sendMessage, status, stop, error, clearError } = useChat({
     transport,
@@ -349,20 +413,42 @@ export function AiChatCard() {
           <p className="text-sm text-muted-foreground">{t("emptyState")}</p>
         ) : (
           messages.map((message) => {
-            const text = getMessageText(message);
-            if (!text) {
+            const isUser = message.role === "user";
+            const hasContent = message.parts.some(
+              (part) => (part.type === "text" && part.text.length > 0) || isToolUIPart(part),
+            );
+            if (!hasContent) {
               return null;
             }
 
-            const isUser = message.role === "user";
             return (
-              <div
-                key={message.id}
-                className={`max-w-[88%] rounded-lg px-3 py-2 text-sm ${
-                  isUser ? "ml-auto bg-btn-accent text-white" : "bg-surface text-foreground"
-                }`}
-              >
-                {text}
+              <div key={message.id} className="space-y-2">
+                {message.parts.map((part, partIndex) => {
+                  if (part.type === "text" && part.text.length > 0) {
+                    return (
+                      <div
+                        key={partIndex}
+                        className={`max-w-[88%] rounded-lg px-3 py-2 text-sm ${
+                          isUser ? "ml-auto bg-btn-accent text-white" : "bg-surface text-foreground"
+                        }`}
+                      >
+                        {part.text}
+                      </div>
+                    );
+                  }
+                  if (isToolUIPart(part)) {
+                    return (
+                      <ToolCallCard
+                        key={partIndex}
+                        toolName={getToolName(part)}
+                        args={part.input}
+                        result={part.state === "output-available" ? part.output : undefined}
+                        state={part.state}
+                      />
+                    );
+                  }
+                  return null;
+                })}
               </div>
             );
           })

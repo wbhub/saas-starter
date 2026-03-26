@@ -30,6 +30,8 @@ describe("POST /api/ai/chat access and gating", () => {
     }));
     vi.doMock("@/lib/ai/config", () => ({
       getAiAccessMode: vi.fn().mockReturnValue("paid"),
+      getAiToolsEnabled: vi.fn().mockReturnValue(false),
+      getAiMaxSteps: vi.fn().mockReturnValue(1),
       getAiAllowedSubscriptionStatuses: vi.fn().mockReturnValue(["trialing", "active", "past_due"]),
       getAiDefaultModel: vi.fn().mockReturnValue("gpt-4.1-mini"),
       getAiDefaultMonthlyTokenBudget: vi.fn().mockReturnValue(2_000_000),
@@ -38,6 +40,7 @@ describe("POST /api/ai/chat access and gating", () => {
         model: "gpt-4.1-mini",
         monthlyBudget: 2_000_000,
         allowedModalities: ["text", "image", "file"],
+        maxSteps: 1,
       }),
       getAiModelForPlan: vi.fn().mockReturnValue("gpt-4.1-mini"),
       getAiMonthlyTokenBudgetForPlan: vi.fn().mockReturnValue(2_000_000),
@@ -53,11 +56,15 @@ describe("POST /api/ai/chat access and gating", () => {
         .mockImplementation((model: string) => !model.startsWith("gpt-3.5")),
       getAiLanguageModel: vi.fn().mockReturnValue("provider-model"),
     }));
-    vi.doMock("ai", () => ({
-      streamText: vi.fn(() => {
-        throw { status: 503 };
-      }),
-    }));
+    vi.doMock("ai", async () => {
+      const actual = await vi.importActual<typeof import("ai")>("ai");
+      return {
+        ...actual,
+        streamText: vi.fn(() => {
+          throw { status: 503 };
+        }),
+      };
+    });
     vi.doMock("@/lib/ai/budget-finalize-retries", () => ({
       enqueueAiBudgetFinalizeRetry: vi.fn().mockResolvedValue(undefined),
       maybeProcessAiBudgetFinalizeRetries: vi.fn().mockResolvedValue({ ran: false }),
@@ -162,6 +169,8 @@ describe("POST /api/ai/chat access and gating", () => {
   it("returns generic unavailable when allowed statuses config is empty", async () => {
     vi.doMock("@/lib/ai/config", () => ({
       getAiAccessMode: vi.fn().mockReturnValue("paid"),
+      getAiToolsEnabled: vi.fn().mockReturnValue(false),
+      getAiMaxSteps: vi.fn().mockReturnValue(1),
       getAiAllowedSubscriptionStatuses: vi.fn().mockReturnValue([]),
       getAiDefaultModel: vi.fn().mockReturnValue("gpt-4.1-mini"),
       getAiDefaultMonthlyTokenBudget: vi.fn().mockReturnValue(2_000_000),
@@ -170,6 +179,7 @@ describe("POST /api/ai/chat access and gating", () => {
         model: "gpt-4.1-mini",
         monthlyBudget: 2_000_000,
         allowedModalities: ["text", "image", "file"],
+        maxSteps: 1,
       }),
       getAiModelForPlan: vi.fn().mockReturnValue("gpt-4.1-mini"),
       getAiMonthlyTokenBudgetForPlan: vi.fn().mockReturnValue(2_000_000),
@@ -300,6 +310,8 @@ describe("POST /api/ai/chat access and gating", () => {
   it("allows free users in all mode", async () => {
     vi.doMock("@/lib/ai/config", () => ({
       getAiAccessMode: vi.fn().mockReturnValue("all"),
+      getAiToolsEnabled: vi.fn().mockReturnValue(false),
+      getAiMaxSteps: vi.fn().mockReturnValue(1),
       getAiAllowedSubscriptionStatuses: vi.fn().mockReturnValue(["trialing", "active", "past_due"]),
       getAiDefaultModel: vi.fn().mockReturnValue("gpt-4.1-mini"),
       getAiDefaultMonthlyTokenBudget: vi.fn().mockReturnValue(0),
@@ -378,6 +390,7 @@ describe("POST /api/ai/chat access and gating", () => {
       model: null,
       monthlyBudget: 10_000,
       allowedModalities: ["text", "image", "file"],
+      maxSteps: 1,
     });
     const maybeSingle = vi.fn().mockResolvedValue({
       data: { stripe_price_id: "price_growth", status: "active" },
@@ -444,6 +457,8 @@ describe("POST /api/ai/chat access and gating", () => {
   it("filters by_plan subscription lookup to live statuses", async () => {
     vi.doMock("@/lib/ai/config", () => ({
       getAiAccessMode: vi.fn().mockReturnValue("by_plan"),
+      getAiToolsEnabled: vi.fn().mockReturnValue(false),
+      getAiMaxSteps: vi.fn().mockReturnValue(1),
       getAiAllowedSubscriptionStatuses: vi.fn().mockReturnValue(["trialing", "active", "past_due"]),
       getAiDefaultModel: vi.fn().mockReturnValue("gpt-4.1-mini"),
       getAiDefaultMonthlyTokenBudget: vi.fn().mockReturnValue(0),
@@ -452,6 +467,7 @@ describe("POST /api/ai/chat access and gating", () => {
         model: "gpt-4.1-mini",
         monthlyBudget: 10_000,
         allowedModalities: ["text", "image", "file"],
+        maxSteps: 1,
       }),
       getAiModelForPlan: vi.fn().mockReturnValue("gpt-4.1-mini"),
       getAiMonthlyTokenBudgetForPlan: vi.fn().mockReturnValue(2_000_000),
@@ -739,10 +755,13 @@ describe("POST /api/ai/chat access and gating", () => {
         model: "gpt-4.1-mini",
         monthlyTokenBudget: 0,
         allowedModalities: ["text"],
+        maxSteps: 1,
       }),
     }));
     vi.doMock("@/lib/ai/config", () => ({
       getAiAccessMode: vi.fn().mockReturnValue("all"),
+      getAiToolsEnabled: vi.fn().mockReturnValue(false),
+      getAiMaxSteps: vi.fn().mockReturnValue(1),
       getAiAllowedSubscriptionStatuses: vi.fn().mockReturnValue(["trialing", "active", "past_due"]),
       getAiDefaultModel: vi.fn().mockReturnValue("gpt-4.1-mini"),
       getAiDefaultMonthlyTokenBudget: vi.fn().mockReturnValue(0),
@@ -751,6 +770,7 @@ describe("POST /api/ai/chat access and gating", () => {
         model: "gpt-4.1-mini",
         monthlyBudget: 0,
         allowedModalities: ["text"],
+        maxSteps: 1,
       }),
       getAiModelForPlan: vi.fn().mockReturnValue("gpt-4.1-mini"),
       getAiMonthlyTokenBudgetForPlan: vi.fn().mockReturnValue(0),
@@ -839,6 +859,7 @@ describe("POST /api/ai/chat access and gating", () => {
         model: "gpt-3.5-turbo",
         monthlyTokenBudget: 0,
         allowedModalities: ["text", "image", "file"],
+        maxSteps: 1,
       }),
     }));
     const aiConfig = await import("@/lib/ai/config");

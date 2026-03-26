@@ -49,6 +49,9 @@ type OptionalEnvKey =
   | "TEAM_MAX_MEMBERS"
   | "UPSTASH_REDIS_REST_URL"
   | "UPSTASH_REDIS_REST_TOKEN"
+  | "AI_TOOLS_ENABLED"
+  | "AI_MAX_STEPS"
+  | "NEXT_PUBLIC_AI_TOOLS_ENABLED"
   | "TRIGGER_SECRET_KEY"
   | "TRIGGER_PROJECT_REF";
 
@@ -163,6 +166,15 @@ const envBase = {
   },
   get AI_PLAN_MODALITIES_MAP_JSON() {
     return optionalEnv("AI_PLAN_MODALITIES_MAP_JSON");
+  },
+  get AI_TOOLS_ENABLED() {
+    return optionalEnv("AI_TOOLS_ENABLED");
+  },
+  get AI_MAX_STEPS() {
+    return optionalEnv("AI_MAX_STEPS");
+  },
+  get NEXT_PUBLIC_AI_TOOLS_ENABLED() {
+    return optionalEnv("NEXT_PUBLIC_AI_TOOLS_ENABLED");
   },
   get APP_FREE_PLAN_ENABLED() {
     return isFreePlanEnabled();

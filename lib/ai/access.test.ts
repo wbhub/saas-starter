@@ -5,6 +5,7 @@ const ORIGINAL_ENV = {
   AI_DEFAULT_MODEL: process.env.AI_DEFAULT_MODEL,
   AI_DEFAULT_MONTHLY_TOKEN_BUDGET: process.env.AI_DEFAULT_MONTHLY_TOKEN_BUDGET,
   AI_ALLOWED_MODALITIES: process.env.AI_ALLOWED_MODALITIES,
+  AI_MAX_STEPS: process.env.AI_MAX_STEPS,
   AI_PLAN_RULES_JSON: process.env.AI_PLAN_RULES_JSON,
   AI_PLAN_MODEL_MAP_JSON: process.env.AI_PLAN_MODEL_MAP_JSON,
   AI_PLAN_MONTHLY_TOKEN_BUDGET_MAP_JSON: process.env.AI_PLAN_MONTHLY_TOKEN_BUDGET_MAP_JSON,
@@ -16,6 +17,7 @@ function resetAiEnv() {
   process.env.AI_DEFAULT_MODEL = ORIGINAL_ENV.AI_DEFAULT_MODEL;
   process.env.AI_DEFAULT_MONTHLY_TOKEN_BUDGET = ORIGINAL_ENV.AI_DEFAULT_MONTHLY_TOKEN_BUDGET;
   process.env.AI_ALLOWED_MODALITIES = ORIGINAL_ENV.AI_ALLOWED_MODALITIES;
+  process.env.AI_MAX_STEPS = ORIGINAL_ENV.AI_MAX_STEPS;
   process.env.AI_PLAN_RULES_JSON = ORIGINAL_ENV.AI_PLAN_RULES_JSON;
   process.env.AI_PLAN_MODEL_MAP_JSON = ORIGINAL_ENV.AI_PLAN_MODEL_MAP_JSON;
   process.env.AI_PLAN_MONTHLY_TOKEN_BUDGET_MAP_JSON =
@@ -47,6 +49,7 @@ describe("resolveAiAccess", () => {
       model: null,
       monthlyTokenBudget: 0,
       allowedModalities: ["text"],
+      maxSteps: 5,
       denialReason: "default_model_missing",
     });
   });
@@ -64,6 +67,7 @@ describe("resolveAiAccess", () => {
       model: "gpt-5-mini",
       monthlyTokenBudget: 12000,
       allowedModalities: ["text"],
+      maxSteps: 5,
     });
   });
 
@@ -89,6 +93,7 @@ describe("resolveAiAccess", () => {
       model: null,
       monthlyTokenBudget: 0,
       allowedModalities: ["text", "image"],
+      maxSteps: 5,
       denialReason: "plan_disabled",
     });
   });
@@ -115,6 +120,7 @@ describe("resolveAiAccess", () => {
       model: "gpt-5-mini",
       monthlyTokenBudget: 2500,
       allowedModalities: ["text", "image", "file"],
+      maxSteps: 5,
     });
   });
 
@@ -144,6 +150,7 @@ describe("resolveAiAccess", () => {
       model: null,
       monthlyTokenBudget: 0,
       allowedModalities: ["text"],
+      maxSteps: 5,
       denialReason: "plan_not_allowed",
     });
   });
@@ -174,6 +181,7 @@ describe("resolveAiAccess", () => {
       model: "gpt-5",
       monthlyTokenBudget: 9000,
       allowedModalities: ["text", "image", "file"],
+      maxSteps: 5,
     });
   });
 
@@ -203,6 +211,7 @@ describe("resolveAiAccess", () => {
       model: null,
       monthlyTokenBudget: 0,
       allowedModalities: ["text", "file"],
+      maxSteps: 5,
       denialReason: "plan_not_allowed",
     });
   });

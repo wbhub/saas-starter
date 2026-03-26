@@ -199,7 +199,7 @@ Use the route's i18n translator `t()` for user-facing error messages. Do **not**
 **Documented exceptions** (routes that intentionally deviate from the canonical envelope):
 
 - **Stripe webhook** (`/api/stripe/webhook`): Returns `{ received: true }` on success -- Stripe expects this acknowledgment shape. Error responses still use `{ ok: false, error }`.
-- **AI chat** (`/api/ai/chat`): Returns a streaming `text/plain` response on success. Error responses use the standard `{ ok: false, error, code }` envelope.
+- **AI chat** (`/api/ai/chat`): Returns a streaming `text/plain` response on success (single-turn), or a UI message stream via `toUIMessageStreamResponse()` when agent tools are enabled. Error responses use the standard `{ ok: false, error, code }` envelope.
 - **Forgot password** (`/api/auth/forgot-password`): Always returns `{ message }` (no `ok`) to avoid leaking whether the email exists.
 
 Common status codes used in this codebase:

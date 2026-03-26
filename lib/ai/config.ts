@@ -21,6 +21,7 @@ type AiByPlanRule = {
   model: string | null;
   monthlyBudget: number;
   allowedModalities: readonly AiModality[];
+  maxSteps: number;
 };
 type AiByPlanRules = Record<EffectivePlanKey, AiByPlanRule>;
 
@@ -35,6 +36,9 @@ const DEFAULT_AI_PLAN_MONTHLY_TOKEN_BUDGET_MAP: AiPlanMonthlyTokenBudgetMap = Ob
 ) as AiPlanMonthlyTokenBudgetMap;
 const DEFAULT_AI_ALLOWED_MODALITIES: readonly AiModality[] = ["text"];
 
+const DEFAULT_AI_MAX_STEPS = 5;
+const MAX_AI_STEPS_CAP = 25;
+
 const DEFAULT_AI_BY_PLAN_RULES: AiByPlanRules = Object.fromEntries(
   AI_POLICY_PLAN_KEYS.map((planKey) => [
     planKey,
@@ -43,6 +47,7 @@ const DEFAULT_AI_BY_PLAN_RULES: AiByPlanRules = Object.fromEntries(
       model: null,
       monthlyBudget: 0,
       allowedModalities: DEFAULT_AI_ALLOWED_MODALITIES,
+      maxSteps: DEFAULT_AI_MAX_STEPS,
     },
   ]),
 ) as AiByPlanRules;
@@ -124,6 +129,30 @@ function parseNonNegativeInteger(rawValue: string | undefined, envKey: string): 
     return 0;
   }
   return Math.floor(parsed);
+}
+
+function parsePositiveInteger(
+  rawValue: string | undefined,
+  envKey: string,
+  defaultValue: number,
+): number {
+  if (!rawValue) {
+    return defaultValue;
+  }
+  const parsed = Number(rawValue);
+  if (!Number.isFinite(parsed) || parsed < 1) {
+    logger.warn(`Invalid ${envKey}; defaulting to ${defaultValue}.`, {
+      envKey,
+      invalidValue: rawValue,
+      fallbackBehavior: defaultValue,
+    });
+    return defaultValue;
+  }
+  return Math.floor(parsed);
+}
+
+function parseBooleanEnv(rawValue: string | undefined): boolean {
+  return rawValue === "true" || rawValue === "1";
 }
 
 function parsePlanModelMap(rawValue: string | undefined): AiPlanModelMap {
@@ -237,13 +266,18 @@ function parsePlanModalitiesMap(
 function parseAiByPlanRules(
   rawValue: string | undefined,
   fallbackModalities: readonly AiModality[],
+  fallbackMaxSteps: number,
 ): AiByPlanRules {
   const parsed = parseJsonObjectEnv(rawValue, "AI_PLAN_RULES_JSON");
   if (!parsed) {
     return Object.fromEntries(
       AI_POLICY_PLAN_KEYS.map((planKey) => [
         planKey,
-        { ...DEFAULT_AI_BY_PLAN_RULES[planKey], allowedModalities: fallbackModalities },
+        {
+          ...DEFAULT_AI_BY_PLAN_RULES[planKey],
+          allowedModalities: fallbackModalities,
+          maxSteps: fallbackMaxSteps,
+        },
       ]),
     ) as AiByPlanRules;
   }
@@ -255,6 +289,7 @@ function parseAiByPlanRules(
       configured[planKey] = {
         ...DEFAULT_AI_BY_PLAN_RULES[planKey],
         allowedModalities: fallbackModalities,
+        maxSteps: fallbackMaxSteps,
       };
       continue;
     }
@@ -264,6 +299,7 @@ function parseAiByPlanRules(
       model?: unknown;
       monthlyBudget?: unknown;
       allowedModalities?: unknown;
+      maxSteps?: unknown;
     };
     const enabled = maybeRule.enabled === true;
     const model =
@@ -281,8 +317,16 @@ function parseAiByPlanRules(
       `AI_PLAN_RULES_JSON.${planKey}.allowedModalities`,
       fallbackModalities,
     );
+    const maxSteps = Math.min(
+      typeof maybeRule.maxSteps === "number" &&
+        Number.isFinite(maybeRule.maxSteps) &&
+        maybeRule.maxSteps >= 1
+        ? Math.floor(maybeRule.maxSteps)
+        : fallbackMaxSteps,
+      MAX_AI_STEPS_CAP,
+    );
 
-    configured[planKey] = { enabled, model, monthlyBudget, allowedModalities };
+    configured[planKey] = { enabled, model, monthlyBudget, allowedModalities, maxSteps };
   }
 
   return Object.fromEntries(
@@ -291,6 +335,7 @@ function parseAiByPlanRules(
       configured[planKey] ?? {
         ...DEFAULT_AI_BY_PLAN_RULES[planKey],
         allowedModalities: fallbackModalities,
+        maxSteps: fallbackMaxSteps,
       },
     ]),
   ) as AiByPlanRules;
@@ -303,7 +348,16 @@ const AI_DEFAULT_MONTHLY_TOKEN_BUDGET = parseNonNegativeInteger(
   "AI_DEFAULT_MONTHLY_TOKEN_BUDGET",
 );
 const AI_ALLOWED_MODALITIES = parseModalities(env.AI_ALLOWED_MODALITIES, "AI_ALLOWED_MODALITIES");
-const AI_PLAN_RULES = parseAiByPlanRules(env.AI_PLAN_RULES_JSON, AI_ALLOWED_MODALITIES);
+const AI_TOOLS_ENABLED = parseBooleanEnv(env.AI_TOOLS_ENABLED);
+const AI_MAX_STEPS = Math.min(
+  parsePositiveInteger(env.AI_MAX_STEPS, "AI_MAX_STEPS", DEFAULT_AI_MAX_STEPS),
+  MAX_AI_STEPS_CAP,
+);
+const AI_PLAN_RULES = parseAiByPlanRules(
+  env.AI_PLAN_RULES_JSON,
+  AI_ALLOWED_MODALITIES,
+  AI_MAX_STEPS,
+);
 const AI_ALLOWED_SUBSCRIPTION_STATUSES = parseAllowedSubscriptionStatuses(
   env.AI_ALLOWED_SUBSCRIPTION_STATUSES,
 );
@@ -350,4 +404,12 @@ export function getAiMonthlyTokenBudgetForPlan(planKey: PlanKey) {
 
 export function getAiAllowedModalitiesForPlan(planKey: PlanKey) {
   return AI_PLAN_MODALITIES_MAP[planKey];
+}
+
+export function getAiToolsEnabled() {
+  return AI_TOOLS_ENABLED;
+}
+
+export function getAiMaxSteps() {
+  return AI_MAX_STEPS;
 }

@@ -1,4 +1,5 @@
 import {
+  stepCountIs,
   streamText,
   type AssistantModelMessage,
   type ModelMessage,
@@ -13,7 +14,12 @@ import {
   finalizeTeamAiBudgetClaimWithRetry,
   type BudgetClaim,
 } from "@/lib/ai/chat-budget";
-import { getAiAccessMode, getAiAllowedSubscriptionStatuses } from "@/lib/ai/config";
+import {
+  getAiAccessMode,
+  getAiAllowedSubscriptionStatuses,
+  getAiToolsEnabled,
+} from "@/lib/ai/config";
+import { AI_TOOL_MAP } from "@/lib/ai/tools";
 import { type AiModality } from "@/lib/ai/config";
 import { estimatePromptTokens } from "@/lib/ai/token-estimation";
 import { logAuditEvent } from "@/lib/audit";
@@ -555,9 +561,12 @@ export async function POST(request: Request) {
     });
     return err(modalityNotAllowedMessage, AI_FORBIDDEN_STATUS, { code: "modality_not_allowed" });
   }
+  const toolsEnabled = getAiToolsEnabled() && Object.keys(AI_TOOL_MAP).length > 0;
+  const maxSteps = toolsEnabled ? aiAccess.maxSteps : 1;
   const monthlyTokenBudget = aiAccess.monthlyTokenBudget;
   const estimatedPromptTokens = estimatePromptTokens(bodyParse.data.messages);
-  const projectedRequestTokens = estimatedPromptTokens + AI_COMPLETION_MAX_TOKENS;
+  const singleStepTokens = estimatedPromptTokens + AI_COMPLETION_MAX_TOKENS;
+  const projectedRequestTokens = singleStepTokens * maxSteps;
   let budgetClaim: BudgetClaim | null = null;
   if (monthlyTokenBudget > 0) {
     try {
@@ -623,6 +632,136 @@ export async function POST(request: Request) {
         requestId,
       });
     }
+
+    if (toolsEnabled) {
+      // ── Agent path: tools + multi-step + UI message stream ──
+      const resolvedTeamId = teamContext.teamId;
+      const resolvedUserId = user.id;
+      const accumulatedUsage: UsageTotals = { promptTokens: 0, completionTokens: 0 };
+      const toolCallNames: string[] = [];
+      let finalized = false;
+
+      async function finalizeAgentStream(
+        promptTokens: number,
+        completionTokens: number,
+        outcome: "success" | "failure",
+        reason?: string,
+      ) {
+        if (finalized) return;
+        finalized = true;
+
+        const resolvedUsage = resolveActualTokenUsage({
+          promptTokens,
+          completionTokens,
+          projectedRequestTokens,
+          estimatedPromptTokens,
+          streamedCompletionChars: 0,
+        });
+
+        if (budgetClaim) {
+          await finalizeTeamAiBudgetClaimWithRetry({
+            claimId: budgetClaim.claimId,
+            actualTokens: resolvedUsage.actualTokens,
+            context: { teamId: resolvedTeamId, userId: resolvedUserId, model },
+            onFinalizeFailureMessage: "Failed to finalize AI budget claim",
+            onEnqueueFailureMessage:
+              "Failed to enqueue AI budget finalize retry after stream finalization error",
+          });
+        }
+
+        try {
+          await insertAiUsageRow({
+            teamId: resolvedTeamId,
+            userId: resolvedUserId,
+            model,
+            promptTokens: resolvedUsage.promptTokens,
+            completionTokens: resolvedUsage.completionTokens,
+          });
+        } catch (error) {
+          logger.error("Failed to persist AI usage row", error, {
+            teamId: resolvedTeamId,
+            userId: resolvedUserId,
+            model,
+            promptTokens: resolvedUsage.promptTokens,
+            completionTokens: resolvedUsage.completionTokens,
+          });
+        }
+
+        logAuditEvent({
+          action: "ai.chat.request",
+          outcome,
+          actorUserId: resolvedUserId,
+          teamId: resolvedTeamId,
+          metadata: {
+            planKey: effectivePlanKey,
+            accessMode: aiAccessMode,
+            model,
+            toolsEnabled: true,
+            maxSteps,
+            toolCalls: toolCallNames.length > 0 ? toolCallNames : undefined,
+            budgetClaimId: budgetClaim?.claimId,
+            promptTokens: resolvedUsage.promptTokens,
+            completionTokens: resolvedUsage.completionTokens,
+            usageFallbackApplied: resolvedUsage.usedFallback,
+            requestModalities,
+            attachmentCounts,
+            ...(reason ? { reason } : {}),
+          },
+        });
+      }
+
+      const aiResult = streamText({
+        model: languageModel,
+        messages: toModelMessages(bodyParse.data.messages),
+        tools: AI_TOOL_MAP,
+        stopWhen: stepCountIs(maxSteps),
+        abortSignal: upstreamAbortController.signal,
+        maxOutputTokens: AI_COMPLETION_MAX_TOKENS,
+        onStepFinish: ({ usage: stepUsage, toolCalls }) => {
+          accumulatedUsage.promptTokens += stepUsage.inputTokens ?? 0;
+          accumulatedUsage.completionTokens += stepUsage.outputTokens ?? 0;
+          for (const tc of toolCalls) {
+            toolCallNames.push(tc.toolName);
+          }
+
+          if (budgetClaim) {
+            const actualTokens = accumulatedUsage.promptTokens + accumulatedUsage.completionTokens;
+            if (actualTokens >= projectedRequestTokens) {
+              upstreamAbortController.abort("budget_exhausted");
+            }
+          }
+        },
+        onFinish: async ({ totalUsage }) => {
+          await finalizeAgentStream(
+            totalUsage.inputTokens ?? 0,
+            totalUsage.outputTokens ?? 0,
+            "success",
+          );
+        },
+        onError: async ({ error }) => {
+          logger.error("Agent stream error", error, {
+            teamId: resolvedTeamId,
+            userId: resolvedUserId,
+            model,
+          });
+          await finalizeAgentStream(
+            accumulatedUsage.promptTokens,
+            accumulatedUsage.completionTokens,
+            "failure",
+            "stream_failed",
+          );
+        },
+      });
+
+      return withRequestId(
+        aiResult.toUIMessageStreamResponse({
+          headers: { "Cache-Control": "no-store" },
+        }),
+        requestId,
+      );
+    }
+
+    // ── Single-turn path: plain text stream (unchanged behavior) ──
     const aiResult = streamText({
       model: languageModel,
       messages: toModelMessages(bodyParse.data.messages),

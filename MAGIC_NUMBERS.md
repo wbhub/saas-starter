@@ -174,6 +174,16 @@ Configured via `STRIPE_SEAT_PRORATION_BEHAVIOR` env var, defaults to `"create_pr
 | Attachment `name` max length     | 255 chars     | Standard filesystem path component limit.                                                                                                                                              |
 | Attachment `mimeType` max length | 255 chars     | Generous for any valid MIME type.                                                                                                                                                      |
 
+### Agent / Tool-Calling Defaults (`lib/ai/config.ts`)
+
+| Constant               | Value                         | Why                                                                                                                                                                                                                                                                                                    |
+| ---------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `DEFAULT_AI_MAX_STEPS` | 5                             | Default maximum model steps per request when tools are enabled. 5 allows multi-tool chains (e.g., call tool A, use result to call tool B, synthesize answer) without excessive cost. Configurable via `AI_MAX_STEPS` env var. When `AI_TOOLS_ENABLED=false`, the route forces `maxSteps=1` regardless. |
+| `MAX_AI_STEPS_CAP`     | 25                            | Hard upper bound on `maxSteps` from both the global env var and per-plan rules. Prevents runaway agent loops and excessive budget claims. 25 is generous for most agent workflows.                                                                                                                     |
+| Budget projection      | `singleStepTokens * maxSteps` | When tools are enabled, the budget claim is scaled by the number of allowed steps. Conservative: claims worst-case to avoid mid-stream budget exhaustion. `onStepFinish` aborts if actual usage exceeds the claim.                                                                                     |
+
+Per-plan `maxSteps` can be set via `AI_PLAN_RULES_JSON` (e.g., `{"pro":{"enabled":true,"maxSteps":5}}`). Plans using the legacy model/budget maps inherit the global `AI_MAX_STEPS` default.
+
 ### Supported File Types
 
 | Set                          | Types                                                | Why                                                                                 |

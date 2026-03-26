@@ -38,6 +38,7 @@ components/                   # React components (flat structure)
 
 lib/                          # Shared business logic (organized by domain)
   ai/                         # AI access control, budgets, provider abstraction, token estimation
+    tools/                    # Agent tool registry (opt-in via AI_TOOLS_ENABLED)
   auth/                       # Social auth provider detection
   billing/                    # Plan capabilities, entitlements, effective plan resolution
   constants/                  # Durations, rate limits, billing timing
@@ -238,7 +239,11 @@ A single `getAiLanguageModel(model)` function that returns a Vercel AI SDK model
    - Check AI access policy (plan enabled? model assigned? modalities allowed?)
    - Estimate prompt tokens, project total with 4,096 completion max
    - Atomically claim budget from team's monthly token budget (RPC)
-   - Stream response via Vercel AI SDK streamText()
+   - If tools disabled (default): plain text stream via streamText()
+   - If tools enabled (AI_TOOLS_ENABLED=true):
+     - streamText() with tools from AI_TOOL_MAP, stopWhen: stepCountIs(maxSteps)
+     - Agent loop runs server-side; onStepFinish accumulates usage and aborts on budget
+     - Response via toUIMessageStreamResponse() (UI message stream protocol)
    - On stream finish: finalize budget claim with actual token usage
    - On finalize failure: enqueue retry to ai_budget_claim_finalize_retries
 ```
@@ -273,6 +278,7 @@ Most features are toggled via environment variables, not code flags:
 | Free plan             | `APP_FREE_PLAN_ENABLED=true` (default)                    | `isFreePlanEnabled()` in `lib/billing/capabilities.ts`         |
 | AI chat               | AI provider env var set (e.g., `OPENAI_API_KEY`)          | `isAiProviderConfigured` in `lib/ai/provider.ts`               |
 | AI access mode        | `AI_ACCESS_MODE` = `paid` / `all` / `by_plan`             | `getAiAccessMode()` in `lib/ai/config.ts`                      |
+| AI agent tools        | `AI_TOOLS_ENABLED=true` + tools registered in AI_TOOL_MAP | `getAiToolsEnabled()` in `lib/ai/config.ts`                    |
 | Email (Resend)        | `RESEND_API_KEY` + `RESEND_FROM_EMAIL` set                | `isResendCustomEmailConfigured()` in `lib/resend/server.ts`    |
 | Background jobs       | `TRIGGER_SECRET_KEY` set                                  | `isTriggerConfigured()` in `lib/trigger/config.ts`             |
 | Redis caching         | `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` set | `getRedisClient()` returns non-null in `lib/redis/client.ts`   |

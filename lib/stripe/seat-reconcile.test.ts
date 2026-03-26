@@ -10,11 +10,9 @@ describe("reconcileTeamSeatQuantities", () => {
   });
 
   it("returns no-op summary when billing is disabled", async () => {
+    vi.resetModules();
     vi.doMock("@/lib/billing/capabilities", () => ({
       isBillingEnabled: () => false,
-    }));
-    vi.doMock("@/lib/supabase/admin", () => ({
-      createAdminClient: vi.fn(),
     }));
 
     const { reconcileTeamSeatQuantities } = await import("./seat-reconcile");

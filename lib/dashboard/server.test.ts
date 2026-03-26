@@ -139,6 +139,7 @@ describe("getDashboardAiUiGate", () => {
         model: "gpt-4.1-mini",
         monthlyTokenBudget: 0,
         allowedModalities: ["text"],
+        maxSteps: 1,
       }),
     }));
 
@@ -183,6 +184,7 @@ describe("getDashboardAiUiGate", () => {
         model: null,
         monthlyTokenBudget: 0,
         allowedModalities: ["text"],
+        maxSteps: 1,
         denialReason: "plan_not_allowed",
       }),
     }));
@@ -213,6 +215,7 @@ describe("getDashboardAiUiGate", () => {
         model: "gpt-4.1-mini",
         monthlyTokenBudget: 0,
         allowedModalities: ["text"],
+        maxSteps: 1,
       }),
     }));
 
