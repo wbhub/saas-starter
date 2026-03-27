@@ -126,9 +126,7 @@ export default async function DashboardPage() {
         <h1 className="text-3xl font-semibold tracking-tight">
           {t("DashboardPage.welcome", { name: displayName })}
         </h1>
-        <p className="mt-2 text-base text-muted-foreground">
-          {t("DashboardPage.navigate")}
-        </p>
+        <p className="mt-2 text-base text-muted-foreground">{t("DashboardPage.navigate")}</p>
       </div>
 
       {/* Account & Subscription */}
@@ -154,7 +152,9 @@ export default async function DashboardPage() {
                   <div className="flex items-center justify-between">
                     <dt className="text-muted-foreground">{t("DashboardPage.role")}</dt>
                     <dd>
-                      <Badge variant="secondary" className="capitalize">{teamContext.role}</Badge>
+                      <Badge variant="secondary" className="capitalize">
+                        {teamContext.role}
+                      </Badge>
                     </dd>
                   </div>
                 </>
@@ -185,7 +185,9 @@ export default async function DashboardPage() {
                 <div className="flex items-center justify-between">
                   <dt className="text-muted-foreground">{t("DashboardPage.status")}</dt>
                   <dd>
-                    <Badge variant="secondary" className="uppercase">{subscription.status}</Badge>
+                    <Badge variant="secondary" className="uppercase">
+                      {subscription.status}
+                    </Badge>
                   </dd>
                 </div>
                 <div className="flex items-center justify-between">

@@ -7,7 +7,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { getAppUrl } from "@/lib/env";
 import { cn } from "@/lib/utils";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 const inter = Inter({
   variable: "--font-inter",
