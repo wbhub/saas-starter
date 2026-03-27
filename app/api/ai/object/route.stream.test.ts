@@ -112,10 +112,12 @@ describe("POST /api/ai/object streaming and finalization", () => {
 
   it("returns 200 streaming response with Cache-Control: no-store", async () => {
     const rpc = makeClaimRpc();
-    const toTextStreamResponse = vi.fn().mockImplementation(
-      (opts: { headers?: Record<string, string> }) =>
-        new Response("data: {}\n\n", { status: 200, headers: opts?.headers ?? {} }),
-    );
+    const toTextStreamResponse = vi
+      .fn()
+      .mockImplementation(
+        (opts: { headers?: Record<string, string> }) =>
+          new Response("data: {}\n\n", { status: 200, headers: opts?.headers ?? {} }),
+      );
 
     vi.doMock("ai", async () => {
       const actual = await vi.importActual<typeof import("ai")>("ai");
@@ -170,9 +172,7 @@ describe("POST /api/ai/object streaming and finalization", () => {
     );
 
     // route builds: `${schemaEntry.description}\n\n${body.prompt}`
-    expect(capturedPrompt).toBe(
-      "Analyze the sentiment of the given text.\n\nI love this product!",
-    );
+    expect(capturedPrompt).toBe("Analyze the sentiment of the given text.\n\nI love this product!");
   });
 
   it("finalizes budget claim with actual token usage when stream completes", async () => {
@@ -271,15 +271,15 @@ describe("POST /api/ai/object streaming and finalization", () => {
       const actual = await vi.importActual<typeof import("ai")>("ai");
       return {
         ...actual,
-        streamObject: vi.fn().mockImplementation(
-          (options: { onFinish?: unknown; onError?: unknown }) => {
+        streamObject: vi
+          .fn()
+          .mockImplementation((options: { onFinish?: unknown; onError?: unknown }) => {
             capturedOnFinish = options.onFinish as typeof capturedOnFinish;
             capturedOnError = options.onError as typeof capturedOnError;
             return {
               toTextStreamResponse: vi.fn().mockReturnValue(new Response("", { status: 200 })),
             };
-          },
-        ),
+          }),
       };
     });
     mockCoreDependencies({ rpc });
