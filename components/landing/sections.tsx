@@ -74,7 +74,7 @@ export function HeroSection() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.16),transparent_45%)]" />
       <div className="relative grid gap-10 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] md:items-center">
         <div>
-          <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-indigo-400/40 bg-indigo-500/5 px-3 py-1 text-sm app-accent">
+          <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-indigo-400/60 bg-indigo-500/10 px-3 py-1 text-sm text-indigo-600 dark:text-indigo-400">
             <Clock3 className="h-4 w-4" />
             {t("badge")}
           </p>
