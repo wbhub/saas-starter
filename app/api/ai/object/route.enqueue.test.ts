@@ -1,0 +1,185 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+describe("POST /api/ai/object finalize retry enqueue", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("STRIPE_STARTER_PRICE_ID", "price_starter");
+    vi.stubEnv("STRIPE_GROWTH_PRICE_ID", "price_growth");
+    vi.stubEnv("STRIPE_PRO_PRICE_ID", "price_pro");
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  function mockCoreDependencies({
+    enqueueImpl,
+  }: {
+    enqueueImpl: (args: { claimId: string; actualTokens: number; error: unknown }) => Promise<void>;
+  }) {
+    // Budget claim succeeds, but finalize RPC returns an error to trigger enqueue
+    const rpc = vi
+      .fn()
+      .mockResolvedValueOnce({
+        data: [{ allowed: true, claim_id: "claim_123", month_start: "2026-03-01" }],
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: null,
+        error: { message: "finalize failed" },
+      });
+
+    vi.doMock("@/lib/security/csrf", () => ({
+      verifyCsrfProtection: vi.fn().mockReturnValue(null),
+    }));
+    vi.doMock("@/lib/http/content-type", () => ({
+      requireJsonContentType: vi.fn().mockReturnValue(null),
+    }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),
+    }));
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          getUser: async () => ({
+            data: { user: { id: "user_123", email: "user@example.com" } },
+          }),
+        },
+        from: vi.fn(() => ({
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          in: vi.fn().mockReturnThis(),
+          order: vi.fn().mockReturnThis(),
+          limit: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({
+            data: { stripe_price_id: "price_growth", status: "active" },
+            error: null,
+          }),
+        })),
+      }),
+    }));
+    vi.doMock("@/lib/supabase/admin", () => ({
+      createAdminClient: () => ({
+        rpc,
+        from: vi.fn(() => ({
+          insert: vi.fn().mockResolvedValue({ error: null }),
+        })),
+      }),
+    }));
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
+        teamId: "team_123",
+        teamName: "Acme Team",
+        role: "owner",
+      }),
+    }));
+    vi.doMock("@/lib/stripe/config", () => ({
+      getPlanByPriceId: vi.fn().mockReturnValue({ key: "growth" }),
+    }));
+    vi.doMock("@/lib/ai/config", () => ({
+      getAiAccessMode: vi.fn().mockReturnValue("paid"),
+      getAiToolsEnabled: vi.fn().mockReturnValue(false),
+      getAiMaxSteps: vi.fn().mockReturnValue(1),
+      getAiAllowedSubscriptionStatuses: vi.fn().mockReturnValue(["trialing", "active", "past_due"]),
+      getAiDefaultModel: vi.fn().mockReturnValue("gpt-4.1-mini"),
+      getAiDefaultMonthlyTokenBudget: vi.fn().mockReturnValue(2_000_000),
+      getAiRuleForPlan: vi.fn().mockReturnValue({
+        enabled: true,
+        model: "gpt-4.1-mini",
+        monthlyBudget: 2_000_000,
+        allowedModalities: ["text"],
+        maxSteps: 1,
+      }),
+      getAiModelForPlan: vi.fn().mockReturnValue("gpt-4.1-mini"),
+      getAiMonthlyTokenBudgetForPlan: vi.fn().mockReturnValue(2_000_000),
+      getAiAllowedModalities: vi.fn().mockReturnValue(["text"]),
+      getAiAllowedModalitiesForPlan: vi.fn().mockReturnValue(["text"]),
+    }));
+    vi.doMock("@/lib/ai/provider", () => ({
+      aiProviderName: "openai",
+      isAiProviderConfigured: true,
+      supportsOpenAiFileIds: true,
+      providerSupportsModalities: vi.fn().mockReturnValue(true),
+      getAiLanguageModel: vi.fn().mockReturnValue("provider-model"),
+    }));
+    // streamObject throws so the catch block runs, triggering finalize with 0 tokens
+    vi.doMock("ai", async () => {
+      const actual = await vi.importActual<typeof import("ai")>("ai");
+      return {
+        ...actual,
+        streamObject: vi.fn().mockImplementation(() => {
+          throw { status: 503 };
+        }),
+      };
+    });
+    vi.doMock("@/lib/audit", () => ({
+      logAuditEvent: vi.fn(),
+    }));
+    vi.doMock("@/lib/ai/budget-finalize-retries", () => ({
+      enqueueAiBudgetFinalizeRetry: vi.fn(enqueueImpl),
+      maybeProcessAiBudgetFinalizeRetries: vi.fn().mockResolvedValue({ ran: false }),
+    }));
+    const loggerError = vi.fn();
+    vi.doMock("@/lib/logger", () => ({
+      logger: { error: loggerError, warn: vi.fn() },
+    }));
+
+    return { rpc, loggerError };
+  }
+
+  it("enqueues finalize retry when budget claim release fails after stream create failure", async () => {
+    const enqueueImpl = vi.fn().mockResolvedValue(undefined);
+    mockCoreDependencies({ enqueueImpl });
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/ai/object", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ schemaName: "sentiment", prompt: "analyze this" }),
+      }),
+    );
+
+    expect(response.status).toBe(503);
+    // actualTokens is non-zero because resolveActualTokenUsage applies fallback
+    // estimation when the provider reports 0 tokens (prompt "analyze this" →
+    // Math.ceil(12/3) + 500 = 504 estimated prompt tokens).
+    expect(enqueueImpl).toHaveBeenCalledWith({
+      claimId: "claim_123",
+      actualTokens: 504,
+      error: expect.objectContaining({ message: "finalize failed" }),
+    });
+  });
+
+  it("continues returning mapped error response when enqueueing the retry also fails", async () => {
+    const enqueueImpl = vi.fn().mockRejectedValue(new Error("queue write failed"));
+    const { loggerError } = mockCoreDependencies({ enqueueImpl });
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/ai/object", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ schemaName: "sentiment", prompt: "analyze this" }),
+      }),
+    );
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      ok: false,
+      error: "AI assistant is currently unavailable.",
+      code: "upstream_error",
+    });
+    expect(loggerError).toHaveBeenCalledWith(
+      "Failed to enqueue AI budget finalize retry after object stream finalization error",
+      expect.any(Error),
+      expect.objectContaining({
+        teamId: "team_123",
+        userId: "user_123",
+        claimId: "claim_123",
+      }),
+    );
+  });
+});
