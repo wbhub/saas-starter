@@ -237,7 +237,7 @@ export function BillingActions({
           <button
             onClick={openPortal}
             disabled={loadingAction !== null}
-            className="rounded-lg bg-btn-primary px-4 py-2 text-sm font-medium text-btn-primary-text hover:bg-btn-primary-hover disabled:opacity-60"
+            className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400 disabled:opacity-60"
           >
             {loadingAction === "portal" ? t("actions.opening") : t("actions.manageBilling")}
           </button>

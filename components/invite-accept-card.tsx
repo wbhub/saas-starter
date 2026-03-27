@@ -73,7 +73,7 @@ export function InviteAcceptCard({
       ) : inviteAccepted ? (
         <Link
           href="/dashboard"
-          className="mt-5 inline-flex rounded-lg bg-btn-primary px-4 py-2 text-sm font-medium text-btn-primary-text hover:bg-btn-primary-hover"
+          className="mt-5 inline-flex rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400"
         >
           {tNotFound("goDashboard")}
         </Link>
@@ -82,7 +82,7 @@ export function InviteAcceptCard({
           type="button"
           onClick={acceptInvite}
           disabled={submitting}
-          className="mt-5 rounded-lg bg-btn-primary px-4 py-2 text-sm font-medium text-btn-primary-text hover:bg-btn-primary-hover disabled:opacity-60"
+          className="mt-5 rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400 disabled:opacity-60"
         >
           {submitting ? t("actions.accepting") : t("actions.acceptInvite")}
         </button>

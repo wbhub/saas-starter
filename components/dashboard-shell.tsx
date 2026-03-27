@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 import type { TeamRole } from "@/lib/team-context";
 import type { DashboardTeamOption } from "@/lib/dashboard/server";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
+import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
 
 type DashboardShellProps = {
   displayName: string;
@@ -29,23 +31,27 @@ export function DashboardShell({
   children,
 }: DashboardShellProps) {
   return (
-    <main className="min-h-screen bg-[color:var(--background)] text-[color:var(--foreground)]">
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
-        <div className="grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-6">
-          <DashboardSidebar
-            displayName={displayName}
-            userEmail={userEmail}
-            teamName={teamName}
-            role={role}
-            teamUiMode={teamUiMode}
-            showAiNav={showAiNav}
-            activeTeamId={activeTeamId}
-            teamMemberships={teamMemberships}
-            csrfToken={csrfToken}
-          />
-          <div className="space-y-4">{children}</div>
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <SiteHeader isLoggedIn={true} />
+      <main className="flex-1">
+        <div className="mx-auto max-w-7xl px-6 py-8 lg:py-12">
+          <div className="grid gap-8 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-14">
+            <DashboardSidebar
+              displayName={displayName}
+              userEmail={userEmail}
+              teamName={teamName}
+              role={role}
+              teamUiMode={teamUiMode}
+              showAiNav={showAiNav}
+              activeTeamId={activeTeamId}
+              teamMemberships={teamMemberships}
+              csrfToken={csrfToken}
+            />
+            <div className="space-y-8">{children}</div>
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
+      <SiteFooter />
+    </div>
   );
 }

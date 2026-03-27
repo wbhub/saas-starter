@@ -1,65 +1,164 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: #f4f7fb;
-  --foreground: #0f172a;
+  --background: oklch(0.985 0.002 260);
+  --foreground: oklch(0.17 0.015 265);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.17 0.015 265);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.17 0.015 265);
+  --primary: oklch(0.585 0.19 265);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.955 0.01 265);
+  --secondary-foreground: oklch(0.35 0.04 265);
+  --muted: oklch(0.955 0.005 260);
+  --muted-foreground: oklch(0.5 0.02 260);
+  --accent: oklch(0.955 0.015 265);
+  --accent-foreground: oklch(0.35 0.04 265);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.905 0.01 260);
+  --input: oklch(0.905 0.01 260);
+  --ring: oklch(0.585 0.19 265);
+  --radius: 0.625rem;
+
+  --chart-1: oklch(0.585 0.19 265);
+  --chart-2: oklch(0.65 0.15 290);
+  --chart-3: oklch(0.6 0.12 220);
+  --chart-4: oklch(0.55 0.1 180);
+  --chart-5: oklch(0.5 0.08 145);
+
+  --sidebar: oklch(0.98 0.003 260);
+  --sidebar-foreground: oklch(0.17 0.015 265);
+  --sidebar-primary: oklch(0.585 0.19 265);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.955 0.015 265);
+  --sidebar-accent-foreground: oklch(0.35 0.04 265);
+  --sidebar-border: oklch(0.905 0.01 260);
+  --sidebar-ring: oklch(0.585 0.19 265);
+
+  /* Legacy app vars — kept for non-shadcn components that still reference them */
   --surface: #ffffff;
-  --surface-subtle: #eef3f9;
-  --surface-hover: #f1f5f9;
-  --border-subtle: #d9e2ec;
-  --muted-foreground: #475569;
-  --accent: #6366f1;
-  --accent-foreground: #ffffff;
-  --ring: rgba(99, 102, 241, 0.28);
-  --btn-primary: #0f172a;
-  --btn-primary-hover: #1e293b;
+  --surface-subtle: #f3f4f8;
+  --surface-hover: #edf0f5;
+  --border-subtle: #dfe3ec;
+  --btn-primary: #6366f1;
+  --btn-primary-hover: #818cf8;
   --btn-primary-text: #ffffff;
-  --btn-accent: #4f46e5;
-  --btn-accent-hover: #6366f1;
+  --btn-accent: #6366f1;
+  --btn-accent-hover: #818cf8;
 }
 
+.dark,
 [data-theme="dark"] {
-  --background: #020617;
-  --foreground: #e5edf9;
-  --surface: #0b1220;
-  --surface-subtle: #111b30;
-  --surface-hover: #1e293b;
-  --border-subtle: #23314a;
-  --muted-foreground: #9fb0c9;
-  --accent: #818cf8;
-  --accent-foreground: #ffffff;
-  --ring: rgba(129, 140, 248, 0.3);
-  --btn-primary: #f1f5f9;
-  --btn-primary-hover: #e2e8f0;
-  --btn-primary-text: #0f172a;
-  --btn-accent: #4f46e5;
-  --btn-accent-hover: #6366f1;
+  --background: oklch(0.14 0.01 265);
+  --foreground: oklch(0.93 0.005 260);
+  --card: oklch(0.18 0.012 265);
+  --card-foreground: oklch(0.93 0.005 260);
+  --popover: oklch(0.18 0.012 265);
+  --popover-foreground: oklch(0.93 0.005 260);
+  --primary: oklch(0.65 0.18 265);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.24 0.015 265);
+  --secondary-foreground: oklch(0.93 0.005 260);
+  --muted: oklch(0.24 0.012 265);
+  --muted-foreground: oklch(0.65 0.02 260);
+  --accent: oklch(0.24 0.015 265);
+  --accent-foreground: oklch(0.93 0.005 260);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0.005 265 / 12%);
+  --input: oklch(1 0.005 265 / 15%);
+  --ring: oklch(0.65 0.18 265);
+
+  --chart-1: oklch(0.65 0.18 265);
+  --chart-2: oklch(0.7 0.15 290);
+  --chart-3: oklch(0.65 0.12 220);
+  --chart-4: oklch(0.6 0.1 180);
+  --chart-5: oklch(0.55 0.08 145);
+
+  --sidebar: oklch(0.16 0.012 265);
+  --sidebar-foreground: oklch(0.93 0.005 260);
+  --sidebar-primary: oklch(0.65 0.18 265);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.24 0.015 265);
+  --sidebar-accent-foreground: oklch(0.93 0.005 260);
+  --sidebar-border: oklch(1 0.005 265 / 12%);
+  --sidebar-ring: oklch(0.65 0.18 265);
+
+  /* Legacy app vars */
+  --surface: #1a1a2e;
+  --surface-subtle: #1e1e34;
+  --surface-hover: #26263f;
+  --border-subtle: #2e2e4a;
+  --btn-primary: #818cf8;
+  --btn-primary-hover: #a5b4fc;
+  --btn-primary-text: #0f0f1a;
+  --btn-accent: #818cf8;
+  --btn-accent-hover: #a5b4fc;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Legacy app color mappings */
   --color-surface: var(--surface);
   --color-surface-subtle: var(--surface-subtle);
   --color-surface-hover: var(--surface-hover);
   --color-border-subtle: var(--border-subtle);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-ring: var(--ring);
   --color-btn-primary: var(--btn-primary);
   --color-btn-primary-hover: var(--btn-primary-hover);
   --color-btn-primary-text: var(--btn-primary-text);
   --color-btn-accent: var(--btn-accent);
   --color-btn-accent-hover: var(--btn-accent-hover);
-  --font-sans: var(--font-inter);
+
+  --font-sans: var(--font-sans);
+  --font-heading: var(--font-sans);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-}
-
+/* Legacy utility classes — used by non-dashboard components */
 .app-surface {
   background-color: var(--surface);
 }
@@ -78,4 +177,16 @@ body {
 
 .app-accent {
   color: var(--accent);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
 }

@@ -1,5 +1,16 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import {
+  Sparkles,
+  CreditCard,
+  Users,
+  UserPlus,
+  BarChart3,
+  Settings,
+  ArrowRight,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { NoTeamCard } from "@/components/no-team-card";
 import { TeamContextErrorCard } from "@/components/team-context-error-card";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -27,7 +38,7 @@ export default async function DashboardPage() {
 
   if (teamContextLoadFailed) {
     return (
-      <main className="min-h-screen bg-[color:var(--background)] px-6 py-10 text-[color:var(--foreground)]">
+      <main className="min-h-screen bg-background px-6 py-10 text-foreground">
         <TeamContextErrorCard />
       </main>
     );
@@ -35,7 +46,7 @@ export default async function DashboardPage() {
 
   if (!teamContext) {
     return (
-      <main className="min-h-screen bg-[color:var(--background)] px-6 py-10 text-[color:var(--foreground)]">
+      <main className="min-h-screen bg-background px-6 py-10 text-foreground">
         <NoTeamCard />
       </main>
     );
@@ -52,6 +63,52 @@ export default async function DashboardPage() {
   const teamNavLabel =
     teamUiMode === "paid_solo" ? t("DashboardPage.inviteTeammates") : t("DashboardPage.teamNav");
 
+  const quickNavItems: Array<{
+    label: string;
+    href: string;
+    icon: React.ComponentType<{ className?: string }>;
+    description: string;
+  }> = [];
+
+  if (aiUiGate.isVisibleInUi) {
+    quickNavItems.push({
+      label: t("DashboardPage.ai"),
+      href: "/dashboard/ai",
+      icon: Sparkles,
+      description: "Chat with AI assistants",
+    });
+  }
+
+  quickNavItems.push(
+    {
+      label: t("DashboardPage.billing"),
+      href: "/dashboard/billing",
+      icon: CreditCard,
+      description: "Manage your plan",
+    },
+    {
+      label: t("DashboardPage.usage"),
+      href: "/dashboard/usage",
+      icon: BarChart3,
+      description: "View usage analytics",
+    },
+    {
+      label: t("DashboardPage.settings"),
+      href: "/dashboard/settings",
+      icon: Settings,
+      description: "Configure your account",
+    },
+  );
+
+  if (teamUiMode !== "free") {
+    quickNavItems.splice(quickNavItems.length - 1, 0, {
+      label: teamNavLabel,
+      href: "/dashboard/team",
+      icon: teamUiMode === "paid_solo" ? UserPlus : Users,
+      description: "Manage your team",
+    });
+  }
+
   return (
     <DashboardShell
       displayName={displayName}
@@ -64,117 +121,126 @@ export default async function DashboardPage() {
       teamMemberships={teamMemberships}
       csrfToken={csrfToken}
     >
-      <header className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm sm:p-6">
-        <p className="text-sm text-muted-foreground">{t("DashboardPage.overview")}</p>
-        <h1 className="mt-1 text-2xl font-semibold text-foreground">
+      {/* Page header */}
+      <div>
+        <h1 className="text-3xl font-semibold tracking-tight">
           {t("DashboardPage.welcome", { name: displayName })}
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t("DashboardPage.navigate")}</p>
-      </header>
+        <p className="mt-2 text-base text-muted-foreground">{t("DashboardPage.navigate")}</p>
+      </div>
 
-      <section className="grid gap-4 md:grid-cols-2">
-        <article className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-foreground">{t("DashboardPage.account")}</h2>
-          <dl className="mt-4 space-y-2 text-sm">
-            <div className="flex items-center justify-between">
-              <dt className="text-muted-foreground">{t("DashboardPage.userId")}</dt>
-              <dd className="max-w-[220px] truncate text-foreground">{user.id}</dd>
-            </div>
-            {teamUiMode !== "free" ? (
-              <>
+      {/* Account & Subscription */}
+      <div className="grid gap-5 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("DashboardPage.account")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <dl className="space-y-4 text-sm">
+              <div className="flex items-center justify-between">
+                <dt className="text-muted-foreground">{t("DashboardPage.userId")}</dt>
+                <dd className="max-w-[180px] truncate font-mono text-xs">{user.id}</dd>
+              </div>
+              {teamUiMode !== "free" ? (
+                <>
+                  <div className="flex items-center justify-between">
+                    <dt className="text-muted-foreground">{t("DashboardPage.team")}</dt>
+                    <dd className="truncate font-medium">
+                      {teamContext.teamName ?? t("Common.myTeam")}
+                    </dd>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <dt className="text-muted-foreground">{t("DashboardPage.role")}</dt>
+                    <dd>
+                      <Badge variant="secondary" className="capitalize">
+                        {teamContext.role}
+                      </Badge>
+                    </dd>
+                  </div>
+                </>
+              ) : null}
+              <div className="flex items-center justify-between">
+                <dt className="text-muted-foreground">{t("DashboardPage.memberSince")}</dt>
+                <dd>{formatUtcDate(profile?.created_at ?? user.created_at)}</dd>
+              </div>
+            </dl>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("DashboardPage.subscriptionSnapshot")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {subscription ? (
+              <dl className="space-y-4 text-sm">
                 <div className="flex items-center justify-between">
-                  <dt className="text-muted-foreground">{t("DashboardPage.team")}</dt>
-                  <dd className="max-w-[220px] truncate text-foreground">
-                    {teamContext.teamName ?? t("Common.myTeam")}
+                  <dt className="text-muted-foreground">{t("DashboardPage.currentPlan")}</dt>
+                  <dd className="font-medium">
+                    {currentPaidPlanKey
+                      ? tPlans(`plans.${currentPaidPlanKey}.name`)
+                      : t("DashboardPage.unknown")}
                   </dd>
                 </div>
                 <div className="flex items-center justify-between">
-                  <dt className="text-muted-foreground">{t("DashboardPage.role")}</dt>
-                  <dd className="text-foreground capitalize">{teamContext.role}</dd>
+                  <dt className="text-muted-foreground">{t("DashboardPage.status")}</dt>
+                  <dd>
+                    <Badge variant="secondary" className="uppercase">
+                      {subscription.status}
+                    </Badge>
+                  </dd>
                 </div>
-              </>
-            ) : null}
-            <div className="flex items-center justify-between">
-              <dt className="text-muted-foreground">{t("DashboardPage.memberSince")}</dt>
-              <dd className="text-foreground">
-                {formatUtcDate(profile?.created_at ?? user.created_at)}
-              </dd>
-            </div>
-          </dl>
-        </article>
+                <div className="flex items-center justify-between">
+                  <dt className="text-muted-foreground">{t("DashboardPage.seats")}</dt>
+                  <dd className="font-medium">{subscription.seat_quantity}</dd>
+                </div>
+              </dl>
+            ) : effectivePlanKey === "free" ? (
+              <div className="space-y-3">
+                <div>
+                  <p className="font-medium">{t("DashboardPage.currentPlanFree")}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {t("DashboardPage.visitBillingUpgrade")}
+                  </p>
+                </div>
+                <Link
+                  href="/dashboard/billing"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-400"
+                >
+                  Upgrade
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {t("DashboardPage.noActiveSubscription")}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
-        <article className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-foreground">
-            {t("DashboardPage.subscriptionSnapshot")}
-          </h2>
-          {subscription ? (
-            <dl className="mt-4 space-y-2 text-sm">
-              <div className="flex items-center justify-between">
-                <dt className="text-muted-foreground">{t("DashboardPage.currentPlan")}</dt>
-                <dd className="font-medium text-foreground">
-                  {currentPaidPlanKey
-                    ? tPlans(`plans.${currentPaidPlanKey}.name`)
-                    : t("DashboardPage.unknown")}
-                </dd>
+      {/* Quick navigation */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {quickNavItems.map((item) => {
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="group flex items-center gap-4 rounded-xl p-4 ring-1 ring-border transition-colors hover:bg-muted"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+                <Icon className="h-5 w-5 text-muted-foreground" />
               </div>
-              <div className="flex items-center justify-between">
-                <dt className="text-muted-foreground">{t("DashboardPage.status")}</dt>
-                <dd className="uppercase tracking-wide text-foreground">{subscription.status}</dd>
+              <div className="min-w-0">
+                <p className="text-sm font-medium">{item.label}</p>
+                <p className="mt-0.5 text-sm text-muted-foreground">{item.description}</p>
               </div>
-              <div className="flex items-center justify-between">
-                <dt className="text-muted-foreground">{t("DashboardPage.seats")}</dt>
-                <dd className="text-foreground">{subscription.seat_quantity}</dd>
-              </div>
-            </dl>
-          ) : effectivePlanKey === "free" ? (
-            <div className="mt-4 rounded-lg app-surface-subtle p-4 text-sm text-muted-foreground">
-              <p className="font-medium text-foreground">{t("DashboardPage.currentPlanFree")}</p>
-              <p className="mt-1">{t("DashboardPage.visitBillingUpgrade")}</p>
-            </div>
-          ) : (
-            <div className="mt-4 rounded-lg app-surface-subtle p-4 text-sm text-muted-foreground">
-              {t("DashboardPage.noActiveSubscription")}
-            </div>
-          )}
-        </article>
-      </section>
-
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        {aiUiGate.isVisibleInUi ? (
-          <Link
-            href="/dashboard/ai"
-            className="rounded-xl border app-border-subtle app-surface p-4 text-sm text-muted-foreground shadow-sm hover:bg-surface-hover"
-          >
-            {t("DashboardPage.ai")}
-          </Link>
-        ) : null}
-        <Link
-          href="/dashboard/billing"
-          className="rounded-xl border app-border-subtle app-surface p-4 text-sm text-muted-foreground shadow-sm hover:bg-surface-hover"
-        >
-          {t("DashboardPage.billing")}
-        </Link>
-        {teamUiMode !== "free" ? (
-          <Link
-            href="/dashboard/team"
-            className="rounded-xl border app-border-subtle app-surface p-4 text-sm text-muted-foreground shadow-sm hover:bg-surface-hover"
-          >
-            {teamNavLabel}
-          </Link>
-        ) : null}
-        <Link
-          href="/dashboard/usage"
-          className="rounded-xl border app-border-subtle app-surface p-4 text-sm text-muted-foreground shadow-sm hover:bg-surface-hover"
-        >
-          {t("DashboardPage.usage")}
-        </Link>
-        <Link
-          href="/dashboard/settings"
-          className="rounded-xl border app-border-subtle app-surface p-4 text-sm text-muted-foreground shadow-sm hover:bg-surface-hover"
-        >
-          {t("DashboardPage.settings")}
-        </Link>
-      </section>
+            </Link>
+          );
+        })}
+      </div>
     </DashboardShell>
   );
 }

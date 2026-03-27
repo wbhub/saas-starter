@@ -27,7 +27,7 @@ describe("SubmitButton", () => {
   it("applies primary variant classes by default", () => {
     render(<SubmitButton idleLabel="Save" pendingLabel="Saving..." />);
     const button = screen.getByRole("button");
-    expect(button.className).toContain("bg-btn-primary");
+    expect(button.className).toContain("bg-indigo-500");
   });
 
   it("applies danger variant classes", () => {

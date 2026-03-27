@@ -6,7 +6,7 @@ import { type ButtonHTMLAttributes } from "react";
 type SubmitButtonVariant = "primary" | "danger";
 
 const variantClasses: Record<SubmitButtonVariant, string> = {
-  primary: "bg-btn-primary text-btn-primary-text hover:bg-btn-primary-hover",
+  primary: "bg-indigo-500 text-white hover:bg-indigo-400",
   danger: "bg-rose-600 text-white hover:bg-rose-500",
 };
 
