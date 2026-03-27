@@ -77,16 +77,16 @@ export default async function DashboardBillingPage() {
       teamMemberships={teamMemberships}
       csrfToken={csrfToken}
     >
-      <header className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm sm:p-6">
-        <p className="text-sm text-muted-foreground">{t("header.eyebrow")}</p>
-        <h1 className="mt-1 text-2xl font-semibold text-foreground">{t("header.title")}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t("header.description")}</p>
+      <header className="relative overflow-hidden rounded-2xl border app-border-subtle bg-gradient-to-br from-emerald-500/5 via-transparent to-teal-500/5 p-6 shadow-sm sm:p-8">
+        <p className="text-sm font-medium text-accent">{t("header.eyebrow")}</p>
+        <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground">{t("header.title")}</h1>
+        <p className="mt-2 text-sm text-muted-foreground">{t("header.description")}</p>
       </header>
 
       {!isPaidPlan ? (
         <section className="space-y-4">
           {!billingEnabled ? (
-            <div className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
+            <div className="rounded-2xl border app-border-subtle app-surface p-6 shadow-sm">
               <h2 className="text-lg font-semibold text-foreground">
                 {t("billingDisabled.title")}
               </h2>
@@ -95,7 +95,7 @@ export default async function DashboardBillingPage() {
               </p>
             </div>
           ) : null}
-          <div className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
+          <div className="rounded-2xl border app-border-subtle app-surface p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-foreground">{t("freeMode.title")}</h2>
             <p className="mt-2 text-sm text-muted-foreground">{t("freeMode.description")}</p>
           </div>
@@ -103,7 +103,7 @@ export default async function DashboardBillingPage() {
             {PLAN_CATALOG.map((plan) => (
               <article
                 key={plan.key}
-                className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm"
+                className="rounded-2xl border app-border-subtle app-surface p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
               >
                 <p className="text-sm font-medium text-muted-foreground">
                   {tPlanCopy(`plans.${plan.key}.name`)}
@@ -125,7 +125,7 @@ export default async function DashboardBillingPage() {
           </div>
         </section>
       ) : (
-        <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
+        <section className="rounded-2xl border app-border-subtle app-surface p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-foreground">
             {t("currentSubscription.title")}
           </h2>
@@ -193,7 +193,7 @@ export default async function DashboardBillingPage() {
       </section>
 
       {teamUiMode === "paid_solo" && currentPlan ? (
-        <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
+        <section className="rounded-2xl border app-border-subtle app-surface p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-foreground">{t("paidSolo.title")}</h2>
           <p className="mt-2 text-sm text-muted-foreground">
             {t("paidSolo.description", { amount: catalogSeatPrice(currentPlan.amountMonthly) })}
