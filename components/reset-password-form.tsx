@@ -4,49 +4,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import {
+  clearRecoveryMarker,
+  hasValidRecoveryMarker,
+  saveRecoveryMarker,
+} from "@/lib/auth/recovery-marker";
 import { getCsrfHeaders } from "@/lib/http/csrf";
 import { createClient } from "@/lib/supabase/client";
 import { validatePasswordComplexity } from "@/lib/validation";
-
-const RECOVERY_MARKER_KEY = "saas-starter-password-recovery";
-const RECOVERY_MARKER_MAX_AGE_MS = 15 * 60 * 1000;
-
-function saveRecoveryMarker() {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.sessionStorage.setItem(RECOVERY_MARKER_KEY, JSON.stringify({ issuedAt: Date.now() }));
-}
-
-function clearRecoveryMarker() {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.sessionStorage.removeItem(RECOVERY_MARKER_KEY);
-}
-
-function hasValidRecoveryMarker() {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  const raw = window.sessionStorage.getItem(RECOVERY_MARKER_KEY);
-  if (!raw) {
-    return false;
-  }
-
-  try {
-    const parsed = JSON.parse(raw) as { issuedAt?: unknown };
-    if (typeof parsed.issuedAt !== "number") {
-      return false;
-    }
-    return Date.now() - parsed.issuedAt <= RECOVERY_MARKER_MAX_AGE_MS;
-  } catch {
-    return false;
-  }
-}
 
 type ResetPasswordFormProps = {
   hasRecoveryProof: boolean;
@@ -71,6 +36,7 @@ export function ResetPasswordForm({ hasRecoveryProof, recoveryUserId }: ResetPas
   const [messageType, setMessageType] = useState<"error" | "success">("success");
   const messageId = "reset-password-message";
   const passwordHintId = "reset-password-hint";
+  const hasServerRecoveryProof = hasRecoveryProof && Boolean(recoveryUserId);
 
   useEffect(() => {
     let active = true;
@@ -91,7 +57,9 @@ export function ResetPasswordForm({ hasRecoveryProof, recoveryUserId }: ResetPas
         data: { session },
       } = await supabase.auth.getSession();
       const hasRecoverySessionProof = hasRecoveryProof || hasValidRecoveryMarker();
-      const isRecoveredUser = session?.user.id === recoveryUserId;
+      const isRecoveredUser = recoveryUserId
+        ? session?.user.id === recoveryUserId
+        : Boolean(session);
       setHasRecoverySession(Boolean(session) && hasRecoverySessionProof && isRecoveredUser);
       setCheckingSession(false);
     }
@@ -124,23 +92,32 @@ export function ResetPasswordForm({ hasRecoveryProof, recoveryUserId }: ResetPas
     setLoading(true);
 
     try {
-      if (!(hasRecoveryProof || hasValidRecoveryMarker())) {
+      const hasClientRecoveryProof = hasValidRecoveryMarker();
+      if (!(hasRecoveryProof || hasClientRecoveryProof)) {
         setMessageType("error");
         setMessage(t("errors.invalidOrExpired"));
         return;
       }
 
-      const response = await fetch("/reset-password/submit", {
-        method: "POST",
-        credentials: "same-origin",
-        cache: "no-store",
-        headers: { "Content-Type": "application/json", ...getCsrfHeaders() },
-        body: JSON.stringify({ password }),
-      });
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as ResetPasswordResponse | null;
-        throw new Error(payload?.error ?? t("errors.unableToUpdatePassword"));
+      if (hasServerRecoveryProof) {
+        const response = await fetch("/reset-password/submit", {
+          method: "POST",
+          credentials: "same-origin",
+          cache: "no-store",
+          headers: { "Content-Type": "application/json", ...getCsrfHeaders() },
+          body: JSON.stringify({ password }),
+        });
+        if (!response.ok) {
+          const payload = (await response.json().catch(() => null)) as ResetPasswordResponse | null;
+          throw new Error(payload?.error ?? t("errors.unableToUpdatePassword"));
+        }
+      } else {
+        const { error } = await supabase.auth.updateUser({ password });
+        if (error) {
+          throw new Error(error.message || t("errors.unableToUpdatePassword"));
+        }
       }
+
       clearRecoveryMarker();
       setMessageType("success");
       setMessage(t("messages.passwordUpdated"));
