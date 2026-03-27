@@ -3,7 +3,6 @@
 import { useSyncExternalStore } from "react";
 import { useTheme } from "./theme-provider";
 import { Monitor, Moon, SunMedium } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
@@ -23,14 +22,14 @@ export function ThemeToggle() {
     displayedTheme === "system" ? Monitor : displayedTheme === "light" ? SunMedium : Moon;
 
   return (
-    <Button
-      variant="ghost"
-      size="icon-sm"
+    <button
+      type="button"
       onClick={() => setTheme(nextTheme)}
       aria-label={`Switch theme (current: ${displayedTheme})`}
       aria-pressed={displayedTheme !== "system"}
+      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border app-border-subtle app-surface text-[color:var(--foreground)] shadow-sm transition-colors hover:bg-[color:var(--surface-subtle)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring)]"
     >
       <Icon className="h-4 w-4" />
-    </Button>
+    </button>
   );
 }
