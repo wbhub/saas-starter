@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Sparkles } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { LocaleSwitcher } from "./locale-switcher";
@@ -11,35 +10,55 @@ export function SiteHeader({ isLoggedIn }: { isLoggedIn: boolean }) {
 
   return (
     <header className="border-b app-border-subtle">
-      <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
+      <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         <Link
           href="/"
-          className="flex items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring)]"
+          className="flex items-center gap-2.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-emerald-400 text-white shadow-sm shadow-indigo-500/30">
-            <Sparkles className="h-4 w-4" />
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-foreground text-background">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 16 16"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M8 1L14.9282 5V11L8 15L1.07179 11V5L8 1Z"
+                fill="currentColor"
+              />
+            </svg>
           </div>
-          <div className="flex flex-col">
-            <span className="text-xl font-semibold leading-tight tracking-tight">
-              {t("Common.brandName")}
-            </span>
-          </div>
+          <span className="text-[15px] font-semibold tracking-tight text-foreground">
+            {t("Common.brandName")}
+          </span>
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {SHOW_LOCALE_SWITCHER ? <LocaleSwitcher /> : null}
           <ThemeToggle />
-          <Link
-            href={isLoggedIn ? "/dashboard" : "/login"}
-            className="rounded-lg border app-border-subtle px-4 py-2 text-sm hover:bg-[color:var(--surface-subtle)]"
-          >
-            {isLoggedIn ? t("SiteHeader.dashboard") : t("SiteHeader.login")}
-          </Link>
-          <Link
-            href={isLoggedIn ? "/dashboard" : "/signup"}
-            className="rounded-lg bg-btn-accent px-4 py-2 text-sm font-medium text-white hover:bg-btn-accent-hover"
-          >
-            {isLoggedIn ? t("SiteHeader.openApp") : t("SiteHeader.startFree")}
-          </Link>
+          {isLoggedIn ? (
+            <Link
+              href="/dashboard"
+              className="ml-1 rounded-lg bg-btn-primary px-3.5 py-1.5 text-[13px] font-medium text-btn-primary-text transition-colors hover:bg-btn-primary-hover"
+            >
+              {t("SiteHeader.openApp")}
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="rounded-lg px-3 py-1.5 text-[13px] text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {t("SiteHeader.login")}
+              </Link>
+              <Link
+                href="/signup"
+                className="rounded-lg bg-btn-primary px-3.5 py-1.5 text-[13px] font-medium text-btn-primary-text transition-colors hover:bg-btn-primary-hover"
+              >
+                {t("SiteHeader.startFree")}
+              </Link>
+            </>
+          )}
         </div>
       </nav>
     </header>
