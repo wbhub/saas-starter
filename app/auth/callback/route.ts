@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 import { LAST_AUTH_PROVIDER_COOKIE, parseSupabaseProvider } from "@/lib/auth/social-auth";
 import { DAY_MS, MINUTE_MS } from "@/lib/constants/durations";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
-import { getAppUrl } from "@/lib/env";
+import { env, getAppUrl } from "@/lib/env";
 import { getClientIp } from "@/lib/http/client-ip";
-import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { rotateCsrfTokenOnResponse } from "@/lib/security/csrf";
 
@@ -183,12 +183,35 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const supabase = await createClient();
+  // Build the success redirect response first so the Supabase client can set
+  // auth cookies directly on it.  Using the cookies() store (via createClient
+  // from lib/supabase/server) risks the auth cookies being dropped when a
+  // NextResponse.redirect() is returned — the same issue the proxy/middleware
+  // avoids by writing cookies onto the NextResponse object itself.
+  const response = NextResponse.redirect(toAbsoluteUrl(safeNext));
+
+  const supabase = createServerClient(
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options),
+          );
+        },
+      },
+    },
+  );
+
   const { data, error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
-    const response = NextResponse.redirect(toAbsoluteUrl("/login?error=invalid_code"));
+    const errorResponse = NextResponse.redirect(toAbsoluteUrl("/login?error=invalid_code"));
     return maybeSetCallbackCookie(
-      response,
+      errorResponse,
       request,
       callbackClientId.isNew,
       callbackClientId.value,
@@ -197,16 +220,15 @@ export async function GET(request: NextRequest) {
 
   const recoveredUserId = data.session?.user.id;
   if (safeNext.startsWith("/reset-password") && !recoveredUserId) {
-    const response = NextResponse.redirect(toAbsoluteUrl("/login?error=invalid_code"));
+    const errorResponse = NextResponse.redirect(toAbsoluteUrl("/login?error=invalid_code"));
     return maybeSetCallbackCookie(
-      response,
+      errorResponse,
       request,
       callbackClientId.isNew,
       callbackClientId.value,
     );
   }
 
-  const response = NextResponse.redirect(toAbsoluteUrl(safeNext));
   rotateCsrfTokenOnResponse(response, request);
   if (recoveredUserId) {
     maybeSetPasswordRecoveryCookies(response, request, safeNext, recoveredUserId);

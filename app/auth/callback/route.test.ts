@@ -14,11 +14,11 @@ describe("GET /auth/callback", () => {
 
   it("redirects to login when code is missing", async () => {
     vi.doMock("@/lib/env", () => ({
-      env: { NEXT_PUBLIC_APP_URL: "https://app.example.com" },
+      env: { NEXT_PUBLIC_APP_URL: "https://app.example.com", NEXT_PUBLIC_SUPABASE_URL: "https://test.supabase.co", NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "test-key" },
       getAppUrl: () => "https://app.example.com",
     }));
-    vi.doMock("@/lib/supabase/server", () => ({
-      createClient: vi.fn(),
+    vi.doMock("@supabase/ssr", () => ({
+      createServerClient: vi.fn(),
     }));
     vi.doMock("@/lib/security/rate-limit", () => ({
       checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),
@@ -38,11 +38,11 @@ describe("GET /auth/callback", () => {
 
   it("uses configured app origin for success redirect", async () => {
     vi.doMock("@/lib/env", () => ({
-      env: { NEXT_PUBLIC_APP_URL: "https://app.example.com" },
+      env: { NEXT_PUBLIC_APP_URL: "https://app.example.com", NEXT_PUBLIC_SUPABASE_URL: "https://test.supabase.co", NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "test-key" },
       getAppUrl: () => "https://app.example.com",
     }));
-    vi.doMock("@/lib/supabase/server", () => ({
-      createClient: async () => ({
+    vi.doMock("@supabase/ssr", () => ({
+      createServerClient: () => ({
         auth: {
           exchangeCodeForSession: async () => ({
             data: { session: { user: { id: "user_123" } } },
@@ -69,11 +69,11 @@ describe("GET /auth/callback", () => {
 
   it("stores the last social provider after successful callback", async () => {
     vi.doMock("@/lib/env", () => ({
-      env: { NEXT_PUBLIC_APP_URL: "https://app.example.com" },
+      env: { NEXT_PUBLIC_APP_URL: "https://app.example.com", NEXT_PUBLIC_SUPABASE_URL: "https://test.supabase.co", NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "test-key" },
       getAppUrl: () => "https://app.example.com",
     }));
-    vi.doMock("@/lib/supabase/server", () => ({
-      createClient: async () => ({
+    vi.doMock("@supabase/ssr", () => ({
+      createServerClient: () => ({
         auth: {
           exchangeCodeForSession: async () => ({
             data: {
@@ -104,11 +104,11 @@ describe("GET /auth/callback", () => {
 
   it("uses only session provider (ignores query provider)", async () => {
     vi.doMock("@/lib/env", () => ({
-      env: { NEXT_PUBLIC_APP_URL: "https://app.example.com" },
+      env: { NEXT_PUBLIC_APP_URL: "https://app.example.com", NEXT_PUBLIC_SUPABASE_URL: "https://test.supabase.co", NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "test-key" },
       getAppUrl: () => "https://app.example.com",
     }));
-    vi.doMock("@/lib/supabase/server", () => ({
-      createClient: async () => ({
+    vi.doMock("@supabase/ssr", () => ({
+      createServerClient: () => ({
         auth: {
           exchangeCodeForSession: async () => ({
             data: {
@@ -139,11 +139,11 @@ describe("GET /auth/callback", () => {
 
   it("does not set cookie when session provider is non-social", async () => {
     vi.doMock("@/lib/env", () => ({
-      env: { NEXT_PUBLIC_APP_URL: "https://app.example.com" },
+      env: { NEXT_PUBLIC_APP_URL: "https://app.example.com", NEXT_PUBLIC_SUPABASE_URL: "https://test.supabase.co", NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "test-key" },
       getAppUrl: () => "https://app.example.com",
     }));
-    vi.doMock("@/lib/supabase/server", () => ({
-      createClient: async () => ({
+    vi.doMock("@supabase/ssr", () => ({
+      createServerClient: () => ({
         auth: {
           exchangeCodeForSession: async () => ({
             data: {
@@ -174,11 +174,11 @@ describe("GET /auth/callback", () => {
 
   it("does not set cookie when session provider is missing", async () => {
     vi.doMock("@/lib/env", () => ({
-      env: { NEXT_PUBLIC_APP_URL: "https://app.example.com" },
+      env: { NEXT_PUBLIC_APP_URL: "https://app.example.com", NEXT_PUBLIC_SUPABASE_URL: "https://test.supabase.co", NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "test-key" },
       getAppUrl: () => "https://app.example.com",
     }));
-    vi.doMock("@/lib/supabase/server", () => ({
-      createClient: async () => ({
+    vi.doMock("@supabase/ssr", () => ({
+      createServerClient: () => ({
         auth: {
           exchangeCodeForSession: async () => ({
             data: { session: { user: { id: "user_123", app_metadata: {} } } },
@@ -205,11 +205,11 @@ describe("GET /auth/callback", () => {
 
   it("falls back to dashboard for unsafe next values", async () => {
     vi.doMock("@/lib/env", () => ({
-      env: { NEXT_PUBLIC_APP_URL: "https://app.example.com" },
+      env: { NEXT_PUBLIC_APP_URL: "https://app.example.com", NEXT_PUBLIC_SUPABASE_URL: "https://test.supabase.co", NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "test-key" },
       getAppUrl: () => "https://app.example.com",
     }));
-    vi.doMock("@/lib/supabase/server", () => ({
-      createClient: async () => ({
+    vi.doMock("@supabase/ssr", () => ({
+      createServerClient: () => ({
         auth: {
           exchangeCodeForSession: async () => ({
             data: { session: { user: { id: "user_123" } } },
@@ -238,11 +238,11 @@ describe("GET /auth/callback", () => {
 
   it("falls back to dashboard for double-encoded protocol-relative next", async () => {
     vi.doMock("@/lib/env", () => ({
-      env: { NEXT_PUBLIC_APP_URL: "https://app.example.com" },
+      env: { NEXT_PUBLIC_APP_URL: "https://app.example.com", NEXT_PUBLIC_SUPABASE_URL: "https://test.supabase.co", NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "test-key" },
       getAppUrl: () => "https://app.example.com",
     }));
-    vi.doMock("@/lib/supabase/server", () => ({
-      createClient: async () => ({
+    vi.doMock("@supabase/ssr", () => ({
+      createServerClient: () => ({
         auth: {
           exchangeCodeForSession: async () => ({
             data: { session: { user: { id: "user_123" } } },
@@ -271,11 +271,11 @@ describe("GET /auth/callback", () => {
     const checkRateLimit = vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 });
 
     vi.doMock("@/lib/env", () => ({
-      env: { NEXT_PUBLIC_APP_URL: "https://app.example.com" },
+      env: { NEXT_PUBLIC_APP_URL: "https://app.example.com", NEXT_PUBLIC_SUPABASE_URL: "https://test.supabase.co", NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "test-key" },
       getAppUrl: () => "https://app.example.com",
     }));
-    vi.doMock("@/lib/supabase/server", () => ({
-      createClient: async () => ({
+    vi.doMock("@supabase/ssr", () => ({
+      createServerClient: () => ({
         auth: {
           exchangeCodeForSession: async () => ({
             data: { session: { user: { id: "user_123" } } },
