@@ -1,5 +1,7 @@
 import { NextRequest } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
+import { env } from "@/lib/env";
 import { jsonError, jsonSuccess } from "@/lib/http/api-json";
 import { getClientRateLimitIdentifier } from "@/lib/http/client-ip";
 import { requireJsonContentType } from "@/lib/http/content-type";
@@ -7,7 +9,6 @@ import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
 import { logger } from "@/lib/logger";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { rotateCsrfTokenOnResponse, verifyCsrfProtection } from "@/lib/security/csrf";
-import { createClient } from "@/lib/supabase/server";
 import { validatePasswordComplexity } from "@/lib/validation";
 
 const PASSWORD_RECOVERY_COOKIE = "auth_password_recovery";
@@ -58,7 +59,24 @@ export async function POST(request: NextRequest) {
     return jsonError("Reset link is invalid or expired. Please request a new link.", 403);
   }
 
-  const supabase = await createClient();
+  const successResponse = jsonSuccess();
+  const supabase = createServerClient(
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            successResponse.cookies.set(name, value, options),
+          );
+        },
+      },
+    },
+  );
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -72,7 +90,7 @@ export async function POST(request: NextRequest) {
     return jsonError("Unable to update password. Please try again.", 400);
   }
 
-  const response = rotateCsrfTokenOnResponse(jsonSuccess(), request);
+  const response = rotateCsrfTokenOnResponse(successResponse, request);
   const secure = request.nextUrl.protocol === "https:";
   response.cookies.set({
     name: PASSWORD_RECOVERY_COOKIE,

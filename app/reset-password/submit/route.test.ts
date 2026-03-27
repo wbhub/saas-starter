@@ -33,8 +33,8 @@ describe("POST /reset-password/submit", () => {
         retryAfterSeconds: 42,
       }),
     }));
-    vi.doMock("@/lib/supabase/server", () => ({
-      createClient: vi.fn(),
+    vi.doMock("@supabase/ssr", () => ({
+      createServerClient: vi.fn(),
     }));
 
     const { POST } = await import("./route");
@@ -56,8 +56,8 @@ describe("POST /reset-password/submit", () => {
     vi.doMock("@/lib/security/rate-limit", () => ({
       checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),
     }));
-    vi.doMock("@/lib/supabase/server", () => ({
-      createClient: vi.fn(),
+    vi.doMock("@supabase/ssr", () => ({
+      createServerClient: vi.fn(),
     }));
 
     const { POST } = await import("./route");
@@ -75,13 +75,13 @@ describe("POST /reset-password/submit", () => {
   });
 
   it("rejects overlong passwords", async () => {
-    const createClient = vi.fn();
+    const createServerClient = vi.fn();
 
     vi.doMock("@/lib/security/rate-limit", () => ({
       checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),
     }));
-    vi.doMock("@/lib/supabase/server", () => ({
-      createClient,
+    vi.doMock("@supabase/ssr", () => ({
+      createServerClient,
     }));
 
     const { POST } = await import("./route");
@@ -94,15 +94,15 @@ describe("POST /reset-password/submit", () => {
       ok: false,
       error: "Password must be between 12 and 128 characters.",
     });
-    expect(createClient).not.toHaveBeenCalled();
+    expect(createServerClient).not.toHaveBeenCalled();
   });
 
   it("rejects requests when session user differs from recovery user", async () => {
     vi.doMock("@/lib/security/rate-limit", () => ({
       checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),
     }));
-    vi.doMock("@/lib/supabase/server", () => ({
-      createClient: async () => ({
+    vi.doMock("@supabase/ssr", () => ({
+      createServerClient: () => ({
         auth: {
           getUser: async () => ({ data: { user: { id: "user_b" } } }),
         },
@@ -127,8 +127,8 @@ describe("POST /reset-password/submit", () => {
     vi.doMock("@/lib/security/rate-limit", () => ({
       checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),
     }));
-    vi.doMock("@/lib/supabase/server", () => ({
-      createClient: async () => ({
+    vi.doMock("@supabase/ssr", () => ({
+      createServerClient: () => ({
         auth: {
           getUser: async () => ({ data: { user: { id: "user_a" } } }),
           updateUser,
