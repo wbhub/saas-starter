@@ -190,6 +190,19 @@ export async function GET(request: NextRequest) {
   // avoids by writing cookies onto the NextResponse object itself.
   const response = NextResponse.redirect(toAbsoluteUrl(safeNext));
 
+  // @supabase/ssr hardcodes flowType: "pkce" and exchangeCodeForSession throws
+  // AuthPKCECodeVerifierMissingError when no code_verifier cookie exists.  For
+  // email-based flows (password recovery, signup confirmation) the reset email
+  // is generated server-side so no browser PKCE flow stores a code_verifier.
+  // Inject a placeholder so the client-side check passes — the Supabase server
+  // accepts it because email-generated codes have no code_challenge to validate.
+  const ref = new URL(env.NEXT_PUBLIC_SUPABASE_URL).hostname.split(".")[0];
+  const codeVerifierCookieName = `sb-${ref}-auth-token-code-verifier`;
+  const hasCodeVerifier = request.cookies.getAll().some((c) => c.name === codeVerifierCookieName);
+  if (!hasCodeVerifier) {
+    request.cookies.set(codeVerifierCookieName, "server-side-email-flow");
+  }
+
   const supabase = createServerClient(
     env.NEXT_PUBLIC_SUPABASE_URL,
     env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
