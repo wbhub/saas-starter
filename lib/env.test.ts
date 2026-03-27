@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const CORE_ENV_KEYS = ["SUPABASE_SERVICE_ROLE_KEY"] as const;
+const CORE_ENV_KEYS = ["SUPABASE_SECRET_KEY"] as const;
 const PUBLIC_RUNTIME_ENV_KEYS = [
   "NEXT_PUBLIC_APP_URL",
   "NEXT_PUBLIC_SUPABASE_URL",
-  "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+  "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
 ] as const;
 
 const STRIPE_ENV_KEYS = [
@@ -17,13 +17,13 @@ const STRIPE_ENV_KEYS = [
 ] as const;
 
 function seedCoreRequiredEnv() {
-  process.env.SUPABASE_SERVICE_ROLE_KEY = "service_role";
+  process.env.SUPABASE_SECRET_KEY = "sb_secret_test";
 }
 
 function seedPublicRuntimeEnv() {
   process.env.NEXT_PUBLIC_APP_URL = "https://app.example.com";
   process.env.NEXT_PUBLIC_SUPABASE_URL = "https://project.supabase.co";
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "sb_publishable_test";
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_test";
 }
 
 function clearEnv() {
