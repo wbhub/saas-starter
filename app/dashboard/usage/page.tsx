@@ -68,11 +68,11 @@ export default async function DashboardUsagePage() {
     >
       <div>
         <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{t("header.eyebrow")}</p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight">{t("header.title")}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t("header.description")}</p>
+        <h1 className="mt-1.5 text-3xl font-semibold tracking-tight">{t("header.title")}</h1>
+        <p className="mt-2 text-base text-muted-foreground">{t("header.description")}</p>
       </div>
 
-      <section className="rounded-xl bg-card ring-1 ring-border p-5">
+      <section className="rounded-xl bg-card ring-1 ring-border p-6">
         <h2 className="text-lg font-semibold text-foreground">{t("table.title")}</h2>
         {usageRows.length === 0 ? (
           <p className="mt-3 rounded-lg app-surface-subtle px-3 py-2 text-sm text-muted-foreground">

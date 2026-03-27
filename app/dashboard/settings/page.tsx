@@ -73,8 +73,8 @@ export default async function DashboardSettingsPage() {
     >
       <div>
         <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{t("header.eyebrow")}</p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight">{t("header.title")}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t("header.description")}</p>
+        <h1 className="mt-1.5 text-3xl font-semibold tracking-tight">{t("header.title")}</h1>
+        <p className="mt-2 text-base text-muted-foreground">{t("header.description")}</p>
       </div>
 
       <section>
@@ -112,12 +112,12 @@ export default async function DashboardSettingsPage() {
       ) : null}
 
       {teamUiMode === "paid_solo" ? (
-        <section className="rounded-xl bg-card ring-1 ring-border p-5">
+        <section className="rounded-xl bg-card ring-1 ring-border p-6">
           <h2 className="text-lg font-semibold text-foreground">{t("inviteTeammates.title")}</h2>
           <p className="mt-2 text-sm text-muted-foreground">{t("inviteTeammates.description")}</p>
           <Link
             href="/dashboard/team"
-            className="mt-4 inline-flex rounded-lg bg-btn-primary px-4 py-2 text-sm font-medium text-btn-primary-text hover:bg-btn-primary-hover"
+            className="mt-4 inline-flex rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400"
           >
             {t("inviteTeammates.action")}
           </Link>

@@ -74,7 +74,7 @@ export function AiObjectCard() {
           <button
             type="submit"
             disabled={isLoading || input.trim().length === 0}
-            className="rounded-lg bg-btn-primary px-4 py-2 text-sm font-medium text-btn-primary-text hover:bg-btn-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isLoading ? t("actions.analyzing") : t("actions.analyze")}
           </button>

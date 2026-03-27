@@ -102,14 +102,14 @@ export function DashboardSidebar({
   }
 
   return (
-    <aside className="flex flex-col lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)]">
+    <aside className="flex flex-col lg:sticky lg:top-8 lg:h-[calc(100vh-4rem)]">
       {/* User info */}
-      <div className="mb-1">
-        <p className="truncate text-sm font-medium">{displayName}</p>
-        <p className="truncate text-xs text-muted-foreground">{userEmail}</p>
+      <div className="mb-2">
+        <p className="truncate text-base font-medium">{displayName}</p>
+        <p className="truncate text-sm text-muted-foreground">{userEmail}</p>
         {teamUiMode !== "free" && (
-          <div className="mt-2 flex items-center gap-2">
-            <span className="truncate text-xs text-muted-foreground">
+          <div className="mt-2.5 flex items-center gap-2">
+            <span className="truncate text-sm text-muted-foreground">
               {teamName ?? t("Common.myTeam")}
             </span>
             <Badge variant="secondary" className="capitalize">
@@ -157,7 +157,7 @@ export function DashboardSidebar({
       <Separator className="my-3" />
 
       {/* Navigation */}
-      <nav className="-mx-2 flex-1 space-y-0.5">
+      <nav className="-mx-2.5 flex-1 space-y-1">
         {navItems.map((item) => {
           const isActive = isNavItemActive(item.href);
           const Icon = item.icon;
@@ -167,7 +167,7 @@ export function DashboardSidebar({
               key={item.href}
               href={item.href}
               aria-current={isActive ? "page" : undefined}
-              className={`flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] transition-colors ${
+              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
                 isActive
                   ? "bg-muted font-medium text-foreground"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -181,22 +181,22 @@ export function DashboardSidebar({
       </nav>
 
       {/* Bottom actions */}
-      <Separator className="my-3" />
-      <div className="flex gap-2">
+      <Separator className="my-4" />
+      <div className="flex gap-2.5">
         <Link
           href="/"
-          className="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg border app-border-subtle px-2.5 text-sm transition-colors hover:bg-[color:var(--surface-subtle)]"
+          className="inline-flex h-9 flex-1 items-center justify-center gap-2 rounded-lg border app-border-subtle px-3 text-sm transition-colors hover:bg-[color:var(--surface-subtle)]"
         >
-          <Home className="h-3.5 w-3.5" />
+          <Home className="h-4 w-4" />
           {t("DashboardSidebar.home")}
         </Link>
         <form action={logout} className="flex-1">
           <input type="hidden" name="csrf_token" value={csrfToken} />
           <button
             type="submit"
-            className="inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-lg bg-indigo-500 px-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-400"
+            className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-indigo-500 px-3 text-sm font-medium text-white transition-colors hover:bg-indigo-400"
           >
-            <LogOut className="h-3.5 w-3.5" />
+            <LogOut className="h-4 w-4" />
             {t("DashboardSidebar.logout")}
           </button>
         </form>

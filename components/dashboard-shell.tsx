@@ -34,8 +34,8 @@ export function DashboardShell({
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <SiteHeader isLoggedIn={true} />
       <main className="flex-1">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:py-8">
-          <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-10">
+        <div className="mx-auto max-w-7xl px-6 py-8 lg:py-12">
+          <div className="grid gap-8 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-14">
             <DashboardSidebar
               displayName={displayName}
               userEmail={userEmail}
@@ -47,7 +47,7 @@ export function DashboardShell({
               teamMemberships={teamMemberships}
               csrfToken={csrfToken}
             />
-            <div className="space-y-6">{children}</div>
+            <div className="space-y-8">{children}</div>
           </div>
         </div>
       </main>

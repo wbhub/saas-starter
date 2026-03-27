@@ -79,14 +79,14 @@ export default async function DashboardBillingPage() {
     >
       <div>
         <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{t("header.eyebrow")}</p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight">{t("header.title")}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t("header.description")}</p>
+        <h1 className="mt-1.5 text-3xl font-semibold tracking-tight">{t("header.title")}</h1>
+        <p className="mt-2 text-base text-muted-foreground">{t("header.description")}</p>
       </div>
 
       {!isPaidPlan ? (
         <section className="space-y-4">
           {!billingEnabled ? (
-            <div className="rounded-xl bg-card ring-1 ring-border p-5">
+            <div className="rounded-xl bg-card ring-1 ring-border p-6">
               <h2 className="text-lg font-semibold text-foreground">
                 {t("billingDisabled.title")}
               </h2>
@@ -95,7 +95,7 @@ export default async function DashboardBillingPage() {
               </p>
             </div>
           ) : null}
-          <div className="rounded-xl bg-card ring-1 ring-border p-5">
+          <div className="rounded-xl bg-card ring-1 ring-border p-6">
             <h2 className="text-lg font-semibold text-foreground">{t("freeMode.title")}</h2>
             <p className="mt-2 text-sm text-muted-foreground">{t("freeMode.description")}</p>
           </div>
@@ -103,7 +103,7 @@ export default async function DashboardBillingPage() {
             {PLAN_CATALOG.map((plan) => (
               <article
                 key={plan.key}
-                className="rounded-xl bg-card ring-1 ring-border p-5 transition-colors hover:bg-muted/50"
+                className="rounded-xl bg-card ring-1 ring-border p-6 transition-colors hover:bg-muted/50"
               >
                 <p className="text-sm font-medium text-muted-foreground">
                   {tPlanCopy(`plans.${plan.key}.name`)}
@@ -125,7 +125,7 @@ export default async function DashboardBillingPage() {
           </div>
         </section>
       ) : (
-        <section className="rounded-xl bg-card ring-1 ring-border p-5">
+        <section className="rounded-xl bg-card ring-1 ring-border p-6">
           <h2 className="text-lg font-semibold text-foreground">
             {t("currentSubscription.title")}
           </h2>
@@ -193,14 +193,14 @@ export default async function DashboardBillingPage() {
       </section>
 
       {teamUiMode === "paid_solo" && currentPlan ? (
-        <section className="rounded-xl bg-card ring-1 ring-border p-5">
+        <section className="rounded-xl bg-card ring-1 ring-border p-6">
           <h2 className="text-lg font-semibold text-foreground">{t("paidSolo.title")}</h2>
           <p className="mt-2 text-sm text-muted-foreground">
             {t("paidSolo.description", { amount: catalogSeatPrice(currentPlan.amountMonthly) })}
           </p>
           <Link
             href="/dashboard/team"
-            className="mt-4 inline-flex rounded-lg border app-border-subtle px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-surface-hover"
+            className="mt-4 inline-flex rounded-lg border app-border-subtle px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-[color:var(--surface-subtle)]"
           >
             {t("paidSolo.action")}
           </Link>
