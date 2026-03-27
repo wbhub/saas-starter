@@ -298,7 +298,7 @@ describe("POST /api/ai/object streaming and finalization", () => {
 
     // finalize_ai_token_budget_claim should only be called once due to the `finalized` guard
     const finalizeCalls = rpc.mock.calls.filter(
-      ([name]: [string]) => name === "finalize_ai_token_budget_claim",
+      (call: unknown[]) => call[0] === "finalize_ai_token_budget_claim",
     );
     expect(finalizeCalls).toHaveLength(1);
   });
