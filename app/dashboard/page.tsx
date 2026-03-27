@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
 import { NoTeamCard } from "@/components/no-team-card";
 import { TeamContextErrorCard } from "@/components/team-context-error-card";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -202,7 +201,10 @@ export default async function DashboardPage() {
                     {t("DashboardPage.visitBillingUpgrade")}
                   </p>
                 </div>
-                <Link href="/dashboard/billing" className={buttonVariants({ variant: "outline", size: "sm" })}>
+                <Link
+                  href="/dashboard/billing"
+                  className="inline-flex h-7 items-center gap-1 rounded-lg border px-2.5 text-[0.8rem] font-medium transition-colors hover:bg-muted"
+                >
                   Upgrade
                   <ArrowRight className="h-3.5 w-3.5" />
                 </Link>

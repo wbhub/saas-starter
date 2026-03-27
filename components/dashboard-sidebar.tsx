@@ -15,7 +15,7 @@ import {
   LogOut,
   ChevronDown,
 } from "lucide-react";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import type { DashboardTeamOption } from "@/lib/dashboard/server";
@@ -183,7 +183,10 @@ export function DashboardSidebar({
       {/* Bottom actions */}
       <Separator className="my-3" />
       <div className="flex gap-2">
-        <Link href="/" className={buttonVariants({ variant: "outline", size: "sm", className: "flex-1" })}>
+        <Link
+          href="/"
+          className="inline-flex h-7 flex-1 items-center justify-center gap-1 rounded-lg border bg-background px-2.5 text-[0.8rem] font-medium text-foreground transition-colors hover:bg-muted"
+        >
           <Home className="h-3.5 w-3.5" />
           {t("DashboardSidebar.home")}
         </Link>

@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { buttonVariants } from "@/components/ui/button";
 import { LocaleSwitcher } from "./locale-switcher";
 import { ThemeToggle } from "./theme-toggle";
 import { SHOW_LOCALE_SWITCHER } from "@/lib/i18n/config";
@@ -28,15 +27,24 @@ export function SiteHeader({ isLoggedIn }: { isLoggedIn: boolean }) {
           {SHOW_LOCALE_SWITCHER ? <LocaleSwitcher /> : null}
           <ThemeToggle />
           {isLoggedIn ? (
-            <Link href="/dashboard" className={buttonVariants({ size: "sm", className: "ml-1" })}>
+            <Link
+              href="/dashboard"
+              className="ml-1 inline-flex h-7 items-center justify-center rounded-lg bg-primary px-2.5 text-[0.8rem] font-medium text-primary-foreground transition-colors hover:bg-primary/80"
+            >
               {t("SiteHeader.openApp")}
             </Link>
           ) : (
             <>
-              <Link href="/login" className={buttonVariants({ variant: "ghost", size: "sm" })}>
+              <Link
+                href="/login"
+                className="inline-flex h-7 items-center justify-center rounded-lg px-2.5 text-[0.8rem] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
                 {t("SiteHeader.login")}
               </Link>
-              <Link href="/signup" className={buttonVariants({ size: "sm" })}>
+              <Link
+                href="/signup"
+                className="inline-flex h-7 items-center justify-center rounded-lg bg-primary px-2.5 text-[0.8rem] font-medium text-primary-foreground transition-colors hover:bg-primary/80"
+              >
                 {t("SiteHeader.startFree")}
               </Link>
             </>
