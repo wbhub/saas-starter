@@ -143,9 +143,12 @@ describe("POST /api/ai/object finalize retry enqueue", () => {
     );
 
     expect(response.status).toBe(503);
+    // actualTokens is non-zero because resolveActualTokenUsage applies fallback
+    // estimation when the provider reports 0 tokens (prompt "analyze this" →
+    // Math.ceil(12/3) + 500 = 504 estimated prompt tokens).
     expect(enqueueImpl).toHaveBeenCalledWith({
       claimId: "claim_123",
-      actualTokens: 0,
+      actualTokens: 504,
       error: expect.objectContaining({ message: "finalize failed" }),
     });
   });

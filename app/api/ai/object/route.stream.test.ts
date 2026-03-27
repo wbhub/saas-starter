@@ -247,12 +247,15 @@ describe("POST /api/ai/object streaming and finalization", () => {
     // Simulate the AI SDK calling onError during stream failure
     await capturedOnError!({ error: new Error("stream_broken") });
 
+    // actualTokens is non-zero because resolveActualTokenUsage applies fallback
+    // estimation when the provider reports 0 tokens (prompt "analyze this" →
+    // Math.ceil(12/3) + 500 = 504 estimated prompt tokens).
     expect(rpc).toHaveBeenNthCalledWith(
       2,
       "finalize_ai_token_budget_claim",
       expect.objectContaining({
         p_claim_id: "claim_obj",
-        p_actual_tokens: 0,
+        p_actual_tokens: 504,
       }),
     );
   });
