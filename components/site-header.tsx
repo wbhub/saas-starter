@@ -29,7 +29,7 @@ export function SiteHeader({ isLoggedIn }: { isLoggedIn: boolean }) {
           {isLoggedIn ? (
             <Link
               href="/dashboard"
-              className="ml-1 inline-flex h-7 items-center justify-center rounded-lg bg-primary px-2.5 text-[0.8rem] font-medium text-primary-foreground transition-colors hover:bg-primary/80"
+              className="ml-1 inline-flex h-7 items-center justify-center rounded-lg bg-primary px-3 text-[0.8rem] font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
               {t("SiteHeader.openApp")}
             </Link>
@@ -37,13 +37,13 @@ export function SiteHeader({ isLoggedIn }: { isLoggedIn: boolean }) {
             <>
               <Link
                 href="/login"
-                className="inline-flex h-7 items-center justify-center rounded-lg px-2.5 text-[0.8rem] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                className="inline-flex h-7 items-center justify-center rounded-lg px-2.5 text-[0.8rem] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
               >
                 {t("SiteHeader.login")}
               </Link>
               <Link
                 href="/signup"
-                className="inline-flex h-7 items-center justify-center rounded-lg bg-primary px-2.5 text-[0.8rem] font-medium text-primary-foreground transition-colors hover:bg-primary/80"
+                className="inline-flex h-7 items-center justify-center rounded-lg bg-primary px-3 text-[0.8rem] font-medium text-primary-foreground transition-colors hover:bg-primary/90"
               >
                 {t("SiteHeader.startFree")}
               </Link>
