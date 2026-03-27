@@ -185,17 +185,20 @@ export function DashboardSidebar({
       <div className="flex gap-2">
         <Link
           href="/"
-          className="inline-flex h-7 flex-1 items-center justify-center gap-1 rounded-lg border bg-background px-2.5 text-[0.8rem] font-medium text-foreground transition-colors hover:bg-muted"
+          className="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg border app-border-subtle px-2.5 text-sm transition-colors hover:bg-[color:var(--surface-subtle)]"
         >
           <Home className="h-3.5 w-3.5" />
           {t("DashboardSidebar.home")}
         </Link>
         <form action={logout} className="flex-1">
           <input type="hidden" name="csrf_token" value={csrfToken} />
-          <Button type="submit" size="sm" className="w-full">
+          <button
+            type="submit"
+            className="inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-lg bg-indigo-500 px-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-400"
+          >
             <LogOut className="h-3.5 w-3.5" />
             {t("DashboardSidebar.logout")}
-          </Button>
+          </button>
         </form>
       </div>
     </aside>

@@ -203,7 +203,7 @@ export default async function DashboardPage() {
                 </div>
                 <Link
                   href="/dashboard/billing"
-                  className="inline-flex h-7 items-center gap-1 rounded-lg border px-2.5 text-[0.8rem] font-medium transition-colors hover:bg-muted"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-400"
                 >
                   Upgrade
                   <ArrowRight className="h-3.5 w-3.5" />
