@@ -12,7 +12,7 @@ describe("GET /auth/callback", () => {
     vi.clearAllMocks();
   });
 
-  it("redirects to login when code is missing", async () => {
+  it("returns a bridge page for implicit callbacks when code is missing", async () => {
     vi.doMock("@/lib/env", () => ({
       env: {
         NEXT_PUBLIC_APP_URL: "https://app.example.com",
@@ -33,11 +33,12 @@ describe("GET /auth/callback", () => {
 
     const { GET } = await import("./route");
     const response = await GET(makeRequest("http://localhost/auth/callback?next=/dashboard"));
+    const html = await response.text();
 
-    expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toBe(
-      "https://app.example.com/login?error=missing_code",
-    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("text/html");
+    expect(html).toContain("https://app.example.com/auth/confirm?next=%2Fdashboard");
+    expect(html).toContain("https://app.example.com/login?error=missing_code");
   });
 
   it("uses configured app origin for success redirect", async () => {

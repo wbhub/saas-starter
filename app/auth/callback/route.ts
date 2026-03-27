@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { getSafeNextPath } from "@/lib/auth/safe-next";
 import { LAST_AUTH_PROVIDER_COOKIE, parseSupabaseProvider } from "@/lib/auth/social-auth";
 import { DAY_MS, MINUTE_MS } from "@/lib/constants/durations";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
@@ -7,35 +8,6 @@ import { env, getAppUrl } from "@/lib/env";
 import { getClientIp } from "@/lib/http/client-ip";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { rotateCsrfTokenOnResponse } from "@/lib/security/csrf";
-
-function getSafeNextPath(next: string | null) {
-  if (!next) {
-    return "/dashboard";
-  }
-
-  // Prevent header injection and malformed redirect values.
-  if (/[\u0000-\u001F\u007F]/.test(next) || next.includes("\\") || next.startsWith("//")) {
-    return "/dashboard";
-  }
-  try {
-    const decoded = decodeURIComponent(next);
-    if (decoded.includes("\\") || decoded.startsWith("//") || decoded.startsWith("/\\")) {
-      return "/dashboard";
-    }
-  } catch {
-    return "/dashboard";
-  }
-
-  try {
-    const parsed = new URL(next, "http://localhost");
-    if (parsed.origin !== "http://localhost" || !parsed.pathname.startsWith("/")) {
-      return "/dashboard";
-    }
-    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
-  } catch {
-    return "/dashboard";
-  }
-}
 
 const CALLBACK_RATE_LIMIT_COOKIE = "auth_callback_client";
 const CALLBACK_RATE_LIMIT_COOKIE_MAX_AGE_SECONDS = (30 * DAY_MS) / 1000;
@@ -147,6 +119,38 @@ function maybeSetLastAuthProviderCookie(
   return response;
 }
 
+function buildConfirmUrl(request: NextRequest, safeNextPath: string) {
+  const confirmUrl = new URL("/auth/confirm", getAppUrl());
+  request.nextUrl.searchParams.forEach((value, key) => {
+    confirmUrl.searchParams.set(key, key === "next" ? safeNextPath : value);
+  });
+  return confirmUrl.toString();
+}
+
+function buildImplicitGrantBridgeHtml(confirmUrl: string, missingCodeUrl: string) {
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Completing authentication...</title>
+  </head>
+  <body>
+    <script>
+      const target = new URL(${JSON.stringify(confirmUrl)});
+      const hash = window.location.hash || "";
+      if (hash) {
+        target.hash = hash.startsWith("#") ? hash.slice(1) : hash;
+      }
+      window.location.replace(target.toString());
+    </script>
+    <noscript>
+      <meta http-equiv="refresh" content="0;url=${missingCodeUrl}" />
+    </noscript>
+  </body>
+</html>`;
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
@@ -174,7 +178,18 @@ export async function GET(request: NextRequest) {
   }
 
   if (!code) {
-    const response = NextResponse.redirect(toAbsoluteUrl("/login?error=missing_code"));
+    const response = new NextResponse(
+      buildImplicitGrantBridgeHtml(
+        buildConfirmUrl(request, safeNext),
+        toAbsoluteUrl("/login?error=missing_code"),
+      ),
+      {
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+          "Cache-Control": "no-store",
+        },
+      },
+    );
     return maybeSetCallbackCookie(
       response,
       request,

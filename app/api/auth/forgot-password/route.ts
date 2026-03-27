@@ -21,9 +21,12 @@ import { getLocaleTranslator, resolveRequestLocale } from "@/lib/i18n/locale";
 import { type AppLocale } from "@/i18n/routing";
 import { isTriggerConfigured } from "@/lib/trigger/config";
 import { triggerSendEmailTask } from "@/lib/trigger/dispatch";
+
 const forgotPasswordPayloadSchema = z.object({
   email: z.string().trim().toLowerCase(),
 });
+
+const IS_DEVELOPMENT = process.env.NODE_ENV === "development";
 
 function isProviderOutageError(error: unknown) {
   if (!error || typeof error !== "object") {
@@ -45,13 +48,40 @@ function isProviderOutageError(error: unknown) {
   );
 }
 
-async function sendPasswordResetEmailInBackground(email: string, locale: AppLocale) {
+async function sendPasswordResetEmail(email: string, locale: AppLocale) {
   try {
     const t = await getLocaleTranslator("ApiForgotPassword", locale);
     const supabaseAdmin = createAdminClient();
     const redirectTo = `${getAppUrl()}/auth/callback?next=/reset-password`;
 
     if (!isResendCustomEmailConfigured()) {
+      if (IS_DEVELOPMENT) {
+        const { data, error } = await supabaseAdmin.auth.admin.generateLink({
+          type: "recovery",
+          email,
+          options: {
+            redirectTo,
+          },
+        });
+
+        if (error) {
+          logger.error("Forgot-password: failed to generate local development reset link", error);
+          return;
+        }
+
+        if (!data.properties?.action_link) {
+          logger.error(
+            "Forgot-password: local development reset link missing from Supabase response",
+          );
+          return;
+        }
+
+        console.info(
+          `Forgot-password: local reset link for ${email}: ${data.properties.action_link}`,
+        );
+        return;
+      }
+
       logger.warn(
         "Forgot-password: Resend is not configured, falling back to Supabase-managed email",
       );
@@ -139,7 +169,7 @@ async function sendPasswordResetEmailInBackground(email: string, locale: AppLoca
       logger.error("Failed to send password reset email", sendError);
     }
   } catch (error) {
-    logger.error("Forgot-password: background job failed", error);
+    logger.error("Forgot-password: delivery failed", error);
   }
 }
 
@@ -190,7 +220,11 @@ export async function POST(request: Request) {
     return genericSuccess();
   }
 
-  after(() => sendPasswordResetEmailInBackground(email, locale));
+  if (IS_DEVELOPMENT) {
+    await sendPasswordResetEmail(email, locale);
+  } else {
+    after(() => sendPasswordResetEmail(email, locale));
+  }
 
   return genericSuccess();
 }

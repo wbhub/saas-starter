@@ -15,6 +15,7 @@ describe("POST /api/auth/forgot-password", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    vi.unstubAllEnvs();
     vi.doMock("@/lib/security/csrf", () => ({
       verifyCsrfProtection: vi.fn().mockReturnValue(null),
     }));
@@ -247,6 +248,8 @@ describe("POST /api/auth/forgot-password", () => {
   });
 
   it("falls back to Supabase-managed reset email when Resend is not configured", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+
     const checkRateLimit = vi
       .fn()
       .mockResolvedValueOnce({ allowed: true, retryAfterSeconds: 0 })
@@ -300,5 +303,74 @@ describe("POST /api/auth/forgot-password", () => {
       });
       expect(generateLink).not.toHaveBeenCalled();
     });
+  });
+
+  it("logs a local reset link in development when Resend is not configured", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+
+    const checkRateLimit = vi
+      .fn()
+      .mockResolvedValueOnce({ allowed: true, retryAfterSeconds: 0 })
+      .mockResolvedValueOnce({ allowed: true, retryAfterSeconds: 0 });
+    const generateLink = vi.fn().mockResolvedValue({
+      data: { properties: { action_link: "https://example.com/reset" } },
+      error: null,
+    });
+    const resetPasswordForEmail = vi.fn();
+    const consoleInfo = vi.spyOn(console, "info").mockImplementation(() => {});
+
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit,
+    }));
+    vi.doMock("@/lib/http/client-ip", () => ({
+      getClientRateLimitIdentifier: () => ({ keyType: "ip", value: "198.51.100.1" }),
+    }));
+    vi.doMock("@/lib/supabase/admin", () => ({
+      createAdminClient: () => ({
+        auth: {
+          admin: {
+            generateLink,
+          },
+          resetPasswordForEmail,
+        },
+      }),
+    }));
+    vi.doMock("@/lib/resend/server", () => ({
+      isResendCustomEmailConfigured: () => false,
+      getResendClientIfConfigured: vi.fn(),
+      getResendFromEmailIfConfigured: vi.fn(),
+      sendResendEmail: vi.fn(),
+    }));
+    vi.doMock("@/lib/env", () => ({
+      env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
+      getAppUrl: () => "http://localhost:3000",
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: "test@example.com" }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      message: "If an account exists for that email, a reset link has been sent.",
+    });
+    expect(generateLink).toHaveBeenCalledWith({
+      type: "recovery",
+      email: "test@example.com",
+      options: {
+        redirectTo: "http://localhost:3000/auth/callback?next=/reset-password",
+      },
+    });
+    expect(resetPasswordForEmail).not.toHaveBeenCalled();
+    expect(consoleInfo).toHaveBeenCalledWith(
+      "Forgot-password: local reset link for test@example.com: https://example.com/reset",
+    );
+
+    consoleInfo.mockRestore();
   });
 });
