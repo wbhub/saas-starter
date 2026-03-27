@@ -11,16 +11,12 @@ export function createAdminClient() {
     return adminClient;
   }
 
-  adminClient = createClient<LooseDatabase>(
-    env.NEXT_PUBLIC_SUPABASE_URL,
-    env.SUPABASE_SECRET_KEY,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
+  adminClient = createClient<LooseDatabase>(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SECRET_KEY, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
     },
-  );
+  });
 
   return adminClient;
 }
