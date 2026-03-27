@@ -9,8 +9,8 @@ import { isBillingEnabled, isFreePlanEnabled } from "@/lib/billing/provider";
 type StaticServerEnvKey =
   | "NEXT_PUBLIC_APP_URL"
   | "NEXT_PUBLIC_SUPABASE_URL"
-  | "NEXT_PUBLIC_SUPABASE_ANON_KEY"
-  | "SUPABASE_SERVICE_ROLE_KEY"
+  | "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+  | "SUPABASE_SECRET_KEY"
   | "STRIPE_SECRET_KEY"
   | "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY"
   | "STRIPE_WEBHOOK_SECRET"
@@ -59,7 +59,7 @@ const warnedMissingEnv = new Set<string>();
 const SOFT_REQUIRED_KEYS = [
   "NEXT_PUBLIC_APP_URL",
   "NEXT_PUBLIC_SUPABASE_URL",
-  "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+  "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
 ] as const satisfies ReadonlyArray<ServerEnvKey>;
 type SoftRequiredEnvKey = (typeof SOFT_REQUIRED_KEYS)[number];
 type HardRequiredEnvKey = Exclude<ServerEnvKey, SoftRequiredEnvKey>;
@@ -67,11 +67,16 @@ const SOFT_REQUIRED_KEY_SET: ReadonlySet<ServerEnvKey> = new Set(SOFT_REQUIRED_K
 const ENV_FALLBACKS: Partial<Record<ServerEnvKey, string>> = {
   NEXT_PUBLIC_APP_URL: "http://localhost:3000",
   NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321",
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: "sb_publishable_placeholder",
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_placeholder",
 };
 
-function ensureEnv(key: ServerEnvKey) {
+function readEnvValue(key: ServerEnvKey) {
   const value = process.env[key]?.trim();
+  return value || "";
+}
+
+function ensureEnv(key: ServerEnvKey) {
+  const value = readEnvValue(key);
   if (!value) {
     if (SOFT_REQUIRED_KEY_SET.has(key)) {
       if (!warnedMissingEnv.has(key)) {
@@ -116,11 +121,11 @@ const envBase = {
   get NEXT_PUBLIC_SUPABASE_URL() {
     return ensureEnv("NEXT_PUBLIC_SUPABASE_URL");
   },
-  get NEXT_PUBLIC_SUPABASE_ANON_KEY() {
-    return ensureEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+  get NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY() {
+    return ensureEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY");
   },
-  get SUPABASE_SERVICE_ROLE_KEY() {
-    return ensureEnv("SUPABASE_SERVICE_ROLE_KEY");
+  get SUPABASE_SECRET_KEY() {
+    return ensureEnv("SUPABASE_SECRET_KEY");
   },
   get OPENAI_API_KEY() {
     return optionalEnv("OPENAI_API_KEY");
@@ -282,7 +287,7 @@ const CORE_REQUIRED_ENV_GETTERS: Readonly<
     true
   >
 > = {
-  SUPABASE_SERVICE_ROLE_KEY: true,
+  SUPABASE_SECRET_KEY: true,
 };
 const PRODUCTION_REQUIRED_PUBLIC_RUNTIME_ENV_KEYS = SOFT_REQUIRED_KEYS;
 
@@ -308,8 +313,8 @@ const BILLING_REQUIRED_ENV_KEYS = Object.keys(BILLING_REQUIRED_ENV_GETTERS) as A
   | StripePriceIdEnvKey
 >;
 
-function hasValue(key: string) {
-  return (process.env[key]?.trim() || "").length > 0;
+function hasValue(key: ServerEnvKey) {
+  return readEnvValue(key).length > 0;
 }
 
 function ensureAbsoluteUrlAtBoot(key: "NEXT_PUBLIC_APP_URL" | "NEXT_PUBLIC_SUPABASE_URL") {

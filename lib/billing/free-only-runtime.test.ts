@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 function clearEnv() {
   delete process.env.NEXT_PUBLIC_APP_URL;
   delete process.env.NEXT_PUBLIC_SUPABASE_URL;
-  delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  delete process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   delete process.env.BILLING_PROVIDER;
   delete process.env.APP_FREE_PLAN_ENABLED;
   delete process.env.STRIPE_SECRET_KEY;
@@ -12,7 +12,7 @@ function clearEnv() {
   delete process.env.STRIPE_STARTER_PRICE_ID;
   delete process.env.STRIPE_GROWTH_PRICE_ID;
   delete process.env.STRIPE_PRO_PRICE_ID;
-  delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+  delete process.env.SUPABASE_SECRET_KEY;
   delete process.env.RESEND_API_KEY;
   delete process.env.RESEND_FROM_EMAIL;
   delete process.env.RESEND_SUPPORT_EMAIL;
@@ -21,8 +21,8 @@ function clearEnv() {
 function seedCoreRequiredEnv() {
   process.env.NEXT_PUBLIC_APP_URL = "https://app.example.com";
   process.env.NEXT_PUBLIC_SUPABASE_URL = "https://project.supabase.co";
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "sb_publishable_test";
-  process.env.SUPABASE_SERVICE_ROLE_KEY = "service_role";
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_test";
+  process.env.SUPABASE_SECRET_KEY = "sb_secret_test";
   process.env.RESEND_API_KEY = "re_test";
   process.env.RESEND_FROM_EMAIL = "Test <test@example.com>";
   process.env.RESEND_SUPPORT_EMAIL = "support@example.com";
