@@ -10,8 +10,5 @@ export function createClient() {
     throw new Error("Missing NEXT_PUBLIC Supabase environment variables in the browser.");
   }
 
-  return createBrowserClient(
-    supabaseUrl,
-    supabasePublishableKey,
-  );
+  return createBrowserClient(supabaseUrl, supabasePublishableKey);
 }
