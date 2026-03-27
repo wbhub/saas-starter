@@ -33,6 +33,8 @@ export function AuthConfirmClient() {
         hashParams.has("access_token") ||
         hashParams.has("refresh_token") ||
         hashParams.has("error_description");
+      const accessToken = hashParams.get("access_token");
+      const refreshToken = hashParams.get("refresh_token");
 
       if (currentUrl.searchParams.has("code")) {
         window.location.replace(buildCallbackUrl(currentUrl, safeNext));
@@ -45,10 +47,18 @@ export function AuthConfirmClient() {
       }
 
       const redirectType = hashParams.get("type") ?? currentUrl.searchParams.get("type");
+      const sessionResult =
+        accessToken && refreshToken
+          ? await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            })
+          : await supabase.auth.getSession();
+
       const {
         data: { session },
         error,
-      } = await supabase.auth.getSession();
+      } = sessionResult;
 
       if (!active) {
         return;
