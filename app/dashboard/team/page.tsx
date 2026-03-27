@@ -78,11 +78,11 @@ export default async function DashboardTeamPage() {
       teamMemberships={teamMemberships}
       csrfToken={csrfToken}
     >
-      <header className="relative overflow-hidden rounded-2xl border app-border-subtle bg-gradient-to-br from-pink-500/5 via-transparent to-rose-500/5 p-6 shadow-sm sm:p-8">
-        <p className="text-sm font-medium text-accent">{t("header.eyebrow")}</p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground">{t("header.title")}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{t("header.description")}</p>
-      </header>
+      <div>
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{t("header.eyebrow")}</p>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight">{t("header.title")}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{t("header.description")}</p>
+      </div>
 
       <section>
         <TeamInviteCard

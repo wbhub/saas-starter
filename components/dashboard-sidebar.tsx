@@ -15,6 +15,9 @@ import {
   LogOut,
   ChevronDown,
 } from "lucide-react";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import type { DashboardTeamOption } from "@/lib/dashboard/server";
 import { logout, switchActiveTeam } from "@/app/dashboard/actions";
 
@@ -98,83 +101,63 @@ export function DashboardSidebar({
     return pathname === href || pathname.startsWith(`${href}/`);
   }
 
-  const initials = displayName
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-
   return (
-    <aside className="flex flex-col rounded-2xl border app-border-subtle app-surface shadow-sm lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)] lg:min-h-[560px]">
-      {/* User profile */}
-      <div className="border-b app-border-subtle p-5">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-emerald-400 text-sm font-semibold text-white shadow-sm">
-            {initials}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-foreground">
-              {displayName}
-            </p>
-            <p className="truncate text-xs text-muted-foreground">{userEmail}</p>
-          </div>
-        </div>
+    <aside className="flex flex-col lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)]">
+      {/* User info */}
+      <div className="mb-1">
+        <p className="truncate text-sm font-medium">{displayName}</p>
+        <p className="truncate text-xs text-muted-foreground">{userEmail}</p>
         {teamUiMode !== "free" && (
-          <div className="mt-3 flex items-center gap-2 rounded-lg app-surface-subtle px-3 py-1.5">
-            <span className="truncate text-xs font-medium text-muted-foreground">
+          <div className="mt-2 flex items-center gap-2">
+            <span className="truncate text-xs text-muted-foreground">
               {teamName ?? t("Common.myTeam")}
             </span>
-            <span className="ml-auto rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium capitalize text-accent">
+            <Badge variant="secondary" className="capitalize">
               {role}
-            </span>
+            </Badge>
           </div>
         )}
       </div>
 
       {/* Team switcher */}
       {teamUiMode !== "free" && teamMemberships.length > 1 ? (
-        <form
-          action={switchActiveTeam}
-          className="border-b app-border-subtle px-5 py-4"
-        >
-          <input type="hidden" name="csrf_token" value={csrfToken} />
-          <input type="hidden" name="redirectTo" value={pathname} />
-          <label
-            htmlFor="active-team-select"
-            className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
-          >
-            {t("DashboardSidebar.team")}
-          </label>
-          <div className="relative">
-            <select
-              id="active-team-select"
-              name="teamId"
-              defaultValue={activeTeamId}
-              className="w-full appearance-none rounded-lg border app-border-subtle app-surface py-2 pl-3 pr-8 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent/40"
+        <>
+          <Separator className="my-3" />
+          <form action={switchActiveTeam} className="space-y-2">
+            <input type="hidden" name="csrf_token" value={csrfToken} />
+            <input type="hidden" name="redirectTo" value={pathname} />
+            <label
+              htmlFor="active-team-select"
+              className="block text-[11px] font-medium uppercase tracking-wider text-muted-foreground"
             >
-              {teamMemberships.map((membership) => (
-                <option key={membership.teamId} value={membership.teamId}>
-                  {membership.teamName ?? t("Common.myTeam")}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          </div>
-          <button
-            type="submit"
-            className="mt-2 w-full rounded-lg border app-border-subtle px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground"
-          >
-            {t("DashboardSidebar.switch")}
-          </button>
-        </form>
+              {t("DashboardSidebar.team")}
+            </label>
+            <div className="relative">
+              <select
+                id="active-team-select"
+                name="teamId"
+                defaultValue={activeTeamId}
+                className="w-full appearance-none rounded-lg border bg-background py-1.5 pl-2.5 pr-7 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                {teamMemberships.map((membership) => (
+                  <option key={membership.teamId} value={membership.teamId}>
+                    {membership.teamName ?? t("Common.myTeam")}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            </div>
+            <Button type="submit" variant="outline" size="sm" className="w-full">
+              {t("DashboardSidebar.switch")}
+            </Button>
+          </form>
+        </>
       ) : null}
 
+      <Separator className="my-3" />
+
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-3 py-4">
-        <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Menu
-        </p>
+      <nav className="-mx-2 flex-1 space-y-0.5">
         {navItems.map((item) => {
           const isActive = isNavItemActive(item.href);
           const Icon = item.icon;
@@ -184,15 +167,13 @@ export function DashboardSidebar({
               key={item.href}
               href={item.href}
               aria-current={isActive ? "page" : undefined}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+              className={`flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] transition-colors ${
                 isActive
-                  ? "bg-gradient-to-r from-accent/10 to-accent/5 font-semibold text-accent"
-                  : "text-muted-foreground hover:bg-surface-hover hover:text-foreground"
+                  ? "bg-muted font-medium text-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
               }`}
             >
-              <Icon
-                className={`h-4 w-4 shrink-0 ${isActive ? "text-accent" : ""}`}
-              />
+              <Icon className="h-4 w-4 shrink-0" />
               {item.label}
             </Link>
           );
@@ -200,26 +181,19 @@ export function DashboardSidebar({
       </nav>
 
       {/* Bottom actions */}
-      <div className="border-t app-border-subtle p-4">
-        <div className="flex gap-2">
-          <Link
-            href="/"
-            className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border app-border-subtle px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground"
-          >
-            <Home className="h-3.5 w-3.5" />
-            {t("DashboardSidebar.home")}
-          </Link>
-          <form action={logout} className="flex-1">
-            <input type="hidden" name="csrf_token" value={csrfToken} />
-            <button
-              type="submit"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-btn-primary px-3 py-2 text-sm font-medium text-btn-primary-text transition-colors hover:bg-btn-primary-hover"
-            >
-              <LogOut className="h-3.5 w-3.5" />
-              {t("DashboardSidebar.logout")}
-            </button>
-          </form>
-        </div>
+      <Separator className="my-3" />
+      <div className="flex gap-2">
+        <Link href="/" className={buttonVariants({ variant: "outline", size: "sm", className: "flex-1" })}>
+          <Home className="h-3.5 w-3.5" />
+          {t("DashboardSidebar.home")}
+        </Link>
+        <form action={logout} className="flex-1">
+          <input type="hidden" name="csrf_token" value={csrfToken} />
+          <Button type="submit" size="sm" className="w-full">
+            <LogOut className="h-3.5 w-3.5" />
+            {t("DashboardSidebar.logout")}
+          </Button>
+        </form>
       </div>
     </aside>
   );

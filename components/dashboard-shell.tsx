@@ -31,11 +31,11 @@ export function DashboardShell({
   children,
 }: DashboardShellProps) {
   return (
-    <div className="flex min-h-screen flex-col bg-[color:var(--background)] text-[color:var(--foreground)]">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
       <SiteHeader isLoggedIn={true} />
       <main className="flex-1">
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:py-10">
-          <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-8">
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:py-8">
+          <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-10">
             <DashboardSidebar
               displayName={displayName}
               userEmail={userEmail}

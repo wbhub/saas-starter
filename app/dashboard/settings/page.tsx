@@ -71,11 +71,11 @@ export default async function DashboardSettingsPage() {
       teamMemberships={teamMemberships}
       csrfToken={csrfToken}
     >
-      <header className="relative overflow-hidden rounded-2xl border app-border-subtle bg-gradient-to-br from-orange-500/5 via-transparent to-amber-500/5 p-6 shadow-sm sm:p-8">
-        <p className="text-sm font-medium text-accent">{t("header.eyebrow")}</p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground">{t("header.title")}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{t("header.description")}</p>
-      </header>
+      <div>
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{t("header.eyebrow")}</p>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight">{t("header.title")}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{t("header.description")}</p>
+      </div>
 
       <section>
         <DashboardSettingsCard
@@ -112,7 +112,7 @@ export default async function DashboardSettingsPage() {
       ) : null}
 
       {teamUiMode === "paid_solo" ? (
-        <section className="rounded-2xl border app-border-subtle app-surface p-6 shadow-sm">
+        <section className="rounded-xl bg-card ring-1 ring-border p-5">
           <h2 className="text-lg font-semibold text-foreground">{t("inviteTeammates.title")}</h2>
           <p className="mt-2 text-sm text-muted-foreground">{t("inviteTeammates.description")}</p>
           <Link
