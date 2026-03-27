@@ -321,14 +321,14 @@ export function AuthForm({
             {t("needAccount")}{" "}
             <Link
               href="/signup"
-              className="font-medium text-[color:var(--accent)] hover:opacity-90"
+              className="font-medium text-[color:var(--btn-accent)] hover:opacity-90"
             >
               {t("signUp")}
             </Link>
           </p>
           <Link
             href="/forgot-password"
-            className="font-medium text-[color:var(--accent)] hover:opacity-90"
+            className="font-medium text-[color:var(--btn-accent)] hover:opacity-90"
           >
             {t("forgotPassword")}
           </Link>
@@ -336,7 +336,10 @@ export function AuthForm({
       ) : (
         <p className="mt-5 text-sm text-[color:var(--muted-foreground)]">
           {t("alreadyHaveAccount")}{" "}
-          <Link href="/login" className="font-medium text-[color:var(--accent)] hover:opacity-90">
+          <Link
+            href="/login"
+            className="font-medium text-[color:var(--btn-accent)] hover:opacity-90"
+          >
             {t("logIn")}
           </Link>
         </p>
