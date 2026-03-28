@@ -1,11 +1,7 @@
 import { isIP } from "net";
 import { parse as parseCookieHeader } from "cookie";
 import { env } from "@/lib/env";
-import {
-  CSRF_CLIENT_COOKIE_NAME,
-  CSRF_COOKIE_NAME,
-  ensureTokenShape,
-} from "@/lib/security/csrf";
+import { CSRF_CLIENT_COOKIE_NAME, CSRF_COOKIE_NAME, ensureTokenShape } from "@/lib/security/csrf";
 
 function extractFirstValidIp(value: string | null) {
   if (!value) return null;

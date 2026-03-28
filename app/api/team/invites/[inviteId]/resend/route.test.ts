@@ -223,7 +223,9 @@ describe("POST /api/team/invites/[inviteId]/resend", () => {
     const update = vi.fn(() => {
       const query = {
         eq: vi.fn().mockReturnThis(),
-        is: vi.fn().mockImplementation(() => Promise.resolve(updateResponses.shift() ?? { error: null })),
+        is: vi
+          .fn()
+          .mockImplementation(() => Promise.resolve(updateResponses.shift() ?? { error: null })),
       };
       return query;
     });
