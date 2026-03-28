@@ -45,6 +45,14 @@ export default async function SignupPage({ searchParams }: SignupPageProps) {
   }
 
   const resolvedSearchParams = (await searchParams) ?? {};
+  const plan = Array.isArray(resolvedSearchParams.plan)
+    ? resolvedSearchParams.plan[0]
+    : resolvedSearchParams.plan;
+
+  if (!plan) {
+    redirect("/onboarding");
+  }
+
   const redirectTo = buildOnboardingRedirect(resolvedSearchParams);
 
   return (

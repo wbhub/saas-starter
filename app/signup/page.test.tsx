@@ -64,7 +64,9 @@ describe("Signup page social auth config", () => {
     }));
 
     const SignupPage = (await import("./page")).default;
-    const html = renderToStaticMarkup(await SignupPage({ searchParams: Promise.resolve({}) }));
+    const html = renderToStaticMarkup(
+      await SignupPage({ searchParams: Promise.resolve({ plan: "starter" }) }),
+    );
 
     expect(html).toContain('data-social="microsoft"');
     expect(html).toContain('data-last-used="microsoft"');
