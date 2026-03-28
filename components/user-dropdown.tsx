@@ -99,12 +99,14 @@ export function UserDropdown({
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex items-center gap-2 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="inline-flex items-center gap-2.5 rounded-full border app-border-subtle py-1.5 pl-1.5 pr-3 shadow-sm transition-colors hover:bg-[color:var(--surface-subtle)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <Avatar size="default">
           {avatarUrl ? <AvatarImage src={avatarUrl} alt={displayName} /> : null}
           <AvatarFallback>{initials}</AvatarFallback>
         </Avatar>
+        <span className="hidden text-sm font-medium sm:inline">{displayName}</span>
+        <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
       </button>
 
       {open ? (

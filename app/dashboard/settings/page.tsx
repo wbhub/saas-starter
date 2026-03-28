@@ -117,7 +117,7 @@ export default async function DashboardSettingsPage() {
       {teamUiMode === "paid_solo" ? (
         <section className="rounded-xl bg-card ring-1 ring-border p-6">
           <h2 className="text-lg font-semibold text-foreground">{t("inviteTeammates.title")}</h2>
-          <p className="mt-2 text-sm text-muted-foreground">{t("inviteTeammates.description")}</p>
+          <p className="mt-2 text-muted-foreground">{t("inviteTeammates.description")}</p>
           <Link
             href="/dashboard/team"
             className="mt-4 inline-flex rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400"
