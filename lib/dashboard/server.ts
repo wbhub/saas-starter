@@ -2,17 +2,14 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { resolveAiAccess } from "@/lib/ai/access";
-import {
-  getAiAccessMode,
-  getAiAllowedSubscriptionStatuses,
-  type AiAccessMode,
-} from "@/lib/ai/config";
-import { hasFeatureAccess } from "@/lib/billing/entitlements";
-import { isBillingEnabled } from "@/lib/billing/capabilities";
-import { resolveEffectivePlanKey, type EffectivePlanKey } from "@/lib/billing/effective-plan";
-import { isAiProviderConfigured } from "@/lib/ai/provider";
-import { LIVE_SUBSCRIPTION_STATUSES, type SubscriptionStatus } from "@/lib/stripe/plans";
+import { measureDashboardTask } from "@/lib/dashboard/perf";
+import { getCachedDashboardTeamSnapshot } from "@/lib/dashboard/team-snapshot-cache";
+import { getDashboardAiUiGate } from "@/lib/dashboard/team-snapshot";
+import type {
+  DashboardAiUiGate,
+  DashboardBillingContext,
+  DashboardTeamUiMode,
+} from "@/lib/dashboard/team-snapshot";
 import type { TeamContext } from "@/lib/team-context";
 import { getCachedTeamContextForUser } from "@/lib/team-context-cache";
 import { getTeamMaxMembers } from "@/lib/team/limits";
@@ -76,44 +73,20 @@ export type DashboardTeamOption = {
   role: "owner" | "admin" | "member";
 };
 
-export type SubscriptionRow = {
-  status: SubscriptionStatus;
-  stripe_price_id: string;
-  seat_quantity: number;
-  current_period_end: string | null;
-  cancel_at_period_end: boolean;
-};
-
-export type DashboardBillingContext = {
-  billingEnabled: boolean;
-  subscription: SubscriptionRow | null;
-  effectivePlanKey: EffectivePlanKey | null;
-  memberCount: number;
-  isPaidPlan: boolean;
-  canInviteMembers: boolean;
-};
-
-export type DashboardAiUiGateReason =
-  | "enabled"
-  | "ai_not_configured"
-  | "plan_not_allowed"
-  | "access_mode_invalid"
-  | "team_context_missing";
-
-export type DashboardAiUiGate = {
-  isVisibleInUi: boolean;
-  reason: DashboardAiUiGateReason;
-  effectivePlanKey: EffectivePlanKey | null;
-  accessMode: AiAccessMode;
-};
-
-export type DashboardTeamUiMode = "free" | "paid_solo" | "paid_team";
-
 export type DashboardShellData = Awaited<ReturnType<typeof getDashboardBaseData>> & {
   billingContext: DashboardBillingContext | null;
   aiUiGate: DashboardAiUiGate;
   teamUiMode: DashboardTeamUiMode | null;
 };
+
+export {
+  getDashboardAiUiGate,
+  getDashboardBillingContext,
+  getDashboardTeamUiMode,
+  getLiveSubscription,
+  getTeamMemberCount,
+} from "@/lib/dashboard/team-snapshot";
+export type { DashboardAiUiGateReason, SubscriptionRow } from "@/lib/dashboard/team-snapshot";
 
 const DEFAULT_NOTIFICATION_PREFERENCES: DashboardNotificationPreferences = {
   marketing_emails: false,
@@ -147,82 +120,56 @@ const getDashboardRequestContext = cache(async function getDashboardRequestConte
 });
 
 export const getDashboardBaseData = cache(async function getDashboardBaseData() {
-  const { supabase, user, csrfToken } = await getDashboardRequestContext();
+  return measureDashboardTask("dashboard.baseData", {}, async () => {
+    const { supabase, user, csrfToken } = await getDashboardRequestContext();
 
-  const [profileQuery, teamContextQuery, teamMembershipsQuery] = await Promise.allSettled([
-    supabase
-      .from("profiles")
-      .select("id,full_name,avatar_url,created_at")
-      .eq("id", user.id)
-      .maybeSingle<ProfileRow>(),
-    getCachedTeamContextForUser(supabase, user.id),
-    supabase
-      .from("team_memberships")
-      .select("team_id,role,teams(name)")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: true })
-      .returns<DashboardTeamMembershipRow[]>(),
-  ]);
+    const [profileQuery, teamContextQuery] = await Promise.allSettled([
+      supabase
+        .from("profiles")
+        .select("id,full_name,avatar_url,created_at")
+        .eq("id", user.id)
+        .maybeSingle<ProfileRow>(),
+      getCachedTeamContextForUser(supabase, user.id),
+    ]);
 
-  let profile: ProfileRow | null = null;
-  if (profileQuery.status === "fulfilled") {
-    if (profileQuery.value.error) {
-      logger.warn("Failed to load dashboard profile; continuing with fallback profile data.", {
-        error: profileQuery.value.error,
-      });
+    let profile: ProfileRow | null = null;
+    if (profileQuery.status === "fulfilled") {
+      if (profileQuery.value.error) {
+        logger.warn("Failed to load dashboard profile; continuing with fallback profile data.", {
+          error: profileQuery.value.error,
+        });
+      } else {
+        profile = profileQuery.value.data;
+      }
     } else {
-      profile = profileQuery.value.data;
+      logger.warn("Failed to load dashboard profile; continuing with fallback profile data.", {
+        error: profileQuery.reason,
+      });
     }
-  } else {
-    logger.warn("Failed to load dashboard profile; continuing with fallback profile data.", {
-      error: profileQuery.reason,
-    });
-  }
 
-  let teamContext: TeamContext | null = null;
-  let teamContextLoadFailed = false;
-  if (teamContextQuery.status === "fulfilled") {
-    teamContext = teamContextQuery.value;
-  } else {
-    logger.warn("Failed to load team context; dashboard will render degraded state.", {
-      error: teamContextQuery.reason,
-    });
-    teamContextLoadFailed = true;
-  }
+    let teamContext: TeamContext | null = null;
+    let teamContextLoadFailed = false;
+    if (teamContextQuery.status === "fulfilled") {
+      teamContext = teamContextQuery.value;
+    } else {
+      logger.warn("Failed to load team context; dashboard will render degraded state.", {
+        error: teamContextQuery.reason,
+      });
+      teamContextLoadFailed = true;
+    }
 
-  const teamMemberships =
-    teamMembershipsQuery.status === "fulfilled" && !teamMembershipsQuery.value.error
-      ? (teamMembershipsQuery.value.data ?? []).map((row) => ({
-          teamId: row.team_id,
-          teamName: row.teams?.name ?? null,
-          role: row.role,
-        }))
-      : [];
-  if (teamMembershipsQuery.status === "fulfilled" && teamMembershipsQuery.value.error) {
-    logger.warn("Failed to load dashboard team memberships; using empty list.", {
-      userId: user.id,
-      error: teamMembershipsQuery.value.error,
-    });
-  }
-  if (teamMembershipsQuery.status === "rejected") {
-    logger.warn("Failed to load dashboard team memberships; using empty list.", {
-      userId: user.id,
-      error: teamMembershipsQuery.reason,
-    });
-  }
+    const displayName = profile?.full_name?.trim() || user.email || "there";
 
-  const displayName = profile?.full_name?.trim() || user.email || "there";
-
-  return {
-    supabase,
-    user,
-    profile,
-    teamContext,
-    teamContextLoadFailed,
-    teamMemberships,
-    displayName,
-    csrfToken,
-  };
+    return {
+      supabase,
+      user,
+      profile,
+      teamContext,
+      teamContextLoadFailed,
+      displayName,
+      csrfToken,
+    };
+  });
 });
 
 export async function getDashboardNotificationPreferences(
@@ -254,311 +201,138 @@ export async function getDashboardNotificationPreferences(
   }
 }
 
-export async function getLiveSubscription(
+export async function getDashboardTeamOptions(
   supabase: SupabaseClient,
-  teamId: string,
-): Promise<SubscriptionRow | null> {
+  userId: string,
+): Promise<DashboardTeamOption[]> {
   try {
-    const subscriptionFetchResult = await supabase
-      .from("subscriptions")
-      .select("status,stripe_price_id,seat_quantity,current_period_end,cancel_at_period_end")
-      .eq("team_id", teamId)
-      .in("status", LIVE_SUBSCRIPTION_STATUSES)
-      .order("current_period_end", { ascending: false })
-      .limit(1)
-      .maybeSingle<SubscriptionRow>();
-    if (subscriptionFetchResult.error) {
-      logger.warn(
-        "Failed to load dashboard subscription; continuing without active subscription.",
-        {
-          error: subscriptionFetchResult.error,
-        },
-      );
-      return null;
-    }
-    return subscriptionFetchResult.data;
-  } catch (error) {
-    logger.warn("Failed to load dashboard subscription; continuing without active subscription.", {
-      error,
-    });
-    return null;
-  }
-}
-
-export async function getTeamMemberCount(supabase: SupabaseClient, teamId: string) {
-  try {
-    const memberCountResult = await supabase
+    const teamMembershipsResult = await supabase
       .from("team_memberships")
-      .select("id", { count: "exact", head: true })
-      .eq("team_id", teamId);
-    if (memberCountResult.error) {
-      logger.warn("Failed to load team member count; defaulting to one member.", {
-        teamId,
-        error: memberCountResult.error,
+      .select("team_id,role,teams(name)")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: true })
+      .returns<DashboardTeamMembershipRow[]>();
+
+    if (teamMembershipsResult.error) {
+      logger.warn("Failed to load dashboard team memberships; using empty list.", {
+        userId,
+        error: teamMembershipsResult.error,
       });
-      return 1;
+      return [];
     }
-    return Math.max(1, memberCountResult.count ?? 1);
+
+    return (teamMembershipsResult.data ?? []).map((row) => ({
+      teamId: row.team_id,
+      teamName: row.teams?.name ?? null,
+      role: row.role,
+    }));
   } catch (error) {
-    logger.warn("Failed to load team member count; defaulting to one member.", {
-      teamId,
+    logger.warn("Failed to load dashboard team memberships; using empty list.", {
+      userId,
       error,
     });
-    return 1;
-  }
-}
-
-export async function getDashboardBillingContext(
-  supabase: SupabaseClient,
-  teamId: string,
-): Promise<DashboardBillingContext> {
-  const billingEnabled = isBillingEnabled();
-  const [subscription, memberCount] = await Promise.all([
-    getLiveSubscription(supabase, teamId),
-    getTeamMemberCount(supabase, teamId),
-  ]);
-
-  const effectivePlanKey = resolveEffectivePlanKey(subscription);
-  const canInviteMembers = hasFeatureAccess(effectivePlanKey, "canInviteMembers");
-  const isPaidPlan = Boolean(effectivePlanKey && effectivePlanKey !== "free");
-
-  return {
-    billingEnabled,
-    subscription,
-    effectivePlanKey,
-    memberCount,
-    isPaidPlan,
-    canInviteMembers,
-  };
-}
-
-export function getDashboardTeamUiMode(
-  billingContext: Pick<DashboardBillingContext, "isPaidPlan" | "memberCount">,
-): DashboardTeamUiMode {
-  if (!billingContext.isPaidPlan) {
-    return "free";
-  }
-
-  return billingContext.memberCount > 1 ? "paid_team" : "paid_solo";
-}
-
-export async function getDashboardAiUiGate(
-  supabase: SupabaseClient,
-  teamId: string | null,
-  options?: {
-    billingContext?: Pick<DashboardBillingContext, "effectivePlanKey" | "subscription">;
-  },
-): Promise<DashboardAiUiGate> {
-  const accessMode = getAiAccessMode();
-  if (!teamId) {
-    return {
-      isVisibleInUi: false,
-      reason: "team_context_missing",
-      effectivePlanKey: null,
-      accessMode,
-    };
-  }
-
-  if (!isAiProviderConfigured) {
-    return {
-      isVisibleInUi: false,
-      reason: "ai_not_configured",
-      effectivePlanKey: null,
-      accessMode,
-    };
-  }
-
-  try {
-    const billingContext = options?.billingContext;
-    let effectivePlanKey: EffectivePlanKey | null =
-      billingContext?.effectivePlanKey ?? resolveEffectivePlanKey(null);
-    if (accessMode === "paid") {
-      const allowedStatuses = getAiAllowedSubscriptionStatuses();
-      if (!allowedStatuses.length) {
-        return {
-          isVisibleInUi: false,
-          reason: "access_mode_invalid",
-          effectivePlanKey: null,
-          accessMode,
-        };
-      }
-
-      const subscriptionStatus = billingContext?.subscription?.status ?? null;
-      if (subscriptionStatus && allowedStatuses.includes(subscriptionStatus)) {
-        effectivePlanKey = billingContext?.effectivePlanKey ?? effectivePlanKey;
-      } else if (billingContext) {
-        effectivePlanKey = resolveEffectivePlanKey(null);
-      }
-    }
-
-    if (accessMode !== "all" && !billingContext) {
-      let subscriptionQuery = supabase
-        .from("subscriptions")
-        .select("stripe_price_id,status")
-        .eq("team_id", teamId)
-        .in("status", LIVE_SUBSCRIPTION_STATUSES);
-
-      if (accessMode === "paid") {
-        subscriptionQuery = subscriptionQuery.in("status", getAiAllowedSubscriptionStatuses());
-      }
-
-      const subscriptionResult = await subscriptionQuery
-        .order("current_period_end", { ascending: false })
-        .limit(1)
-        .maybeSingle<{ stripe_price_id: string | null; status: SubscriptionStatus | null }>();
-
-      if (subscriptionResult.error) {
-        logger.warn(
-          "Failed to resolve AI UI gate subscription context; defaulting to hidden AI UI.",
-          {
-            teamId,
-            accessMode,
-            error: subscriptionResult.error,
-          },
-        );
-        return {
-          isVisibleInUi: false,
-          reason: "access_mode_invalid",
-          effectivePlanKey: null,
-          accessMode,
-        };
-      }
-
-      effectivePlanKey = resolveEffectivePlanKey(subscriptionResult.data);
-    }
-
-    const aiAccess = resolveAiAccess({ effectivePlanKey });
-    if (!aiAccess.allowed || !aiAccess.model) {
-      return {
-        isVisibleInUi: false,
-        reason:
-          aiAccess.denialReason === "default_model_missing" ||
-          aiAccess.denialReason === "plan_model_missing"
-            ? "access_mode_invalid"
-            : "plan_not_allowed",
-        effectivePlanKey,
-        accessMode,
-      };
-    }
-
-    return {
-      isVisibleInUi: true,
-      reason: "enabled",
-      effectivePlanKey,
-      accessMode,
-    };
-  } catch (error) {
-    logger.warn("Failed to resolve AI UI gate; defaulting to hidden AI UI.", {
-      teamId,
-      accessMode,
-      error,
-    });
-    return {
-      isVisibleInUi: false,
-      reason: "access_mode_invalid",
-      effectivePlanKey: null,
-      accessMode,
-    };
+    return [];
   }
 }
 
 export const getDashboardShellData = cache(async function getDashboardShellData() {
-  const baseData = await getDashboardBaseData();
+  return measureDashboardTask("dashboard.shellData", {}, async () => {
+    const baseData = await getDashboardBaseData();
 
-  if (baseData.teamContextLoadFailed) {
+    if (baseData.teamContextLoadFailed) {
+      return {
+        ...baseData,
+        billingContext: null,
+        aiUiGate: await getDashboardAiUiGate(baseData.supabase, null),
+        teamUiMode: null,
+      } satisfies DashboardShellData;
+    }
+
+    if (!baseData.teamContext) {
+      return {
+        ...baseData,
+        billingContext: null,
+        aiUiGate: await getDashboardAiUiGate(baseData.supabase, null),
+        teamUiMode: null,
+      } satisfies DashboardShellData;
+    }
+
+    const snapshot = await getCachedDashboardTeamSnapshot(
+      baseData.supabase,
+      baseData.teamContext.teamId,
+    );
+
     return {
       ...baseData,
-      billingContext: null,
-      aiUiGate: await getDashboardAiUiGate(baseData.supabase, null),
-      teamUiMode: null,
+      billingContext: snapshot.billingContext,
+      aiUiGate: snapshot.aiUiGate,
+      teamUiMode: snapshot.teamUiMode,
     } satisfies DashboardShellData;
-  }
-
-  if (!baseData.teamContext) {
-    return {
-      ...baseData,
-      billingContext: null,
-      aiUiGate: await getDashboardAiUiGate(baseData.supabase, null),
-      teamUiMode: null,
-    } satisfies DashboardShellData;
-  }
-
-  const billingContext = await getDashboardBillingContext(
-    baseData.supabase,
-    baseData.teamContext.teamId,
-  );
-  const aiUiGate = await getDashboardAiUiGate(baseData.supabase, baseData.teamContext.teamId, {
-    billingContext,
   });
-
-  return {
-    ...baseData,
-    billingContext,
-    aiUiGate,
-    teamUiMode: getDashboardTeamUiMode(billingContext),
-  } satisfies DashboardShellData;
 });
 
 export async function getTeamMembersAndPendingInvites(supabase: SupabaseClient, teamId: string) {
-  const queryLimit = getTeamMaxMembers();
-  const [membershipResult, pendingInvitesResult] = await Promise.allSettled([
-    supabase
-      .from("team_memberships")
-      .select("user_id,role,created_at,profiles(id,full_name)")
-      .eq("team_id", teamId)
-      .order("created_at", { ascending: true })
-      .limit(queryLimit)
-      .returns<TeamMembershipRow[]>(),
-    supabase
-      .from("team_invites")
-      .select("id,email,role,expires_at")
-      .eq("team_id", teamId)
-      .is("accepted_at", null)
-      .gt("expires_at", new Date().toISOString())
-      .order("created_at", { ascending: false })
-      .limit(queryLimit)
-      .returns<PendingInviteRow[]>(),
-  ]);
+  return measureDashboardTask("dashboard.teamMembersAndPendingInvites", { teamId }, async () => {
+    const queryLimit = getTeamMaxMembers();
+    const [membershipResult, pendingInvitesResult] = await Promise.allSettled([
+      supabase
+        .from("team_memberships")
+        .select("user_id,role,created_at,profiles(id,full_name)")
+        .eq("team_id", teamId)
+        .order("created_at", { ascending: true })
+        .limit(queryLimit)
+        .returns<TeamMembershipRow[]>(),
+      supabase
+        .from("team_invites")
+        .select("id,email,role,expires_at")
+        .eq("team_id", teamId)
+        .is("accepted_at", null)
+        .gt("expires_at", new Date().toISOString())
+        .order("created_at", { ascending: false })
+        .limit(queryLimit)
+        .returns<PendingInviteRow[]>(),
+    ]);
 
-  const memberships =
-    membershipResult.status === "fulfilled" && !membershipResult.value.error
-      ? (membershipResult.value.data ?? [])
-      : [];
-  if (membershipResult.status === "fulfilled" && membershipResult.value.error) {
-    logger.warn("Failed to load team members; using empty member list.", {
-      error: membershipResult.value.error,
-    });
-  }
-  if (membershipResult.status === "rejected") {
-    logger.warn("Failed to load team members; using empty member list.", {
-      error: membershipResult.reason,
-    });
-  }
+    const memberships =
+      membershipResult.status === "fulfilled" && !membershipResult.value.error
+        ? (membershipResult.value.data ?? [])
+        : [];
+    if (membershipResult.status === "fulfilled" && membershipResult.value.error) {
+      logger.warn("Failed to load team members; using empty member list.", {
+        error: membershipResult.value.error,
+      });
+    }
+    if (membershipResult.status === "rejected") {
+      logger.warn("Failed to load team members; using empty member list.", {
+        error: membershipResult.reason,
+      });
+    }
 
-  const pendingInvitesData =
-    pendingInvitesResult.status === "fulfilled" && !pendingInvitesResult.value.error
-      ? (pendingInvitesResult.value.data ?? [])
-      : [];
-  if (pendingInvitesResult.status === "fulfilled" && pendingInvitesResult.value.error) {
-    logger.warn("Failed to load pending team invites; using empty invite list.", {
-      error: pendingInvitesResult.value.error,
-    });
-  }
-  if (pendingInvitesResult.status === "rejected") {
-    logger.warn("Failed to load pending team invites; using empty invite list.", {
-      error: pendingInvitesResult.reason,
-    });
-  }
+    const pendingInvitesData =
+      pendingInvitesResult.status === "fulfilled" && !pendingInvitesResult.value.error
+        ? (pendingInvitesResult.value.data ?? [])
+        : [];
+    if (pendingInvitesResult.status === "fulfilled" && pendingInvitesResult.value.error) {
+      logger.warn("Failed to load pending team invites; using empty invite list.", {
+        error: pendingInvitesResult.value.error,
+      });
+    }
+    if (pendingInvitesResult.status === "rejected") {
+      logger.warn("Failed to load pending team invites; using empty invite list.", {
+        error: pendingInvitesResult.reason,
+      });
+    }
 
-  const teamMembers = mapMembershipsToTeamMembers(memberships);
-  const pendingInvites = pendingInvitesData.map((row) => ({
-    id: row.id,
-    email: row.email,
-    role: row.role,
-    expiresAt: row.expires_at,
-  }));
+    const teamMembers = mapMembershipsToTeamMembers(memberships);
+    const pendingInvites = pendingInvitesData.map((row) => ({
+      id: row.id,
+      email: row.email,
+      role: row.role,
+      expiresAt: row.expires_at,
+    }));
 
-  return { teamMembers, pendingInvites };
+    return { teamMembers, pendingInvites };
+  });
 }
 
 export async function getTeamMembers(
@@ -603,25 +377,27 @@ export async function getUsageMonthlyTotals(
   supabase: SupabaseClient,
   teamId: string,
 ): Promise<UsageMonthlyTotalsRow[]> {
-  try {
-    const usageResult = await supabase
-      .from("ai_usage_monthly_totals")
-      .select("month_start,used_tokens,reserved_tokens")
-      .eq("team_id", teamId)
-      .order("month_start", { ascending: false })
-      .limit(6)
-      .returns<UsageMonthlyTotalsRow[]>();
+  return measureDashboardTask("dashboard.usageMonthlyTotals", { teamId }, async () => {
+    try {
+      const usageResult = await supabase
+        .from("ai_usage_monthly_totals")
+        .select("month_start,used_tokens,reserved_tokens")
+        .eq("team_id", teamId)
+        .order("month_start", { ascending: false })
+        .limit(6)
+        .returns<UsageMonthlyTotalsRow[]>();
 
-    if (usageResult.error) {
-      logger.warn("Failed to load usage totals; using empty usage data.", {
-        error: usageResult.error,
-      });
+      if (usageResult.error) {
+        logger.warn("Failed to load usage totals; using empty usage data.", {
+          error: usageResult.error,
+        });
+        return [];
+      }
+
+      return usageResult.data ?? [];
+    } catch (error) {
+      logger.warn("Failed to load usage totals; using empty usage data.", { error });
       return [];
     }
-
-    return usageResult.data ?? [];
-  } catch (error) {
-    logger.warn("Failed to load usage totals; using empty usage data.", { error });
-    return [];
-  }
+  });
 }

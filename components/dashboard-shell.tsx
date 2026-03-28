@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import type { TeamRole } from "@/lib/team-context";
-import type { DashboardTeamOption } from "@/lib/dashboard/server";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -14,7 +13,6 @@ type DashboardShellProps = {
   teamUiMode: "free" | "paid_solo" | "paid_team";
   showAiNav: boolean;
   activeTeamId: string;
-  teamMemberships: DashboardTeamOption[];
   csrfToken: string;
   children: ReactNode;
 };
@@ -28,7 +26,6 @@ export function DashboardShell({
   teamUiMode,
   showAiNav,
   activeTeamId,
-  teamMemberships,
   csrfToken,
   children,
 }: DashboardShellProps) {
@@ -43,7 +40,6 @@ export function DashboardShell({
           role,
           teamUiMode,
           activeTeamId,
-          teamMemberships,
           csrfToken,
         }}
       />

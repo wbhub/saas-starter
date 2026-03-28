@@ -52,22 +52,6 @@ describe("Dashboard page billing selection", () => {
       limit: vi.fn().mockReturnThis(),
       maybeSingle: subscriptionMaybeSingle,
     };
-    const teamMembershipsQuery = {
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      order: vi.fn().mockReturnThis(),
-      returns: vi.fn().mockResolvedValue({
-        data: [
-          {
-            user_id: "user_123",
-            role: "owner",
-            created_at: "2026-01-01T00:00:00Z",
-            profiles: { id: "user_123", full_name: "Test User" },
-          },
-        ],
-        error: null,
-      }),
-    };
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: async () => ({
         auth: {
@@ -87,9 +71,6 @@ describe("Dashboard page billing selection", () => {
           }
           if (table === "subscriptions") {
             return subscriptionsQuery;
-          }
-          if (table === "team_memberships") {
-            return teamMembershipsQuery;
           }
           throw new Error(`Unexpected table: ${table}`);
         }),
@@ -176,15 +157,6 @@ describe("Dashboard page billing selection", () => {
               select: vi.fn().mockReturnThis(),
               eq: vi.fn().mockReturnThis(),
               maybeSingle: vi.fn().mockResolvedValue({ data: null, error: { message: "boom" } }),
-            };
-          }
-
-          if (table === "team_memberships") {
-            return {
-              select: vi.fn().mockReturnThis(),
-              eq: vi.fn().mockReturnThis(),
-              order: vi.fn().mockReturnThis(),
-              returns: vi.fn().mockResolvedValue({ data: [], error: null }),
             };
           }
           return {

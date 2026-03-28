@@ -3,7 +3,7 @@ import { getRedisClient } from "@/lib/redis/client";
 import { logger } from "@/lib/logger";
 import { getTeamContextForUser, type TeamContext } from "@/lib/team-context";
 
-const TEAM_CONTEXT_CACHE_TTL_SECONDS = 30;
+const TEAM_CONTEXT_CACHE_TTL_SECONDS = 300;
 const TEAM_CONTEXT_CACHE_TTL_MS = TEAM_CONTEXT_CACHE_TTL_SECONDS * 1000;
 const FALLBACK_SWEEP_INTERVAL_MS = 30 * 1000;
 const FALLBACK_MAX_ENTRIES = 10_000;
@@ -12,6 +12,21 @@ type TeamContextCacheEntry = {
   value: TeamContext | null;
   expiresAt: number;
 };
+
+type RedisTeamContextCacheRead =
+  | {
+      cacheAvailable: true;
+      hit: true;
+      value: TeamContext | null;
+    }
+  | {
+      cacheAvailable: true;
+      hit: false;
+    }
+  | {
+      cacheAvailable: false;
+      hit: false;
+    };
 
 declare global {
   var __saasStarterTeamContextCache: Map<string, TeamContextCacheEntry> | undefined;
@@ -88,25 +103,42 @@ function writeInMemoryCache(userId: string, value: TeamContext | null) {
   trimOverflowEntries(cache);
 }
 
-async function readRedisCache(userId: string): Promise<TeamContext | null | undefined> {
+async function readRedisCache(userId: string): Promise<RedisTeamContextCacheRead> {
   const redis = getRedisClient();
   if (!redis) {
-    return undefined;
+    return {
+      cacheAvailable: false,
+      hit: false,
+    };
   }
 
   const raw = await redis.get<string | TeamContext | null>(getCacheKey(userId));
   if (raw === null || raw === undefined) {
-    return undefined;
+    return {
+      cacheAvailable: true,
+      hit: false,
+    };
   }
 
   if (typeof raw === "object") {
-    return raw;
+    return {
+      cacheAvailable: true,
+      hit: true,
+      value: raw,
+    };
   }
 
   try {
-    return JSON.parse(raw) as TeamContext | null;
+    return {
+      cacheAvailable: true,
+      hit: true,
+      value: JSON.parse(raw) as TeamContext | null,
+    };
   } catch {
-    return undefined;
+    return {
+      cacheAvailable: true,
+      hit: false,
+    };
   }
 }
 
@@ -127,19 +159,27 @@ export async function getCachedTeamContextForUser(
 ): Promise<TeamContext | null> {
   try {
     const redisCached = await readRedisCache(userId);
-    if (redisCached !== undefined) {
-      return redisCached;
+    if (redisCached.hit) {
+      writeInMemoryCache(userId, redisCached.value);
+      return redisCached.value;
+    }
+
+    if (!redisCached.cacheAvailable) {
+      const inMemoryCached = readInMemoryCache(userId);
+      if (inMemoryCached !== undefined) {
+        return inMemoryCached;
+      }
     }
   } catch (error) {
-    logger.warn("Failed to read team context cache from redis; using in-memory fallback.", {
+    logger.warn("Failed to read team context cache from redis; continuing.", {
       userId,
       error,
     });
-  }
 
-  const inMemoryCached = readInMemoryCache(userId);
-  if (inMemoryCached !== undefined) {
-    return inMemoryCached;
+    const inMemoryCached = readInMemoryCache(userId);
+    if (inMemoryCached !== undefined) {
+      return inMemoryCached;
+    }
   }
 
   const teamContext = await getTeamContextForUser(supabase, userId);

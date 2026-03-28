@@ -44,7 +44,6 @@ export default async function DashboardLayout({ children }: Readonly<{ children:
         teamUiMode={shellData.teamUiMode}
         showAiNav={shellData.aiUiGate.isVisibleInUi}
         activeTeamId={shellData.teamContext.teamId}
-        teamMemberships={shellData.teamMemberships}
         csrfToken={shellData.csrfToken}
       >
         {children}

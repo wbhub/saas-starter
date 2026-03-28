@@ -9,6 +9,7 @@ import {
   Check,
   ChevronDown,
   CircleHelp,
+  Loader2,
   Languages,
   LogOut,
   Monitor,
@@ -34,8 +35,12 @@ export type UserDropdownProps = {
   role: "owner" | "admin" | "member";
   teamUiMode: "free" | "paid_solo" | "paid_team";
   activeTeamId: string;
-  teamMemberships: DashboardTeamOption[];
   csrfToken: string;
+};
+
+type TeamOptionsResponse = {
+  ok: true;
+  teams: DashboardTeamOption[];
 };
 
 const LOCALE_COOKIE = "NEXT_LOCALE";
@@ -48,7 +53,6 @@ export function UserDropdown({
   role,
   teamUiMode,
   activeTeamId,
-  teamMemberships,
   csrfToken,
 }: UserDropdownProps) {
   const t = useTranslations();
@@ -58,17 +62,37 @@ export function UserDropdown({
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
+  const [teamOptions, setTeamOptions] = useState<DashboardTeamOption[]>([]);
+  const [teamOptionsState, setTeamOptionsState] = useState<"idle" | "loading" | "loaded" | "error">(
+    teamUiMode === "free" ? "loaded" : "idle",
+  );
   const containerRef = useRef<HTMLDivElement | null>(null);
+
+  function closeMenu() {
+    setOpen(false);
+    if (teamUiMode === "free" || teamOptionsState !== "error") {
+      return;
+    }
+
+    setTeamOptions([]);
+    setTeamOptionsState("idle");
+  }
 
   useEffect(() => {
     function onDocumentPointerDown(event: MouseEvent) {
       if (!containerRef.current?.contains(event.target as Node)) {
         setOpen(false);
+        if (teamUiMode === "free" || teamOptionsState !== "error") {
+          return;
+        }
+
+        setTeamOptions([]);
+        setTeamOptionsState("idle");
       }
     }
     document.addEventListener("mousedown", onDocumentPointerDown);
     return () => document.removeEventListener("mousedown", onDocumentPointerDown);
-  }, []);
+  }, [teamOptionsState, teamUiMode]);
 
   const initials = displayName
     .split(" ")
@@ -85,11 +109,61 @@ export function UserDropdown({
   function onLocaleChange(nextLocale: AppLocale) {
     if (nextLocale === locale) return;
     Cookies.set(LOCALE_COOKIE, nextLocale, { path: "/", expires: 365, sameSite: "lax" });
-    setOpen(false);
+    closeMenu();
     router.refresh();
   }
 
-  const showTeamSwitcher = teamUiMode !== "free" && teamMemberships.length > 1;
+  function toggleMenu() {
+    if (open) {
+      closeMenu();
+      return;
+    }
+
+    if (teamUiMode !== "free") {
+      setTeamOptions([]);
+      setTeamOptionsState("loading");
+    }
+
+    setOpen(true);
+  }
+
+  useEffect(() => {
+    if (!open || teamUiMode === "free" || teamOptionsState !== "loading") {
+      return;
+    }
+
+    let cancelled = false;
+
+    fetch("/api/team/options", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`Team options request failed: ${response.status}`);
+        }
+
+        const payload = (await response.json()) as TeamOptionsResponse;
+        if (cancelled) {
+          return;
+        }
+
+        setTeamOptions(payload.teams);
+        setTeamOptionsState("loaded");
+      })
+      .catch(() => {
+        if (cancelled) {
+          return;
+        }
+
+        setTeamOptions([]);
+        setTeamOptionsState("error");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, teamOptionsState, teamUiMode]);
+
+  const showTeamSwitcher = teamUiMode !== "free" && teamOptions.length > 1;
+  const showTeamSwitcherLoading = teamUiMode !== "free" && teamOptionsState === "loading";
 
   return (
     <div ref={containerRef} className="relative inline-flex">
@@ -98,7 +172,7 @@ export function UserDropdown({
         aria-label={t("UserDropdown.label")}
         aria-haspopup="menu"
         aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggleMenu}
         className="inline-flex items-center gap-2.5 rounded-full border app-border-subtle py-1.5 pl-1.5 pr-3 shadow-sm transition-colors hover:bg-[color:var(--surface-subtle)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <Avatar size="default">
@@ -151,7 +225,7 @@ export function UserDropdown({
                     defaultValue={activeTeamId}
                     className="w-full appearance-none rounded-lg border bg-background py-1 pl-2 pr-6 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
                   >
-                    {teamMemberships.map((m) => (
+                    {teamOptions.map((m) => (
                       <option key={m.teamId} value={m.teamId}>
                         {m.teamName ?? t("Common.myTeam")}
                       </option>
@@ -166,6 +240,18 @@ export function UserDropdown({
                   {t("DashboardSidebar.switch")}
                 </button>
               </form>
+            </>
+          ) : null}
+
+          {showTeamSwitcherLoading ? (
+            <>
+              <Separator className="my-1" />
+              <div className="px-2.5 py-2">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  {t("DashboardSidebar.team")}
+                </div>
+              </div>
             </>
           ) : null}
 
@@ -233,7 +319,7 @@ export function UserDropdown({
             <Link
               href="/dashboard/settings"
               role="menuitem"
-              onClick={() => setOpen(false)}
+              onClick={closeMenu}
               className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-foreground transition-colors hover:bg-[color:var(--surface-subtle)]"
             >
               <Settings className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -242,7 +328,7 @@ export function UserDropdown({
             <Link
               href="/dashboard/support"
               role="menuitem"
-              onClick={() => setOpen(false)}
+              onClick={closeMenu}
               className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-foreground transition-colors hover:bg-[color:var(--surface-subtle)]"
             >
               <CircleHelp className="h-4 w-4 shrink-0 text-muted-foreground" />

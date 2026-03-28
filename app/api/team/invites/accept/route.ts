@@ -12,6 +12,7 @@ import { getTeamMaxMembers } from "@/lib/team/limits";
 import { logger } from "@/lib/logger";
 import { getRouteTranslator } from "@/lib/i18n/locale";
 import { invalidateCachedTeamContextForUser } from "@/lib/team-context-cache";
+import { invalidateCachedDashboardTeamSnapshot } from "@/lib/dashboard/team-snapshot-cache";
 
 const acceptInvitePayloadSchema = z.object({
   token: z.string().trim().min(10).max(256),
@@ -109,7 +110,10 @@ export async function POST(request: Request) {
         return jsonError(t("errors.unableToAcceptInvite"), 500);
       }
 
-      await invalidateCachedTeamContextForUser(user.id);
+      await Promise.all([
+        invalidateCachedTeamContextForUser(user.id),
+        rpcRow.team_id ? invalidateCachedDashboardTeamSnapshot(rpcRow.team_id) : Promise.resolve(),
+      ]);
 
       let seatSynced = true;
       if (rpcRow.team_id) {
