@@ -13,6 +13,10 @@ const onAuthStateChange = vi.fn(() => ({
   },
 }));
 
+function createIntercomMock(): NonNullable<Window["Intercom"]> {
+  return vi.fn() as unknown as NonNullable<Window["Intercom"]>;
+}
+
 vi.mock("next/navigation", () => ({
   usePathname: () => "/dashboard",
   useSearchParams: () => new URLSearchParams(),
@@ -31,7 +35,7 @@ describe("IntercomProvider", () => {
     vi.clearAllMocks();
     document.head.innerHTML = "";
     window.intercomSettings = undefined;
-    window.Intercom = vi.fn();
+    window.Intercom = createIntercomMock();
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({
