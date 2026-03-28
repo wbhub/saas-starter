@@ -75,6 +75,5 @@ describe("BillingActions", () => {
 
     expect(html).not.toContain("Manage billing");
     expect(html).toContain("description.billingDisabled");
-    expect(html).toContain("messages.billingDisabled");
   });
 });

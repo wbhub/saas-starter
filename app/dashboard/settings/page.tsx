@@ -63,6 +63,7 @@ export default async function DashboardSettingsPage() {
     <DashboardShell
       displayName={displayName}
       userEmail={user.email ?? null}
+      avatarUrl={profile?.avatar_url ?? null}
       teamName={teamContext.teamName}
       role={teamContext.role}
       teamUiMode={teamUiMode}

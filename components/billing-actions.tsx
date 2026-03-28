@@ -249,11 +249,6 @@ export function BillingActions({
           {message}
         </p>
       ) : null}
-      {!billingEnabled ? (
-        <p className="rounded-lg app-surface-subtle px-3 py-2 text-sm text-muted-foreground">
-          {t("messages.billingDisabled")}
-        </p>
-      ) : null}
     </div>
   );
 }

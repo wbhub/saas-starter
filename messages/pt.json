@@ -206,13 +206,25 @@
     "billing": "Cobrança",
     "usage": "Uso",
     "settings": "Configurações",
-    "home": "Lar",
+    "support": "Suporte"
+  },
+  "UserDropdown": {
+    "label": "Menu da conta",
+    "theme": "Tema",
+    "themeOptions": {
+      "system": "Sistema",
+      "light": "Claro",
+      "dark": "Escuro"
+    },
+    "language": "Idioma",
+    "settings": "Configurações",
+    "support": "Suporte",
     "logout": "Sair"
   },
   "DashboardPage": {
     "overview": "Visão geral",
     "welcome": "Bem-vindo, {name}",
-    "navigate": "Navegue por seção para faturamento, gerenciamento de equipe, uso e configurações.",
+    "subtitle": "Aqui está uma visão geral da sua conta e assinatura.",
     "account": "Conta",
     "userId": "ID do usuário",
     "team": "Equipe",
@@ -399,10 +411,18 @@
     },
     "table": {
       "title": "Últimos 6 meses",
-      "noUsage": "Ainda não há dados de uso.",
+      "noUsage": "Ainda não há dados de uso",
+      "noUsageDescription": "Os dados de uso aparecerão aqui assim que sua equipe começar a usar os recursos de IA.",
       "month": "Mês",
       "usedTokens": "Tokens usados",
       "reservedTokens": "Tokens reservados"
+    }
+  },
+  "DashboardSupportPage": {
+    "header": {
+      "eyebrow": "Suporte",
+      "title": "Ajuda e suporte",
+      "description": "Envie-nos uma mensagem e responderemos o mais breve possível."
     }
   },
   "DashboardSettingsCard": {
@@ -421,6 +441,7 @@
     "upload": {
       "profilePhoto": "Foto do perfil",
       "profileAvatarAlt": "Avatar do perfil",
+      "changePhoto": "Alterar foto",
       "noPhoto": "Nenhuma foto",
       "uploading": "Carregando...",
       "uploadPhoto": "Carregar foto",

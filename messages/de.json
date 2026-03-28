@@ -206,13 +206,25 @@
     "billing": "Abrechnung",
     "usage": "Nutzung",
     "settings": "Einstellungen",
-    "home": "Startseite",
+    "support": "Support"
+  },
+  "UserDropdown": {
+    "label": "Kontomenü",
+    "theme": "Design",
+    "themeOptions": {
+      "system": "System",
+      "light": "Hell",
+      "dark": "Dunkel"
+    },
+    "language": "Sprache",
+    "settings": "Einstellungen",
+    "support": "Support",
     "logout": "Abmelden"
   },
   "DashboardPage": {
     "overview": "Übersicht",
     "welcome": "Willkommen, {name}",
-    "navigate": "Navigiere nach Bereich zu Abrechnung, Teamverwaltung, Nutzung und Einstellungen.",
+    "subtitle": "Hier ist eine Übersicht über dein Konto und dein Abonnement.",
     "account": "Konto",
     "userId": "Benutzer-ID",
     "team": "Team",
@@ -399,10 +411,18 @@
     },
     "table": {
       "title": "Letzte 6 Monate",
-      "noUsage": "Noch keine Nutzungsdaten.",
+      "noUsage": "Noch keine Nutzungsdaten",
+      "noUsageDescription": "Nutzungsdaten erscheinen hier, sobald dein Team beginnt, KI-Funktionen zu verwenden.",
       "month": "Monat",
       "usedTokens": "Verbrauchte Tokens",
       "reservedTokens": "Reservierte Tokens"
+    }
+  },
+  "DashboardSupportPage": {
+    "header": {
+      "eyebrow": "Support",
+      "title": "Hilfe & Support",
+      "description": "Sende uns eine Nachricht und wir melden uns so schnell wie möglich bei dir."
     }
   },
   "DashboardSettingsCard": {
@@ -421,6 +441,7 @@
     "upload": {
       "profilePhoto": "Profilfoto",
       "profileAvatarAlt": "Profilavatar",
+      "changePhoto": "Foto ändern",
       "noPhoto": "Kein Foto",
       "uploading": "Wird hochgeladen...",
       "uploadPhoto": "Foto hochladen",

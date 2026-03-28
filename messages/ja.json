@@ -206,13 +206,25 @@
     "billing": "課金",
     "usage": "使用状況",
     "settings": "設定",
-    "home": "ホーム",
+    "support": "サポート"
+  },
+  "UserDropdown": {
+    "label": "アカウントメニュー",
+    "theme": "テーマ",
+    "themeOptions": {
+      "system": "システム",
+      "light": "ライト",
+      "dark": "ダーク"
+    },
+    "language": "言語",
+    "settings": "設定",
+    "support": "サポート",
     "logout": "ログアウト"
   },
   "DashboardPage": {
     "overview": "概要",
     "welcome": "{name} さん、ようこそ",
-    "navigate": "課金、チーム管理、使用状況、設定は各セクションから移動できます。",
+    "subtitle": "アカウントとサブスクリプションの概要です。",
     "account": "アカウント",
     "userId": "ユーザー ID",
     "team": "チーム",
@@ -399,10 +411,18 @@
     },
     "table": {
       "title": "直近 6 か月",
-      "noUsage": "まだ使用データはありません。",
+      "noUsage": "まだ使用データはありません",
+      "noUsageDescription": "チームがAI機能を使い始めると、使用状況がここに表示されます。",
       "month": "月",
       "usedTokens": "使用トークン",
       "reservedTokens": "予約済みトークン"
+    }
+  },
+  "DashboardSupportPage": {
+    "header": {
+      "eyebrow": "サポート",
+      "title": "ヘルプとサポート",
+      "description": "メッセージをお送りください。できるだけ早くご返信いたします。"
     }
   },
   "DashboardSettingsCard": {
@@ -421,6 +441,7 @@
     "upload": {
       "profilePhoto": "プロフィール写真",
       "profileAvatarAlt": "プロフィールアバター",
+      "changePhoto": "写真を変更",
       "noPhoto": "写真なし",
       "uploading": "アップロード中...",
       "uploadPhoto": "写真をアップロード",

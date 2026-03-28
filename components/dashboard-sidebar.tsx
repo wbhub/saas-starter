@@ -11,26 +11,13 @@ import {
   Settings,
   Users,
   UserPlus,
-  Home,
-  LogOut,
-  ChevronDown,
+  CircleHelp,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import type { DashboardTeamOption } from "@/lib/dashboard/server";
-import { logout, switchActiveTeam } from "@/app/dashboard/actions";
 
 type DashboardSidebarProps = {
-  displayName: string;
-  userEmail: string | null;
-  teamName: string | null;
-  role: "owner" | "admin" | "member";
   teamUiMode: "free" | "paid_solo" | "paid_team";
   showAiNav: boolean;
-  activeTeamId: string;
-  teamMemberships: DashboardTeamOption[];
-  csrfToken: string;
 };
 
 type NavItem = {
@@ -39,17 +26,7 @@ type NavItem = {
   icon: React.ComponentType<{ className?: string }>;
 };
 
-export function DashboardSidebar({
-  displayName,
-  userEmail,
-  teamName,
-  role,
-  teamUiMode,
-  showAiNav,
-  activeTeamId,
-  teamMemberships,
-  csrfToken,
-}: DashboardSidebarProps) {
+export function DashboardSidebar({ teamUiMode, showAiNav }: DashboardSidebarProps) {
   const t = useTranslations();
   const pathname = usePathname();
   const navItems: NavItem[] = [
@@ -77,14 +54,9 @@ export function DashboardSidebar({
       href: "/dashboard/usage",
       icon: BarChart3,
     },
-    {
-      label: t("DashboardSidebar.settings"),
-      href: "/dashboard/settings",
-      icon: Settings,
-    },
   );
   if (teamUiMode !== "free") {
-    navItems.splice(3, 0, {
+    navItems.push({
       label:
         teamUiMode === "paid_solo"
           ? t("DashboardSidebar.inviteTeammates")
@@ -93,6 +65,18 @@ export function DashboardSidebar({
       icon: teamUiMode === "paid_solo" ? UserPlus : Users,
     });
   }
+  navItems.push(
+    {
+      label: t("DashboardSidebar.settings"),
+      href: "/dashboard/settings",
+      icon: Settings,
+    },
+    {
+      label: t("DashboardSidebar.support"),
+      href: "/dashboard/support",
+      icon: CircleHelp,
+    },
+  );
 
   function isNavItemActive(href: string) {
     if (href === "/dashboard") {
@@ -103,58 +87,7 @@ export function DashboardSidebar({
 
   return (
     <aside className="flex flex-col lg:sticky lg:top-8 lg:h-[calc(100vh-4rem)]">
-      {/* User info */}
-      <div className="mb-2">
-        <p className="truncate text-base font-medium">{displayName}</p>
-        <p className="truncate text-sm text-muted-foreground">{userEmail}</p>
-        {teamUiMode !== "free" && (
-          <div className="mt-2.5 flex items-center gap-2">
-            <span className="truncate text-sm text-muted-foreground">
-              {teamName ?? t("Common.myTeam")}
-            </span>
-            <Badge variant="secondary" className="capitalize">
-              {role}
-            </Badge>
-          </div>
-        )}
-      </div>
-
-      {/* Team switcher */}
-      {teamUiMode !== "free" && teamMemberships.length > 1 ? (
-        <>
-          <Separator className="my-3" />
-          <form action={switchActiveTeam} className="space-y-2">
-            <input type="hidden" name="csrf_token" value={csrfToken} />
-            <input type="hidden" name="redirectTo" value={pathname} />
-            <label
-              htmlFor="active-team-select"
-              className="block text-[11px] font-medium uppercase tracking-wider text-muted-foreground"
-            >
-              {t("DashboardSidebar.team")}
-            </label>
-            <div className="relative">
-              <select
-                id="active-team-select"
-                name="teamId"
-                defaultValue={activeTeamId}
-                className="w-full appearance-none rounded-lg border bg-background py-1.5 pl-2.5 pr-7 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              >
-                {teamMemberships.map((membership) => (
-                  <option key={membership.teamId} value={membership.teamId}>
-                    {membership.teamName ?? t("Common.myTeam")}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-            </div>
-            <Button type="submit" variant="outline" size="sm" className="w-full">
-              {t("DashboardSidebar.switch")}
-            </Button>
-          </form>
-        </>
-      ) : null}
-
-      <Separator className="my-3" />
+      <Separator className="mb-3 lg:hidden" />
 
       {/* Navigation */}
       <nav className="-mx-2.5 flex-1 space-y-1">
@@ -179,28 +112,6 @@ export function DashboardSidebar({
           );
         })}
       </nav>
-
-      {/* Bottom actions */}
-      <Separator className="my-4" />
-      <div className="flex gap-2.5">
-        <Link
-          href="/"
-          className="inline-flex h-9 flex-1 items-center justify-center gap-2 rounded-lg border app-border-subtle px-3 text-sm transition-colors hover:bg-[color:var(--surface-subtle)]"
-        >
-          <Home className="h-4 w-4" />
-          {t("DashboardSidebar.home")}
-        </Link>
-        <form action={logout} className="flex-1">
-          <input type="hidden" name="csrf_token" value={csrfToken} />
-          <button
-            type="submit"
-            className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-indigo-500 px-3 text-sm font-medium text-white transition-colors hover:bg-indigo-400"
-          >
-            <LogOut className="h-4 w-4" />
-            {t("DashboardSidebar.logout")}
-          </button>
-        </form>
-      </div>
     </aside>
   );
 }

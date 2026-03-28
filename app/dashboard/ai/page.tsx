@@ -19,6 +19,7 @@ export default async function DashboardAiPage() {
   const {
     supabase,
     user,
+    profile,
     teamContext,
     teamContextLoadFailed,
     teamMemberships,
@@ -56,6 +57,7 @@ export default async function DashboardAiPage() {
     <DashboardShell
       displayName={displayName}
       userEmail={user.email ?? null}
+      avatarUrl={profile?.avatar_url ?? null}
       teamName={teamContext.teamName}
       role={teamContext.role}
       teamUiMode={teamUiMode}

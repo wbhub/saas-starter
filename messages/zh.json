@@ -206,13 +206,25 @@
     "billing": "计费",
     "usage": "用法",
     "settings": "设置",
-    "home": "家",
-    "logout": "退出"
+    "support": "支持"
+  },
+  "UserDropdown": {
+    "label": "账户菜单",
+    "theme": "主题",
+    "themeOptions": {
+      "system": "系统",
+      "light": "浅色",
+      "dark": "深色"
+    },
+    "language": "语言",
+    "settings": "设置",
+    "support": "支持",
+    "logout": "退出登录"
   },
   "DashboardPage": {
     "overview": "概述",
     "welcome": "欢迎，{name}",
-    "navigate": "按计费、团队管理、使用情况和设置部分导航。",
+    "subtitle": "以下是您的账户和订阅概览。",
     "account": "帐户",
     "userId": "用户身份",
     "team": "团队",
@@ -399,10 +411,18 @@
     },
     "table": {
       "title": "过去 6 个月",
-      "noUsage": "尚无使用数据。",
+      "noUsage": "尚无使用数据",
+      "noUsageDescription": "团队开始使用 AI 功能后，使用情况将显示在此处。",
       "month": "月",
       "usedTokens": "使用的代币",
       "reservedTokens": "预留代币"
+    }
+  },
+  "DashboardSupportPage": {
+    "header": {
+      "eyebrow": "支持",
+      "title": "帮助与支持",
+      "description": "请给我们发送消息，我们会尽快回复您。"
     }
   },
   "DashboardSettingsCard": {
@@ -421,6 +441,7 @@
     "upload": {
       "profilePhoto": "个人资料照片",
       "profileAvatarAlt": "个人资料头像",
+      "changePhoto": "更换照片",
       "noPhoto": "没有照片",
       "uploading": "正在上传...",
       "uploadPhoto": "上传照片",

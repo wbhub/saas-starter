@@ -1,14 +1,6 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import {
-  Sparkles,
-  CreditCard,
-  Users,
-  UserPlus,
-  BarChart3,
-  Settings,
-  ArrowRight,
-} from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { NoTeamCard } from "@/components/no-team-card";
@@ -60,59 +52,12 @@ export default async function DashboardPage() {
   const currentPaidPlanKey: PlanKey | null =
     isPaidPlan && effectivePlanKey && effectivePlanKey !== "free" ? effectivePlanKey : null;
   const teamUiMode = !isPaidPlan ? "free" : memberCount > 1 ? "paid_team" : "paid_solo";
-  const teamNavLabel =
-    teamUiMode === "paid_solo" ? t("DashboardPage.inviteTeammates") : t("DashboardPage.teamNav");
-
-  const quickNavItems: Array<{
-    label: string;
-    href: string;
-    icon: React.ComponentType<{ className?: string }>;
-    description: string;
-  }> = [];
-
-  if (aiUiGate.isVisibleInUi) {
-    quickNavItems.push({
-      label: t("DashboardPage.ai"),
-      href: "/dashboard/ai",
-      icon: Sparkles,
-      description: "Chat with AI assistants",
-    });
-  }
-
-  quickNavItems.push(
-    {
-      label: t("DashboardPage.billing"),
-      href: "/dashboard/billing",
-      icon: CreditCard,
-      description: "Manage your plan",
-    },
-    {
-      label: t("DashboardPage.usage"),
-      href: "/dashboard/usage",
-      icon: BarChart3,
-      description: "View usage analytics",
-    },
-    {
-      label: t("DashboardPage.settings"),
-      href: "/dashboard/settings",
-      icon: Settings,
-      description: "Configure your account",
-    },
-  );
-
-  if (teamUiMode !== "free") {
-    quickNavItems.splice(quickNavItems.length - 1, 0, {
-      label: teamNavLabel,
-      href: "/dashboard/team",
-      icon: teamUiMode === "paid_solo" ? UserPlus : Users,
-      description: "Manage your team",
-    });
-  }
 
   return (
     <DashboardShell
       displayName={displayName}
       userEmail={user.email ?? null}
+      avatarUrl={profile?.avatar_url ?? null}
       teamName={teamContext.teamName}
       role={teamContext.role}
       teamUiMode={teamUiMode}
@@ -126,7 +71,7 @@ export default async function DashboardPage() {
         <h1 className="text-3xl font-semibold tracking-tight">
           {t("DashboardPage.welcome", { name: displayName })}
         </h1>
-        <p className="mt-2 text-base text-muted-foreground">{t("DashboardPage.navigate")}</p>
+        <p className="mt-2 text-base text-muted-foreground">{t("DashboardPage.subtitle")}</p>
       </div>
 
       {/* Account & Subscription */}
@@ -218,28 +163,6 @@ export default async function DashboardPage() {
             )}
           </CardContent>
         </Card>
-      </div>
-
-      {/* Quick navigation */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {quickNavItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="group flex items-center gap-4 rounded-xl p-4 ring-1 ring-border transition-colors hover:bg-muted"
-            >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
-                <Icon className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium">{item.label}</p>
-                <p className="mt-0.5 text-sm text-muted-foreground">{item.description}</p>
-              </div>
-            </Link>
-          );
-        })}
       </div>
     </DashboardShell>
   );
