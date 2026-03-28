@@ -24,7 +24,7 @@ export function LandingHeader() {
 
   return (
     <header className="border-b app-border-subtle">
-      <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
+      <nav className="mx-auto flex max-w-[1600px] items-center justify-between px-6 py-5 lg:px-10">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-emerald-400 text-white shadow-sm shadow-indigo-500/30">
             <Sparkles className="h-4 w-4" />

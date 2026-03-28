@@ -191,13 +191,13 @@
   }
 }
 
-/* Bump small text inside the dashboard for better readability */
-.dashboard-content .text-sm {
+/* Bump small text inside the app for better readability */
+.app-content .text-sm {
   font-size: 0.9375rem;
   line-height: 1.5;
 }
 
-.dashboard-content .text-xs {
+.app-content .text-xs {
   font-size: 0.8125rem;
   line-height: 1.5;
 }
