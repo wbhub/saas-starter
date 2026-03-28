@@ -178,5 +178,4 @@ describe("Dashboard page subscription snapshot free plan behavior", () => {
     expect(html).toContain("Growth");
     expect(html).not.toContain("Current plan: Free");
   });
-
 });
