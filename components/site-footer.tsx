@@ -1,14 +1,12 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
-export function SiteFooter({ wide }: { wide?: boolean }) {
+export function SiteFooter() {
   const t = useTranslations("SiteFooter");
 
   return (
     <footer className="border-t app-border-subtle">
-      <div
-        className={`mx-auto flex flex-col justify-between gap-3 px-6 py-6 text-sm text-muted-foreground md:flex-row md:items-center ${wide ? "max-w-[1600px] lg:px-10" : "max-w-7xl"}`}
-      >
+      <div className="mx-auto flex max-w-[1440px] flex-col justify-between gap-3 px-6 py-6 text-sm text-muted-foreground md:flex-row md:items-center lg:px-10">
         <p>
           &copy; {new Date().getFullYear()} {t("companyPlaceholder")}
         </p>

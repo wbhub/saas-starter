@@ -15,7 +15,7 @@ export function LandingPage() {
     <div className="app-content min-h-screen bg-[color:var(--background)] text-[color:var(--foreground)]">
       <LandingHeader />
 
-      <main className="mx-auto max-w-[1600px] px-6 py-14 md:py-20 lg:px-10">
+      <main className="mx-auto max-w-[1440px] px-6 py-14 md:py-20 lg:px-10">
         <div className="space-y-16 md:space-y-20">
           <HeroSection />
           <GettingStartedSection />
@@ -27,7 +27,7 @@ export function LandingPage() {
         </div>
       </main>
 
-      <SiteFooter wide />
+      <SiteFooter />
     </div>
   );
 }

@@ -48,14 +48,14 @@ export function DashboardShell({
         }}
       />
       <main className="app-content flex-1">
-        <div className="mx-auto max-w-[1600px] px-6 py-8 lg:px-10 lg:py-12">
+        <div className="mx-auto max-w-[1440px] px-6 py-8 lg:px-10 lg:py-12">
           <div className="grid gap-8 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-14">
             <DashboardSidebar teamUiMode={teamUiMode} showAiNav={showAiNav} />
             <div className="space-y-8">{children}</div>
           </div>
         </div>
       </main>
-      <SiteFooter wide />
+      <SiteFooter />
     </div>
   );
 }
