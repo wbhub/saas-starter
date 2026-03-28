@@ -55,7 +55,7 @@ export function DashboardShell({
           </div>
         </div>
       </main>
-      <SiteFooter />
+      <SiteFooter wide />
     </div>
   );
 }
