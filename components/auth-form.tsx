@@ -173,7 +173,7 @@ export function AuthForm({
 
         if (payload?.sessionCreated) {
           dispatch({ type: "SUBMIT_SUCCESS" });
-          router.push("/dashboard");
+          router.push("/onboarding");
           router.refresh();
           return;
         }

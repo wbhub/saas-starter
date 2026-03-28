@@ -1,8 +1,10 @@
 import {
   STRIPE_PLAN_PRICE_ID_ENV_KEYS,
   getStripePriceIdEnvKey,
+  getStripeAnnualPriceIdEnvKey,
   type PlanKey,
   type StripePriceIdEnvKey,
+  type StripeAnnualPriceIdEnvKey,
 } from "@/lib/stripe/plans";
 import { isBillingEnabled, isFreePlanEnabled } from "@/lib/billing/provider";
 
@@ -53,7 +55,8 @@ type OptionalEnvKey =
   | "AI_MAX_STEPS"
   | "NEXT_PUBLIC_AI_TOOLS_ENABLED"
   | "TRIGGER_SECRET_KEY"
-  | "TRIGGER_PROJECT_REF";
+  | "TRIGGER_PROJECT_REF"
+  | StripeAnnualPriceIdEnvKey;
 
 const warnedMissingEnv = new Set<string>();
 const SOFT_REQUIRED_KEYS = [
@@ -198,6 +201,9 @@ const envBase = {
   },
   getStripePriceId(planKey: PlanKey) {
     return ensureEnv(getStripePriceIdEnvKey(planKey));
+  },
+  getStripeAnnualPriceId(planKey: PlanKey) {
+    return optionalEnv(getStripeAnnualPriceIdEnvKey(planKey) as OptionalEnvKey) ?? null;
   },
   get RESEND_API_KEY() {
     return ensureEnv("RESEND_API_KEY");

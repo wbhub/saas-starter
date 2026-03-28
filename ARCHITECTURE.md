@@ -24,17 +24,20 @@ app/                          # Next.js App Router
   api/                        # API routes (organized by domain)
     auth/                     # signup, login, forgot-password
     team/                     # invites, members, settings, ownership
+    onboarding/               # complete (mark onboarding done for free plan)
     stripe/                   # checkout, change-plan, portal, webhook
     ai/                       # chat (streaming), object (structured output)
     cron/                     # reconcile-seat-quantities, prune-webhook-events
     resend/                   # support email
     intercom/                 # identity boot
   auth/                       # OAuth callback route
+  onboarding/                 # Post-signup plan selection (paywall gate)
   dashboard/                  # Protected dashboard pages
     actions.ts                # Server actions (logout, update settings, delete account, etc.)
 
 components/                   # React components (flat structure)
   landing/                    # Landing page components (grouped subdirectory)
+  onboarding/                 # Onboarding plan selector with monthly/annual toggle
 
 lib/                          # Shared business logic (organized by domain)
   ai/                         # AI access control, budgets, provider abstraction, token estimation
@@ -198,7 +201,7 @@ A single `getAiLanguageModel(model)` function that returns a Vercel AI SDK model
 
 ## Data Flow: Key Features
 
-### Signup -> Team Creation
+### Signup -> Onboarding -> Team Creation
 
 ```
 1. POST /api/auth/signup
@@ -207,15 +210,28 @@ A single `getAiLanguageModel(model)` function that returns a Vercel AI SDK model
    - Call Supabase signUp() (creates auth.users row)
    - Supabase trigger creates profile + personal team + owner membership
    - Return { ok: true, sessionCreated: bool }
+
+2. Client redirects to /onboarding (plan selection page)
+   - If APP_FREE_PLAN_ENABLED=true: shows Free + paid plans (4-column grid)
+   - If APP_FREE_PLAN_ENABLED=false: shows paid plans only (3-column grid)
+   - Monthly/annual toggle shown when annual Stripe price IDs are configured
+   - Free plan: POST /api/onboarding/complete -> sets onboarding_completed_at -> /dashboard
+   - Paid plan: POST /api/stripe/checkout (source=onboarding) -> Stripe -> /onboarding?checkout=success -> /dashboard
+
+3. Dashboard layout paywall gate
+   - If billing enabled and effectivePlanKey === null -> redirect to /onboarding
+   - If billing enabled and effectivePlanKey === "free" and onboarding_completed_at is null -> redirect to /onboarding
 ```
 
 ### Stripe Checkout -> Subscription
 
 ```
 1. POST /api/stripe/checkout
+   - Accepts planKey, interval (month/year), and optional source (e.g. "onboarding")
    - Verify team has no live subscription
    - Create or reuse Stripe customer (with supabase_team_id metadata)
-   - Create Stripe Checkout Session
+   - Resolve price ID from planKey + interval (monthly or annual)
+   - Create Stripe Checkout Session (success/cancel URLs vary by source)
    - Return { url: checkoutUrl }
 
 2. User completes payment on Stripe

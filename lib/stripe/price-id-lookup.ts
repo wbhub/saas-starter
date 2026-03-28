@@ -11,12 +11,20 @@ export function readConfiguredPriceIdForPlan(planKey: PlanKey): string | null {
   }
 }
 
+export function readConfiguredAnnualPriceIdForPlan(planKey: PlanKey): string | null {
+  return env.getStripeAnnualPriceId(planKey);
+}
+
 export function getPlanKeyByPriceIdMap(): ReadonlyMap<string, PlanKey> {
   if (cachedPlanKeyByPriceIdMap === null) {
     cachedPlanKeyByPriceIdMap = new Map(
       PLAN_CATALOG.flatMap((plan) => {
-        const priceId = readConfiguredPriceIdForPlan(plan.key);
-        return priceId ? [[priceId, plan.key] as const] : [];
+        const entries: [string, PlanKey][] = [];
+        const monthlyPriceId = readConfiguredPriceIdForPlan(plan.key);
+        if (monthlyPriceId) entries.push([monthlyPriceId, plan.key]);
+        const annualPriceId = readConfiguredAnnualPriceIdForPlan(plan.key);
+        if (annualPriceId) entries.push([annualPriceId, plan.key]);
+        return entries;
       }),
     );
   }

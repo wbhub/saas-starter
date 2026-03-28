@@ -112,6 +112,7 @@ function shouldRefreshSession(pathname: string) {
     isProtectedDashboardPath(pathname) ||
     pathname === "/login" ||
     pathname === "/signup" ||
+    pathname === "/onboarding" ||
     pathname === "/reset-password" ||
     pathname.startsWith("/reset-password/") ||
     pathname === "/auth/callback" ||

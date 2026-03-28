@@ -156,6 +156,11 @@
       "mostPopular": "Most popular",
       "managePlan": "Manage Plan",
       "choosePlan": "Choose {name}",
+      "toggle": {
+        "monthly": "Monthly",
+        "annual": "Annual",
+        "save": "Save 20%"
+      },
       "priceSuffix": {
         "month": "/mo",
         "year": "/yr",
@@ -1018,6 +1023,45 @@
       "cronNotConfigured": "Cron is not configured.",
       "unauthorized": "Unauthorized.",
       "rateLimited": "Too many requests."
+    }
+  },
+  "Onboarding": {
+    "title": "Choose your plan",
+    "description": "Start today, no credit card required.",
+    "descriptionPaidOnly": "Select a plan to get started.",
+    "toggle": {
+      "monthly": "Monthly",
+      "annual": "Annual",
+      "save": "Save 20%"
+    },
+    "freePlan": {
+      "name": "Free",
+      "price": "$0",
+      "priceDescription": "Free forever",
+      "description": "For individuals getting started",
+      "cta": "Start for free"
+    },
+    "paidPlan": {
+      "priceDescriptionMonthly": "Per user/month, billed monthly",
+      "priceDescriptionAnnual": "Per user/month, billed annually",
+      "cta": "Continue with {name}"
+    },
+    "loading": "Opening checkout…",
+    "errors": {
+      "checkoutFailed": "Unable to start checkout. Please try again.",
+      "missingCheckoutUrl": "Missing checkout URL.",
+      "completeFailed": "Something went wrong. Please try again.",
+      "requestFailed": "Request failed."
+    }
+  },
+  "ApiOnboardingComplete": {
+    "errors": {
+      "unauthorized": "You must be signed in.",
+      "missingCsrfToken": "Missing CSRF token.",
+      "invalidCsrfToken": "Invalid CSRF token.",
+      "invalidOrigin": "Invalid request origin.",
+      "rateLimited": "Too many requests.",
+      "failed": "Unable to complete onboarding."
     }
   }
 }

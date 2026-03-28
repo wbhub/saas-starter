@@ -33,6 +33,7 @@ export default async function SignupPage() {
       <main className="flex flex-1 flex-col items-center justify-center px-4 py-12">
         <AuthForm
           mode="signup"
+          redirectTo="/onboarding"
           socialProviders={socialProviders}
           lastUsedProvider={lastUsedProvider}
         />

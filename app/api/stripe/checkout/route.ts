@@ -9,7 +9,7 @@ import { checkRateLimit } from "@/lib/security/rate-limit";
 import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getPlanByKey } from "@/lib/stripe/config";
+import { getPlanByKey, getPlanPriceId } from "@/lib/stripe/config";
 import { getStripeServerClient } from "@/lib/stripe/server";
 import { getAppUrl } from "@/lib/env";
 import { isBillingEnabled } from "@/lib/billing/capabilities";
@@ -20,6 +20,8 @@ import { canManageTeamBilling } from "@/lib/team-context";
 import { getCachedTeamContextForUser } from "@/lib/team-context-cache";
 const checkoutPayloadSchema = z.object({
   planKey: z.string().trim(),
+  interval: z.enum(["month", "year"]).optional().default("month"),
+  source: z.string().trim().optional(),
 });
 
 type ExistingSubscriptionRow = {
@@ -176,12 +178,15 @@ export async function POST(req: Request) {
   if (!planKey) {
     return err(t("errors.invalidPayload"), 400);
   }
+  const requestedInterval = bodyParse.success ? bodyParse.data.interval : "month";
+  const checkoutSource = bodyParse.success ? bodyParse.data.source : undefined;
 
   const plan = getPlanByKey(planKey);
   if (!plan) {
     return err(t("errors.invalidPlan"), 400);
   }
-  if (!plan.priceId) {
+  const resolvedPriceId = getPlanPriceId(plan.key, requestedInterval);
+  if (!resolvedPriceId) {
     return err(t("errors.billingPlansNotConfigured"), 503);
   }
   const idempotencyKey = getCheckoutIdempotencyKey(req, teamContext.teamId, plan.key);
@@ -265,15 +270,23 @@ export async function POST(req: Request) {
       return err(t("errors.activeSubscriptionExists"), 409);
     }
 
+    const isOnboardingSource = checkoutSource === "onboarding";
+    const successPath = isOnboardingSource
+      ? "/onboarding?checkout=success&session_id={CHECKOUT_SESSION_ID}"
+      : "/dashboard/billing?checkout=success&session_id={CHECKOUT_SESSION_ID}";
+    const cancelPath = isOnboardingSource
+      ? "/onboarding"
+      : "/dashboard/billing?checkout=canceled";
+
     const sessionIdempotencyKey = getScopedIdempotencyKey(idempotencyKey, "session");
     const session = await stripe.checkout.sessions.create(
       {
         mode: "subscription",
         customer: customerId,
         client_reference_id: teamContext.teamId,
-        line_items: [{ price: plan.priceId, quantity: 1 }],
-        success_url: `${appUrl}/dashboard/billing?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${appUrl}/dashboard/billing?checkout=canceled`,
+        line_items: [{ price: resolvedPriceId, quantity: 1 }],
+        success_url: `${appUrl}${successPath}`,
+        cancel_url: `${appUrl}${cancelPath}`,
         metadata: {
           supabase_team_id: teamContext.teamId,
           supabase_user_id: user.id,
