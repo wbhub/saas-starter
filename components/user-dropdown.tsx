@@ -67,21 +67,32 @@ export function UserDropdown({
     teamUiMode === "free" ? "loaded" : "idle",
   );
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const teamOptionsStateRef = useRef(teamOptionsState);
-  const teamOptionsSyncKey = `${activeTeamId}:${teamName ?? ""}:${role}:${teamUiMode}`;
-  const lastLoadedTeamOptionsSyncKeyRef = useRef<string | null>(
-    teamUiMode === "free" ? teamOptionsSyncKey : null,
-  );
+
+  function closeMenu() {
+    setOpen(false);
+    if (teamUiMode === "free" || teamOptionsState !== "error") {
+      return;
+    }
+
+    setTeamOptions([]);
+    setTeamOptionsState("idle");
+  }
 
   useEffect(() => {
     function onDocumentPointerDown(event: MouseEvent) {
       if (!containerRef.current?.contains(event.target as Node)) {
         setOpen(false);
+        if (teamUiMode === "free" || teamOptionsState !== "error") {
+          return;
+        }
+
+        setTeamOptions([]);
+        setTeamOptionsState("idle");
       }
     }
     document.addEventListener("mousedown", onDocumentPointerDown);
     return () => document.removeEventListener("mousedown", onDocumentPointerDown);
-  }, []);
+  }, [teamOptionsState, teamUiMode]);
 
   const initials = displayName
     .split(" ")
@@ -98,63 +109,30 @@ export function UserDropdown({
   function onLocaleChange(nextLocale: AppLocale) {
     if (nextLocale === locale) return;
     Cookies.set(LOCALE_COOKIE, nextLocale, { path: "/", expires: 365, sameSite: "lax" });
-    setOpen(false);
+    closeMenu();
     router.refresh();
   }
 
   function toggleMenu() {
-    const nextOpen = !open;
-    if (nextOpen && teamUiMode !== "free") {
-      lastLoadedTeamOptionsSyncKeyRef.current = null;
-      setTeamOptions([]);
-      setTeamOptionsState("idle");
+    if (open) {
+      closeMenu();
+      return;
     }
 
-    setOpen(nextOpen);
+    if (teamUiMode !== "free") {
+      setTeamOptions([]);
+      setTeamOptionsState("loading");
+    }
+
+    setOpen(true);
   }
 
   useEffect(() => {
-    teamOptionsStateRef.current = teamOptionsState;
-  }, [teamOptionsState]);
-
-  useEffect(() => {
-    if (teamUiMode !== "free") {
-      return;
-    }
-
-    lastLoadedTeamOptionsSyncKeyRef.current = teamOptionsSyncKey;
-    setTeamOptions([]);
-    setTeamOptionsState("loaded");
-  }, [teamOptionsSyncKey, teamUiMode]);
-
-  useEffect(() => {
-    if (open || teamOptionsState !== "error") {
-      return;
-    }
-
-    setTeamOptionsState(teamUiMode === "free" ? "loaded" : "idle");
-  }, [open, teamOptionsState, teamUiMode]);
-
-  useEffect(() => {
-    const currentTeamOptionsState = teamOptionsStateRef.current;
-
-    if (!open || teamUiMode === "free" || currentTeamOptionsState === "loading") {
-      return;
-    }
-
-    if (
-      currentTeamOptionsState === "loaded" &&
-      lastLoadedTeamOptionsSyncKeyRef.current === teamOptionsSyncKey
-    ) {
-      return;
-    }
-
-    if (currentTeamOptionsState === "error") {
+    if (!open || teamUiMode === "free" || teamOptionsState !== "loading") {
       return;
     }
 
     let cancelled = false;
-    setTeamOptionsState("loading");
 
     fetch("/api/team/options", { cache: "no-store" })
       .then(async (response) => {
@@ -168,7 +146,6 @@ export function UserDropdown({
         }
 
         setTeamOptions(payload.teams);
-        lastLoadedTeamOptionsSyncKeyRef.current = teamOptionsSyncKey;
         setTeamOptionsState("loaded");
       })
       .catch(() => {
@@ -183,7 +160,7 @@ export function UserDropdown({
     return () => {
       cancelled = true;
     };
-  }, [open, teamOptionsSyncKey, teamUiMode]);
+  }, [open, teamOptionsState, teamUiMode]);
 
   const showTeamSwitcher = teamUiMode !== "free" && teamOptions.length > 1;
   const showTeamSwitcherLoading = teamUiMode !== "free" && teamOptionsState === "loading";
@@ -342,7 +319,7 @@ export function UserDropdown({
             <Link
               href="/dashboard/settings"
               role="menuitem"
-              onClick={() => setOpen(false)}
+              onClick={closeMenu}
               className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-foreground transition-colors hover:bg-[color:var(--surface-subtle)]"
             >
               <Settings className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -351,7 +328,7 @@ export function UserDropdown({
             <Link
               href="/dashboard/support"
               role="menuitem"
-              onClick={() => setOpen(false)}
+              onClick={closeMenu}
               className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-foreground transition-colors hover:bg-[color:var(--surface-subtle)]"
             >
               <CircleHelp className="h-4 w-4 shrink-0 text-muted-foreground" />

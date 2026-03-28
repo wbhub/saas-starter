@@ -27,7 +27,15 @@ export function SiteHeader(props: SiteHeaderProps) {
         </Link>
         <div className="flex items-center gap-3">
           {props.dashboardUser ? (
-            <UserDropdown {...props.dashboardUser} />
+            <UserDropdown
+              key={[
+                props.dashboardUser.activeTeamId,
+                props.dashboardUser.teamName ?? "",
+                props.dashboardUser.role,
+                props.dashboardUser.teamUiMode,
+              ].join(":")}
+              {...props.dashboardUser}
+            />
           ) : (
             <PublicHeaderActions
               loginLabel={t("SiteHeader.login")}
