@@ -180,7 +180,20 @@ export function OnboardingPlanSelector({
     }
   }
 
+  // Show loading state immediately when returning from signup with a plan param
+  // to avoid a flash of the plan cards before the auto-trigger fires.
+  const isAutoTriggering = isAuthenticated && Boolean(selectedPlan);
+
   const gridCols = freePlanEnabled ? "md:grid-cols-2 xl:grid-cols-4" : "md:grid-cols-3";
+
+  if (isAutoTriggering && !error) {
+    return (
+      <div className="mt-10 flex flex-col items-center justify-center gap-4 py-20">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-foreground" />
+        <p className="text-sm text-muted-foreground">{t("loading")}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="mt-10 space-y-8">
