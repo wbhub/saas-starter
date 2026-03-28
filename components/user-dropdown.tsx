@@ -25,12 +25,7 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useTheme } from "@/components/theme-provider";
@@ -74,6 +69,7 @@ export function UserDropdown({
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
+  const [showLocales, setShowLocales] = useState(false);
   const [teamOptions, setTeamOptions] = useState<DashboardTeamOption[]>([]);
   const [teamOptionsState, setTeamOptionsState] = useState<"idle" | "loading" | "loaded" | "error">(
     teamUiMode === "free" ? "loaded" : "idle",
@@ -83,6 +79,9 @@ export function UserDropdown({
 
   function handleOpenChange(nextOpen: boolean) {
     setOpen(nextOpen);
+    if (!nextOpen) {
+      setShowLocales(false);
+    }
     if (nextOpen && teamUiMode !== "free") {
       setTeamOptions([]);
       setTeamOptionsState("loading");
@@ -248,10 +247,8 @@ export function UserDropdown({
 
         {/* Preferences */}
         <DropdownMenuItem
-          onSelect={(e) => {
-            e.preventDefault();
-            setTheme(nextTheme);
-          }}
+          onClick={() => setTheme(nextTheme)}
+          closeOnClick={false}
           className="gap-2.5 rounded-lg px-2.5 py-2"
         >
           <ThemeIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -259,21 +256,33 @@ export function UserDropdown({
         </DropdownMenuItem>
 
         {SHOW_LOCALE_SWITCHER ? (
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger className="gap-2.5 rounded-lg px-2.5 py-2">
+          <>
+            <DropdownMenuItem
+              onClick={() => setShowLocales((prev) => !prev)}
+              closeOnClick={false}
+              className="gap-2.5 rounded-lg px-2.5 py-2"
+            >
               <Languages className="h-4 w-4 shrink-0 text-muted-foreground" />
               {t("UserDropdown.language")}: {tLocale(`localeNames.${locale}`)}
-            </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent>
-              <DropdownMenuRadioGroup value={locale} onValueChange={onLocaleChange}>
-                {routing.locales.map((item) => (
-                  <DropdownMenuRadioItem key={item} value={item}>
+              <ChevronDown
+                className={`ml-auto h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${showLocales ? "rotate-180" : ""}`}
+              />
+            </DropdownMenuItem>
+            {showLocales
+              ? routing.locales.map((item) => (
+                  <DropdownMenuItem
+                    key={item}
+                    onClick={() => onLocaleChange(item)}
+                    className="gap-2.5 rounded-lg py-1.5 pl-11 pr-2.5"
+                  >
                     {tLocale(`localeNames.${item}`)}
-                  </DropdownMenuRadioItem>
-                ))}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuSubContent>
-          </DropdownMenuSub>
+                    {item === locale ? (
+                      <Check className="ml-auto h-3.5 w-3.5 text-muted-foreground" />
+                    ) : null}
+                  </DropdownMenuItem>
+                ))
+              : null}
+          </>
         ) : null}
 
         <DropdownMenuSeparator />
@@ -302,10 +311,7 @@ export function UserDropdown({
         </form>
         <DropdownMenuItem
           className="gap-2.5 rounded-lg px-2.5 py-2"
-          onSelect={(e) => {
-            e.preventDefault();
-            logoutFormRef.current?.requestSubmit();
-          }}
+          onClick={() => logoutFormRef.current?.requestSubmit()}
         >
           <LogOut className="h-4 w-4 shrink-0 text-muted-foreground" />
           {t("UserDropdown.logout")}
