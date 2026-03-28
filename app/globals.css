@@ -191,7 +191,9 @@
   }
 }
 
-/* Bump small text inside the app for better readability */
+/* Bump small text inside the app for better readability.
+   Add the "app-content" class to the outermost wrapper of each page
+   so header, content, and footer all receive the size boost. */
 .app-content .text-sm {
   font-size: 0.9375rem;
   line-height: 1.5;

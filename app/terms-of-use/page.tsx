@@ -16,9 +16,9 @@ export default async function TermsOfUsePage() {
   } = await supabase.auth.getSession();
 
   return (
-    <div className="min-h-screen bg-[color:var(--background)] text-[color:var(--foreground)]">
+    <div className="app-content min-h-screen bg-[color:var(--background)] text-[color:var(--foreground)]">
       <SiteHeader isLoggedIn={Boolean(session)} />
-      <main className="app-content mx-auto max-w-[1440px] px-6 py-12 lg:px-10">
+      <main className="mx-auto max-w-[1440px] px-6 py-12 lg:px-10">
         <div className="mx-auto max-w-4xl space-y-8">
           <div className="space-y-3">
             <h1 className="text-3xl font-semibold tracking-tight">Terms of Use</h1>
