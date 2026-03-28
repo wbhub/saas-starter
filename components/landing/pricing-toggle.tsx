@@ -96,7 +96,7 @@ export function LandingPricingCards({ plans, showAnnualToggle }: Props) {
             <p className="app-muted mt-3 text-sm">{t(`plans.${tier.key}.description`)}</p>
             <AuthAwareLink
               loggedInHref="/dashboard"
-              loggedOutHref="/signup"
+              loggedOutHref="/onboarding"
               loggedInLabel={t("managePlan")}
               loggedOutLabel={t("choosePlan", { name: t(`plans.${tier.key}.name`) })}
               className="mt-6 inline-block rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400"

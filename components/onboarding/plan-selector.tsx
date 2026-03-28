@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { CheckCircle2 } from "lucide-react";
@@ -24,6 +24,11 @@ type Props = {
   freePlanEnabled: boolean;
   freePlanFeatures: string[];
   showAnnualToggle: boolean;
+  isAuthenticated: boolean;
+  /** Pre-selected plan key from URL (e.g. after returning from signup). */
+  selectedPlan?: string | null;
+  /** Pre-selected interval from URL. */
+  selectedInterval?: "year" | null;
 };
 
 function formatUsd(amount: number) {
@@ -77,16 +82,43 @@ export function OnboardingPlanSelector({
   freePlanEnabled,
   freePlanFeatures,
   showAnnualToggle,
+  isAuthenticated,
+  selectedPlan,
+  selectedInterval,
 }: Props) {
   const t = useTranslations("Onboarding");
   const router = useRouter();
-  const [interval, setInterval] = useState<"month" | "year">("month");
+  const [interval, setInterval] = useState<"month" | "year">(selectedInterval ?? "month");
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const autoTriggered = useRef(false);
 
   const isAnnual = interval === "year";
 
+  // Auto-trigger checkout when returning from signup with a plan param
+  useEffect(() => {
+    if (!isAuthenticated || !selectedPlan || autoTriggered.current) return;
+    autoTriggered.current = true;
+
+    if (selectedPlan === "free") {
+      handleFreePlan();
+    } else {
+      handlePaidPlan(selectedPlan as PlanKey);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, selectedPlan]);
+
+  function redirectToSignup(plan: string) {
+    const params = new URLSearchParams({ plan });
+    if (isAnnual) params.set("interval", "year");
+    router.push(`/signup?${params.toString()}`);
+  }
+
   async function handleFreePlan() {
+    if (!isAuthenticated) {
+      redirectToSignup("free");
+      return;
+    }
     setLoadingAction("free");
     setError(null);
     try {
@@ -113,6 +145,10 @@ export function OnboardingPlanSelector({
   }
 
   async function handlePaidPlan(planKey: PlanKey) {
+    if (!isAuthenticated) {
+      redirectToSignup(planKey);
+      return;
+    }
     setLoadingAction(planKey);
     setError(null);
     try {
@@ -221,7 +257,11 @@ export function OnboardingPlanSelector({
         {plans.map((plan) => {
           const price =
             isAnnual && plan.amountAnnualMonthly ? plan.amountAnnualMonthly : plan.amountMonthly;
-          const canCheckout = isAnnual ? plan.hasAnnualPriceId : plan.hasPriceId;
+          const canCheckout = isAuthenticated
+            ? isAnnual
+              ? plan.hasAnnualPriceId
+              : plan.hasPriceId
+            : true;
 
           return (
             <div

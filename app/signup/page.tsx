@@ -12,7 +12,25 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function SignupPage() {
+type SignupPageProps = {
+  searchParams?:
+    | Promise<Record<string, string | string[] | undefined>>
+    | Record<string, string | string[] | undefined>;
+};
+
+function buildOnboardingRedirect(params: Record<string, string | string[] | undefined>): string {
+  const plan = Array.isArray(params.plan) ? params.plan[0] : params.plan;
+  const interval = Array.isArray(params.interval) ? params.interval[0] : params.interval;
+
+  if (!plan) return "/onboarding";
+
+  const url = new URL("/onboarding", "http://localhost");
+  url.searchParams.set("plan", plan);
+  if (interval) url.searchParams.set("interval", interval);
+  return `${url.pathname}${url.search}`;
+}
+
+export default async function SignupPage({ searchParams }: SignupPageProps) {
   const t = await getTranslations("AuthPages");
   const supabase = await createClient();
   const cookieStore = await cookies();
@@ -26,6 +44,9 @@ export default async function SignupPage() {
     redirect("/dashboard");
   }
 
+  const resolvedSearchParams = (await searchParams) ?? {};
+  const redirectTo = buildOnboardingRedirect(resolvedSearchParams);
+
   return (
     <div className="app-content flex min-h-screen flex-col bg-[color:var(--background)] text-[color:var(--foreground)]">
       <SiteHeader />
@@ -33,7 +54,7 @@ export default async function SignupPage() {
       <main className="flex flex-1 flex-col items-center justify-center px-4 py-12">
         <AuthForm
           mode="signup"
-          redirectTo="/onboarding"
+          redirectTo={redirectTo}
           socialProviders={socialProviders}
           lastUsedProvider={lastUsedProvider}
         />
