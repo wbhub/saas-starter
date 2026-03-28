@@ -87,9 +87,7 @@ describe("syncCheckoutSuccessForTeam", () => {
     });
 
     const { syncCheckoutSuccessForTeam } = await import("./checkout-success");
-    await expect(
-      syncCheckoutSuccessForTeam("team_123", { sessionId: "cs_123" }),
-    ).resolves.toEqual({
+    await expect(syncCheckoutSuccessForTeam("team_123", { sessionId: "cs_123" })).resolves.toEqual({
       synced: true,
       subscriptionId: "sub_123",
     });
@@ -152,9 +150,7 @@ describe("syncCheckoutSuccessForTeam", () => {
     });
 
     const { syncCheckoutSuccessForTeam } = await import("./checkout-success");
-    await expect(
-      syncCheckoutSuccessForTeam("team_123", { sessionId: "cs_123" }),
-    ).resolves.toEqual({
+    await expect(syncCheckoutSuccessForTeam("team_123", { sessionId: "cs_123" })).resolves.toEqual({
       synced: false,
       reason: "team_mismatch",
     });

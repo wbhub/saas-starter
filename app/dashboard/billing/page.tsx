@@ -19,7 +19,9 @@ function getFirstSearchParamValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
-export default async function DashboardBillingPage({ searchParams }: DashboardBillingPageProps = {}) {
+export default async function DashboardBillingPage({
+  searchParams,
+}: DashboardBillingPageProps = {}) {
   const t = await getTranslations("DashboardBillingPage");
   const tPlanCopy = await getTranslations("Landing.pricing");
   const locale = await getLocale();
@@ -37,11 +39,14 @@ export default async function DashboardBillingPage({ searchParams }: DashboardBi
         sessionId: checkoutSessionId ?? null,
       });
     } catch (error) {
-      logger.warn("Billing page checkout-success sync failed; continuing with current billing view.", {
-        teamId: baseData.teamContext.teamId,
-        checkoutSessionId: checkoutSessionId ?? null,
-        error,
-      });
+      logger.warn(
+        "Billing page checkout-success sync failed; continuing with current billing view.",
+        {
+          teamId: baseData.teamContext.teamId,
+          checkoutSessionId: checkoutSessionId ?? null,
+          error,
+        },
+      );
     }
   }
 

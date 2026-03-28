@@ -34,9 +34,7 @@ function getSubscriptionIdFromSession(session: Stripe.Checkout.Session) {
 }
 
 function isLiveSubscriptionStatus(status: string) {
-  return LIVE_SUBSCRIPTION_STATUSES.includes(
-    status as (typeof LIVE_SUBSCRIPTION_STATUSES)[number],
-  );
+  return LIVE_SUBSCRIPTION_STATUSES.includes(status as (typeof LIVE_SUBSCRIPTION_STATUSES)[number]);
 }
 
 async function getTeamStripeCustomerId(teamId: string) {
@@ -65,11 +63,14 @@ async function getLatestLiveSubscriptionForCustomer(
   }
 
   if (customer.metadata?.supabase_team_id && customer.metadata.supabase_team_id !== teamId) {
-    logger.warn("Skipping checkout success sync because Stripe customer is mapped to another team", {
-      teamId,
-      stripeCustomerId,
-      customerTeamId: customer.metadata.supabase_team_id,
-    });
+    logger.warn(
+      "Skipping checkout success sync because Stripe customer is mapped to another team",
+      {
+        teamId,
+        stripeCustomerId,
+        customerTeamId: customer.metadata.supabase_team_id,
+      },
+    );
     return null;
   }
 
