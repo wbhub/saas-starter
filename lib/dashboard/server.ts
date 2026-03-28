@@ -111,7 +111,7 @@ export type UsageMonthlyTotalsRow = {
   reserved_tokens: number;
 };
 
-export const getDashboardBaseData = cache(async function getDashboardBaseData() {
+const getDashboardRequestContext = cache(async function getDashboardRequestContext() {
   const supabase = await createClient();
   const cookieStore = await cookies();
   const csrfToken = cookieStore.get(CSRF_COOKIE_NAME)?.value ?? "";
@@ -122,6 +122,16 @@ export const getDashboardBaseData = cache(async function getDashboardBaseData() 
   if (!user) {
     redirect("/login");
   }
+
+  return {
+    supabase,
+    user,
+    csrfToken,
+  };
+});
+
+export const getDashboardBaseData = cache(async function getDashboardBaseData() {
+  const { supabase, user, csrfToken } = await getDashboardRequestContext();
 
   const [profileQuery, teamContextQuery, teamMembershipsQuery, notificationPreferencesQuery] =
     await Promise.allSettled([

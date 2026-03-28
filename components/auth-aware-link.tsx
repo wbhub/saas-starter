@@ -14,11 +14,19 @@ type AuthAwareLinkProps = {
   children?: ReactNode;
 };
 
-const supabase = createClient();
+let supabaseClient: ReturnType<typeof createClient> | null = null;
 let isLoggedInSnapshot = false;
 let listenerCount = 0;
 let unsubscribeAuthListener: (() => void) | null = null;
 const subscribers = new Set<() => void>();
+
+function getSupabaseClient() {
+  if (!supabaseClient) {
+    supabaseClient = createClient();
+  }
+
+  return supabaseClient;
+}
 
 function notifySubscribers() {
   for (const subscriber of subscribers) {
@@ -27,6 +35,7 @@ function notifySubscribers() {
 }
 
 async function refreshSnapshot() {
+  const supabase = getSupabaseClient();
   const { data } = await supabase.auth.getUser();
   const nextSnapshot = Boolean(data.user);
   if (nextSnapshot !== isLoggedInSnapshot) {
@@ -40,6 +49,7 @@ function ensureAuthListener() {
     return;
   }
 
+  const supabase = getSupabaseClient();
   const {
     data: { subscription },
   } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -74,6 +84,10 @@ function getIsLoggedInSnapshot() {
   return isLoggedInSnapshot;
 }
 
+export function useIsLoggedIn() {
+  return useSyncExternalStore(subscribeAuthState, getIsLoggedInSnapshot, getIsLoggedInSnapshot);
+}
+
 export function AuthAwareLink({
   loggedInHref,
   loggedOutHref,
@@ -82,11 +96,7 @@ export function AuthAwareLink({
   className,
   children,
 }: AuthAwareLinkProps) {
-  const isLoggedIn = useSyncExternalStore(
-    subscribeAuthState,
-    getIsLoggedInSnapshot,
-    getIsLoggedInSnapshot,
-  );
+  const isLoggedIn = useIsLoggedIn();
 
   const href = isLoggedIn ? loggedInHref : loggedOutHref;
   const label = isLoggedIn ? loggedInLabel : loggedOutLabel;

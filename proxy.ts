@@ -107,6 +107,22 @@ function isProtectedDashboardPath(pathname: string) {
   return pathname === "/dashboard" || pathname.startsWith("/dashboard/");
 }
 
+function shouldRefreshSession(pathname: string) {
+  return (
+    isProtectedDashboardPath(pathname) ||
+    pathname === "/login" ||
+    pathname === "/signup" ||
+    pathname === "/reset-password" ||
+    pathname.startsWith("/reset-password/") ||
+    pathname === "/auth/callback" ||
+    pathname === "/auth/confirm" ||
+    pathname === "/invite" ||
+    pathname.startsWith("/invite/") ||
+    pathname === "/api" ||
+    pathname.startsWith("/api/")
+  );
+}
+
 function getSafeNextPath(pathname: string, search: string) {
   const next = `${pathname}${search}`;
   if (!next.startsWith("/")) {
@@ -134,7 +150,19 @@ export async function proxy(request: NextRequest) {
   requestHeaders.set("x-nonce", nonce);
   requestHeaders.set(REQUEST_ID_HEADER, requestId);
 
-  const { response, user } = await updateSession(request, { requestHeaders });
+  let response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
+  let user = null;
+
+  if (shouldRefreshSession(request.nextUrl.pathname)) {
+    const sessionResult = await updateSession(request, { requestHeaders });
+    response = sessionResult.response;
+    user = sessionResult.user;
+  }
+
   if (!user && isProtectedDashboardPath(request.nextUrl.pathname)) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";

@@ -8,7 +8,7 @@ export default async function NotFound() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[color:var(--background)] text-[color:var(--foreground)]">
-      <SiteHeader isLoggedIn={false} />
+      <SiteHeader />
       <main className="flex flex-1 items-center justify-center px-6 py-12 text-center">
         <div>
           <p className="text-6xl font-bold tracking-tight">404</p>
