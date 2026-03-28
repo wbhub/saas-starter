@@ -1,15 +1,7 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import { BarChart3 } from "lucide-react";
-import { DashboardShell } from "@/components/dashboard-shell";
-import { NoTeamCard } from "@/components/no-team-card";
-import { TeamContextErrorCard } from "@/components/team-context-error-card";
 import { formatUtcDate } from "@/lib/date";
-import {
-  getDashboardAiUiGate,
-  getDashboardBaseData,
-  getDashboardBillingContext,
-  getUsageMonthlyTotals,
-} from "@/lib/dashboard/server";
+import { getDashboardShellData, getUsageMonthlyTotals } from "@/lib/dashboard/server";
 
 function formatTokens(value: number, locale: string) {
   return new Intl.NumberFormat(locale).format(value);
@@ -18,57 +10,16 @@ function formatTokens(value: number, locale: string) {
 export default async function DashboardUsagePage() {
   const t = await getTranslations("DashboardUsagePage");
   const locale = await getLocale();
-  const {
-    supabase,
-    user,
-    profile,
-    teamContext,
-    teamContextLoadFailed,
-    teamMemberships,
-    displayName,
-    csrfToken,
-  } = await getDashboardBaseData();
-
-  if (teamContextLoadFailed) {
-    return (
-      <main className="min-h-screen bg-[color:var(--background)] px-6 py-10 text-[color:var(--foreground)]">
-        <TeamContextErrorCard />
-      </main>
-    );
-  }
+  const { supabase, teamContext } = await getDashboardShellData();
 
   if (!teamContext) {
-    return (
-      <main className="min-h-screen bg-[color:var(--background)] px-6 py-10 text-[color:var(--foreground)]">
-        <NoTeamCard />
-      </main>
-    );
+    return null;
   }
 
-  const [usageRows, billingContext, aiUiGate] = await Promise.all([
-    getUsageMonthlyTotals(supabase, teamContext.teamId),
-    getDashboardBillingContext(supabase, teamContext.teamId),
-    getDashboardAiUiGate(supabase, teamContext.teamId),
-  ]);
-  const teamUiMode = !billingContext.isPaidPlan
-    ? "free"
-    : billingContext.memberCount > 1
-      ? "paid_team"
-      : "paid_solo";
+  const usageRows = await getUsageMonthlyTotals(supabase, teamContext.teamId);
 
   return (
-    <DashboardShell
-      displayName={displayName}
-      userEmail={user.email ?? null}
-      avatarUrl={profile?.avatar_url ?? null}
-      teamName={teamContext.teamName}
-      role={teamContext.role}
-      teamUiMode={teamUiMode}
-      showAiNav={aiUiGate.isVisibleInUi}
-      activeTeamId={teamContext.teamId}
-      teamMemberships={teamMemberships}
-      csrfToken={csrfToken}
-    >
+    <>
       <div>
         <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
           {t("header.eyebrow")}
@@ -125,6 +76,6 @@ export default async function DashboardUsagePage() {
           </div>
         )}
       </section>
-    </DashboardShell>
+    </>
   );
 }

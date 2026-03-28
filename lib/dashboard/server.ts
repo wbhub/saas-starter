@@ -33,6 +33,8 @@ type NotificationPreferencesRow = {
   security_alerts: boolean;
 };
 
+export type DashboardNotificationPreferences = NotificationPreferencesRow;
+
 type TeamMembershipRow = {
   user_id: string;
   role: "owner" | "admin" | "member";
@@ -105,6 +107,20 @@ export type DashboardAiUiGate = {
   accessMode: AiAccessMode;
 };
 
+export type DashboardTeamUiMode = "free" | "paid_solo" | "paid_team";
+
+export type DashboardShellData = Awaited<ReturnType<typeof getDashboardBaseData>> & {
+  billingContext: DashboardBillingContext | null;
+  aiUiGate: DashboardAiUiGate;
+  teamUiMode: DashboardTeamUiMode | null;
+};
+
+const DEFAULT_NOTIFICATION_PREFERENCES: DashboardNotificationPreferences = {
+  marketing_emails: false,
+  product_updates: true,
+  security_alerts: true,
+};
+
 export type UsageMonthlyTotalsRow = {
   month_start: string;
   used_tokens: number;
@@ -133,26 +149,20 @@ const getDashboardRequestContext = cache(async function getDashboardRequestConte
 export const getDashboardBaseData = cache(async function getDashboardBaseData() {
   const { supabase, user, csrfToken } = await getDashboardRequestContext();
 
-  const [profileQuery, teamContextQuery, teamMembershipsQuery, notificationPreferencesQuery] =
-    await Promise.allSettled([
-      supabase
-        .from("profiles")
-        .select("id,full_name,avatar_url,created_at")
-        .eq("id", user.id)
-        .maybeSingle<ProfileRow>(),
-      getCachedTeamContextForUser(supabase, user.id),
-      supabase
-        .from("team_memberships")
-        .select("team_id,role,teams(name)")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: true })
-        .returns<DashboardTeamMembershipRow[]>(),
-      supabase
-        .from("notification_preferences")
-        .select("marketing_emails,product_updates,security_alerts")
-        .eq("user_id", user.id)
-        .maybeSingle<NotificationPreferencesRow>(),
-    ]);
+  const [profileQuery, teamContextQuery, teamMembershipsQuery] = await Promise.allSettled([
+    supabase
+      .from("profiles")
+      .select("id,full_name,avatar_url,created_at")
+      .eq("id", user.id)
+      .maybeSingle<ProfileRow>(),
+    getCachedTeamContextForUser(supabase, user.id),
+    supabase
+      .from("team_memberships")
+      .select("team_id,role,teams(name)")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: true })
+      .returns<DashboardTeamMembershipRow[]>(),
+  ]);
 
   let profile: ProfileRow | null = null;
   if (profileQuery.status === "fulfilled") {
@@ -202,26 +212,6 @@ export const getDashboardBaseData = cache(async function getDashboardBaseData() 
   }
 
   const displayName = profile?.full_name?.trim() || user.email || "there";
-  let notificationPreferences: NotificationPreferencesRow = {
-    marketing_emails: false,
-    product_updates: true,
-    security_alerts: true,
-  };
-  if (notificationPreferencesQuery.status === "fulfilled") {
-    if (notificationPreferencesQuery.value.error) {
-      logger.warn("Failed to load dashboard notification preferences; using defaults.", {
-        userId: user.id,
-        error: notificationPreferencesQuery.value.error,
-      });
-    } else if (notificationPreferencesQuery.value.data) {
-      notificationPreferences = notificationPreferencesQuery.value.data;
-    }
-  } else {
-    logger.warn("Failed to load dashboard notification preferences; using defaults.", {
-      userId: user.id,
-      error: notificationPreferencesQuery.reason,
-    });
-  }
 
   return {
     supabase,
@@ -230,11 +220,39 @@ export const getDashboardBaseData = cache(async function getDashboardBaseData() 
     teamContext,
     teamContextLoadFailed,
     teamMemberships,
-    notificationPreferences,
     displayName,
     csrfToken,
   };
 });
+
+export async function getDashboardNotificationPreferences(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<DashboardNotificationPreferences> {
+  try {
+    const notificationPreferencesResult = await supabase
+      .from("notification_preferences")
+      .select("marketing_emails,product_updates,security_alerts")
+      .eq("user_id", userId)
+      .maybeSingle<NotificationPreferencesRow>();
+
+    if (notificationPreferencesResult.error) {
+      logger.warn("Failed to load dashboard notification preferences; using defaults.", {
+        userId,
+        error: notificationPreferencesResult.error,
+      });
+      return DEFAULT_NOTIFICATION_PREFERENCES;
+    }
+
+    return notificationPreferencesResult.data ?? DEFAULT_NOTIFICATION_PREFERENCES;
+  } catch (error) {
+    logger.warn("Failed to load dashboard notification preferences; using defaults.", {
+      userId,
+      error,
+    });
+    return DEFAULT_NOTIFICATION_PREFERENCES;
+  }
+}
 
 export async function getLiveSubscription(
   supabase: SupabaseClient,
@@ -314,9 +332,22 @@ export async function getDashboardBillingContext(
   };
 }
 
+export function getDashboardTeamUiMode(
+  billingContext: Pick<DashboardBillingContext, "isPaidPlan" | "memberCount">,
+): DashboardTeamUiMode {
+  if (!billingContext.isPaidPlan) {
+    return "free";
+  }
+
+  return billingContext.memberCount > 1 ? "paid_team" : "paid_solo";
+}
+
 export async function getDashboardAiUiGate(
   supabase: SupabaseClient,
   teamId: string | null,
+  options?: {
+    billingContext?: Pick<DashboardBillingContext, "effectivePlanKey" | "subscription">;
+  },
 ): Promise<DashboardAiUiGate> {
   const accessMode = getAiAccessMode();
   if (!teamId) {
@@ -338,10 +369,9 @@ export async function getDashboardAiUiGate(
   }
 
   try {
-    let subscriptionRow: {
-      stripe_price_id: string | null;
-      status: SubscriptionStatus | null;
-    } | null = null;
+    const billingContext = options?.billingContext;
+    let effectivePlanKey: EffectivePlanKey | null =
+      billingContext?.effectivePlanKey ?? resolveEffectivePlanKey(null);
     if (accessMode === "paid") {
       const allowedStatuses = getAiAllowedSubscriptionStatuses();
       if (!allowedStatuses.length) {
@@ -352,9 +382,16 @@ export async function getDashboardAiUiGate(
           accessMode,
         };
       }
+
+      const subscriptionStatus = billingContext?.subscription?.status ?? null;
+      if (subscriptionStatus && allowedStatuses.includes(subscriptionStatus)) {
+        effectivePlanKey = billingContext?.effectivePlanKey ?? effectivePlanKey;
+      } else if (billingContext) {
+        effectivePlanKey = resolveEffectivePlanKey(null);
+      }
     }
 
-    if (accessMode !== "all") {
+    if (accessMode !== "all" && !billingContext) {
       let subscriptionQuery = supabase
         .from("subscriptions")
         .select("stripe_price_id,status")
@@ -387,10 +424,9 @@ export async function getDashboardAiUiGate(
         };
       }
 
-      subscriptionRow = subscriptionResult.data;
+      effectivePlanKey = resolveEffectivePlanKey(subscriptionResult.data);
     }
 
-    const effectivePlanKey = resolveEffectivePlanKey(subscriptionRow);
     const aiAccess = resolveAiAccess({ effectivePlanKey });
     if (!aiAccess.allowed || !aiAccess.model) {
       return {
@@ -425,6 +461,43 @@ export async function getDashboardAiUiGate(
     };
   }
 }
+
+export const getDashboardShellData = cache(async function getDashboardShellData() {
+  const baseData = await getDashboardBaseData();
+
+  if (baseData.teamContextLoadFailed) {
+    return {
+      ...baseData,
+      billingContext: null,
+      aiUiGate: await getDashboardAiUiGate(baseData.supabase, null),
+      teamUiMode: null,
+    } satisfies DashboardShellData;
+  }
+
+  if (!baseData.teamContext) {
+    return {
+      ...baseData,
+      billingContext: null,
+      aiUiGate: await getDashboardAiUiGate(baseData.supabase, null),
+      teamUiMode: null,
+    } satisfies DashboardShellData;
+  }
+
+  const billingContext = await getDashboardBillingContext(
+    baseData.supabase,
+    baseData.teamContext.teamId,
+  );
+  const aiUiGate = await getDashboardAiUiGate(baseData.supabase, baseData.teamContext.teamId, {
+    billingContext,
+  });
+
+  return {
+    ...baseData,
+    billingContext,
+    aiUiGate,
+    teamUiMode: getDashboardTeamUiMode(billingContext),
+  } satisfies DashboardShellData;
+});
 
 export async function getTeamMembersAndPendingInvites(supabase: SupabaseClient, teamId: string) {
   const queryLimit = getTeamMaxMembers();

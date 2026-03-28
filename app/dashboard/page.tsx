@@ -3,69 +3,26 @@ import { getTranslations } from "next-intl/server";
 import { ArrowRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { NoTeamCard } from "@/components/no-team-card";
-import { TeamContextErrorCard } from "@/components/team-context-error-card";
-import { DashboardShell } from "@/components/dashboard-shell";
 import { formatUtcDate } from "@/lib/date";
 import { type PlanKey } from "@/lib/stripe/plans";
-import {
-  getDashboardAiUiGate,
-  getDashboardBaseData,
-  getDashboardBillingContext,
-} from "@/lib/dashboard/server";
+import { getDashboardShellData } from "@/lib/dashboard/server";
 
 export default async function DashboardPage() {
   const t = await getTranslations();
   const tPlans = await getTranslations("Landing.pricing");
-  const {
-    supabase,
-    user,
-    profile,
-    teamContext,
-    teamContextLoadFailed,
-    teamMemberships,
-    displayName,
-    csrfToken,
-  } = await getDashboardBaseData();
+  const { user, profile, teamContext, displayName, billingContext, teamUiMode } =
+    await getDashboardShellData();
 
-  if (teamContextLoadFailed) {
-    return (
-      <main className="min-h-screen bg-background px-6 py-10 text-foreground">
-        <TeamContextErrorCard />
-      </main>
-    );
+  if (!teamContext || !billingContext || !teamUiMode) {
+    return null;
   }
 
-  if (!teamContext) {
-    return (
-      <main className="min-h-screen bg-background px-6 py-10 text-foreground">
-        <NoTeamCard />
-      </main>
-    );
-  }
-
-  const [billingContext, aiUiGate] = await Promise.all([
-    getDashboardBillingContext(supabase, teamContext.teamId),
-    getDashboardAiUiGate(supabase, teamContext.teamId),
-  ]);
   const { subscription, effectivePlanKey, memberCount, isPaidPlan } = billingContext;
   const currentPaidPlanKey: PlanKey | null =
     isPaidPlan && effectivePlanKey && effectivePlanKey !== "free" ? effectivePlanKey : null;
-  const teamUiMode = !isPaidPlan ? "free" : memberCount > 1 ? "paid_team" : "paid_solo";
 
   return (
-    <DashboardShell
-      displayName={displayName}
-      userEmail={user.email ?? null}
-      avatarUrl={profile?.avatar_url ?? null}
-      teamName={teamContext.teamName}
-      role={teamContext.role}
-      teamUiMode={teamUiMode}
-      showAiNav={aiUiGate.isVisibleInUi}
-      activeTeamId={teamContext.teamId}
-      teamMemberships={teamMemberships}
-      csrfToken={csrfToken}
-    >
+    <>
       {/* Page header */}
       <div>
         <h1 className="text-3xl font-semibold tracking-tight">
@@ -164,6 +121,6 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-    </DashboardShell>
+    </>
   );
 }

@@ -68,26 +68,6 @@ describe("Dashboard page billing selection", () => {
         error: null,
       }),
     };
-    const teamInvitesQuery = {
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      is: vi.fn().mockReturnThis(),
-      gt: vi.fn().mockReturnThis(),
-      order: vi.fn().mockReturnThis(),
-      returns: vi.fn().mockResolvedValue({ data: [], error: null }),
-    };
-    const notificationPreferencesQuery = {
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      maybeSingle: vi.fn().mockResolvedValue({
-        data: {
-          marketing_emails: false,
-          product_updates: true,
-          security_alerts: true,
-        },
-        error: null,
-      }),
-    };
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: async () => ({
         auth: {
@@ -110,12 +90,6 @@ describe("Dashboard page billing selection", () => {
           }
           if (table === "team_memberships") {
             return teamMembershipsQuery;
-          }
-          if (table === "team_invites") {
-            return teamInvitesQuery;
-          }
-          if (table === "notification_preferences") {
-            return notificationPreferencesQuery;
           }
           throw new Error(`Unexpected table: ${table}`);
         }),
@@ -213,22 +187,6 @@ describe("Dashboard page billing selection", () => {
               returns: vi.fn().mockResolvedValue({ data: [], error: null }),
             };
           }
-
-          if (table === "notification_preferences") {
-            return {
-              select: vi.fn().mockReturnThis(),
-              eq: vi.fn().mockReturnThis(),
-              maybeSingle: vi.fn().mockResolvedValue({
-                data: {
-                  marketing_emails: false,
-                  product_updates: true,
-                  security_alerts: true,
-                },
-                error: null,
-              }),
-            };
-          }
-
           return {
             select: vi.fn().mockReturnThis(),
             eq: vi.fn().mockReturnThis(),
@@ -250,7 +208,11 @@ describe("Dashboard page billing selection", () => {
       logout: vi.fn(),
     }));
     vi.doMock("@/lib/team-context-cache", () => ({
-      getCachedTeamContextForUser: vi.fn().mockResolvedValue(null),
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
+        teamId: "team_123",
+        teamName: "Acme Team",
+        role: "owner",
+      }),
     }));
     const consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
 

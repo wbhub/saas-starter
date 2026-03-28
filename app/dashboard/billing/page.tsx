@@ -1,17 +1,10 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { BillingActions } from "@/components/billing-actions";
-import { DashboardShell } from "@/components/dashboard-shell";
-import { NoTeamCard } from "@/components/no-team-card";
-import { TeamContextErrorCard } from "@/components/team-context-error-card";
 import { formatUtcDate } from "@/lib/date";
 import { formatStaticUsdMonthlyLabel } from "@/lib/stripe/plan-price-display";
 import { canManageTeamBilling } from "@/lib/team-context";
-import {
-  getDashboardAiUiGate,
-  getDashboardBaseData,
-  getDashboardBillingContext,
-} from "@/lib/dashboard/server";
+import { getDashboardShellData } from "@/lib/dashboard/server";
 import { PLAN_CATALOG, type PlanKey } from "@/lib/stripe/plans";
 
 export default async function DashboardBillingPage() {
@@ -21,40 +14,14 @@ export default async function DashboardBillingPage() {
   const priceSuffixMonth = tPlanCopy("priceSuffix.month");
   const catalogSeatPrice = (amountMonthly: number) =>
     formatStaticUsdMonthlyLabel(amountMonthly, locale, priceSuffixMonth);
-  const {
-    supabase,
-    user,
-    profile,
-    teamContext,
-    teamContextLoadFailed,
-    teamMemberships,
-    displayName,
-    csrfToken,
-  } = await getDashboardBaseData();
+  const { teamContext, billingContext, teamUiMode } = await getDashboardShellData();
 
-  if (teamContextLoadFailed) {
-    return (
-      <main className="min-h-screen bg-[color:var(--background)] px-6 py-10 text-[color:var(--foreground)]">
-        <TeamContextErrorCard />
-      </main>
-    );
+  if (!teamContext || !billingContext || !teamUiMode) {
+    return null;
   }
 
-  if (!teamContext) {
-    return (
-      <main className="min-h-screen bg-[color:var(--background)] px-6 py-10 text-[color:var(--foreground)]">
-        <NoTeamCard />
-      </main>
-    );
-  }
-
-  const [billingContext, aiUiGate] = await Promise.all([
-    getDashboardBillingContext(supabase, teamContext.teamId),
-    getDashboardAiUiGate(supabase, teamContext.teamId),
-  ]);
   const { billingEnabled, subscription, effectivePlanKey, memberCount, isPaidPlan } =
     billingContext;
-  const teamUiMode = !isPaidPlan ? "free" : memberCount > 1 ? "paid_team" : "paid_solo";
   const currentPaidPlanKey: PlanKey | null =
     isPaidPlan && effectivePlanKey && effectivePlanKey !== "free" ? effectivePlanKey : null;
   const currentPlan = currentPaidPlanKey
@@ -66,18 +33,7 @@ export default async function DashboardBillingPage() {
   const canManageBilling = canManageTeamBilling(teamContext.role);
 
   return (
-    <DashboardShell
-      displayName={displayName}
-      userEmail={user.email ?? null}
-      avatarUrl={profile?.avatar_url ?? null}
-      teamName={teamContext.teamName}
-      role={teamContext.role}
-      teamUiMode={teamUiMode}
-      showAiNav={aiUiGate.isVisibleInUi}
-      activeTeamId={teamContext.teamId}
-      teamMemberships={teamMemberships}
-      csrfToken={csrfToken}
-    >
+    <>
       <div>
         <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
           {t("header.eyebrow")}
@@ -207,6 +163,6 @@ export default async function DashboardBillingPage() {
           </Link>
         </section>
       ) : null}
-    </DashboardShell>
+    </>
   );
 }

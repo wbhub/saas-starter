@@ -1,71 +1,18 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { AiChatCard } from "@/components/ai-chat-card";
-import { DashboardShell } from "@/components/dashboard-shell";
-import { NoTeamCard } from "@/components/no-team-card";
-import { TeamContextErrorCard } from "@/components/team-context-error-card";
 import { env } from "@/lib/env";
 import { parseAiProviderName } from "@/lib/ai/provider-name";
-import {
-  getDashboardAiUiGate,
-  getDashboardBaseData,
-  getDashboardBillingContext,
-} from "@/lib/dashboard/server";
+import { getDashboardShellData } from "@/lib/dashboard/server";
 
 export default async function DashboardAiPage() {
   const aiProviderName = parseAiProviderName(env.AI_PROVIDER);
   const aiToolsEnabled = env.NEXT_PUBLIC_AI_TOOLS_ENABLED === "true";
   const t = await getTranslations("DashboardAiPage");
-  const {
-    supabase,
-    user,
-    profile,
-    teamContext,
-    teamContextLoadFailed,
-    teamMemberships,
-    displayName,
-    csrfToken,
-  } = await getDashboardBaseData();
-
-  if (teamContextLoadFailed) {
-    return (
-      <main className="min-h-screen bg-[color:var(--background)] px-6 py-10 text-[color:var(--foreground)]">
-        <TeamContextErrorCard />
-      </main>
-    );
-  }
-
-  if (!teamContext) {
-    return (
-      <main className="min-h-screen bg-[color:var(--background)] px-6 py-10 text-[color:var(--foreground)]">
-        <NoTeamCard />
-      </main>
-    );
-  }
-
-  const [billingContext, aiUiGate] = await Promise.all([
-    getDashboardBillingContext(supabase, teamContext.teamId),
-    getDashboardAiUiGate(supabase, teamContext.teamId),
-  ]);
-  const teamUiMode = !billingContext.isPaidPlan
-    ? "free"
-    : billingContext.memberCount > 1
-      ? "paid_team"
-      : "paid_solo";
+  const { aiUiGate } = await getDashboardShellData();
 
   return (
-    <DashboardShell
-      displayName={displayName}
-      userEmail={user.email ?? null}
-      avatarUrl={profile?.avatar_url ?? null}
-      teamName={teamContext.teamName}
-      role={teamContext.role}
-      teamUiMode={teamUiMode}
-      showAiNav={aiUiGate.isVisibleInUi}
-      activeTeamId={teamContext.teamId}
-      teamMemberships={teamMemberships}
-      csrfToken={csrfToken}
-    >
+    <>
       <div>
         <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
           {t("header.eyebrow")}
@@ -101,6 +48,6 @@ export default async function DashboardAiPage() {
           ) : null}
         </section>
       )}
-    </DashboardShell>
+    </>
   );
 }
