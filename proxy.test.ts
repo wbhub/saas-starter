@@ -55,6 +55,19 @@ describe("proxy auth guard", () => {
     expect(response.cookies.get("csrf_token_client")?.value).toBe("csrf-token-value");
   });
 
+  it("skips session refresh for informational public pages", async () => {
+    const updateSession = vi.fn();
+    vi.doMock("@/lib/supabase/middleware", () => ({
+      updateSession,
+    }));
+
+    const { proxy } = await import("./proxy");
+    const response = await proxy(makeRequest("https://app.example.com/privacy-policy"));
+
+    expect(updateSession).not.toHaveBeenCalled();
+    expect(response.status).toBe(200);
+  });
+
   it("falls back to /dashboard when encoded backslash appears in next path", async () => {
     vi.doMock("@/lib/supabase/middleware", () => ({
       updateSession: vi.fn().mockResolvedValue({
@@ -87,5 +100,21 @@ describe("proxy auth guard", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("location")).toBeNull();
+  });
+
+  it("refreshes session state for login and api routes", async () => {
+    const updateSession = vi.fn().mockResolvedValue({
+      response: NextResponse.next(),
+      user: null,
+    });
+    vi.doMock("@/lib/supabase/middleware", () => ({
+      updateSession,
+    }));
+
+    const { proxy } = await import("./proxy");
+    await proxy(makeRequest("https://app.example.com/login"));
+    await proxy(makeRequest("https://app.example.com/api/intercom/boot"));
+
+    expect(updateSession).toHaveBeenCalledTimes(2);
   });
 });

@@ -10,10 +10,10 @@ import {
   WhyStarterSection,
 } from "./landing/sections";
 
-export function LandingPage({ isLoggedIn }: { isLoggedIn: boolean }) {
+export function LandingPage() {
   return (
     <div className="app-content min-h-screen bg-[color:var(--background)] text-[color:var(--foreground)]">
-      <SiteHeader isLoggedIn={isLoggedIn} />
+      <SiteHeader />
 
       <main className="mx-auto max-w-[1440px] px-6 py-14 md:py-20 lg:px-10">
         <div className="space-y-16 md:space-y-20">

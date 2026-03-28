@@ -1,18 +1,15 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Sparkles } from "lucide-react";
-import { LocaleSwitcher } from "./locale-switcher";
-import { ThemeToggle } from "./theme-toggle";
+import { PublicHeaderActions } from "./public-header-actions";
 import { UserDropdown, type UserDropdownProps } from "./user-dropdown";
-import { SHOW_LOCALE_SWITCHER } from "@/lib/i18n/config";
 
-type SiteHeaderProps =
-  | { isLoggedIn: boolean; dashboardUser?: undefined }
-  | { isLoggedIn?: undefined; dashboardUser: UserDropdownProps };
+type SiteHeaderProps = {
+  dashboardUser?: UserDropdownProps;
+};
 
 export function SiteHeader(props: SiteHeaderProps) {
   const t = useTranslations();
-  const isDashboard = !!props.dashboardUser;
 
   return (
     <header className="border-b app-border-subtle">
@@ -29,36 +26,14 @@ export function SiteHeader(props: SiteHeaderProps) {
           </span>
         </Link>
         <div className="flex items-center gap-3">
-          {isDashboard ? (
+          {props.dashboardUser ? (
             <UserDropdown {...props.dashboardUser} />
           ) : (
-            <>
-              {SHOW_LOCALE_SWITCHER ? <LocaleSwitcher /> : null}
-              <ThemeToggle />
-              {props.isLoggedIn ? (
-                <Link
-                  href="/dashboard"
-                  className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400"
-                >
-                  {t("SiteHeader.openApp")}
-                </Link>
-              ) : (
-                <>
-                  <Link
-                    href="/login"
-                    className="rounded-lg border app-border-subtle px-4 py-2 text-sm hover:bg-[color:var(--surface-subtle)]"
-                  >
-                    {t("SiteHeader.login")}
-                  </Link>
-                  <Link
-                    href="/signup"
-                    className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400"
-                  >
-                    {t("SiteHeader.startFree")}
-                  </Link>
-                </>
-              )}
-            </>
+            <PublicHeaderActions
+              loginLabel={t("SiteHeader.login")}
+              signupLabel={t("SiteHeader.startFree")}
+              openAppLabel={t("SiteHeader.openApp")}
+            />
           )}
         </div>
       </nav>
