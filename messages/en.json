@@ -33,7 +33,8 @@
     "dashboard": "Dashboard",
     "login": "Login",
     "openApp": "Open App",
-    "startFree": "Start Free"
+    "startFree": "Start Free",
+    "getStarted": "Get Started"
   },
   "SiteFooter": {
     "companyPlaceholder": "[Company Name]",
@@ -85,7 +86,8 @@
       "dashboard": "Dashboard",
       "login": "Login",
       "openApp": "Open App",
-      "startFree": "Start Free"
+      "startFree": "Start Free",
+      "getStarted": "Get Started"
     },
     "hero": {
       "badge": "Ship your product, not your platform",
@@ -93,6 +95,7 @@
       "description": "Auth, multi-tenant teams, seat-based Stripe billing, AI with DB-enforced budgets, audit logging, and a hardened security pipeline — wired end-to-end on Next.js 16, Supabase, and React 19 so you can focus entirely on what makes your product unique.",
       "goDashboard": "Go to dashboard",
       "startFreeNow": "Start free now",
+      "getStartedNow": "Get started now",
       "viewPricing": "View pricing",
       "feature1": "Multi-tenant team roles",
       "feature2": "Seat-based Stripe billing",

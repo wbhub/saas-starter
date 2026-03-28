@@ -3,6 +3,7 @@ import { useTranslations } from "next-intl";
 import { Sparkles } from "lucide-react";
 import { PublicHeaderActions } from "./public-header-actions";
 import { UserDropdown, type UserDropdownProps } from "./user-dropdown";
+import { env } from "@/lib/env";
 
 type SiteHeaderProps = {
   dashboardUser?: UserDropdownProps;
@@ -39,7 +40,9 @@ export function SiteHeader(props: SiteHeaderProps) {
           ) : (
             <PublicHeaderActions
               loginLabel={t("SiteHeader.login")}
-              signupLabel={t("SiteHeader.startFree")}
+              signupLabel={t(
+                env.APP_FREE_PLAN_ENABLED ? "SiteHeader.startFree" : "SiteHeader.getStarted",
+              )}
               openAppLabel={t("SiteHeader.openApp")}
             />
           )}

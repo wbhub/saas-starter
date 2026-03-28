@@ -33,7 +33,8 @@
     "dashboard": "Painel",
     "login": "Entrar",
     "openApp": "Abrir app",
-    "startFree": "Comece grátis"
+    "startFree": "Comece grátis",
+    "getStarted": "Começar"
   },
   "SiteFooter": {
     "companyPlaceholder": "[Nome da empresa]",
@@ -85,7 +86,8 @@
       "dashboard": "Painel",
       "login": "Entrar",
       "openApp": "Abrir app",
-      "startFree": "Comece grátis"
+      "startFree": "Comece grátis",
+      "getStarted": "Começar"
     },
     "hero": {
       "badge": "Envie seu produto, não sua plataforma",
@@ -93,6 +95,7 @@
       "description": "Auth, equipes multi-tenant, cobrança Stripe por assento, AI com orçamentos de tokens aplicados no banco, log de auditoria e um pipeline de segurança reforçado — conectado de ponta a ponta com Next.js 16, Supabase e React 19 para que você foque inteiramente no que torna seu produto único.",
       "goDashboard": "Ir ao painel",
       "startFreeNow": "Comece grátis agora",
+      "getStartedNow": "Começar agora",
       "viewPricing": "Ver preços",
       "feature1": "Funções multi-tenant",
       "feature2": "Cobrança Stripe por assento",

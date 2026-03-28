@@ -33,7 +33,8 @@
     "dashboard": "Dashboard",
     "login": "Anmelden",
     "openApp": "App öffnen",
-    "startFree": "Kostenlos starten"
+    "startFree": "Kostenlos starten",
+    "getStarted": "Loslegen"
   },
   "SiteFooter": {
     "companyPlaceholder": "[Firmenname]",
@@ -85,7 +86,8 @@
       "dashboard": "Dashboard",
       "login": "Anmelden",
       "openApp": "App öffnen",
-      "startFree": "Kostenlos starten"
+      "startFree": "Kostenlos starten",
+      "getStarted": "Loslegen"
     },
     "hero": {
       "badge": "Liefere dein Produkt, nicht deine Plattform",
@@ -93,6 +95,7 @@
       "description": "Auth, mandantenfähige Teams, sitzplatzbasierte Stripe-Abrechnung, KI mit in der Datenbank erzwungenen Token-Budgets, Audit-Logging und eine gehärtete Sicherheitspipeline – Ende zu Ende auf Next.js 16, Supabase und React 19 verdrahtet, damit du dich vollständig auf das konzentrieren kannst, was dein Produkt einzigartig macht.",
       "goDashboard": "Zum Dashboard",
       "startFreeNow": "Jetzt kostenlos starten",
+      "getStartedNow": "Jetzt loslegen",
       "viewPricing": "Preise ansehen",
       "feature1": "Mandantenfähige Teamrollen",
       "feature2": "Sitzplatzbasierte Stripe-Abrechnung",

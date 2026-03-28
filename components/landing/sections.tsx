@@ -15,6 +15,7 @@ import { AuthAwareLink } from "@/components/auth-aware-link";
 import { LandingPricingCards } from "@/components/landing/pricing-toggle";
 import { getPublicPricingCatalog } from "@/lib/stripe/public-pricing";
 import { hasAnnualPricing } from "@/lib/stripe/config";
+import { env } from "@/lib/env";
 
 export function HeroSection() {
   const t = useTranslations("Landing.hero");
@@ -43,7 +44,7 @@ export function HeroSection() {
               loggedInHref="/dashboard"
               loggedOutHref="/onboarding"
               loggedInLabel={t("goDashboard")}
-              loggedOutLabel={t("startFreeNow")}
+              loggedOutLabel={t(env.APP_FREE_PLAN_ENABLED ? "startFreeNow" : "getStartedNow")}
               className="inline-flex items-center gap-2 rounded-lg bg-indigo-500 px-5 py-3 font-medium text-white hover:bg-indigo-400"
             >
               <ArrowRight className="h-4 w-4" />

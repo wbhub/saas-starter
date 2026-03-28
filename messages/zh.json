@@ -33,7 +33,8 @@
     "dashboard": "控制台",
     "login": "登录",
     "openApp": "打开应用",
-    "startFree": "免费开始"
+    "startFree": "免费开始",
+    "getStarted": "开始使用"
   },
   "SiteFooter": {
     "companyPlaceholder": "[公司名称]",
@@ -85,7 +86,8 @@
       "dashboard": "控制台",
       "login": "登录",
       "openApp": "打开应用",
-      "startFree": "免费开始"
+      "startFree": "免费开始",
+      "getStarted": "开始使用"
     },
     "hero": {
       "badge": "交付产品，而非平台",
@@ -93,6 +95,7 @@
       "description": "身份验证、多租户团队、按席位 Stripe 计费、数据库级 AI 令牌预算、审计日志和加固的安全管道 — 基于 Next.js 16、Supabase 和 React 19 端到端连接，让您完全专注于产品的独特价值。",
       "goDashboard": "前往控制台",
       "startFreeNow": "立即免费开始",
+      "getStartedNow": "立即开始",
       "viewPricing": "查看定价",
       "feature1": "多租户团队角色",
       "feature2": "按席位 Stripe 计费",
