@@ -16,7 +16,9 @@ export function SiteHeader(props: SiteHeaderProps) {
 
   return (
     <header className="border-b app-border-subtle">
-      <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
+      <nav
+        className={`mx-auto flex items-center justify-between px-6 py-5 ${isDashboard ? "max-w-[1600px] lg:px-10" : "max-w-7xl"}`}
+      >
         <Link
           href="/"
           className="flex items-center gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
