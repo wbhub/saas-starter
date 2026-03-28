@@ -2,6 +2,8 @@
 
 import { useFormStatus } from "react-dom";
 import { type ButtonHTMLAttributes } from "react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 type SubmitButtonVariant = "primary" | "danger";
 
@@ -31,16 +33,13 @@ export function SubmitButton({
   const isPending = loading ?? pending;
 
   return (
-    <button
+    <Button
       type="submit"
       disabled={isPending || disabled}
-      className={
-        className ??
-        `rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-60 ${variantClasses[variant]}`
-      }
+      className={cn("h-auto px-4 py-2", variantClasses[variant], className)}
       {...rest}
     >
       {isPending ? pendingLabel : idleLabel}
-    </button>
+    </Button>
   );
 }

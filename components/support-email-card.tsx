@@ -5,6 +5,8 @@ import { useTranslations } from "next-intl";
 import { getCsrfHeaders } from "@/lib/http/csrf";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { FormMessage } from "@/components/ui/form-message";
 
 type ApiError = {
@@ -51,10 +53,8 @@ export function SupportEmailCard() {
       <p className="mt-2 text-muted-foreground">{t("description")}</p>
 
       <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium text-foreground">
-            {t("fields.subject")}
-          </span>
+        <div>
+          <Label className="mb-1">{t("fields.subject")}</Label>
           <Input
             type="text"
             maxLength={120}
@@ -62,23 +62,20 @@ export function SupportEmailCard() {
             onChange={(event) => setSubject(event.target.value)}
             placeholder={t("fields.subjectPlaceholder")}
           />
-        </label>
+        </div>
 
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium text-foreground">
-            {t("fields.message")}
-          </span>
-          <textarea
+        <div>
+          <Label className="mb-1">{t("fields.message")}</Label>
+          <Textarea
             required
             minLength={10}
             maxLength={2000}
             rows={5}
             value={message}
             onChange={(event) => setMessage(event.target.value)}
-            className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-sm text-foreground outline-none ring-ring placeholder:text-muted-foreground focus:ring-2"
             placeholder={t("fields.messagePlaceholder")}
           />
-        </label>
+        </div>
 
         <SubmitButton
           loading={submitting}

@@ -6,8 +6,18 @@ import { useLocale, useTranslations } from "next-intl";
 import { getCsrfHeaders } from "@/lib/http/csrf";
 import { formatUtcDate } from "@/lib/date";
 import { type AppLocale } from "@/i18n/routing";
+import { Button } from "@/components/ui/button";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { FormMessage } from "@/components/ui/form-message";
 
 type TeamMember = {
@@ -207,11 +217,6 @@ export function TeamInviteCard({
   }
 
   async function removeMember(targetUserId: string) {
-    const confirmed = window.confirm(t("confirmations.removeMember"));
-    if (!confirmed) {
-      return;
-    }
-
     dispatch({ type: "REMOVE_MEMBER_START", userId: targetUserId });
 
     try {
@@ -263,10 +268,6 @@ export function TeamInviteCard({
   }
 
   async function revokeInvite(inviteId: string) {
-    const confirmed = window.confirm(t("confirmations.revokeInvite"));
-    if (!confirmed) {
-      return;
-    }
     dispatch({ type: "REVOKE_INVITE_START", inviteId });
     try {
       const response = await fetch(`/api/team/invites/${inviteId}`, {
@@ -373,31 +374,43 @@ export function TeamInviteCard({
                 {getRoleLabel(member.role)}
               </span>
               {canManageRole(member) ? (
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="xs"
                   disabled={updatingRoleUserId !== null}
                   onClick={() =>
                     updateMemberRole(member.userId, member.role === "admin" ? "member" : "admin")
                   }
-                  className="rounded-md border app-border-subtle px-2 py-0.5 text-xs text-muted-foreground hover:bg-surface-hover disabled:opacity-60"
+                  className="text-muted-foreground"
                 >
                   {updatingRoleUserId === member.userId
                     ? t("actions.saving")
                     : member.role === "admin"
                       ? t("actions.makeMember")
                       : t("actions.makeAdmin")}
-                </button>
+                </Button>
               ) : null}
             </div>
             {canRemoveMember(member) ? (
-              <button
-                type="button"
-                disabled={removingUserId !== null}
-                onClick={() => removeMember(member.userId)}
-                className="ml-2 rounded-md border border-rose-300/60 px-2 py-0.5 text-xs text-rose-700 hover:bg-rose-50 disabled:opacity-60 dark:border-rose-700/60 dark:text-rose-200 dark:hover:bg-rose-950/30"
+              <ConfirmDialog
+                title={t("confirmations.removeMemberTitle")}
+                description={t("confirmations.removeMember")}
+                confirmLabel={t("actions.remove")}
+                cancelLabel={t("actions.cancel")}
+                variant="destructive"
+                onConfirm={() => removeMember(member.userId)}
               >
-                {removingUserId === member.userId ? t("actions.removing") : t("actions.remove")}
-              </button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="xs"
+                  disabled={removingUserId !== null}
+                  className="ml-2 border-rose-300/60 text-rose-700 hover:bg-rose-50 dark:border-rose-700/60 dark:text-rose-200 dark:hover:bg-rose-950/30"
+                >
+                  {removingUserId === member.userId ? t("actions.removing") : t("actions.remove")}
+                </Button>
+              </ConfirmDialog>
             ) : null}
           </div>
         ))}
@@ -428,24 +441,38 @@ export function TeamInviteCard({
                   </span>
                   {canInvite ? (
                     <>
-                      <button
+                      <Button
                         type="button"
+                        variant="outline"
+                        size="xs"
                         disabled={resendInviteId !== null || revokeInviteId !== null}
                         onClick={() => resendInvite(invite.id)}
-                        className="rounded-md border app-border-subtle px-2 py-0.5 text-xs text-muted-foreground hover:bg-surface-hover disabled:opacity-60"
+                        className="text-muted-foreground"
                       >
                         {resendInviteId === invite.id
                           ? t("actions.resending")
                           : t("actions.resend")}
-                      </button>
-                      <button
-                        type="button"
-                        disabled={revokeInviteId !== null || resendInviteId !== null}
-                        onClick={() => revokeInvite(invite.id)}
-                        className="rounded-md border border-rose-300/60 px-2 py-0.5 text-xs text-rose-700 hover:bg-rose-50 disabled:opacity-60 dark:border-rose-700/60 dark:text-rose-200 dark:hover:bg-rose-950/30"
+                      </Button>
+                      <ConfirmDialog
+                        title={t("confirmations.revokeInviteTitle")}
+                        description={t("confirmations.revokeInvite")}
+                        confirmLabel={t("actions.revoke")}
+                        cancelLabel={t("actions.cancel")}
+                        variant="destructive"
+                        onConfirm={() => revokeInvite(invite.id)}
                       >
-                        {revokeInviteId === invite.id ? t("actions.revoking") : t("actions.revoke")}
-                      </button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="xs"
+                          disabled={revokeInviteId !== null || resendInviteId !== null}
+                          className="border-rose-300/60 text-rose-700 hover:bg-rose-50 dark:border-rose-700/60 dark:text-rose-200 dark:hover:bg-rose-950/30"
+                        >
+                          {revokeInviteId === invite.id
+                            ? t("actions.revoking")
+                            : t("actions.revoke")}
+                        </Button>
+                      </ConfirmDialog>
                     </>
                   ) : null}
                 </div>
@@ -457,11 +484,9 @@ export function TeamInviteCard({
 
       <form className="mt-5 space-y-3" onSubmit={handleSubmit}>
         {requireTeamNameOnFirstInvite ? (
-          <label className="block">
-            <span className="mb-1 block text-sm font-medium text-foreground">
-              {t("inviteForm.teamNameLabel")}
-            </span>
-            <input
+          <div>
+            <Label className="mb-1">{t("inviteForm.teamNameLabel")}</Label>
+            <Input
               type="text"
               required
               minLength={2}
@@ -471,17 +496,14 @@ export function TeamInviteCard({
               onChange={(event) =>
                 dispatch({ type: "SET_FIELD", field: "inviteTeamName", value: event.target.value })
               }
-              className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-sm text-foreground outline-none ring-ring placeholder:text-muted-foreground focus:ring-2 disabled:opacity-60"
               placeholder={t("inviteForm.teamNamePlaceholder")}
             />
             <p className="mt-1 text-xs text-muted-foreground">{t("inviteForm.teamNameHint")}</p>
-          </label>
+          </div>
         ) : null}
 
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium text-foreground">
-            {t("inviteForm.emailLabel")}
-          </span>
+        <div>
+          <Label className="mb-1">{t("inviteForm.emailLabel")}</Label>
           <Input
             type="email"
             required
@@ -492,28 +514,30 @@ export function TeamInviteCard({
             }
             placeholder={t("inviteForm.emailPlaceholder")}
           />
-        </label>
+        </div>
 
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium text-foreground">
-            {t("inviteForm.roleLabel")}
-          </span>
-          <select
+        <div>
+          <Label className="mb-1">{t("inviteForm.roleLabel")}</Label>
+          <Select
             disabled={!canInvite || submitting}
             value={role}
-            onChange={(event) =>
+            onValueChange={(value) =>
               dispatch({
                 type: "SET_FIELD",
                 field: "role",
-                value: event.target.value as "member" | "admin",
+                value: value as "member" | "admin",
               })
             }
-            className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-sm text-foreground outline-none ring-ring focus:ring-2 disabled:opacity-60"
           >
-            <option value="member">{t("roles.member")}</option>
-            <option value="admin">{t("roles.admin")}</option>
-          </select>
-        </label>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="member">{t("roles.member")}</SelectItem>
+              <SelectItem value="admin">{t("roles.admin")}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
         <SubmitButton
           loading={submitting}

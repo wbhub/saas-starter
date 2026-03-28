@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { logoutAllSessions } from "@/app/dashboard/actions";
+import { Button } from "@/components/ui/button";
 
 type SecuritySettingsCardProps = {
   csrfToken: string;
@@ -17,19 +18,16 @@ export function SecuritySettingsCard({ csrfToken }: SecuritySettingsCardProps) {
       <div className="mt-4 flex flex-wrap gap-2">
         <form action={logoutAllSessions}>
           <input type="hidden" name="csrf_token" value={csrfToken} />
-          <button
-            type="submit"
-            className="rounded-lg border app-border-subtle px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-surface-hover"
-          >
+          <Button type="submit" variant="outline" className="text-muted-foreground">
             {t("actions.signOutAll")}
-          </button>
+          </Button>
         </form>
-        <Link
-          href="/forgot-password"
-          className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400"
+        <Button
+          render={<Link href="/forgot-password" />}
+          className="bg-indigo-500 text-white hover:bg-indigo-400"
         >
           {t("actions.resetPassword")}
-        </Link>
+        </Button>
       </div>
     </section>
   );

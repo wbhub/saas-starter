@@ -12,6 +12,9 @@ import {
 import { getCsrfHeaders } from "@/lib/http/csrf";
 import { createClient } from "@/lib/supabase/client";
 import { validatePasswordComplexity } from "@/lib/validation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 type Mode = "login" | "signup";
 
@@ -215,9 +218,9 @@ export function AuthForm({
   }
 
   return (
-    <div className="w-full max-w-md rounded-2xl border app-border-subtle app-surface p-8 text-[color:var(--foreground)] shadow-sm">
+    <div className="w-full max-w-md rounded-2xl border app-border-subtle app-surface p-8 text-foreground shadow-sm">
       <h1 className="text-2xl font-semibold">{isLogin ? t("title.login") : t("title.signup")}</h1>
-      <p className="mt-2 text-sm text-[color:var(--muted-foreground)]">
+      <p className="mt-2 text-sm text-muted-foreground">
         {isLogin ? t("description.login") : t("description.signup")}
       </p>
 
@@ -227,23 +230,24 @@ export function AuthForm({
             const isProviderLoading = socialLoadingProvider === provider;
 
             return (
-              <button
+              <Button
                 key={provider}
                 type="button"
+                variant="outline"
                 onClick={() => onOAuthClick(provider)}
                 disabled={loading || Boolean(socialLoadingProvider)}
-                className="flex w-full items-center justify-center gap-2 rounded-lg border app-border-subtle px-4 py-2 text-sm font-medium hover:bg-[color:var(--surface-subtle)] disabled:opacity-60"
+                className="flex h-auto w-full items-center justify-center gap-2 px-4 py-2 font-medium hover:bg-[color:var(--surface-subtle)]"
               >
                 <SocialProviderIcon provider={provider} />
                 <span>
                   {isProviderLoading ? t("pleaseWait") : t("continueWith", { provider: label })}
                 </span>
                 {isLastUsed ? (
-                  <span className="rounded-full border app-border-subtle px-2 py-0.5 text-[10px] uppercase tracking-wide text-[color:var(--muted-foreground)]">
+                  <span className="rounded-full border app-border-subtle px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
                     {t("lastUsed")}
                   </span>
                 ) : null}
-              </button>
+              </Button>
             );
           })}
           <div className="relative py-1">
@@ -251,7 +255,7 @@ export function AuthForm({
               <span className="w-full border-t app-border-subtle" />
             </div>
             <div className="relative flex justify-center">
-              <span className="app-surface px-2 text-xs text-[color:var(--muted-foreground)]">
+              <span className="app-surface px-2 text-xs text-muted-foreground">
                 {t("orContinueWithEmail")}
               </span>
             </div>
@@ -260,11 +264,9 @@ export function AuthForm({
       ) : null}
 
       <form className="mt-6 space-y-4" onSubmit={onSubmit} aria-busy={loading}>
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium text-[color:var(--foreground)]">
-            {t("email")}
-          </span>
-          <input
+        <div>
+          <Label className="mb-1">{t("email")}</Label>
+          <Input
             type="email"
             required
             autoComplete="email"
@@ -272,14 +274,11 @@ export function AuthForm({
             onChange={(e) => dispatch({ type: "SET_FIELD", field: "email", value: e.target.value })}
             aria-describedby={message ? messageId : undefined}
             aria-invalid={messageType === "error" && Boolean(message)}
-            className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-[color:var(--foreground)] outline-none ring-[color:var(--ring)] placeholder:text-[color:var(--muted-foreground)] focus:ring-2"
           />
-        </label>
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium text-[color:var(--foreground)]">
-            {t("password")}
-          </span>
-          <input
+        </div>
+        <div>
+          <Label className="mb-1">{t("password")}</Label>
+          <Input
             type="password"
             required
             minLength={12}
@@ -290,21 +289,20 @@ export function AuthForm({
             }
             aria-describedby={passwordDescribedBy || undefined}
             aria-invalid={messageType === "error" && Boolean(message)}
-            className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-[color:var(--foreground)] outline-none ring-[color:var(--ring)] placeholder:text-[color:var(--muted-foreground)] focus:ring-2"
           />
-        </label>
+        </div>
         {!isLogin ? (
-          <p id={passwordHintId} className="text-xs text-[color:var(--muted-foreground)]">
+          <p id={passwordHintId} className="text-xs text-muted-foreground">
             {t("passwordHint")}
           </p>
         ) : null}
-        <button
+        <Button
           type="submit"
           disabled={loading}
-          className="w-full rounded-lg bg-btn-accent px-4 py-2 font-medium text-white hover:bg-btn-accent-hover disabled:opacity-60"
+          className="h-auto w-full bg-btn-accent px-4 py-2 font-medium text-white hover:bg-btn-accent-hover"
         >
           {loading ? t("pleaseWait") : isLogin ? t("submit.login") : t("submit.signup")}
-        </button>
+        </Button>
       </form>
 
       {message ? (
@@ -312,7 +310,7 @@ export function AuthForm({
           id={messageId}
           role={messageType === "error" ? "alert" : "status"}
           aria-live={messageType === "error" ? "assertive" : "polite"}
-          className="mt-4 rounded-lg app-surface-subtle px-3 py-2 text-sm text-[color:var(--foreground)]"
+          className="mt-4 rounded-lg app-surface-subtle px-3 py-2 text-sm text-foreground"
         >
           {message}
         </p>
@@ -320,29 +318,20 @@ export function AuthForm({
 
       {isLogin ? (
         <div className="mt-5 flex items-center justify-between gap-3 text-sm">
-          <p className="text-[color:var(--muted-foreground)]">
+          <p className="text-muted-foreground">
             {t("needAccount")}{" "}
-            <Link
-              href="/signup"
-              className="font-medium text-[color:var(--btn-accent)] hover:opacity-90"
-            >
+            <Link href="/signup" className="font-medium text-btn-accent hover:opacity-90">
               {t("signUp")}
             </Link>
           </p>
-          <Link
-            href="/forgot-password"
-            className="font-medium text-[color:var(--btn-accent)] hover:opacity-90"
-          >
+          <Link href="/forgot-password" className="font-medium text-btn-accent hover:opacity-90">
             {t("forgotPassword")}
           </Link>
         </div>
       ) : (
-        <p className="mt-5 text-sm text-[color:var(--muted-foreground)]">
+        <p className="mt-5 text-sm text-muted-foreground">
           {t("alreadyHaveAccount")}{" "}
-          <Link
-            href="/login"
-            className="font-medium text-[color:var(--btn-accent)] hover:opacity-90"
-          >
+          <Link href="/login" className="font-medium text-btn-accent hover:opacity-90">
             {t("logIn")}
           </Link>
         </p>
