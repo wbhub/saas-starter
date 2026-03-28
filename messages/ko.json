@@ -206,13 +206,25 @@
     "billing": "결제",
     "usage": "사용량",
     "settings": "설정",
-    "home": "홈",
+    "support": "지원"
+  },
+  "UserDropdown": {
+    "label": "계정 메뉴",
+    "theme": "테마",
+    "themeOptions": {
+      "system": "시스템",
+      "light": "라이트",
+      "dark": "다크"
+    },
+    "language": "언어",
+    "settings": "설정",
+    "support": "지원",
     "logout": "로그아웃"
   },
   "DashboardPage": {
     "overview": "개요",
     "welcome": "환영합니다, {name}",
-    "navigate": "결제, 팀 관리, 사용량, 설정 섹션으로 이동하세요.",
+    "subtitle": "계정 및 구독에 대한 개요입니다.",
     "account": "계정",
     "userId": "사용자 ID",
     "team": "팀",
@@ -399,10 +411,18 @@
     },
     "table": {
       "title": "최근 6개월",
-      "noUsage": "아직 사용량 데이터가 없습니다.",
+      "noUsage": "아직 사용량 데이터가 없습니다",
+      "noUsageDescription": "팀이 AI 기능을 사용하기 시작하면 사용량이 여기에 표시됩니다.",
       "month": "월",
       "usedTokens": "사용된 토큰",
       "reservedTokens": "예약된 토큰"
+    }
+  },
+  "DashboardSupportPage": {
+    "header": {
+      "eyebrow": "지원",
+      "title": "도움말 및 지원",
+      "description": "메시지를 보내주시면 가능한 빨리 답변드리겠습니다."
     }
   },
   "DashboardSettingsCard": {
@@ -421,6 +441,7 @@
     "upload": {
       "profilePhoto": "프로필 사진",
       "profileAvatarAlt": "프로필 아바타",
+      "changePhoto": "사진 변경",
       "noPhoto": "사진 없음",
       "uploading": "업로드 중...",
       "uploadPhoto": "사진 업로드",

@@ -2,11 +2,14 @@
 
 import { ChangeEvent, useActionState, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { Camera } from "lucide-react";
 import {
   updateDashboardSettings,
   type UpdateDashboardSettingsState,
 } from "@/app/dashboard/actions";
 import { createClient } from "@/lib/supabase/client";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { FormMessage } from "@/components/ui/form-message";
@@ -38,6 +41,14 @@ export function DashboardSettingsCard({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const selectedFileRef = useRef<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const initials = (fullName ?? email ?? "?")
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   const handleFileSelection = (event: ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0] ?? null;
@@ -105,40 +116,47 @@ export function DashboardSettingsCard({
         <div className="rounded-lg border app-border-subtle p-3">
           <p className="text-sm font-medium text-foreground">{t("upload.profilePhoto")}</p>
           <div className="mt-3 flex flex-wrap items-center gap-3">
-            <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-surface-subtle text-xs text-muted-foreground">
-              {avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={avatarUrl}
-                  alt={t("upload.profileAvatarAlt")}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                t("upload.noPhoto")
-              )}
-            </div>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="group relative flex-shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label={t("upload.changePhoto")}
+            >
+              <Avatar size="lg" className="h-14 w-14">
+                {avatarUrl ? (
+                  <AvatarImage src={avatarUrl} alt={t("upload.profileAvatarAlt")} />
+                ) : null}
+                <AvatarFallback className="text-sm">{initials}</AvatarFallback>
+              </Avatar>
+              <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                <Camera className="h-5 w-5 text-white" />
+              </div>
+            </button>
             <input
+              ref={fileInputRef}
               type="file"
               accept="image/png,image/jpeg,image/webp,image/gif"
               onChange={handleFileSelection}
-              className="block text-sm text-muted-foreground file:mr-3 file:rounded-md file:border file:border-border-subtle file:bg-surface-subtle file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-muted-foreground hover:file:bg-surface-hover"
+              className="sr-only"
             />
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               onClick={uploadAvatar}
               disabled={isUploading}
-              className="rounded-lg border app-border-subtle px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-surface-hover disabled:opacity-60"
             >
               {isUploading ? t("upload.uploading") : t("upload.uploadPhoto")}
-            </button>
+            </Button>
             {avatarUrl ? (
-              <button
+              <Button
                 type="button"
+                variant="outline"
+                size="sm"
                 onClick={() => setAvatarUrl("")}
-                className="rounded-lg border app-border-subtle px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-surface-hover"
               >
                 {t("upload.removePhoto")}
-              </button>
+              </Button>
             ) : null}
           </div>
           {uploadMessage ? (
@@ -158,14 +176,6 @@ export function DashboardSettingsCard({
             defaultValue={fullName ?? ""}
             placeholder={t("fields.displayNamePlaceholder")}
           />
-        </label>
-
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium text-foreground">
-            {t("fields.email")}
-          </span>
-          <Input type="email" value={email ?? ""} variant="readonly" />
-          <p className="mt-1 text-xs text-muted-foreground">{t("fields.emailHint")}</p>
         </label>
 
         <SubmitButton pendingLabel={t("actions.saving")} idleLabel={t("actions.saveSettings")} />

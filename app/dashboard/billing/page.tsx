@@ -3,7 +3,6 @@ import Link from "next/link";
 import { BillingActions } from "@/components/billing-actions";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { NoTeamCard } from "@/components/no-team-card";
-import { SupportEmailCard } from "@/components/support-email-card";
 import { TeamContextErrorCard } from "@/components/team-context-error-card";
 import { formatUtcDate } from "@/lib/date";
 import { formatStaticUsdMonthlyLabel } from "@/lib/stripe/plan-price-display";
@@ -25,6 +24,7 @@ export default async function DashboardBillingPage() {
   const {
     supabase,
     user,
+    profile,
     teamContext,
     teamContextLoadFailed,
     teamMemberships,
@@ -69,6 +69,7 @@ export default async function DashboardBillingPage() {
     <DashboardShell
       displayName={displayName}
       userEmail={user.email ?? null}
+      avatarUrl={profile?.avatar_url ?? null}
       teamName={teamContext.teamName}
       role={teamContext.role}
       teamUiMode={teamUiMode}
@@ -209,9 +210,6 @@ export default async function DashboardBillingPage() {
         </section>
       ) : null}
 
-      <section>
-        <SupportEmailCard />
-      </section>
     </DashboardShell>
   );
 }

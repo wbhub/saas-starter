@@ -8,6 +8,7 @@ import { SiteFooter } from "@/components/site-footer";
 type DashboardShellProps = {
   displayName: string;
   userEmail: string | null;
+  avatarUrl: string | null;
   teamName: string | null;
   role: TeamRole;
   teamUiMode: "free" | "paid_solo" | "paid_team";
@@ -21,6 +22,7 @@ type DashboardShellProps = {
 export function DashboardShell({
   displayName,
   userEmail,
+  avatarUrl,
   teamName,
   role,
   teamUiMode,
@@ -32,21 +34,23 @@ export function DashboardShell({
 }: DashboardShellProps) {
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <SiteHeader isLoggedIn={true} />
+      <SiteHeader
+        dashboardUser={{
+          displayName,
+          userEmail,
+          avatarUrl,
+          teamName,
+          role,
+          teamUiMode,
+          activeTeamId,
+          teamMemberships,
+          csrfToken,
+        }}
+      />
       <main className="flex-1">
         <div className="mx-auto max-w-7xl px-6 py-8 lg:py-12">
           <div className="grid gap-8 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-14">
-            <DashboardSidebar
-              displayName={displayName}
-              userEmail={userEmail}
-              teamName={teamName}
-              role={role}
-              teamUiMode={teamUiMode}
-              showAiNav={showAiNav}
-              activeTeamId={activeTeamId}
-              teamMemberships={teamMemberships}
-              csrfToken={csrfToken}
-            />
+            <DashboardSidebar teamUiMode={teamUiMode} showAiNav={showAiNav} />
             <div className="space-y-8">{children}</div>
           </div>
         </div>

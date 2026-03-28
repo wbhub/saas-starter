@@ -206,13 +206,25 @@
     "billing": "Facturation",
     "usage": "Usage",
     "settings": "Paramètres",
-    "home": "Maison",
-    "logout": "Déconnexion"
+    "support": "Support"
+  },
+  "UserDropdown": {
+    "label": "Menu du compte",
+    "theme": "Thème",
+    "themeOptions": {
+      "system": "Système",
+      "light": "Clair",
+      "dark": "Sombre"
+    },
+    "language": "Langue",
+    "settings": "Paramètres",
+    "support": "Support",
+    "logout": "Se déconnecter"
   },
   "DashboardPage": {
     "overview": "Aperçu",
     "welcome": "Bienvenue, {name}",
-    "navigate": "Naviguez par section pour la facturation, la gestion des équipes, l'utilisation et les paramètres.",
+    "subtitle": "Voici un aperçu de votre compte et de votre abonnement.",
     "account": "Compte",
     "userId": "ID de l'utilisateur",
     "team": "Équipe",
@@ -399,10 +411,18 @@
     },
     "table": {
       "title": "6 derniers mois",
-      "noUsage": "Aucune donnée d'utilisation pour l'instant.",
+      "noUsage": "Aucune donnée d'utilisation pour l'instant",
+      "noUsageDescription": "Les données d'utilisation apparaîtront ici lorsque votre équipe commencera à utiliser les fonctionnalités d'IA.",
       "month": "Mois",
       "usedTokens": "Jetons utilisés",
       "reservedTokens": "Jetons réservés"
+    }
+  },
+  "DashboardSupportPage": {
+    "header": {
+      "eyebrow": "Support",
+      "title": "Aide et support",
+      "description": "Envoyez-nous un message et nous vous répondrons dans les plus brefs délais."
     }
   },
   "DashboardSettingsCard": {
@@ -421,6 +441,7 @@
     "upload": {
       "profilePhoto": "Photo de profil",
       "profileAvatarAlt": "Avatar du profil",
+      "changePhoto": "Changer la photo",
       "noPhoto": "Aucune photo",
       "uploading": "Téléchargement...",
       "uploadPhoto": "Télécharger une photo",

@@ -1,4 +1,5 @@
 import { getLocale, getTranslations } from "next-intl/server";
+import { BarChart3 } from "lucide-react";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { NoTeamCard } from "@/components/no-team-card";
 import { TeamContextErrorCard } from "@/components/team-context-error-card";
@@ -20,6 +21,7 @@ export default async function DashboardUsagePage() {
   const {
     supabase,
     user,
+    profile,
     teamContext,
     teamContextLoadFailed,
     teamMemberships,
@@ -58,6 +60,7 @@ export default async function DashboardUsagePage() {
     <DashboardShell
       displayName={displayName}
       userEmail={user.email ?? null}
+      avatarUrl={profile?.avatar_url ?? null}
       teamName={teamContext.teamName}
       role={teamContext.role}
       teamUiMode={teamUiMode}
@@ -77,9 +80,15 @@ export default async function DashboardUsagePage() {
       <section className="rounded-xl bg-card ring-1 ring-border p-6">
         <h2 className="text-lg font-semibold text-foreground">{t("table.title")}</h2>
         {usageRows.length === 0 ? (
-          <p className="mt-3 rounded-lg app-surface-subtle px-3 py-2 text-sm text-muted-foreground">
-            {t("table.noUsage")}
-          </p>
+          <div className="mt-6 flex flex-col items-center py-8 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+              <BarChart3 className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <p className="mt-3 text-sm font-medium text-foreground">{t("table.noUsage")}</p>
+            <p className="mt-1 max-w-xs text-sm text-muted-foreground">
+              {t("table.noUsageDescription")}
+            </p>
+          </div>
         ) : (
           <div className="mt-4 overflow-x-auto">
             <table className="min-w-full text-sm">

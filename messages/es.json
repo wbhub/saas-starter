@@ -206,13 +206,25 @@
     "billing": "Facturación",
     "usage": "Uso",
     "settings": "Configuración",
-    "home": "Inicio",
+    "support": "Soporte"
+  },
+  "UserDropdown": {
+    "label": "Menú de cuenta",
+    "theme": "Tema",
+    "themeOptions": {
+      "system": "Sistema",
+      "light": "Claro",
+      "dark": "Oscuro"
+    },
+    "language": "Idioma",
+    "settings": "Configuración",
+    "support": "Soporte",
     "logout": "Cerrar sesión"
   },
   "DashboardPage": {
     "overview": "Resumen",
     "welcome": "Bienvenido, {name}",
-    "navigate": "Navega por secciones para facturación, gestión de equipos, uso y configuración.",
+    "subtitle": "Aquí tienes un resumen de tu cuenta y suscripción.",
     "account": "Cuenta",
     "userId": "ID de usuario",
     "team": "Equipo",
@@ -399,10 +411,18 @@
     },
     "table": {
       "title": "Últimos 6 meses",
-      "noUsage": "Aún no hay datos de uso.",
+      "noUsage": "Aún no hay datos de uso",
+      "noUsageDescription": "Los datos de uso aparecerán aquí cuando tu equipo empiece a utilizar funciones de IA.",
       "month": "Mes",
       "usedTokens": "Tokens usados",
       "reservedTokens": "Tokens reservados"
+    }
+  },
+  "DashboardSupportPage": {
+    "header": {
+      "eyebrow": "Soporte",
+      "title": "Ayuda y soporte",
+      "description": "Envíanos un mensaje y te responderemos lo antes posible."
     }
   },
   "DashboardSettingsCard": {
@@ -421,6 +441,7 @@
     "upload": {
       "profilePhoto": "Foto de perfil",
       "profileAvatarAlt": "Avatar de perfil",
+      "changePhoto": "Cambiar foto",
       "noPhoto": "Sin foto",
       "uploading": "Subiendo...",
       "uploadPhoto": "Subir foto",
