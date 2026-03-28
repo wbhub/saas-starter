@@ -3,6 +3,10 @@
 import { useActionState } from "react";
 import { useTranslations } from "next-intl";
 import { deleteAccount, logoutAllSessions, type DeleteAccountState } from "@/app/dashboard/actions";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { SubmitButton } from "@/components/ui/submit-button";
 
 const initialState: DeleteAccountState = {
@@ -27,51 +31,51 @@ export function DangerZoneCard({ email, csrfToken }: DangerZoneCardProps) {
       <div className="mt-4">
         <form action={logoutAllSessions}>
           <input type="hidden" name="csrf_token" value={csrfToken} />
-          <button
+          <Button
             type="submit"
-            className="rounded-lg border border-rose-300/80 px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-100 dark:border-rose-800 dark:text-rose-200 dark:hover:bg-rose-900/40"
+            variant="outline"
+            className="border-rose-300/80 text-rose-700 hover:bg-rose-100 dark:border-rose-800 dark:text-rose-200 dark:hover:bg-rose-900/40"
           >
             {t("actions.deactivate")}
-          </button>
+          </Button>
         </form>
       </div>
 
       <form action={formAction} className="mt-4 space-y-3">
         <input type="hidden" name="csrf_token" value={csrfToken} />
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium text-rose-800 dark:text-rose-100">
+        <div>
+          <Label className="mb-1 text-rose-800 dark:text-rose-100">
             {t("fields.confirmDelete")}
-          </span>
-          <input
+          </Label>
+          <Input
             name="confirmDelete"
             required
             autoComplete="off"
-            className="w-full rounded-lg border border-rose-300/80 bg-white px-3 py-2 text-sm text-foreground outline-none ring-rose-400/50 placeholder:text-muted-foreground focus:ring-2 dark:border-rose-800 dark:bg-rose-950/30"
+            className="border-rose-300/80 bg-white ring-rose-400/50 dark:border-rose-800 dark:bg-rose-950/30"
             placeholder={t("fields.deleteToken")}
           />
-        </label>
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium text-rose-800 dark:text-rose-100">
+        </div>
+        <div>
+          <Label className="mb-1 text-rose-800 dark:text-rose-100">
             {t("fields.confirmEmail")}
-          </span>
-          <input
+          </Label>
+          <Input
             type="email"
             name="confirmEmail"
             required
             autoComplete="off"
             placeholder={email ?? t("fields.confirmEmailPlaceholder")}
-            className="w-full rounded-lg border border-rose-300/80 bg-white px-3 py-2 text-sm text-foreground outline-none ring-rose-400/50 placeholder:text-muted-foreground focus:ring-2 dark:border-rose-800 dark:bg-rose-950/30"
+            className="border-rose-300/80 bg-white ring-rose-400/50 dark:border-rose-800 dark:bg-rose-950/30"
           />
-        </label>
-        <label className="flex items-start gap-2 rounded-lg border border-rose-300/80 p-3 text-sm text-rose-800 dark:border-rose-800 dark:text-rose-100">
-          <input
-            type="checkbox"
+        </div>
+        <Label className="flex items-start gap-2 rounded-lg border border-rose-300/80 p-3 text-sm font-normal text-rose-800 dark:border-rose-800 dark:text-rose-100">
+          <Checkbox
             name="confirmUnderstood"
             required
-            className="mt-0.5 h-4 w-4 rounded border border-rose-400 bg-transparent"
+            className="mt-0.5"
           />
           <span>{t("fields.confirmPermanent")}</span>
-        </label>
+        </Label>
         <SubmitButton
           variant="danger"
           pendingLabel={t("actions.deleting")}

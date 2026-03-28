@@ -6,6 +6,8 @@ import { useTranslations } from "next-intl";
 import { z } from "zod";
 import { getCsrfHeaders } from "@/lib/http/csrf";
 import { resolveUserFacingErrorMessage } from "@/lib/ai/error-message";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
 /**
  * Client-side schema matching the server's `sentimentSchema`.
@@ -62,30 +64,30 @@ export function AiObjectCard() {
       </header>
 
       <form onSubmit={handleSubmit} className="mt-4 space-y-2">
-        <textarea
+        <Textarea
           value={input}
           onChange={(event) => setInput(event.target.value)}
           rows={3}
           placeholder={t("placeholder")}
           disabled={isLoading}
-          className="w-full rounded-lg border app-border-subtle app-surface px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
         />
         <div className="flex items-center gap-2">
-          <button
+          <Button
             type="submit"
             disabled={isLoading || input.trim().length === 0}
-            className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-60"
+            className="h-auto bg-indigo-500 px-4 py-2 text-white hover:bg-indigo-400"
           >
             {isLoading ? t("actions.analyzing") : t("actions.analyze")}
-          </button>
+          </Button>
           {isLoading ? (
-            <button
+            <Button
               type="button"
+              variant="outline"
               onClick={() => stop()}
-              className="rounded-lg border app-border-subtle px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-surface-hover"
+              className="h-auto px-4 py-2 text-muted-foreground"
             >
               {t("actions.stop")}
-            </button>
+            </Button>
           ) : null}
         </div>
       </form>

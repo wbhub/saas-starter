@@ -3,6 +3,14 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { BarChart3 } from "lucide-react";
 import { formatUtcDate } from "@/lib/date";
 import { getDashboardShellData, getUsageMonthlyTotals } from "@/lib/dashboard/server";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 function formatTokens(value: number, locale: string) {
   return new Intl.NumberFormat(locale).format(value);
@@ -48,19 +56,19 @@ async function UsageTableSection({
           <p className="mt-1 max-w-xs text-sm text-muted-foreground">{copy.noUsageDescription}</p>
         </div>
       ) : (
-        <div className="mt-4 overflow-x-auto">
-          <table className="min-w-full">
-            <thead>
-              <tr className="border-b app-border-subtle text-left text-muted-foreground">
-                <th className="px-2 py-2 font-medium">{copy.month}</th>
-                <th className="px-2 py-2 font-medium">{copy.usedTokens}</th>
-                <th className="px-2 py-2 font-medium">{copy.reservedTokens}</th>
-              </tr>
-            </thead>
-            <tbody>
+        <div className="mt-4">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-b app-border-subtle">
+                <TableHead className="text-muted-foreground">{copy.month}</TableHead>
+                <TableHead className="text-muted-foreground">{copy.usedTokens}</TableHead>
+                <TableHead className="text-muted-foreground">{copy.reservedTokens}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {usageRows.map((row) => (
-                <tr key={row.month_start} className="border-b app-border-subtle last:border-0">
-                  <td className="px-2 py-2 text-foreground">
+                <TableRow key={row.month_start} className="border-b app-border-subtle last:border-0">
+                  <TableCell className="text-foreground">
                     {formatUtcDate(
                       row.month_start,
                       {
@@ -69,17 +77,17 @@ async function UsageTableSection({
                       },
                       locale,
                     )}
-                  </td>
-                  <td className="px-2 py-2 text-foreground">
+                  </TableCell>
+                  <TableCell className="text-foreground">
                     {formatTokens(row.used_tokens, locale)}
-                  </td>
-                  <td className="px-2 py-2 text-foreground">
+                  </TableCell>
+                  <TableCell className="text-foreground">
                     {formatTokens(row.reserved_tokens, locale)}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
     </section>

@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { requestEmailChange, type RequestEmailChangeState } from "@/app/dashboard/actions";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { FormMessage } from "@/components/ui/form-message";
 
 type EmailSettingsCardProps = {
@@ -27,16 +28,12 @@ export function EmailSettingsCard({ email, csrfToken }: EmailSettingsCardProps) 
       <p className="mt-2 text-muted-foreground">{t("description")}</p>
       <form action={formAction} className="mt-4 space-y-3">
         <input type="hidden" name="csrf_token" value={csrfToken} />
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium text-foreground">
-            {t("fields.currentEmail")}
-          </span>
+        <div>
+          <Label className="mb-1">{t("fields.currentEmail")}</Label>
           <Input type="email" variant="readonly" value={email ?? ""} />
-        </label>
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium text-foreground">
-            {t("fields.newEmail")}
-          </span>
+        </div>
+        <div>
+          <Label className="mb-1">{t("fields.newEmail")}</Label>
           <Input
             type="email"
             name="newEmail"
@@ -44,7 +41,7 @@ export function EmailSettingsCard({ email, csrfToken }: EmailSettingsCardProps) 
             autoComplete="email"
             placeholder={t("fields.newEmailPlaceholder")}
           />
-        </label>
+        </div>
         <SubmitButton
           pendingLabel={t("actions.sending")}
           idleLabel={t("actions.requestEmailChange")}

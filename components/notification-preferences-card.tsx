@@ -6,6 +6,8 @@ import {
   updateNotificationPreferences,
   type UpdateNotificationPreferencesState,
 } from "@/app/dashboard/actions";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { FormMessage } from "@/components/ui/form-message";
 
@@ -33,18 +35,13 @@ function PreferenceToggle({
   defaultChecked: boolean;
 }) {
   return (
-    <label className="flex items-start justify-between gap-4 rounded-lg border app-border-subtle px-3 py-2">
+    <Label className="flex items-start justify-between gap-4 rounded-lg border app-border-subtle px-3 py-2 font-normal">
       <span>
         <span className="block text-sm font-medium text-foreground">{label}</span>
         <span className="mt-0.5 block text-xs text-muted-foreground">{description}</span>
       </span>
-      <input
-        type="checkbox"
-        name={name}
-        defaultChecked={defaultChecked}
-        className="mt-1 h-4 w-4 rounded border app-border-subtle bg-transparent text-foreground focus:ring-2 focus:ring-ring"
-      />
-    </label>
+      <Checkbox name={name} defaultChecked={defaultChecked} className="mt-1" />
+    </Label>
   );
 }
 

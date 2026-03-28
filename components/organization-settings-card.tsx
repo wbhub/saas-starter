@@ -4,8 +4,12 @@ import { FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { getCsrfHeaders } from "@/lib/http/csrf";
+import { Button } from "@/components/ui/button";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { FormMessage } from "@/components/ui/form-message";
 
 type TeamMember = {
@@ -71,14 +75,9 @@ export function OrganizationSettingsCard({
     }
   }
 
-  async function transferOwnership(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function transferOwnership() {
     if (!nextOwnerUserId) {
       setError(t("errors.selectTeammate"));
-      return;
-    }
-    const confirmed = window.confirm(t("confirm.transferOwnership"));
-    if (!confirmed) {
       return;
     }
 
@@ -116,10 +115,8 @@ export function OrganizationSettingsCard({
       <p className="mt-2 text-muted-foreground">{t("description")}</p>
 
       <form className="mt-4 space-y-3" onSubmit={saveTeamName}>
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium text-foreground">
-            {t("fields.teamName")}
-          </span>
+        <div>
+          <Label className="mb-1">{t("fields.teamName")}</Label>
           <Input
             type="text"
             value={nameValue}
@@ -128,7 +125,7 @@ export function OrganizationSettingsCard({
             minLength={2}
             disabled={currentUserRole === "member" || savingName}
           />
-        </label>
+        </div>
         <SubmitButton
           loading={savingName}
           disabled={currentUserRole === "member"}
@@ -138,37 +135,44 @@ export function OrganizationSettingsCard({
       </form>
 
       {currentUserRole === "owner" ? (
-        <form
-          className="mt-6 space-y-3 border-t app-border-subtle pt-5"
-          onSubmit={transferOwnership}
-        >
+        <div className="mt-6 space-y-3 border-t app-border-subtle pt-5">
           <h3 className="text-sm font-medium text-foreground">{t("ownership.title")}</h3>
-          <label className="block">
-            <span className="mb-1 block text-sm text-muted-foreground">
-              {t("ownership.newOwner")}
-            </span>
-            <select
+          <div>
+            <Label className="mb-1 text-muted-foreground">{t("ownership.newOwner")}</Label>
+            <Select
               value={nextOwnerUserId}
-              onChange={(event) => setNextOwnerUserId(event.target.value)}
+              onValueChange={(value) => setNextOwnerUserId(value ?? "")}
               disabled={transferring || ownershipCandidates.length === 0}
-              className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-sm text-foreground outline-none ring-ring focus:ring-2 disabled:opacity-60"
             >
-              <option value="">{t("ownership.selectTeammate")}</option>
-              {ownershipCandidates.map((member) => (
-                <option key={member.userId} value={member.userId}>
-                  {(member.fullName?.trim() || member.userId) + ` (${member.role})`}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button
-            type="submit"
-            disabled={transferring || !nextOwnerUserId}
-            className="rounded-lg border border-amber-300/60 px-4 py-2 text-sm font-medium text-amber-800 hover:bg-amber-50 disabled:opacity-60 dark:border-amber-700/60 dark:text-amber-200 dark:hover:bg-amber-950/30"
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={t("ownership.selectTeammate")} />
+              </SelectTrigger>
+              <SelectContent>
+                {ownershipCandidates.map((member) => (
+                  <SelectItem key={member.userId} value={member.userId}>
+                    {(member.fullName?.trim() || member.userId) + ` (${member.role})`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <ConfirmDialog
+            title={t("ownership.title")}
+            description={t("confirm.transferOwnership")}
+            confirmLabel={t("actions.transferOwnership")}
+            cancelLabel={t("actions.cancel")}
+            onConfirm={() => transferOwnership()}
           >
-            {transferring ? t("actions.transferring") : t("actions.transferOwnership")}
-          </button>
-        </form>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={transferring || !nextOwnerUserId}
+              className="border-amber-300/60 text-amber-800 hover:bg-amber-50 dark:border-amber-700/60 dark:text-amber-200 dark:hover:bg-amber-950/30"
+            >
+              {transferring ? t("actions.transferring") : t("actions.transferOwnership")}
+            </Button>
+          </ConfirmDialog>
+        </div>
       ) : null}
 
       <FormMessage status="success" message={feedback} />

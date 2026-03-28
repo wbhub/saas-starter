@@ -3,6 +3,9 @@
 import { FormEvent, useState } from "react";
 import { useTranslations } from "next-intl";
 import { getCsrfHeaders } from "@/lib/http/csrf";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 type ApiResponse = {
   message?: string;
@@ -46,32 +49,29 @@ export function ForgotPasswordForm() {
   }
 
   return (
-    <div className="w-full max-w-md rounded-2xl border app-border-subtle app-surface p-8 text-[color:var(--foreground)] shadow-sm">
+    <div className="w-full max-w-md rounded-2xl border app-border-subtle app-surface p-8 text-foreground shadow-sm">
       <h1 className="text-2xl font-semibold">{t("title")}</h1>
-      <p className="mt-2 text-sm text-[color:var(--muted-foreground)]">{t("description")}</p>
+      <p className="mt-2 text-sm text-muted-foreground">{t("description")}</p>
 
       <form className="mt-6 space-y-4" onSubmit={onSubmit} aria-busy={loading}>
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium text-[color:var(--foreground)]">
-            {t("email")}
-          </span>
-          <input
+        <div>
+          <Label className="mb-1">{t("email")}</Label>
+          <Input
             type="email"
             required
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             aria-describedby={message ? messageId : undefined}
             aria-invalid={messageType === "error" && Boolean(message)}
-            className="w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-[color:var(--foreground)] outline-none ring-[color:var(--ring)] placeholder:text-[color:var(--muted-foreground)] focus:ring-2"
           />
-        </label>
-        <button
+        </div>
+        <Button
           type="submit"
           disabled={loading}
-          className="w-full rounded-lg bg-btn-accent px-4 py-2 font-medium text-white hover:bg-btn-accent-hover disabled:opacity-60"
+          className="h-auto w-full bg-btn-accent px-4 py-2 font-medium text-white hover:bg-btn-accent-hover"
         >
           {loading ? t("sending") : t("sendResetLink")}
-        </button>
+        </Button>
       </form>
 
       {message ? (
@@ -79,7 +79,7 @@ export function ForgotPasswordForm() {
           id={messageId}
           role={messageType === "error" ? "alert" : "status"}
           aria-live={messageType === "error" ? "assertive" : "polite"}
-          className="mt-4 rounded-lg app-surface-subtle px-3 py-2 text-sm text-[color:var(--foreground)]"
+          className="mt-4 rounded-lg app-surface-subtle px-3 py-2 text-sm text-foreground"
         >
           {message}
         </p>

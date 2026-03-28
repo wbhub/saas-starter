@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { FormMessage } from "@/components/ui/form-message";
 
 type DashboardSettingsCardProps = {
@@ -160,10 +161,8 @@ export function DashboardSettingsCard({
           {uploadError ? <p className="mt-2 text-xs text-rose-600">{uploadError}</p> : null}
         </div>
 
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium text-foreground">
-            {t("fields.displayName")}
-          </span>
+        <div>
+          <Label className="mb-1">{t("fields.displayName")}</Label>
           <Input
             type="text"
             name="fullName"
@@ -171,7 +170,7 @@ export function DashboardSettingsCard({
             defaultValue={fullName ?? ""}
             placeholder={t("fields.displayNamePlaceholder")}
           />
-        </label>
+        </div>
 
         <SubmitButton pendingLabel={t("actions.saving")} idleLabel={t("actions.saveSettings")} />
       </form>

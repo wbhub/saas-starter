@@ -19,11 +19,23 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useTheme } from "@/components/theme-provider";
 import { SHOW_LOCALE_SWITCHER } from "@/lib/i18n/config";
 import { routing, type AppLocale } from "@/i18n/routing";
-import { cn } from "@/lib/utils";
 import { logout, switchActiveTeam } from "@/app/dashboard/actions";
 import type { DashboardTeamOption } from "@/lib/dashboard/server";
 
@@ -66,65 +78,22 @@ export function UserDropdown({
   const [teamOptionsState, setTeamOptionsState] = useState<"idle" | "loading" | "loaded" | "error">(
     teamUiMode === "free" ? "loaded" : "idle",
   );
-  const containerRef = useRef<HTMLDivElement | null>(null);
+  const logoutFormRef = useRef<HTMLFormElement | null>(null);
+  const teamSwitchFormRef = useRef<HTMLFormElement | null>(null);
 
-  function closeMenu() {
-    setOpen(false);
-    if (teamUiMode === "free" || teamOptionsState !== "error") {
-      return;
-    }
-
-    setTeamOptions([]);
-    setTeamOptionsState("idle");
-  }
-
-  useEffect(() => {
-    function onDocumentPointerDown(event: MouseEvent) {
-      if (!containerRef.current?.contains(event.target as Node)) {
-        setOpen(false);
-        if (teamUiMode === "free" || teamOptionsState !== "error") {
-          return;
-        }
-
-        setTeamOptions([]);
-        setTeamOptionsState("idle");
-      }
-    }
-    document.addEventListener("mousedown", onDocumentPointerDown);
-    return () => document.removeEventListener("mousedown", onDocumentPointerDown);
-  }, [teamOptionsState, teamUiMode]);
-
-  const initials = displayName
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-
-  const themeOrder: Array<"system" | "light" | "dark"> = ["system", "light", "dark"];
-  const themeIndex = themeOrder.indexOf(theme);
-  const nextTheme = themeOrder[(themeIndex + 1) % themeOrder.length];
-  const ThemeIcon = theme === "system" ? Monitor : theme === "light" ? SunMedium : Moon;
-
-  function onLocaleChange(nextLocale: AppLocale) {
-    if (nextLocale === locale) return;
-    Cookies.set(LOCALE_COOKIE, nextLocale, { path: "/", expires: 365, sameSite: "lax" });
-    closeMenu();
-    router.refresh();
-  }
-
-  function toggleMenu() {
-    if (open) {
-      closeMenu();
-      return;
-    }
-
-    if (teamUiMode !== "free") {
+  function handleOpenChange(nextOpen: boolean) {
+    setOpen(nextOpen);
+    if (nextOpen && teamUiMode !== "free") {
       setTeamOptions([]);
       setTeamOptionsState("loading");
     }
-
-    setOpen(true);
+    if (!nextOpen) {
+      if (teamUiMode === "free" || teamOptionsState !== "error") {
+        return;
+      }
+      setTeamOptions([]);
+      setTeamOptionsState("idle");
+    }
   }
 
   useEffect(() => {
@@ -162,17 +131,32 @@ export function UserDropdown({
     };
   }, [open, teamOptionsState, teamUiMode]);
 
+  const initials = displayName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  const themeOrder: Array<"system" | "light" | "dark"> = ["system", "light", "dark"];
+  const themeIndex = themeOrder.indexOf(theme);
+  const nextTheme = themeOrder[(themeIndex + 1) % themeOrder.length];
+  const ThemeIcon = theme === "system" ? Monitor : theme === "light" ? SunMedium : Moon;
+
+  function onLocaleChange(nextLocale: string) {
+    if (nextLocale === locale) return;
+    Cookies.set(LOCALE_COOKIE, nextLocale, { path: "/", expires: 365, sameSite: "lax" });
+    setOpen(false);
+    router.refresh();
+  }
+
   const showTeamSwitcher = teamUiMode !== "free" && teamOptions.length > 1;
   const showTeamSwitcherLoading = teamUiMode !== "free" && teamOptionsState === "loading";
 
   return (
-    <div ref={containerRef} className="relative inline-flex">
-      <button
-        type="button"
+    <DropdownMenu open={open} onOpenChange={handleOpenChange}>
+      <DropdownMenuTrigger
         aria-label={t("UserDropdown.label")}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        onClick={toggleMenu}
         className="inline-flex items-center gap-2.5 rounded-full border app-border-subtle py-1.5 pl-1.5 pr-3 shadow-sm transition-colors hover:bg-[color:var(--surface-subtle)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <Avatar size="default">
@@ -181,35 +165,43 @@ export function UserDropdown({
         </Avatar>
         <span className="hidden text-sm font-medium sm:inline">{displayName}</span>
         <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-      </button>
+      </DropdownMenuTrigger>
 
-      {open ? (
-        <div
-          role="menu"
-          aria-label={t("UserDropdown.label")}
-          className="absolute right-0 top-[calc(100%+0.4rem)] z-30 w-64 rounded-xl border app-border-subtle app-surface p-1.5 shadow-lg"
-        >
-          {/* User info */}
-          <div className="px-2.5 py-2">
-            <p className="truncate text-sm font-medium">{displayName}</p>
-            <p className="truncate text-xs text-muted-foreground">{userEmail}</p>
-            {teamUiMode !== "free" && (
-              <div className="mt-1.5 flex items-center gap-2">
-                <span className="truncate text-xs text-muted-foreground">
-                  {teamName ?? t("Common.myTeam")}
-                </span>
-                <Badge variant="secondary" className="capitalize text-[10px] px-1.5 py-0">
-                  {role}
-                </Badge>
-              </div>
-            )}
-          </div>
+      <DropdownMenuContent
+        align="end"
+        sideOffset={6}
+        className="w-64 rounded-xl p-1.5"
+      >
+        {/* User info */}
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="px-2.5 py-2">
+            <div>
+              <p className="truncate text-sm font-medium text-foreground">{displayName}</p>
+              <p className="truncate text-xs text-muted-foreground">{userEmail}</p>
+              {teamUiMode !== "free" && (
+                <div className="mt-1.5 flex items-center gap-2">
+                  <span className="truncate text-xs text-muted-foreground">
+                    {teamName ?? t("Common.myTeam")}
+                  </span>
+                  <Badge variant="secondary" className="capitalize text-[10px] px-1.5 py-0">
+                    {role}
+                  </Badge>
+                </div>
+              )}
+            </div>
+          </DropdownMenuLabel>
+        </DropdownMenuGroup>
 
-          {/* Team switcher */}
-          {showTeamSwitcher ? (
-            <>
-              <Separator className="my-1" />
-              <form action={switchActiveTeam} className="px-2.5 py-1.5">
+        {/* Team switcher */}
+        {showTeamSwitcher ? (
+          <>
+            <DropdownMenuSeparator />
+            <div
+              className="px-2.5 py-1.5"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <form ref={teamSwitchFormRef} action={switchActiveTeam}>
                 <input type="hidden" name="csrf_token" value={csrfToken} />
                 <input type="hidden" name="redirectTo" value={pathname} />
                 <label
@@ -240,118 +232,83 @@ export function UserDropdown({
                   {t("DashboardSidebar.switch")}
                 </button>
               </form>
-            </>
-          ) : null}
+            </div>
+          </>
+        ) : null}
 
-          {showTeamSwitcherLoading ? (
-            <>
-              <Separator className="my-1" />
-              <div className="px-2.5 py-2">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  {t("DashboardSidebar.team")}
-                </div>
+        {showTeamSwitcherLoading ? (
+          <>
+            <DropdownMenuSeparator />
+            <div className="px-2.5 py-2">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                {t("DashboardSidebar.team")}
               </div>
-            </>
-          ) : null}
+            </div>
+          </>
+        ) : null}
 
-          <Separator className="my-1" />
+        <DropdownMenuSeparator />
 
-          {/* Preferences */}
-          <div className="space-y-0.5">
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => setTheme(nextTheme)}
-              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-foreground transition-colors hover:bg-[color:var(--surface-subtle)]"
-            >
-              <ThemeIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
-              {t("UserDropdown.theme")}: {t(`UserDropdown.themeOptions.${theme}`)}
-            </button>
+        {/* Preferences */}
+        <DropdownMenuItem
+          onSelect={(e) => {
+            e.preventDefault();
+            setTheme(nextTheme);
+          }}
+          className="gap-2.5 rounded-lg px-2.5 py-2"
+        >
+          <ThemeIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+          {t("UserDropdown.theme")}: {t(`UserDropdown.themeOptions.${theme}`)}
+        </DropdownMenuItem>
 
-            {SHOW_LOCALE_SWITCHER ? (
-              <div>
-                <button
-                  type="button"
-                  role="menuitem"
-                  aria-haspopup="true"
-                  className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-foreground transition-colors hover:bg-[color:var(--surface-subtle)]"
-                  onClick={(e) => {
-                    // Toggle display of the inline locale list
-                    const list = e.currentTarget.nextElementSibling;
-                    list?.classList.toggle("hidden");
-                  }}
-                >
-                  <Languages className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  {t("UserDropdown.language")}: {tLocale(`localeNames.${locale}`)}
-                </button>
-                <div className="hidden pl-7 pr-1 py-1">
-                  {routing.locales.map((item) => {
-                    const isActive = item === locale;
-                    return (
-                      <button
-                        key={item}
-                        type="button"
-                        role="menuitemradio"
-                        aria-checked={isActive}
-                        onClick={() => onLocaleChange(item)}
-                        className={cn(
-                          "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs transition-colors",
-                          isActive
-                            ? "bg-[color:var(--surface-subtle)] text-foreground"
-                            : "text-muted-foreground hover:bg-[color:var(--surface-subtle)] hover:text-foreground",
-                        )}
-                      >
-                        <span>{tLocale(`localeNames.${item}`)}</span>
-                        {isActive ? <Check className="h-3 w-3 text-indigo-500" /> : null}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : null}
-          </div>
+        {SHOW_LOCALE_SWITCHER ? (
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger className="gap-2.5 rounded-lg px-2.5 py-2">
+              <Languages className="h-4 w-4 shrink-0 text-muted-foreground" />
+              {t("UserDropdown.language")}: {tLocale(`localeNames.${locale}`)}
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              <DropdownMenuRadioGroup value={locale} onValueChange={onLocaleChange}>
+                {routing.locales.map((item) => (
+                  <DropdownMenuRadioItem key={item} value={item}>
+                    {tLocale(`localeNames.${item}`)}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+        ) : null}
 
-          <Separator className="my-1" />
+        <DropdownMenuSeparator />
 
-          {/* Navigation links */}
-          <div className="space-y-0.5">
-            <Link
-              href="/dashboard/settings"
-              role="menuitem"
-              onClick={closeMenu}
-              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-foreground transition-colors hover:bg-[color:var(--surface-subtle)]"
-            >
-              <Settings className="h-4 w-4 shrink-0 text-muted-foreground" />
-              {t("UserDropdown.settings")}
-            </Link>
-            <Link
-              href="/dashboard/support"
-              role="menuitem"
-              onClick={closeMenu}
-              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-foreground transition-colors hover:bg-[color:var(--surface-subtle)]"
-            >
-              <CircleHelp className="h-4 w-4 shrink-0 text-muted-foreground" />
-              {t("UserDropdown.support")}
-            </Link>
-          </div>
+        {/* Navigation links */}
+        <DropdownMenuItem className="gap-2.5 rounded-lg px-2.5 py-2" render={<Link href="/dashboard/settings" />}>
+          <Settings className="h-4 w-4 shrink-0 text-muted-foreground" />
+          {t("UserDropdown.settings")}
+        </DropdownMenuItem>
+        <DropdownMenuItem className="gap-2.5 rounded-lg px-2.5 py-2" render={<Link href="/dashboard/support" />}>
+          <CircleHelp className="h-4 w-4 shrink-0 text-muted-foreground" />
+          {t("UserDropdown.support")}
+        </DropdownMenuItem>
 
-          <Separator className="my-1" />
+        <DropdownMenuSeparator />
 
-          {/* Logout */}
-          <form action={logout}>
-            <input type="hidden" name="csrf_token" value={csrfToken} />
-            <button
-              type="submit"
-              role="menuitem"
-              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-foreground transition-colors hover:bg-[color:var(--surface-subtle)]"
-            >
-              <LogOut className="h-4 w-4 shrink-0 text-muted-foreground" />
-              {t("UserDropdown.logout")}
-            </button>
-          </form>
-        </div>
-      ) : null}
-    </div>
+        {/* Logout */}
+        <form ref={logoutFormRef} action={logout} className="hidden">
+          <input type="hidden" name="csrf_token" value={csrfToken} />
+        </form>
+        <DropdownMenuItem
+          className="gap-2.5 rounded-lg px-2.5 py-2"
+          onSelect={(e) => {
+            e.preventDefault();
+            logoutFormRef.current?.requestSubmit();
+          }}
+        >
+          <LogOut className="h-4 w-4 shrink-0 text-muted-foreground" />
+          {t("UserDropdown.logout")}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
