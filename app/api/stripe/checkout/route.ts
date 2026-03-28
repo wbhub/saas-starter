@@ -272,7 +272,7 @@ export async function POST(req: Request) {
         customer: customerId,
         client_reference_id: teamContext.teamId,
         line_items: [{ price: plan.priceId, quantity: 1 }],
-        success_url: `${appUrl}/dashboard/billing?checkout=success`,
+        success_url: `${appUrl}/dashboard/billing?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${appUrl}/dashboard/billing?checkout=canceled`,
         metadata: {
           supabase_team_id: teamContext.teamId,

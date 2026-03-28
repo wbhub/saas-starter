@@ -4,16 +4,47 @@ import { BillingActions } from "@/components/billing-actions";
 import { formatUtcDate } from "@/lib/date";
 import { formatStaticUsdMonthlyLabel } from "@/lib/stripe/plan-price-display";
 import { canManageTeamBilling } from "@/lib/team-context";
-import { getDashboardShellData } from "@/lib/dashboard/server";
+import { getDashboardBaseData, getDashboardShellData } from "@/lib/dashboard/server";
 import { PLAN_CATALOG, type PlanKey } from "@/lib/stripe/plans";
+import { syncCheckoutSuccessForTeam } from "@/lib/stripe/checkout-success";
+import { logger } from "@/lib/logger";
 
-export default async function DashboardBillingPage() {
+type DashboardBillingPageProps = {
+  searchParams?:
+    | Promise<Record<string, string | string[] | undefined>>
+    | Record<string, string | string[] | undefined>;
+};
+
+function getFirstSearchParamValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+export default async function DashboardBillingPage({ searchParams }: DashboardBillingPageProps = {}) {
   const t = await getTranslations("DashboardBillingPage");
   const tPlanCopy = await getTranslations("Landing.pricing");
   const locale = await getLocale();
   const priceSuffixMonth = tPlanCopy("priceSuffix.month");
   const catalogSeatPrice = (amountMonthly: number) =>
     formatStaticUsdMonthlyLabel(amountMonthly, locale, priceSuffixMonth);
+  const resolvedSearchParams = (await searchParams) ?? {};
+  const checkoutStatus = getFirstSearchParamValue(resolvedSearchParams.checkout);
+  const checkoutSessionId = getFirstSearchParamValue(resolvedSearchParams.session_id);
+  const baseData = await getDashboardBaseData();
+
+  if (checkoutStatus === "success" && baseData.teamContext) {
+    try {
+      await syncCheckoutSuccessForTeam(baseData.teamContext.teamId, {
+        sessionId: checkoutSessionId ?? null,
+      });
+    } catch (error) {
+      logger.warn("Billing page checkout-success sync failed; continuing with current billing view.", {
+        teamId: baseData.teamContext.teamId,
+        checkoutSessionId: checkoutSessionId ?? null,
+        error,
+      });
+    }
+  }
+
   const { teamContext, billingContext, teamUiMode } = await getDashboardShellData();
 
   if (!teamContext || !billingContext || !teamUiMode) {
