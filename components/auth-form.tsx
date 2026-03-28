@@ -197,7 +197,10 @@ export function AuthForm({
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: toSupabaseOAuthProvider(provider),
-        options: { redirectTo: callbackUrl.toString() },
+        options: {
+          redirectTo: callbackUrl.toString(),
+          ...(provider === "microsoft" ? { scopes: "email" } : {}),
+        },
       });
 
       if (error) {
