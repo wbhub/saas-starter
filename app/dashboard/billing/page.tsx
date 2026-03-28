@@ -93,9 +93,7 @@ export default async function DashboardBillingPage() {
               <h2 className="text-lg font-semibold text-foreground">
                 {t("billingDisabled.title")}
               </h2>
-              <p className="mt-2 text-muted-foreground">
-                {t("billingDisabled.description")}
-              </p>
+              <p className="mt-2 text-muted-foreground">{t("billingDisabled.description")}</p>
             </div>
           ) : null}
           <div className="rounded-xl bg-card ring-1 ring-border p-6">
