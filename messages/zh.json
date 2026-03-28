@@ -507,6 +507,7 @@
       "roleUpdated": "会员角色已更新。",
       "inviteRevoked": "邀请被撤销。",
       "inviteResent": "重新邀请。",
+      "inviteResentEmailFailedPreserved": "重新发送邀请失败，但当前邀请链接仍然有效。",
       "inviteResentEmailFailed": "邀请令牌轮换，但电子邮件发送失败。"
     },
     "errors": {

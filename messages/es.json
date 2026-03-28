@@ -507,6 +507,7 @@
       "roleUpdated": "Rol del miembro actualizado.",
       "inviteRevoked": "Invitación revocada.",
       "inviteResent": "Invitación reenviada.",
+      "inviteResentEmailFailedPreserved": "Falló el reenvío de la invitación, pero el enlace actual sigue activo.",
       "inviteResentEmailFailed": "Se rotó el token de invitación, pero falló el envío del email."
     },
     "errors": {

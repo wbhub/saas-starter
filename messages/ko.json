@@ -507,6 +507,7 @@
       "roleUpdated": "멤버 역할이 업데이트되었습니다.",
       "inviteRevoked": "초대가 철회되었습니다.",
       "inviteResent": "초대를 다시 보냈습니다.",
+      "inviteResentEmailFailedPreserved": "초대 재전송에 실패했지만 기존 초대 링크는 계속 유효합니다.",
       "inviteResentEmailFailed": "초대 토큰은 갱신되었지만 이메일 전송에 실패했습니다."
     },
     "errors": {

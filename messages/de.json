@@ -507,6 +507,7 @@
       "roleUpdated": "Mitgliederrolle aktualisiert.",
       "inviteRevoked": "Einladung widerrufen.",
       "inviteResent": "Einladung erneut gesendet.",
+      "inviteResentEmailFailedPreserved": "Das erneute Senden ist fehlgeschlagen, aber der bestehende Einladungslink bleibt aktiv.",
       "inviteResentEmailFailed": "Einladungstoken rotiert, aber der E-Mail-Versand ist fehlgeschlagen."
     },
     "errors": {

@@ -23,7 +23,12 @@ type TeamInviteRow = {
   id: string;
   email: string;
   role: "admin" | "member";
+  token_hash: string;
+  expires_at: string;
+  invited_by: string | null;
 };
+
+type InviteResendDeliveryStatus = "sent" | "failed_preserved" | "failed_rotated";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -52,7 +57,7 @@ export async function POST(request: Request, context: ResendInviteRouteContext) 
 
       const { data: invite, error: inviteError } = await supabase
         .from("team_invites")
-        .select("id,email,role")
+        .select("id,email,role,token_hash,expires_at,invited_by")
         .eq("id", inviteId)
         .eq("team_id", teamContext.teamId)
         .is("accepted_at", null)
@@ -67,6 +72,63 @@ export async function POST(request: Request, context: ResendInviteRouteContext) 
       }
       if (!invite) {
         return jsonError(t("errors.pendingInviteNotFound"), 404);
+      }
+
+      if (!isResendCustomEmailConfigured()) {
+        logger.warn(
+          "Team invite resend email delivery disabled because Resend is not fully configured",
+          {
+            requestId,
+            teamId: teamContext.teamId,
+            inviteId,
+          },
+        );
+        logAuditEvent({
+          action: "team.invite.resend",
+          outcome: "failure",
+          actorUserId: user.id,
+          teamId: teamContext.teamId,
+          resourceId: invite.id,
+          metadata: {
+            emailSent: false,
+            deliveryStatus: "failed_preserved" satisfies InviteResendDeliveryStatus,
+            reason: "email_delivery_failed",
+            emailFailureReason: "resend_not_configured",
+          },
+        });
+        return jsonSuccess({
+          emailSent: false,
+          deliveryStatus: "failed_preserved" satisfies InviteResendDeliveryStatus,
+        });
+      }
+
+      const fromEmail = getResendFromEmailIfConfigured();
+      if (!getResendClientIfConfigured() || !fromEmail) {
+        logger.warn(
+          "Team invite resend email delivery skipped because Resend became unavailable mid-request",
+          {
+            requestId,
+            teamId: teamContext.teamId,
+            inviteId,
+          },
+        );
+        logAuditEvent({
+          action: "team.invite.resend",
+          outcome: "failure",
+          actorUserId: user.id,
+          teamId: teamContext.teamId,
+          resourceId: invite.id,
+          metadata: {
+            emailSent: false,
+            deliveryStatus: "failed_preserved" satisfies InviteResendDeliveryStatus,
+            reason: "email_delivery_failed",
+            emailFailureReason: "resend_unavailable",
+          },
+        });
+        return jsonSuccess({
+          emailSent: false,
+          deliveryStatus: "failed_preserved" satisfies InviteResendDeliveryStatus,
+        });
       }
 
       const token = createRawInviteToken();
@@ -100,81 +162,77 @@ export async function POST(request: Request, context: ResendInviteRouteContext) 
 
       const inviteUrl = `${getAppUrl()}/invite/${token}`;
       let emailSent = false;
-      let emailFailureReason:
-        | "resend_not_configured"
-        | "resend_unavailable"
-        | "resend_send_failed"
-        | null = null;
+      let deliveryStatus: InviteResendDeliveryStatus = "failed_preserved";
+      let emailFailureReason: "resend_send_failed" | null = null;
 
-      if (!isResendCustomEmailConfigured()) {
-        emailFailureReason = "resend_not_configured";
-        logger.warn(
-          "Team invite resend email delivery disabled because Resend is not fully configured",
-          {
-            requestId,
-            teamId: teamContext.teamId,
-            inviteId,
-          },
-        );
-      } else {
-        try {
-          const resend = getResendClientIfConfigured();
-          const fromEmail = getResendFromEmailIfConfigured();
-          if (!resend || !fromEmail) {
-            emailFailureReason = "resend_unavailable";
+      try {
+        const emailPayload = {
+          from: fromEmail,
+          to: invite.email,
+          subject: t("email.subject", {
+            teamName: teamContext.teamName ?? t("email.defaultTeamName"),
+          }),
+          text: [
+            t("email.line1", { teamName: teamContext.teamName ?? t("email.defaultTeamName") }),
+            "",
+            t("email.role", { role: invite.role }),
+            t("email.acceptInvite", { inviteUrl }),
+            "",
+            t("email.expiresIn7Days"),
+          ].join("\n"),
+          replyTo: user.email ?? undefined,
+        };
+
+        if (isTriggerConfigured()) {
+          const triggered = await triggerSendEmailTask(emailPayload);
+          if (!triggered) {
             logger.warn(
-              "Team invite resend email delivery skipped because Resend became unavailable mid-request",
+              "Team invite resend Trigger enqueue failed, falling back to inline Resend send",
               {
                 requestId,
                 teamId: teamContext.teamId,
                 inviteId,
               },
             );
-          } else {
-            const emailPayload = {
-              from: fromEmail,
-              to: invite.email,
-              subject: t("email.subject", {
-                teamName: teamContext.teamName ?? t("email.defaultTeamName"),
-              }),
-              text: [
-                t("email.line1", { teamName: teamContext.teamName ?? t("email.defaultTeamName") }),
-                "",
-                t("email.role", { role: invite.role }),
-                t("email.acceptInvite", { inviteUrl }),
-                "",
-                t("email.expiresIn7Days"),
-              ].join("\n"),
-              replyTo: user.email ?? undefined,
-            };
-
-            if (isTriggerConfigured()) {
-              const triggered = await triggerSendEmailTask(emailPayload);
-              if (!triggered) {
-                logger.warn(
-                  "Team invite resend Trigger enqueue failed, falling back to inline Resend send",
-                  {
-                    requestId,
-                    teamId: teamContext.teamId,
-                    inviteId,
-                  },
-                );
-                await sendResendEmail(emailPayload);
-              }
-            } else {
-              await sendResendEmail(emailPayload);
-            }
-
-            emailSent = true;
-            emailFailureReason = null;
+            await sendResendEmail(emailPayload);
           }
-        } catch (error) {
-          emailFailureReason = "resend_send_failed";
-          logger.error("Failed to send resend invite email", error, {
+        } else {
+          await sendResendEmail(emailPayload);
+        }
+
+        emailSent = true;
+        deliveryStatus = "sent";
+        emailFailureReason = null;
+      } catch (error) {
+        emailFailureReason = "resend_send_failed";
+        logger.error("Failed to send resend invite email", error, {
+          requestId,
+          teamId: teamContext.teamId,
+          inviteId,
+        });
+      }
+
+      if (!emailSent) {
+        const { error: rollbackError } = await supabase
+          .from("team_invites")
+          .update({
+            token_hash: invite.token_hash,
+            expires_at: invite.expires_at,
+            invited_by: invite.invited_by,
+          })
+          .eq("id", invite.id)
+          .eq("team_id", teamContext.teamId)
+          .eq("token_hash", tokenHash)
+          .is("accepted_at", null);
+
+        if (rollbackError) {
+          logger.error("Failed to restore previous invite token after resend delivery failure", {
             requestId,
             teamId: teamContext.teamId,
             inviteId,
+            error: rollbackError,
           });
+          deliveryStatus = "failed_rotated";
         }
       }
 
@@ -186,11 +244,12 @@ export async function POST(request: Request, context: ResendInviteRouteContext) 
         resourceId: invite.id,
         metadata: {
           emailSent,
+          deliveryStatus,
           reason: emailSent ? undefined : "email_delivery_failed",
           emailFailureReason: emailFailureReason ?? undefined,
         },
       });
-      return jsonSuccess({ emailSent });
+      return jsonSuccess({ emailSent, deliveryStatus });
     },
   });
 }
