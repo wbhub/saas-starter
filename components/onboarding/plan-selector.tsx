@@ -180,7 +180,7 @@ export function OnboardingPlanSelector({
     }
   }
 
-  const gridCols = freePlanEnabled ? "md:grid-cols-2 lg:grid-cols-4" : "md:grid-cols-3";
+  const gridCols = freePlanEnabled ? "md:grid-cols-2 xl:grid-cols-4" : "md:grid-cols-3";
 
   return (
     <div className="mt-10 space-y-8">
