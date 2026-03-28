@@ -18,8 +18,8 @@ export default async function TermsOfUsePage() {
   return (
     <div className="min-h-screen bg-[color:var(--background)] text-[color:var(--foreground)]">
       <SiteHeader isLoggedIn={Boolean(session)} />
-      <main className="px-6 py-12">
-        <div className="mx-auto max-w-3xl space-y-8">
+      <main className="app-content mx-auto max-w-[1440px] px-6 py-12 lg:px-10">
+        <div className="mx-auto max-w-4xl space-y-8">
           <div className="space-y-3">
             <h1 className="text-3xl font-semibold tracking-tight">Terms of Use</h1>
             <p className="text-sm app-muted">Effective date: [Month DD, YYYY]</p>
