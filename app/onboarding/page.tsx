@@ -114,7 +114,7 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
       <SiteHeader />
 
       <main className="flex flex-1 flex-col items-center px-4 py-12">
-        <div className={`w-full ${freePlanEnabled ? "max-w-7xl" : "max-w-5xl"}`}>
+        <div className={`my-auto w-full ${freePlanEnabled ? "max-w-7xl" : "max-w-5xl"}`}>
           <div className="text-center">
             <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">{t("title")}</h1>
             <p className="mt-3 text-lg text-muted-foreground">
