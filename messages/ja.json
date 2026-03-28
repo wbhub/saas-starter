@@ -507,6 +507,7 @@
       "roleUpdated": "メンバーのロールを更新しました。",
       "inviteRevoked": "招待を取り消しました。",
       "inviteResent": "招待を再送しました。",
+      "inviteResentEmailFailedPreserved": "招待の再送に失敗しましたが、既存の招待リンクは引き続き有効です。",
       "inviteResentEmailFailed": "招待トークンは更新されましたが、メール送信に失敗しました。"
     },
     "errors": {

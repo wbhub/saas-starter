@@ -91,6 +91,21 @@ describe("getClientIp", () => {
 });
 
 describe("getClientRateLimitIdentifier", () => {
+  it("prefers a stable csrf cookie when trusted proxy headers are disabled", () => {
+    delete process.env.TRUST_PROXY_HEADERS;
+    const request = new Request("https://example.com", {
+      headers: {
+        cookie: "csrf_token=abcdefghijklmnopqrstuvwxyz012345; theme=dark",
+        "user-agent": "Mozilla/5.0",
+      },
+    });
+
+    expect(getClientRateLimitIdentifier(request)).toEqual({
+      keyType: "cookie",
+      value: "abcdefghijklmnopqrstuvwxyz012345",
+    });
+  });
+
   it("returns fingerprint identifier when trusted proxy headers are disabled", () => {
     delete process.env.TRUST_PROXY_HEADERS;
     const request = new Request("https://example.com", {

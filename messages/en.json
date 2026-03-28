@@ -507,6 +507,7 @@
       "roleUpdated": "Member role updated.",
       "inviteRevoked": "Invite revoked.",
       "inviteResent": "Invite resent.",
+      "inviteResentEmailFailedPreserved": "Invite resend failed, but the existing invite link is still active.",
       "inviteResentEmailFailed": "Invite token rotated, but email delivery failed."
     },
     "errors": {

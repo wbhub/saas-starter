@@ -507,6 +507,7 @@
       "roleUpdated": "Função do membro atualizada.",
       "inviteRevoked": "Convite revogado.",
       "inviteResent": "Convidar ressentimento.",
+      "inviteResentEmailFailedPreserved": "O reenvio do convite falhou, mas o link atual continua ativo.",
       "inviteResentEmailFailed": "O token de convite foi alternado, mas a entrega do e-mail falhou."
     },
     "errors": {

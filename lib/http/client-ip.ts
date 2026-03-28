@@ -1,5 +1,11 @@
 import { isIP } from "net";
+import { parse as parseCookieHeader } from "cookie";
 import { env } from "@/lib/env";
+import {
+  CSRF_CLIENT_COOKIE_NAME,
+  CSRF_COOKIE_NAME,
+  ensureTokenShape,
+} from "@/lib/security/csrf";
 
 function extractFirstValidIp(value: string | null) {
   if (!value) return null;
@@ -76,12 +82,37 @@ function buildClientFingerprint(request: Request) {
   return normalizeRateLimitToken(`${userAgent}|${acceptLanguage}|${secChUa}|${secChUaPlatform}`);
 }
 
+function getCookieBackedClientId(request: Request) {
+  const cookieHeader = request.headers.get("cookie");
+  if (!cookieHeader) {
+    return null;
+  }
+
+  const cookies = parseCookieHeader(cookieHeader);
+  const csrfCookie =
+    cookies[CSRF_COOKIE_NAME]?.trim() ?? cookies[CSRF_CLIENT_COOKIE_NAME]?.trim() ?? "";
+
+  if (!ensureTokenShape(csrfCookie)) {
+    return null;
+  }
+
+  return csrfCookie;
+}
+
 export function getClientRateLimitIdentifier(request: Request) {
   const clientIp = getClientIp(request);
   if (clientIp) {
     return {
       keyType: "ip" as const,
       value: clientIp,
+    };
+  }
+
+  const cookieBackedClientId = getCookieBackedClientId(request);
+  if (cookieBackedClientId) {
+    return {
+      keyType: "cookie" as const,
+      value: cookieBackedClientId,
     };
   }
 

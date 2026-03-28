@@ -34,6 +34,7 @@ type TeamMutationResponse = {
   ok?: boolean;
   error?: string;
   emailSent?: boolean;
+  deliveryStatus?: "sent" | "failed_preserved" | "failed_rotated";
   warning?: string;
 };
 
@@ -297,11 +298,15 @@ export function TeamInviteCard({
       if (!response.ok) {
         throw new Error(payload?.error ?? t("errors.resendInvite"));
       }
+      const feedback =
+        payload?.deliveryStatus === "sent" || payload?.emailSent
+          ? t("feedback.inviteResent")
+          : payload?.deliveryStatus === "failed_preserved"
+            ? t("feedback.inviteResentEmailFailedPreserved")
+            : t("feedback.inviteResentEmailFailed");
       dispatch({
         type: "RESEND_INVITE_END",
-        feedback: payload?.emailSent
-          ? t("feedback.inviteResent")
-          : t("feedback.inviteResentEmailFailed"),
+        feedback,
       });
       router.refresh();
     } catch (error) {

@@ -507,6 +507,7 @@
       "roleUpdated": "Rôle de membre mis à jour.",
       "inviteRevoked": "Invitation révoquée.",
       "inviteResent": "Invitez le ressentiment.",
+      "inviteResentEmailFailedPreserved": "Le renvoi de l'invitation a échoué, mais le lien actuel reste actif.",
       "inviteResentEmailFailed": "Le jeton d'invitation a effectué une rotation, mais la livraison de l'e-mail a échoué."
     },
     "errors": {
