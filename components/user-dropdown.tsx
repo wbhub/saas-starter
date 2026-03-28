@@ -9,6 +9,7 @@ import {
   Check,
   ChevronDown,
   CircleHelp,
+  Loader2,
   Languages,
   LogOut,
   Monitor,
@@ -34,8 +35,12 @@ export type UserDropdownProps = {
   role: "owner" | "admin" | "member";
   teamUiMode: "free" | "paid_solo" | "paid_team";
   activeTeamId: string;
-  teamMemberships: DashboardTeamOption[];
   csrfToken: string;
+};
+
+type TeamOptionsResponse = {
+  ok: true;
+  teams: DashboardTeamOption[];
 };
 
 const LOCALE_COOKIE = "NEXT_LOCALE";
@@ -48,7 +53,6 @@ export function UserDropdown({
   role,
   teamUiMode,
   activeTeamId,
-  teamMemberships,
   csrfToken,
 }: UserDropdownProps) {
   const t = useTranslations();
@@ -58,7 +62,16 @@ export function UserDropdown({
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
+  const [teamOptions, setTeamOptions] = useState<DashboardTeamOption[]>([]);
+  const [teamOptionsState, setTeamOptionsState] = useState<"idle" | "loading" | "loaded" | "error">(
+    teamUiMode === "free" ? "loaded" : "idle",
+  );
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const teamOptionsStateRef = useRef(teamOptionsState);
+  const teamOptionsSyncKey = `${activeTeamId}:${teamName ?? ""}:${role}:${teamUiMode}`;
+  const lastLoadedTeamOptionsSyncKeyRef = useRef<string | null>(
+    teamUiMode === "free" ? teamOptionsSyncKey : null,
+  );
 
   useEffect(() => {
     function onDocumentPointerDown(event: MouseEvent) {
@@ -89,7 +102,91 @@ export function UserDropdown({
     router.refresh();
   }
 
-  const showTeamSwitcher = teamUiMode !== "free" && teamMemberships.length > 1;
+  function toggleMenu() {
+    const nextOpen = !open;
+    if (nextOpen && teamUiMode !== "free") {
+      lastLoadedTeamOptionsSyncKeyRef.current = null;
+      setTeamOptions([]);
+      setTeamOptionsState("idle");
+    }
+
+    setOpen(nextOpen);
+  }
+
+  useEffect(() => {
+    teamOptionsStateRef.current = teamOptionsState;
+  }, [teamOptionsState]);
+
+  useEffect(() => {
+    if (teamUiMode !== "free") {
+      return;
+    }
+
+    lastLoadedTeamOptionsSyncKeyRef.current = teamOptionsSyncKey;
+    setTeamOptions([]);
+    setTeamOptionsState("loaded");
+  }, [teamOptionsSyncKey, teamUiMode]);
+
+  useEffect(() => {
+    if (open || teamOptionsState !== "error") {
+      return;
+    }
+
+    setTeamOptionsState(teamUiMode === "free" ? "loaded" : "idle");
+  }, [open, teamOptionsState, teamUiMode]);
+
+  useEffect(() => {
+    const currentTeamOptionsState = teamOptionsStateRef.current;
+
+    if (!open || teamUiMode === "free" || currentTeamOptionsState === "loading") {
+      return;
+    }
+
+    if (
+      currentTeamOptionsState === "loaded" &&
+      lastLoadedTeamOptionsSyncKeyRef.current === teamOptionsSyncKey
+    ) {
+      return;
+    }
+
+    if (currentTeamOptionsState === "error") {
+      return;
+    }
+
+    let cancelled = false;
+    setTeamOptionsState("loading");
+
+    fetch("/api/team/options", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`Team options request failed: ${response.status}`);
+        }
+
+        const payload = (await response.json()) as TeamOptionsResponse;
+        if (cancelled) {
+          return;
+        }
+
+        setTeamOptions(payload.teams);
+        lastLoadedTeamOptionsSyncKeyRef.current = teamOptionsSyncKey;
+        setTeamOptionsState("loaded");
+      })
+      .catch(() => {
+        if (cancelled) {
+          return;
+        }
+
+        setTeamOptions([]);
+        setTeamOptionsState("error");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, teamOptionsSyncKey, teamUiMode]);
+
+  const showTeamSwitcher = teamUiMode !== "free" && teamOptions.length > 1;
+  const showTeamSwitcherLoading = teamUiMode !== "free" && teamOptionsState === "loading";
 
   return (
     <div ref={containerRef} className="relative inline-flex">
@@ -98,7 +195,7 @@ export function UserDropdown({
         aria-label={t("UserDropdown.label")}
         aria-haspopup="menu"
         aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggleMenu}
         className="inline-flex items-center gap-2.5 rounded-full border app-border-subtle py-1.5 pl-1.5 pr-3 shadow-sm transition-colors hover:bg-[color:var(--surface-subtle)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <Avatar size="default">
@@ -151,7 +248,7 @@ export function UserDropdown({
                     defaultValue={activeTeamId}
                     className="w-full appearance-none rounded-lg border bg-background py-1 pl-2 pr-6 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
                   >
-                    {teamMemberships.map((m) => (
+                    {teamOptions.map((m) => (
                       <option key={m.teamId} value={m.teamId}>
                         {m.teamName ?? t("Common.myTeam")}
                       </option>
@@ -166,6 +263,18 @@ export function UserDropdown({
                   {t("DashboardSidebar.switch")}
                 </button>
               </form>
+            </>
+          ) : null}
+
+          {showTeamSwitcherLoading ? (
+            <>
+              <Separator className="my-1" />
+              <div className="px-2.5 py-2">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  {t("DashboardSidebar.team")}
+                </div>
+              </div>
             </>
           ) : null}
 

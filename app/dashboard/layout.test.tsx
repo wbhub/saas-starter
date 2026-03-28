@@ -45,7 +45,6 @@ describe("DashboardLayout", () => {
         profile: { avatar_url: null },
         teamContext: { teamId: "team_123", teamName: "Acme Team", role: "owner" },
         teamContextLoadFailed: false,
-        teamMemberships: [],
         displayName: "Owner",
         csrfToken: "csrf_token",
         billingContext: {

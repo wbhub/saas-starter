@@ -54,10 +54,51 @@ describe("team context cache", () => {
     expect(second).toEqual(TEST_TEAM_CONTEXT);
     expect(getTeamContextForUser).toHaveBeenCalledTimes(1);
 
-    vi.advanceTimersByTime(30_001);
+    vi.advanceTimersByTime(300_001);
     const afterTtl = await getCachedTeamContextForUser(supabase, TEST_USER_ID);
     expect(afterTtl).toEqual(TEST_TEAM_CONTEXT);
     expect(getTeamContextForUser).toHaveBeenCalledTimes(2);
+  });
+
+  it("refreshes from the data source when shared cache misses even if memory is warm", async () => {
+    const freshTeamContext = {
+      ...TEST_TEAM_CONTEXT,
+      role: "admin" as const,
+    };
+    const redis = {
+      get: vi.fn().mockResolvedValue(null),
+      set: vi.fn().mockResolvedValue("OK"),
+      del: vi.fn(),
+    };
+    const getTeamContextForUser = vi.fn().mockResolvedValue(freshTeamContext);
+
+    const now = Date.now();
+    const globalCacheState = globalThis as GlobalCacheState;
+    globalCacheState.__saasStarterTeamContextCache = new Map([
+      [
+        TEST_CACHE_KEY,
+        {
+          value: TEST_TEAM_CONTEXT,
+          expiresAt: now + 60_000,
+        },
+      ],
+    ]);
+    globalCacheState.__saasStarterTeamContextCacheLastSweepAt = now;
+
+    vi.doMock("@/lib/redis/client", () => ({
+      getRedisClient: () => redis,
+    }));
+    vi.doMock("@/lib/team-context", () => ({
+      getTeamContextForUser,
+    }));
+
+    const { getCachedTeamContextForUser } = await import("./team-context-cache");
+
+    const result = await getCachedTeamContextForUser({} as never, TEST_USER_ID);
+
+    expect(redis.get).toHaveBeenCalledTimes(1);
+    expect(getTeamContextForUser).toHaveBeenCalledTimes(1);
+    expect(result).toEqual(freshTeamContext);
   });
 
   it("accepts object responses from redis cache", async () => {
@@ -82,6 +123,34 @@ describe("team context cache", () => {
     expect(getTeamContextForUser).not.toHaveBeenCalled();
   });
 
+  it("backfills in-memory cache from redis hits for fallback when redis becomes unavailable", async () => {
+    const getTeamContextForUser = vi.fn();
+    let redisAvailable = true;
+    const redis = {
+      get: vi.fn().mockResolvedValue(TEST_TEAM_CONTEXT),
+      set: vi.fn(),
+      del: vi.fn(),
+    };
+
+    vi.doMock("@/lib/redis/client", () => ({
+      getRedisClient: () => (redisAvailable ? redis : null),
+    }));
+    vi.doMock("@/lib/team-context", () => ({
+      getTeamContextForUser,
+    }));
+
+    const { getCachedTeamContextForUser } = await import("./team-context-cache");
+
+    await getCachedTeamContextForUser({} as never, TEST_USER_ID);
+    redis.get.mockClear();
+    redisAvailable = false;
+
+    await getCachedTeamContextForUser({} as never, TEST_USER_ID);
+
+    expect(redis.get).not.toHaveBeenCalled();
+    expect(getTeamContextForUser).not.toHaveBeenCalled();
+  });
+
   it("fetches from data source on redis miss and writes through to redis cache", async () => {
     const getTeamContextForUser = vi.fn().mockResolvedValue(TEST_TEAM_CONTEXT);
     const redis = {
@@ -102,7 +171,7 @@ describe("team context cache", () => {
 
     expect(result).toEqual(TEST_TEAM_CONTEXT);
     expect(getTeamContextForUser).toHaveBeenCalledTimes(1);
-    expect(redis.set).toHaveBeenCalledWith(TEST_CACHE_KEY, TEST_TEAM_CONTEXT, { ex: 30 });
+    expect(redis.set).toHaveBeenCalledWith(TEST_CACHE_KEY, TEST_TEAM_CONTEXT, { ex: 300 });
   });
 
   it("parses JSON string values returned by redis", async () => {
@@ -154,7 +223,7 @@ describe("team context cache", () => {
     expect(result).toEqual(TEST_TEAM_CONTEXT);
     expect(getTeamContextForUser).toHaveBeenCalledTimes(1);
     expect(logger.warn).toHaveBeenCalledWith(
-      "Failed to read team context cache from redis; using in-memory fallback.",
+      "Failed to read team context cache from redis; continuing.",
       expect.objectContaining({
         userId: TEST_USER_ID,
         error: expect.any(Error),

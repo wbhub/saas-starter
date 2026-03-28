@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { invalidateCachedDashboardTeamSnapshot } from "@/lib/dashboard/team-snapshot-cache";
 import { getStripeServerClient } from "@/lib/stripe/server";
 import { ALL_SUBSCRIPTION_STATUSES } from "@/lib/stripe/plans";
 import { logger } from "@/lib/logger";
@@ -78,6 +79,7 @@ export async function upsertStripeCustomer(teamId: string, stripeCustomerId: str
 
 export async function handleCustomerDeleted(stripeCustomerId: string) {
   const admin = getAdminClient();
+  const teamId = await resolveTeamIdFromStripeCustomer(stripeCustomerId);
 
   const { data, error } = await admin.rpc("delete_stripe_customer_and_cancel_subscriptions", {
     p_stripe_customer_id: stripeCustomerId,
@@ -90,8 +92,12 @@ export async function handleCustomerDeleted(stripeCustomerId: string) {
   }
 
   const cancelled = Array.isArray(data) ? data[0] : data;
+  if (teamId) {
+    await invalidateCachedDashboardTeamSnapshot(teamId);
+  }
   logger.info("Handled Stripe customer deletion", {
     stripeCustomerId,
+    teamId,
     subscriptionsCancelled: cancelled ?? 0,
   });
 }
@@ -166,5 +172,8 @@ export async function syncSubscription(
       teamId,
       eventCreatedAt,
     });
+    return;
   }
+
+  await invalidateCachedDashboardTeamSnapshot(teamId);
 }

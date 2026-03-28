@@ -5,6 +5,7 @@ import { recoverPersonalTeamForUser } from "@/lib/team-recovery";
 import { logger } from "@/lib/logger";
 import { getRouteTranslator } from "@/lib/i18n/locale";
 import { invalidateCachedTeamContextForUser } from "@/lib/team-context-cache";
+import { invalidateCachedDashboardTeamSnapshot } from "@/lib/dashboard/team-snapshot-cache";
 
 export async function POST(request: Request) {
   const t = await getRouteTranslator("ApiTeamRecoverPersonal", request);
@@ -30,7 +31,10 @@ export async function POST(request: Request) {
           user.email,
           typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name : null,
         );
-        await invalidateCachedTeamContextForUser(user.id);
+        await Promise.all([
+          invalidateCachedTeamContextForUser(user.id),
+          invalidateCachedDashboardTeamSnapshot(teamId),
+        ]);
         return jsonSuccess({ teamId });
       } catch (error) {
         logger.error("Failed to recover personal team", error);

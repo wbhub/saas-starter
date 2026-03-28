@@ -7,6 +7,7 @@ import { env, getAppUrl } from "@/lib/env";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { invalidateCachedDashboardTeamSnapshots } from "@/lib/dashboard/team-snapshot-cache";
 import { syncTeamSeatQuantity } from "@/lib/stripe/seats";
 import { enqueueSeatSyncRetry } from "@/lib/stripe/seat-sync-retries";
 import { logger } from "@/lib/logger";
@@ -131,6 +132,8 @@ async function getTeamIdsForUserMemberships(userId: string): Promise<string[]> {
 }
 
 async function syncTeamSeatsAfterAccountDeletion(teamIds: string[], deletedUserId: string) {
+  await invalidateCachedDashboardTeamSnapshots(teamIds);
+
   await Promise.all(
     teamIds.map(async (teamId) => {
       try {

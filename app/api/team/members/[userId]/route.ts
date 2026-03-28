@@ -4,6 +4,7 @@ import { jsonError, jsonSuccess } from "@/lib/http/api-json";
 import { withTeamRoute } from "@/lib/http/team-route";
 import { z } from "@/lib/http/request-validation";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { invalidateCachedDashboardTeamSnapshot } from "@/lib/dashboard/team-snapshot-cache";
 import { invalidateCachedTeamContextForUser } from "@/lib/team-context-cache";
 import { syncTeamSeatQuantity } from "@/lib/stripe/seats";
 import { enqueueSeatSyncRetry } from "@/lib/stripe/seat-sync-retries";
@@ -127,7 +128,10 @@ export async function DELETE(request: Request, context: TeamMembersRouteContext)
         return jsonError(t("errors.unableToRemoveMember"), 500);
       }
 
-      await invalidateCachedTeamContextForUser(targetUserId);
+      await Promise.all([
+        invalidateCachedTeamContextForUser(targetUserId),
+        invalidateCachedDashboardTeamSnapshot(teamContext.teamId),
+      ]);
 
       let seatSynced = true;
       try {
