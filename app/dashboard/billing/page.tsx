@@ -209,7 +209,6 @@ export default async function DashboardBillingPage() {
           </Link>
         </section>
       ) : null}
-
     </DashboardShell>
   );
 }

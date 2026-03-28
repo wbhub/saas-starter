@@ -149,12 +149,7 @@ export function DashboardSettingsCard({
               {isUploading ? t("upload.uploading") : t("upload.uploadPhoto")}
             </Button>
             {avatarUrl ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setAvatarUrl("")}
-              >
+              <Button type="button" variant="outline" size="sm" onClick={() => setAvatarUrl("")}>
                 {t("upload.removePhoto")}
               </Button>
             ) : null}

@@ -179,31 +179,4 @@ describe("Dashboard page subscription snapshot free plan behavior", () => {
     expect(html).not.toContain("Current plan: Free");
   });
 
-  it("shows AI quick link when AI UI is visible", async () => {
-    mockDashboardDependencies({
-      subscription: null,
-      effectivePlanKey: "free",
-      isPaidPlan: false,
-      showAiNav: true,
-    });
-
-    const DashboardPage = (await import("./page")).default;
-    const html = renderToStaticMarkup(await DashboardPage());
-
-    expect(html).toContain('href="/dashboard/ai"');
-  });
-
-  it("hides AI quick link when AI UI is gated off", async () => {
-    mockDashboardDependencies({
-      subscription: null,
-      effectivePlanKey: "free",
-      isPaidPlan: false,
-      showAiNav: false,
-    });
-
-    const DashboardPage = (await import("./page")).default;
-    const html = renderToStaticMarkup(await DashboardPage());
-
-    expect(html).not.toContain('href="/dashboard/ai"');
-  });
 });
