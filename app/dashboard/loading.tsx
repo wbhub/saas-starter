@@ -3,7 +3,7 @@ export default function DashboardLoading() {
     <div className="flex min-h-screen flex-col bg-background">
       {/* Header skeleton */}
       <div className="border-b app-border-subtle">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
+        <div className="mx-auto flex max-w-[1440px] items-center justify-between px-6 py-5 lg:px-10">
           <div className="flex items-center gap-3">
             <div className="h-9 w-9 animate-pulse rounded-2xl bg-muted" />
             <div className="h-5 w-28 animate-pulse rounded bg-muted" />
@@ -17,7 +17,7 @@ export default function DashboardLoading() {
 
       {/* Content skeleton */}
       <div className="flex-1">
-        <div className="mx-auto max-w-7xl px-6 py-8 lg:py-12">
+        <div className="mx-auto max-w-[1440px] px-6 py-8 lg:px-10 lg:py-12">
           <div className="grid gap-8 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-14">
             {/* Sidebar skeleton */}
             <div className="space-y-4">

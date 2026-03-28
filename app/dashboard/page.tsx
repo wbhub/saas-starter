@@ -81,7 +81,7 @@ export default async function DashboardPage() {
             <CardTitle>{t("DashboardPage.account")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <dl className="space-y-4 text-sm">
+            <dl className="space-y-4">
               <div className="flex items-center justify-between">
                 <dt className="text-muted-foreground">{t("DashboardPage.userId")}</dt>
                 <dd className="max-w-[180px] truncate font-mono text-xs">{user.id}</dd>
@@ -118,7 +118,7 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             {subscription ? (
-              <dl className="space-y-4 text-sm">
+              <dl className="space-y-4">
                 <div className="flex items-center justify-between">
                   <dt className="text-muted-foreground">{t("DashboardPage.currentPlan")}</dt>
                   <dd className="font-medium">

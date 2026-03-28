@@ -344,7 +344,7 @@ export function TeamInviteCard({
   return (
     <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
       <h2 className="text-lg font-semibold text-foreground">{t("title")}</h2>
-      <p className="mt-2 text-sm text-muted-foreground">{t("description", { teamName })}</p>
+      <p className="mt-2 text-muted-foreground">{t("description", { teamName })}</p>
       {seatPriceLabel ? (
         <p className="mt-2 rounded-lg app-surface-subtle px-3 py-2 text-sm text-muted-foreground">
           {t("pricing.perSeat", { amount: seatPriceLabel })}

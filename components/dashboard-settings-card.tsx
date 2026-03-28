@@ -107,7 +107,7 @@ export function DashboardSettingsCard({
   return (
     <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
       <h2 className="text-lg font-semibold text-foreground">{t("title")}</h2>
-      <p className="mt-2 text-sm text-muted-foreground">{t("description")}</p>
+      <p className="mt-2 text-muted-foreground">{t("description")}</p>
 
       <form action={formAction} className="mt-4 space-y-3">
         <input type="hidden" name="csrf_token" value={csrfToken} />

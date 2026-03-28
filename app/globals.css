@@ -190,3 +190,14 @@
     @apply font-sans;
   }
 }
+
+/* Bump small text inside the app for better readability */
+.app-content .text-sm {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.app-content .text-xs {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}

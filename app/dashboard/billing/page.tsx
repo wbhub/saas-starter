@@ -93,14 +93,12 @@ export default async function DashboardBillingPage() {
               <h2 className="text-lg font-semibold text-foreground">
                 {t("billingDisabled.title")}
               </h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {t("billingDisabled.description")}
-              </p>
+              <p className="mt-2 text-muted-foreground">{t("billingDisabled.description")}</p>
             </div>
           ) : null}
           <div className="rounded-xl bg-card ring-1 ring-border p-6">
             <h2 className="text-lg font-semibold text-foreground">{t("freeMode.title")}</h2>
-            <p className="mt-2 text-sm text-muted-foreground">{t("freeMode.description")}</p>
+            <p className="mt-2 text-muted-foreground">{t("freeMode.description")}</p>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
             {PLAN_CATALOG.map((plan) => (
@@ -133,7 +131,7 @@ export default async function DashboardBillingPage() {
             {t("currentSubscription.title")}
           </h2>
           {subscription ? (
-            <dl className="mt-4 space-y-2 text-sm">
+            <dl className="mt-4 space-y-2">
               <div className="flex items-center justify-between">
                 <dt className="text-muted-foreground">{t("currentSubscription.currentPlan")}</dt>
                 <dd className="font-medium text-foreground">
@@ -198,7 +196,7 @@ export default async function DashboardBillingPage() {
       {teamUiMode === "paid_solo" && currentPlan ? (
         <section className="rounded-xl bg-card ring-1 ring-border p-6">
           <h2 className="text-lg font-semibold text-foreground">{t("paidSolo.title")}</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mt-2 text-muted-foreground">
             {t("paidSolo.description", { amount: catalogSeatPrice(currentPlan.amountMonthly) })}
           </p>
           <Link
