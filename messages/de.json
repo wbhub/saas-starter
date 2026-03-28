@@ -176,6 +176,11 @@
           "name": "Pro",
           "description": "Vollständige Plattform mit priorisiertem Support, Audit-Logging und erweiterten Integrationen."
         }
+      },
+      "toggle": {
+        "monthly": "Monatlich",
+        "annual": "Jährlich",
+        "save": "20% sparen"
       }
     },
     "ctaFaq": {
@@ -1018,6 +1023,45 @@
       "cronNotConfigured": "Cron ist nicht konfiguriert.",
       "unauthorized": "Nicht autorisiert.",
       "rateLimited": "Zu viele Anfragen."
+    }
+  },
+  "Onboarding": {
+    "title": "Wählen Sie Ihren Plan",
+    "description": "Starten Sie heute, keine Kreditkarte erforderlich.",
+    "descriptionPaidOnly": "Wählen Sie einen Plan, um zu beginnen.",
+    "toggle": {
+      "monthly": "Monatlich",
+      "annual": "Jährlich",
+      "save": "20% sparen"
+    },
+    "freePlan": {
+      "name": "Kostenlos",
+      "price": "$0",
+      "priceDescription": "Für immer kostenlos",
+      "description": "Für Einzelpersonen zum Einstieg",
+      "cta": "Kostenlos starten"
+    },
+    "paidPlan": {
+      "priceDescriptionMonthly": "Pro Benutzer/Monat, monatlich abgerechnet",
+      "priceDescriptionAnnual": "Pro Benutzer/Monat, jährlich abgerechnet",
+      "cta": "Weiter mit {name}"
+    },
+    "loading": "Checkout wird geöffnet…",
+    "errors": {
+      "checkoutFailed": "Checkout konnte nicht gestartet werden. Bitte versuchen Sie es erneut.",
+      "missingCheckoutUrl": "Checkout-URL fehlt.",
+      "completeFailed": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
+      "requestFailed": "Anfrage fehlgeschlagen."
+    }
+  },
+  "ApiOnboardingComplete": {
+    "errors": {
+      "unauthorized": "Sie müssen angemeldet sein.",
+      "missingCsrfToken": "CSRF-Token fehlt.",
+      "invalidCsrfToken": "Ungültiges CSRF-Token.",
+      "invalidOrigin": "Ungültiger Anfrageursprung.",
+      "rateLimited": "Zu viele Anfragen.",
+      "failed": "Onboarding konnte nicht abgeschlossen werden."
     }
   }
 }

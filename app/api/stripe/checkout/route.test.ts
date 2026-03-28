@@ -18,6 +18,7 @@ describe("POST /api/stripe/checkout", () => {
     }));
     vi.doMock("@/lib/stripe/config", () => ({
       getPlanByKey: vi.fn(),
+      getPlanPriceId: vi.fn(),
     }));
 
     const { POST } = await import("./route");
@@ -64,6 +65,7 @@ describe("POST /api/stripe/checkout", () => {
     }));
     vi.doMock("@/lib/stripe/config", () => ({
       getPlanByKey: () => ({ key: "starter", priceId: "price_starter" }),
+      getPlanPriceId: () => "price_starter",
     }));
     vi.doMock("@/lib/stripe/server", () => ({
       getStripeServerClient: () => ({
@@ -121,6 +123,7 @@ describe("POST /api/stripe/checkout", () => {
     }));
     vi.doMock("@/lib/stripe/config", () => ({
       getPlanByKey: () => ({ key: "starter", priceId: "price_starter" }),
+      getPlanPriceId: () => "price_starter",
     }));
     vi.doMock("@/lib/stripe/server", () => ({
       getStripeServerClient: () => ({
@@ -236,6 +239,7 @@ describe("POST /api/stripe/checkout", () => {
     }));
     vi.doMock("@/lib/stripe/config", () => ({
       getPlanByKey: () => ({ key: "starter", priceId: "price_starter" }),
+      getPlanPriceId: () => "price_starter",
     }));
     vi.doMock("@/lib/stripe/server", () => ({
       getStripeServerClient: () => ({
@@ -361,6 +365,7 @@ describe("POST /api/stripe/checkout", () => {
     }));
     vi.doMock("@/lib/stripe/config", () => ({
       getPlanByKey: () => ({ key: "starter", priceId: "price_starter" }),
+      getPlanPriceId: () => "price_starter",
     }));
     vi.doMock("@/lib/stripe/server", () => ({
       getStripeServerClient: () => ({

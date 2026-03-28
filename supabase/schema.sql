@@ -26,6 +26,7 @@ create table if not exists public.profiles (
   full_name text,
   avatar_url text,
   active_team_id uuid references public.teams(id) on delete set null,
+  onboarding_completed_at timestamptz,
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
 );

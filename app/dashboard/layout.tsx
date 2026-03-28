@@ -1,10 +1,12 @@
 import { Suspense } from "react";
 import type { ReactNode } from "react";
+import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { IntercomProvider } from "@/components/intercom-provider";
 import { NoTeamCard } from "@/components/no-team-card";
 import { TeamContextErrorCard } from "@/components/team-context-error-card";
 import { getDashboardShellData } from "@/lib/dashboard/server";
+import { isBillingEnabled } from "@/lib/billing/capabilities";
 import { env } from "@/lib/env";
 
 export default async function DashboardLayout({ children }: Readonly<{ children: ReactNode }>) {
@@ -26,6 +28,29 @@ export default async function DashboardLayout({ children }: Readonly<{ children:
         <NoTeamCard />
       </main>
     );
+  }
+
+  // Onboarding / paywall gate: redirect users who haven't completed onboarding
+  if (isBillingEnabled()) {
+    const { effectivePlanKey } = shellData.billingContext;
+
+    // No plan at all (free plan disabled + no subscription) → must onboard
+    if (effectivePlanKey === null) {
+      redirect("/onboarding");
+    }
+
+    // Free plan but hasn't completed onboarding → must select a plan
+    if (effectivePlanKey === "free" && shellData.profile) {
+      const { data: onboardingCheck } = await shellData.supabase
+        .from("profiles")
+        .select("onboarding_completed_at")
+        .eq("id", shellData.user.id)
+        .maybeSingle<{ onboarding_completed_at: string | null }>();
+
+      if (!onboardingCheck?.onboarding_completed_at) {
+        redirect("/onboarding");
+      }
+    }
   }
 
   return (

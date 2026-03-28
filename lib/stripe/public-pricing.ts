@@ -6,11 +6,13 @@ import { formatStaticUsdMonthlyLabel } from "@/lib/stripe/plan-price-display";
 import { plans } from "@/lib/stripe/config";
 import { getStripeServerClient } from "@/lib/stripe/server";
 
-type PublicPricingPlan = {
+export type PublicPricingPlan = {
   key: (typeof plans)[number]["key"];
   name: string;
   description: string;
   priceLabel: string;
+  annualPriceLabel?: string;
+  amountAnnualMonthly?: number;
   popular?: boolean;
 };
 
@@ -70,6 +72,10 @@ export const getPublicPricingCatalog = cache(async (): Promise<PublicPricingPlan
       name: plan.name,
       description: plan.description,
       priceLabel: catalogPrice(plan.amountMonthly),
+      annualPriceLabel: plan.amountAnnualMonthly
+        ? catalogPrice(plan.amountAnnualMonthly)
+        : undefined,
+      amountAnnualMonthly: plan.amountAnnualMonthly,
       popular: plan.popular,
     }));
   }
@@ -122,6 +128,10 @@ export const getPublicPricingCatalog = cache(async (): Promise<PublicPricingPlan
       name: plan.name,
       description: plan.description,
       priceLabel: resolvedLabel ?? catalogPrice(plan.amountMonthly),
+      annualPriceLabel: plan.amountAnnualMonthly
+        ? catalogPrice(plan.amountAnnualMonthly)
+        : undefined,
+      amountAnnualMonthly: plan.amountAnnualMonthly,
       popular: plan.popular,
     };
   });

@@ -176,6 +176,11 @@
           "name": "Pro",
           "description": "優先サポート、監査ログ、高度な統合まで含むフルプラットフォーム。"
         }
+      },
+      "toggle": {
+        "monthly": "月払い",
+        "annual": "年払い",
+        "save": "20%お得"
       }
     },
     "ctaFaq": {
@@ -1018,6 +1023,45 @@
       "cronNotConfigured": "Cron が設定されていません。",
       "unauthorized": "認証されていません。",
       "rateLimited": "リクエストが多すぎます。"
+    }
+  },
+  "Onboarding": {
+    "title": "プランを選択",
+    "description": "今すぐ始めましょう。クレジットカードは不要です。",
+    "descriptionPaidOnly": "プランを選択して始めましょう。",
+    "toggle": {
+      "monthly": "月払い",
+      "annual": "年払い",
+      "save": "20%お得"
+    },
+    "freePlan": {
+      "name": "無料",
+      "price": "$0",
+      "priceDescription": "永久無料",
+      "description": "個人の方向け",
+      "cta": "無料で始める"
+    },
+    "paidPlan": {
+      "priceDescriptionMonthly": "ユーザー/月あたり、月額請求",
+      "priceDescriptionAnnual": "ユーザー/月あたり、年額請求",
+      "cta": "{name}で続ける"
+    },
+    "loading": "チェックアウトを開いています…",
+    "errors": {
+      "checkoutFailed": "チェックアウトを開始できませんでした。もう一度お試しください。",
+      "missingCheckoutUrl": "チェックアウトURLがありません。",
+      "completeFailed": "問題が発生しました。もう一度お試しください。",
+      "requestFailed": "リクエストに失敗しました。"
+    }
+  },
+  "ApiOnboardingComplete": {
+    "errors": {
+      "unauthorized": "ログインが必要です。",
+      "missingCsrfToken": "CSRFトークンがありません。",
+      "invalidCsrfToken": "無効なCSRFトークンです。",
+      "invalidOrigin": "リクエスト元が無効です。",
+      "rateLimited": "リクエストが多すぎます。",
+      "failed": "オンボーディングを完了できませんでした。"
     }
   }
 }

@@ -176,6 +176,11 @@
           "name": "Pro",
           "description": "Plateforme complète avec support prioritaire, journalisation d'audit et intégrations avancées."
         }
+      },
+      "toggle": {
+        "monthly": "Mensuel",
+        "annual": "Annuel",
+        "save": "Économisez 20%"
       }
     },
     "ctaFaq": {
@@ -1018,6 +1023,45 @@
       "cronNotConfigured": "Cron n'est pas configuré.",
       "unauthorized": "Non autorisé.",
       "rateLimited": "Trop de demandes."
+    }
+  },
+  "Onboarding": {
+    "title": "Choisissez votre plan",
+    "description": "Commencez aujourd'hui, aucune carte de crédit requise.",
+    "descriptionPaidOnly": "Sélectionnez un plan pour commencer.",
+    "toggle": {
+      "monthly": "Mensuel",
+      "annual": "Annuel",
+      "save": "Économisez 20%"
+    },
+    "freePlan": {
+      "name": "Gratuit",
+      "price": "$0",
+      "priceDescription": "Gratuit pour toujours",
+      "description": "Pour les particuliers qui débutent",
+      "cta": "Commencer gratuitement"
+    },
+    "paidPlan": {
+      "priceDescriptionMonthly": "Par utilisateur/mois, facturé mensuellement",
+      "priceDescriptionAnnual": "Par utilisateur/mois, facturé annuellement",
+      "cta": "Continuer avec {name}"
+    },
+    "loading": "Ouverture du paiement…",
+    "errors": {
+      "checkoutFailed": "Impossible de lancer le paiement. Veuillez réessayer.",
+      "missingCheckoutUrl": "URL de paiement manquante.",
+      "completeFailed": "Une erreur est survenue. Veuillez réessayer.",
+      "requestFailed": "La requête a échoué."
+    }
+  },
+  "ApiOnboardingComplete": {
+    "errors": {
+      "unauthorized": "Vous devez être connecté.",
+      "missingCsrfToken": "Jeton CSRF manquant.",
+      "invalidCsrfToken": "Jeton CSRF invalide.",
+      "invalidOrigin": "Origine de la requête invalide.",
+      "rateLimited": "Trop de requêtes.",
+      "failed": "Impossible de terminer l'intégration."
     }
   }
 }

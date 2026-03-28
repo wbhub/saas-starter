@@ -62,7 +62,7 @@ Use `.env.example` as the source of truth for all available variables.
 
 ## Enable by Feature (Optional)
 
-- Billing: Stripe (`BILLING_PROVIDER=stripe` + Stripe env vars)
+- Billing: Stripe (`BILLING_PROVIDER=stripe` + Stripe env vars). Set `APP_FREE_PLAN_ENABLED=true` to allow a free tier alongside paid plans.
 - AI chat + structured output: Vercel AI SDK (`AI_PROVIDER` + provider keys)
 - In-app messenger: Intercom (`NEXT_PUBLIC_INTERCOM_APP_ID`, `INTERCOM_IDENTITY_SECRET`)
 - Multi-instance rate limiting/cache: Redis via Upstash (`UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`)
@@ -103,11 +103,11 @@ Open `http://localhost:3000`.
 
 ## What You Get
 
-- Public/auth pages: `/`, `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/privacy-policy`, `/terms-of-use`
+- Public/auth pages: `/`, `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/privacy-policy`, `/terms-of-use`, `/onboarding`
 - App pages: `/dashboard`, `/dashboard/team`, `/dashboard/settings`, `/dashboard/usage`
 - Optional pages: `/dashboard/billing`, `/dashboard/ai`
 - Team invite flow: `/invite/[token]`
-- API routes for auth, teams, billing, AI, support email, and cron tasks
+- API routes for auth, onboarding, teams, billing, AI, support email, and cron tasks
 - Built-in localization (8 bundled locales) via `next-intl`
 - Theme toggle with system, light, and dark modes
 
@@ -127,6 +127,10 @@ To enable Stripe:
   - `STRIPE_STARTER_PRICE_ID`
   - `STRIPE_GROWTH_PRICE_ID`
   - `STRIPE_PRO_PRICE_ID`
+- (Optional) For monthly/annual billing toggle, also set:
+  - `STRIPE_STARTER_ANNUAL_PRICE_ID`
+  - `STRIPE_GROWTH_ANNUAL_PRICE_ID`
+  - `STRIPE_PRO_ANNUAL_PRICE_ID`
 
 Local webhook testing:
 

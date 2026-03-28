@@ -176,6 +176,11 @@
           "name": "专业版",
           "description": "完整平台，包含优先支持、审计日志和高级集成。"
         }
+      },
+      "toggle": {
+        "monthly": "月付",
+        "annual": "年付",
+        "save": "节省 20%"
       }
     },
     "ctaFaq": {
@@ -1018,6 +1023,45 @@
       "cronNotConfigured": "未配置 Cron。",
       "unauthorized": "未经授权。",
       "rateLimited": "请求太多。"
+    }
+  },
+  "Onboarding": {
+    "title": "选择您的计划",
+    "description": "今天开始，无需信用卡。",
+    "descriptionPaidOnly": "选择一个计划开始使用。",
+    "toggle": {
+      "monthly": "月付",
+      "annual": "年付",
+      "save": "节省 20%"
+    },
+    "freePlan": {
+      "name": "免费",
+      "price": "$0",
+      "priceDescription": "永久免费",
+      "description": "适合个人入门使用",
+      "cta": "免费开始"
+    },
+    "paidPlan": {
+      "priceDescriptionMonthly": "每用户/月，按月计费",
+      "priceDescriptionAnnual": "每用户/月，按年计费",
+      "cta": "继续使用 {name}"
+    },
+    "loading": "正在打开结账页面…",
+    "errors": {
+      "checkoutFailed": "无法启动结账。请重试。",
+      "missingCheckoutUrl": "缺少结账 URL。",
+      "completeFailed": "出了点问题。请重试。",
+      "requestFailed": "请求失败。"
+    }
+  },
+  "ApiOnboardingComplete": {
+    "errors": {
+      "unauthorized": "您必须登录。",
+      "missingCsrfToken": "缺少 CSRF 令牌。",
+      "invalidCsrfToken": "无效的 CSRF 令牌。",
+      "invalidOrigin": "请求来源无效。",
+      "rateLimited": "请求过多。",
+      "failed": "无法完成入门流程。"
     }
   }
 }

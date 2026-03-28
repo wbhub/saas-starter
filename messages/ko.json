@@ -176,6 +176,11 @@
           "name": "Pro",
           "description": "우선 지원, 감사 로그, 고급 통합까지 포함한 전체 플랫폼."
         }
+      },
+      "toggle": {
+        "monthly": "월간",
+        "annual": "연간",
+        "save": "20% 절약"
       }
     },
     "ctaFaq": {
@@ -1018,6 +1023,45 @@
       "cronNotConfigured": "Cron이 구성되어 있지 않습니다.",
       "unauthorized": "인증되지 않음.",
       "rateLimited": "요청이 너무 많습니다."
+    }
+  },
+  "Onboarding": {
+    "title": "플랜을 선택하세요",
+    "description": "오늘 시작하세요. 신용카드가 필요하지 않습니다.",
+    "descriptionPaidOnly": "시작하려면 플랜을 선택하세요.",
+    "toggle": {
+      "monthly": "월간",
+      "annual": "연간",
+      "save": "20% 절약"
+    },
+    "freePlan": {
+      "name": "무료",
+      "price": "$0",
+      "priceDescription": "영원히 무료",
+      "description": "개인 사용자를 위한 플랜",
+      "cta": "무료로 시작"
+    },
+    "paidPlan": {
+      "priceDescriptionMonthly": "사용자당/월, 월별 청구",
+      "priceDescriptionAnnual": "사용자당/월, 연별 청구",
+      "cta": "{name}으로 계속"
+    },
+    "loading": "결제 페이지를 여는 중…",
+    "errors": {
+      "checkoutFailed": "결제를 시작할 수 없습니다. 다시 시도해 주세요.",
+      "missingCheckoutUrl": "결제 URL이 없습니다.",
+      "completeFailed": "문제가 발생했습니다. 다시 시도해 주세요.",
+      "requestFailed": "요청에 실패했습니다."
+    }
+  },
+  "ApiOnboardingComplete": {
+    "errors": {
+      "unauthorized": "로그인이 필요합니다.",
+      "missingCsrfToken": "CSRF 토큰이 없습니다.",
+      "invalidCsrfToken": "유효하지 않은 CSRF 토큰입니다.",
+      "invalidOrigin": "유효하지 않은 요청 출처입니다.",
+      "rateLimited": "요청이 너무 많습니다.",
+      "failed": "온보딩을 완료할 수 없습니다."
     }
   }
 }

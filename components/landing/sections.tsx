@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 import {
   ArrowRight,
   BadgeCheck,
@@ -12,8 +12,9 @@ import {
 import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { AuthAwareLink } from "@/components/auth-aware-link";
+import { LandingPricingCards } from "@/components/landing/pricing-toggle";
 import { getPublicPricingCatalog } from "@/lib/stripe/public-pricing";
-import { PLAN_CATALOG } from "@/lib/stripe/plans";
+import { hasAnnualPricing } from "@/lib/stripe/config";
 
 export function HeroSection() {
   const t = useTranslations("Landing.hero");
@@ -242,9 +243,6 @@ export function StackSection() {
 export async function PricingSection() {
   const t = await getTranslations("Landing.pricing");
   const pricingCatalog = await getPublicPricingCatalog();
-  const pricingGridStyle = {
-    "--pricing-plan-count": String(Math.max(PLAN_CATALOG.length, 1)),
-  } as CSSProperties;
 
   return (
     <section id="pricing" className="space-y-8">
@@ -252,42 +250,7 @@ export async function PricingSection() {
         <h2 className="text-3xl font-semibold">{t("title")}</h2>
         <p className="app-muted mt-3">{t("description")}</p>
       </div>
-      <div
-        className="grid gap-4 md:[grid-template-columns:repeat(var(--pricing-plan-count),minmax(0,1fr))]"
-        style={pricingGridStyle}
-      >
-        {pricingCatalog.map((tier) => (
-          <article
-            key={tier.key}
-            className={`rounded-2xl border app-surface p-6 ${
-              tier.popular
-                ? "border-indigo-400/70 shadow-lg shadow-indigo-500/10"
-                : "app-border-subtle"
-            }`}
-          >
-            <p
-              aria-hidden={!tier.popular}
-              className={`mb-3 inline-flex items-center rounded-full bg-indigo-500/10 px-3 py-1 text-xs font-medium text-indigo-600 dark:text-indigo-300 ${
-                tier.popular ? "" : "invisible"
-              }`}
-            >
-              {t("mostPopular")}
-            </p>
-            <h3 className="text-lg font-semibold">{t(`plans.${tier.key}.name`)}</h3>
-            <p className="mt-2 text-3xl font-semibold text-indigo-600 dark:text-indigo-300">
-              {tier.priceLabel}
-            </p>
-            <p className="app-muted mt-3 text-sm">{t(`plans.${tier.key}.description`)}</p>
-            <AuthAwareLink
-              loggedInHref="/dashboard"
-              loggedOutHref="/signup"
-              loggedInLabel={t("managePlan")}
-              loggedOutLabel={t("choosePlan", { name: t(`plans.${tier.key}.name`) })}
-              className="mt-6 inline-block rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400"
-            />
-          </article>
-        ))}
-      </div>
+      <LandingPricingCards plans={pricingCatalog} showAnnualToggle={hasAnnualPricing} />
     </section>
   );
 }
