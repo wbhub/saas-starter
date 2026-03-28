@@ -43,44 +43,17 @@ function mockAiPageDependencies({
     ),
   }));
   vi.doMock("@/lib/dashboard/server", () => ({
-    getDashboardBaseData: vi.fn().mockResolvedValue({
-      supabase: {},
-      user: {
-        id: "user_123",
-        email: "owner@example.com",
+    getDashboardShellData: vi.fn().mockResolvedValue({
+      aiUiGate: {
+        isVisibleInUi,
+        reason,
+        effectivePlanKey: "free",
+        accessMode: "paid",
       },
-      teamContext: { teamId: "team_123", teamName: "Acme Team", role: "owner" },
-      teamContextLoadFailed: false,
-      teamMemberships: [],
-      displayName: "Owner",
-      csrfToken: "csrf_token",
     }),
-    getDashboardBillingContext: vi.fn().mockResolvedValue({
-      billingEnabled: true,
-      subscription: null,
-      effectivePlanKey: "free",
-      memberCount: 1,
-      isPaidPlan: false,
-      canInviteMembers: false,
-    }),
-    getDashboardAiUiGate: vi.fn().mockResolvedValue({
-      isVisibleInUi,
-      reason,
-      effectivePlanKey: "free",
-      accessMode: "paid",
-    }),
-  }));
-  vi.doMock("@/components/dashboard-shell", () => ({
-    DashboardShell: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   }));
   vi.doMock("@/components/ai-chat-card", () => ({
     AiChatCard: () => <div>AiChatCardMock</div>,
-  }));
-  vi.doMock("@/components/no-team-card", () => ({
-    NoTeamCard: () => <div>No team</div>,
-  }));
-  vi.doMock("@/components/team-context-error-card", () => ({
-    TeamContextErrorCard: () => <div>Team context error</div>,
   }));
 }
 

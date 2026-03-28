@@ -15,7 +15,6 @@ function mockDashboardDependencies({
   effectivePlanKey,
   isPaidPlan,
   memberCount = 1,
-  showAiNav = true,
 }: {
   subscription: {
     status: "active";
@@ -27,11 +26,9 @@ function mockDashboardDependencies({
   effectivePlanKey: "free" | "starter" | "growth" | "pro" | null;
   isPaidPlan: boolean;
   memberCount?: number;
-  showAiNav?: boolean;
 }) {
   vi.doMock("@/lib/dashboard/server", () => ({
-    getDashboardBaseData: vi.fn().mockResolvedValue({
-      supabase: {},
+    getDashboardShellData: vi.fn().mockResolvedValue({
       user: {
         id: "user_123",
         email: "owner@example.com",
@@ -39,24 +36,16 @@ function mockDashboardDependencies({
       },
       profile: { created_at: "2026-01-01T00:00:00Z" },
       teamContext: { teamId: "team_123", teamName: "Acme Team", role: "owner" },
-      teamContextLoadFailed: false,
-      teamMemberships: [],
       displayName: "Owner",
-      csrfToken: "csrf_token",
-    }),
-    getDashboardBillingContext: vi.fn().mockResolvedValue({
-      billingEnabled: true,
-      subscription,
-      effectivePlanKey,
-      memberCount,
-      isPaidPlan,
-      canInviteMembers: isPaidPlan,
-    }),
-    getDashboardAiUiGate: vi.fn().mockResolvedValue({
-      isVisibleInUi: showAiNav,
-      reason: showAiNav ? "enabled" : "plan_not_allowed",
-      effectivePlanKey,
-      accessMode: "all",
+      billingContext: {
+        billingEnabled: true,
+        subscription,
+        effectivePlanKey,
+        memberCount,
+        isPaidPlan,
+        canInviteMembers: isPaidPlan,
+      },
+      teamUiMode: isPaidPlan ? (memberCount > 1 ? "paid_team" : "paid_solo") : "free",
     }),
   }));
   vi.doMock("next-intl/server", () => ({
@@ -102,15 +91,6 @@ function mockDashboardDependencies({
         {children}
       </a>
     ),
-  }));
-  vi.doMock("@/components/dashboard-shell", () => ({
-    DashboardShell: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-  }));
-  vi.doMock("@/components/no-team-card", () => ({
-    NoTeamCard: () => <div>No team</div>,
-  }));
-  vi.doMock("@/components/team-context-error-card", () => ({
-    TeamContextErrorCard: () => <div>Team context error</div>,
   }));
 }
 

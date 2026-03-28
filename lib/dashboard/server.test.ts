@@ -53,23 +53,6 @@ describe("getDashboardBaseData", () => {
         };
       }
 
-      if (table === "notification_preferences") {
-        return {
-          select: () => ({
-            eq: () => ({
-              maybeSingle: async () => ({
-                data: {
-                  marketing_emails: false,
-                  product_updates: true,
-                  security_alerts: true,
-                },
-                error: null,
-              }),
-            }),
-          }),
-        };
-      }
-
       throw new Error(`Unexpected table ${table}`);
     });
 
@@ -228,5 +211,51 @@ describe("getDashboardAiUiGate", () => {
       effectivePlanKey: "free",
       accessMode: "all",
     });
+  });
+
+  it("reuses provided billing context without re-querying subscriptions", async () => {
+    const from = vi.fn(() => {
+      throw new Error("AI gate should not query subscriptions when billing context is provided");
+    });
+    const supabase = { from };
+
+    vi.doMock("@/lib/ai/provider", () => ({
+      isAiProviderConfigured: true,
+    }));
+    vi.doMock("@/lib/ai/config", () => ({
+      getAiAccessMode: vi.fn().mockReturnValue("paid"),
+      getAiAllowedSubscriptionStatuses: vi.fn().mockReturnValue(["active"]),
+    }));
+    vi.doMock("@/lib/ai/access", () => ({
+      resolveAiAccess: vi.fn().mockReturnValue({
+        allowed: true,
+        model: "gpt-4.1-mini",
+        monthlyTokenBudget: 0,
+        allowedModalities: ["text"],
+        maxSteps: 1,
+      }),
+    }));
+
+    const { getDashboardAiUiGate } = await import("./server");
+    const gate = await getDashboardAiUiGate(supabase as never, "team_123", {
+      billingContext: {
+        effectivePlanKey: "growth",
+        subscription: {
+          status: "active",
+          stripe_price_id: "price_growth",
+          seat_quantity: 3,
+          current_period_end: null,
+          cancel_at_period_end: false,
+        },
+      },
+    });
+
+    expect(gate).toEqual({
+      isVisibleInUi: true,
+      reason: "enabled",
+      effectivePlanKey: "growth",
+      accessMode: "paid",
+    });
+    expect(from).not.toHaveBeenCalled();
   });
 });

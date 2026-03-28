@@ -1,77 +1,33 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { DashboardSettingsCard } from "@/components/dashboard-settings-card";
-import { DashboardShell } from "@/components/dashboard-shell";
 import { DangerZoneCard } from "@/components/danger-zone-card";
 import { EmailSettingsCard } from "@/components/email-settings-card";
-import { NoTeamCard } from "@/components/no-team-card";
 import { NotificationPreferencesCard } from "@/components/notification-preferences-card";
 import { OrganizationSettingsCard } from "@/components/organization-settings-card";
 import { SecuritySettingsCard } from "@/components/security-settings-card";
-import { TeamContextErrorCard } from "@/components/team-context-error-card";
 import {
-  getDashboardAiUiGate,
-  getDashboardBaseData,
-  getDashboardBillingContext,
+  getDashboardNotificationPreferences,
+  getDashboardShellData,
   getTeamMembers,
 } from "@/lib/dashboard/server";
 
 export default async function DashboardSettingsPage() {
   const t = await getTranslations("DashboardSettingsPage");
   const tCommon = await getTranslations("Common");
-  const {
-    supabase,
-    user,
-    profile,
-    teamContext,
-    teamContextLoadFailed,
-    teamMemberships,
-    notificationPreferences,
-    displayName,
-    csrfToken,
-  } = await getDashboardBaseData();
+  const { supabase, user, profile, teamContext, billingContext, teamUiMode, csrfToken } =
+    await getDashboardShellData();
 
-  if (teamContextLoadFailed) {
-    return (
-      <main className="min-h-screen bg-[color:var(--background)] px-6 py-10 text-[color:var(--foreground)]">
-        <TeamContextErrorCard />
-      </main>
-    );
+  if (!teamContext || !billingContext || !teamUiMode) {
+    return null;
   }
 
-  if (!teamContext) {
-    return (
-      <main className="min-h-screen bg-[color:var(--background)] px-6 py-10 text-[color:var(--foreground)]">
-        <NoTeamCard />
-      </main>
-    );
-  }
-
-  const [billingContext, aiUiGate] = await Promise.all([
-    getDashboardBillingContext(supabase, teamContext.teamId),
-    getDashboardAiUiGate(supabase, teamContext.teamId),
-  ]);
-  const teamUiMode = !billingContext.isPaidPlan
-    ? "free"
-    : billingContext.memberCount > 1
-      ? "paid_team"
-      : "paid_solo";
+  const notificationPreferences = await getDashboardNotificationPreferences(supabase, user.id);
   const teamMembers =
     teamUiMode === "paid_team" ? await getTeamMembers(supabase, teamContext.teamId) : [];
 
   return (
-    <DashboardShell
-      displayName={displayName}
-      userEmail={user.email ?? null}
-      avatarUrl={profile?.avatar_url ?? null}
-      teamName={teamContext.teamName}
-      role={teamContext.role}
-      teamUiMode={teamUiMode}
-      showAiNav={aiUiGate.isVisibleInUi}
-      activeTeamId={teamContext.teamId}
-      teamMemberships={teamMemberships}
-      csrfToken={csrfToken}
-    >
+    <>
       <div>
         <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
           {t("header.eyebrow")}
@@ -134,6 +90,6 @@ export default async function DashboardSettingsPage() {
       <section>
         <DangerZoneCard email={user.email ?? null} csrfToken={csrfToken} />
       </section>
-    </DashboardShell>
+    </>
   );
 }
