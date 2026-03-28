@@ -60,9 +60,7 @@ function createTeamOptionsResponse(
   };
 }
 
-function renderDropdown(
-  overrides?: Partial<ComponentProps<typeof UserDropdown>>,
-) {
+function renderDropdown(overrides?: Partial<ComponentProps<typeof UserDropdown>>) {
   return render(
     <UserDropdown
       displayName="Test User"
