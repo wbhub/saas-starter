@@ -453,9 +453,7 @@ export function AiChatCard({
           disabled={isSending}
         />
         <div className="space-y-2">
-          <Label className="text-muted-foreground">
-            {t("attachments.label")}
-          </Label>
+          <Label className="text-muted-foreground">{t("attachments.label")}</Label>
           <input
             ref={fileInputRef}
             type="file"

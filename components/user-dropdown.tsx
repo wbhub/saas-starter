@@ -167,11 +167,7 @@ export function UserDropdown({
         <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent
-        align="end"
-        sideOffset={6}
-        className="w-64 rounded-xl p-1.5"
-      >
+      <DropdownMenuContent align="end" sideOffset={6} className="w-64 rounded-xl p-1.5">
         {/* User info */}
         <DropdownMenuGroup>
           <DropdownMenuLabel className="px-2.5 py-2">
@@ -283,11 +279,17 @@ export function UserDropdown({
         <DropdownMenuSeparator />
 
         {/* Navigation links */}
-        <DropdownMenuItem className="gap-2.5 rounded-lg px-2.5 py-2" render={<Link href="/dashboard/settings" />}>
+        <DropdownMenuItem
+          className="gap-2.5 rounded-lg px-2.5 py-2"
+          render={<Link href="/dashboard/settings" />}
+        >
           <Settings className="h-4 w-4 shrink-0 text-muted-foreground" />
           {t("UserDropdown.settings")}
         </DropdownMenuItem>
-        <DropdownMenuItem className="gap-2.5 rounded-lg px-2.5 py-2" render={<Link href="/dashboard/support" />}>
+        <DropdownMenuItem
+          className="gap-2.5 rounded-lg px-2.5 py-2"
+          render={<Link href="/dashboard/support" />}
+        >
           <CircleHelp className="h-4 w-4 shrink-0 text-muted-foreground" />
           {t("UserDropdown.support")}
         </DropdownMenuItem>

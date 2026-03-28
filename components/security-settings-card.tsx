@@ -22,7 +22,10 @@ export function SecuritySettingsCard({ csrfToken }: SecuritySettingsCardProps) {
             {t("actions.signOutAll")}
           </Button>
         </form>
-        <Button render={<Link href="/forgot-password" />} className="bg-indigo-500 text-white hover:bg-indigo-400">
+        <Button
+          render={<Link href="/forgot-password" />}
+          className="bg-indigo-500 text-white hover:bg-indigo-400"
+        >
           {t("actions.resetPassword")}
         </Button>
       </div>

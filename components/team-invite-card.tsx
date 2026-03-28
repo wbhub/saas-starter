@@ -10,7 +10,13 @@ import { Button } from "@/components/ui/button";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { FormMessage } from "@/components/ui/form-message";
 
@@ -462,7 +468,9 @@ export function TeamInviteCard({
                           disabled={revokeInviteId !== null || resendInviteId !== null}
                           className="border-rose-300/60 text-rose-700 hover:bg-rose-50 dark:border-rose-700/60 dark:text-rose-200 dark:hover:bg-rose-950/30"
                         >
-                          {revokeInviteId === invite.id ? t("actions.revoking") : t("actions.revoke")}
+                          {revokeInviteId === invite.id
+                            ? t("actions.revoking")
+                            : t("actions.revoke")}
                         </Button>
                       </ConfirmDialog>
                     </>

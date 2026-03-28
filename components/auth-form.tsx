@@ -320,27 +320,18 @@ export function AuthForm({
         <div className="mt-5 flex items-center justify-between gap-3 text-sm">
           <p className="text-muted-foreground">
             {t("needAccount")}{" "}
-            <Link
-              href="/signup"
-              className="font-medium text-btn-accent hover:opacity-90"
-            >
+            <Link href="/signup" className="font-medium text-btn-accent hover:opacity-90">
               {t("signUp")}
             </Link>
           </p>
-          <Link
-            href="/forgot-password"
-            className="font-medium text-btn-accent hover:opacity-90"
-          >
+          <Link href="/forgot-password" className="font-medium text-btn-accent hover:opacity-90">
             {t("forgotPassword")}
           </Link>
         </div>
       ) : (
         <p className="mt-5 text-sm text-muted-foreground">
           {t("alreadyHaveAccount")}{" "}
-          <Link
-            href="/login"
-            className="font-medium text-btn-accent hover:opacity-90"
-          >
+          <Link href="/login" className="font-medium text-btn-accent hover:opacity-90">
             {t("logIn")}
           </Link>
         </p>

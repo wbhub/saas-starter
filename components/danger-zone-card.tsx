@@ -69,11 +69,7 @@ export function DangerZoneCard({ email, csrfToken }: DangerZoneCardProps) {
           />
         </div>
         <Label className="flex items-start gap-2 rounded-lg border border-rose-300/80 p-3 text-sm font-normal text-rose-800 dark:border-rose-800 dark:text-rose-100">
-          <Checkbox
-            name="confirmUnderstood"
-            required
-            className="mt-0.5"
-          />
+          <Checkbox name="confirmUnderstood" required className="mt-0.5" />
           <span>{t("fields.confirmPermanent")}</span>
         </Label>
         <SubmitButton

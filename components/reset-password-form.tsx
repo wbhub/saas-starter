@@ -138,11 +138,7 @@ export function ResetPasswordForm({ hasRecoveryProof, recoveryUserId }: ResetPas
   if (checkingSession) {
     return (
       <div className="w-full max-w-md rounded-2xl border app-border-subtle app-surface p-8 text-foreground shadow-sm">
-        <p
-          role="status"
-          aria-live="polite"
-          className="text-sm text-muted-foreground"
-        >
+        <p role="status" aria-live="polite" className="text-sm text-muted-foreground">
           {t("checking")}
         </p>
       </div>
@@ -153,9 +149,7 @@ export function ResetPasswordForm({ hasRecoveryProof, recoveryUserId }: ResetPas
     return (
       <div className="w-full max-w-md rounded-2xl border app-border-subtle app-surface p-8 text-foreground shadow-sm">
         <h1 className="text-2xl font-semibold">{t("invalidTitle")}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          {t("invalidDescription")}
-        </p>
+        <p className="mt-2 text-sm text-muted-foreground">{t("invalidDescription")}</p>
         <Link
           href="/forgot-password"
           className="mt-5 inline-flex rounded-lg bg-btn-accent px-4 py-2 text-sm font-medium text-white hover:bg-btn-accent-hover"
@@ -173,7 +167,9 @@ export function ResetPasswordForm({ hasRecoveryProof, recoveryUserId }: ResetPas
 
       <form className="mt-6 space-y-4" onSubmit={onSubmit} aria-busy={loading}>
         <div>
-          <Label htmlFor="reset-new-password" className="mb-1">{t("newPassword")}</Label>
+          <Label htmlFor="reset-new-password" className="mb-1">
+            {t("newPassword")}
+          </Label>
           <Input
             id="reset-new-password"
             type="password"
@@ -186,7 +182,9 @@ export function ResetPasswordForm({ hasRecoveryProof, recoveryUserId }: ResetPas
           />
         </div>
         <div>
-          <Label htmlFor="reset-confirm-password" className="mb-1">{t("confirmPassword")}</Label>
+          <Label htmlFor="reset-confirm-password" className="mb-1">
+            {t("confirmPassword")}
+          </Label>
           <Input
             id="reset-confirm-password"
             type="password"
