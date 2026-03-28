@@ -85,9 +85,7 @@ export function LandingPricingCards({ plans, showAnnualToggle }: Props) {
             <h3 className="text-lg font-semibold">{t(`plans.${tier.key}.name`)}</h3>
             <div className="mt-2 flex items-baseline gap-1.5">
               <p className="text-3xl font-semibold text-indigo-600 dark:text-indigo-300">
-                {isAnnual && tier.annualPriceLabel
-                  ? tier.annualPriceLabel
-                  : tier.priceLabel}
+                {isAnnual && tier.annualPriceLabel ? tier.annualPriceLabel : tier.priceLabel}
               </p>
               {isAnnual && tier.annualPriceLabel ? (
                 <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">

@@ -109,9 +109,7 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
       <main className="flex flex-1 flex-col items-center justify-center px-4 py-12">
         <div className="w-full max-w-5xl">
           <div className="text-center">
-            <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">
-              {t("title")}
-            </h1>
+            <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">{t("title")}</h1>
             <p className="mt-3 text-lg text-muted-foreground">
               {freePlanEnabled ? t("description") : t("descriptionPaidOnly")}
             </p>

@@ -64,10 +64,7 @@ function createIdempotencyToken(planKey: string) {
       : `${Math.random().toString(36).slice(2)}-${now.toString(36)}`;
   const token = `onboarding-${planKey}-${randomPart}`;
   try {
-    window.sessionStorage.setItem(
-      storageKey,
-      JSON.stringify({ token, expiresAt: now + ttlMs }),
-    );
+    window.sessionStorage.setItem(storageKey, JSON.stringify({ token, expiresAt: now + ttlMs }));
   } catch {
     // Ignore storage errors.
   }
@@ -109,9 +106,7 @@ export function OnboardingPlanSelector({
       router.push("/dashboard");
       router.refresh();
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : t("errors.completeFailed"),
-      );
+      setError(err instanceof Error ? err.message : t("errors.completeFailed"));
     } finally {
       setLoadingAction(null);
     }
@@ -144,16 +139,12 @@ export function OnboardingPlanSelector({
       if (!data.url) throw new Error(t("errors.missingCheckoutUrl"));
       window.location.assign(data.url);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : t("errors.checkoutFailed"),
-      );
+      setError(err instanceof Error ? err.message : t("errors.checkoutFailed"));
       setLoadingAction(null);
     }
   }
 
-  const gridCols = freePlanEnabled
-    ? "md:grid-cols-2 lg:grid-cols-4"
-    : "md:grid-cols-3";
+  const gridCols = freePlanEnabled ? "md:grid-cols-2 lg:grid-cols-4" : "md:grid-cols-3";
 
   return (
     <div className="mt-10 space-y-8">
@@ -197,17 +188,13 @@ export function OnboardingPlanSelector({
         {/* Free plan card */}
         {freePlanEnabled ? (
           <div className="relative flex flex-col rounded-xl bg-card ring-1 ring-border p-6">
-            <p className="text-lg font-semibold text-foreground">
-              {t("freePlan.name")}
-            </p>
+            <p className="text-lg font-semibold text-foreground">{t("freePlan.name")}</p>
             <div className="mt-4">
               <span className="text-4xl font-bold tracking-tight text-foreground">
                 {t("freePlan.price")}
               </span>
             </div>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {t("freePlan.priceDescription")}
-            </p>
+            <p className="mt-1 text-sm text-muted-foreground">{t("freePlan.priceDescription")}</p>
             <p className="mt-4 text-sm font-medium text-muted-foreground">
               {t("freePlan.description")}
             </p>
@@ -225,29 +212,22 @@ export function OnboardingPlanSelector({
               disabled={loadingAction !== null}
               className="mt-6 w-full rounded-lg border app-border-subtle px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/50 disabled:opacity-60"
             >
-              {loadingAction === "free"
-                ? t("loading")
-                : t("freePlan.cta")}
+              {loadingAction === "free" ? t("loading") : t("freePlan.cta")}
             </button>
           </div>
         ) : null}
 
         {/* Paid plan cards */}
         {plans.map((plan) => {
-          const price = isAnnual && plan.amountAnnualMonthly
-            ? plan.amountAnnualMonthly
-            : plan.amountMonthly;
-          const canCheckout = isAnnual
-            ? plan.hasAnnualPriceId
-            : plan.hasPriceId;
+          const price =
+            isAnnual && plan.amountAnnualMonthly ? plan.amountAnnualMonthly : plan.amountMonthly;
+          const canCheckout = isAnnual ? plan.hasAnnualPriceId : plan.hasPriceId;
 
           return (
             <div
               key={plan.key}
               className={`relative flex flex-col rounded-xl bg-card p-6 ${
-                plan.popular
-                  ? "ring-2 ring-indigo-500"
-                  : "ring-1 ring-border"
+                plan.popular ? "ring-2 ring-indigo-500" : "ring-1 ring-border"
               }`}
             >
               {plan.popular ? (
@@ -255,9 +235,7 @@ export function OnboardingPlanSelector({
                   Most popular
                 </span>
               ) : null}
-              <p className="text-lg font-semibold text-foreground">
-                {plan.name}
-              </p>
+              <p className="text-lg font-semibold text-foreground">{plan.name}</p>
               <div className="mt-4 flex items-baseline gap-1.5">
                 <span className="text-4xl font-bold tracking-tight text-foreground">
                   {formatUsd(price)}
@@ -273,9 +251,7 @@ export function OnboardingPlanSelector({
                   ? t("paidPlan.priceDescriptionAnnual")
                   : t("paidPlan.priceDescriptionMonthly")}
               </p>
-              <p className="mt-4 text-sm font-medium text-muted-foreground">
-                {plan.description}
-              </p>
+              <p className="mt-4 text-sm font-medium text-muted-foreground">{plan.description}</p>
               <ul className="mt-4 space-y-2.5 flex-1">
                 {plan.features.map((feature) => (
                   <li key={feature} className="flex items-start gap-2 text-sm">
@@ -294,9 +270,7 @@ export function OnboardingPlanSelector({
                     : "border app-border-subtle text-foreground hover:bg-muted/50"
                 }`}
               >
-                {loadingAction === plan.key
-                  ? t("loading")
-                  : t("paidPlan.cta", { name: plan.name })}
+                {loadingAction === plan.key ? t("loading") : t("paidPlan.cta", { name: plan.name })}
               </button>
             </div>
           );
@@ -304,9 +278,7 @@ export function OnboardingPlanSelector({
       </div>
 
       {/* Error message */}
-      {error ? (
-        <p className="text-center text-sm text-destructive">{error}</p>
-      ) : null}
+      {error ? <p className="text-center text-sm text-destructive">{error}</p> : null}
     </div>
   );
 }

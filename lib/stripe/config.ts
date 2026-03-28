@@ -45,10 +45,7 @@ export function getPlanByPriceId(priceId?: string | null) {
 }
 
 /** Returns the Stripe price ID for a plan + interval, or null if not configured. */
-export function getPlanPriceId(
-  planKey: PlanKey,
-  interval: PlanInterval = "month",
-): string | null {
+export function getPlanPriceId(planKey: PlanKey, interval: PlanInterval = "month"): string | null {
   const plan = getPlanByKey(planKey);
   if (!plan) return null;
   return interval === "year" ? plan.annualPriceId : plan.priceId;

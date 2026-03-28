@@ -48,12 +48,9 @@ export type PlanCatalogEntry = {
   features: string[];
 };
 
-export type StripeAnnualPriceIdEnvKey =
-  `STRIPE_${Uppercase<PlanKey>}_ANNUAL_PRICE_ID`;
+export type StripeAnnualPriceIdEnvKey = `STRIPE_${Uppercase<PlanKey>}_ANNUAL_PRICE_ID`;
 
-export function getStripeAnnualPriceIdEnvKey(
-  planKey: PlanKey,
-): StripeAnnualPriceIdEnvKey {
+export function getStripeAnnualPriceIdEnvKey(planKey: PlanKey): StripeAnnualPriceIdEnvKey {
   return `STRIPE_${planKey.toUpperCase()}_ANNUAL_PRICE_ID` as StripeAnnualPriceIdEnvKey;
 }
 
@@ -82,11 +79,7 @@ export const PLAN_CATALOG: PlanCatalogEntry[] = [
     amountMonthly: 25,
     amountAnnualMonthly: 20,
     description: "Auth, teams, and billing for founders validating a new product.",
-    features: [
-      "Up to 5 team members",
-      "Real-time data syncing",
-      "Basic integrations",
-    ],
+    features: ["Up to 5 team members", "Real-time data syncing", "Basic integrations"],
   },
   {
     key: "growth",
@@ -96,11 +89,7 @@ export const PLAN_CATALOG: PlanCatalogEntry[] = [
     amountAnnualMonthly: 40,
     description: "Add AI access, seat scaling, and usage tracking as your team grows.",
     popular: true,
-    features: [
-      "AI-powered features",
-      "Advanced analytics",
-      "Priority email support",
-    ],
+    features: ["AI-powered features", "Advanced analytics", "Priority email support"],
   },
   {
     key: "pro",
@@ -109,11 +98,7 @@ export const PLAN_CATALOG: PlanCatalogEntry[] = [
     amountMonthly: 100,
     amountAnnualMonthly: 80,
     description: "Full platform with priority support, audit logging, and advanced integrations.",
-    features: [
-      "Unlimited team members",
-      "Audit logging",
-      "Dedicated support",
-    ],
+    features: ["Unlimited team members", "Audit logging", "Dedicated support"],
   },
 ];
 

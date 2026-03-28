@@ -274,9 +274,7 @@ export async function POST(req: Request) {
     const successPath = isOnboardingSource
       ? "/onboarding?checkout=success&session_id={CHECKOUT_SESSION_ID}"
       : "/dashboard/billing?checkout=success&session_id={CHECKOUT_SESSION_ID}";
-    const cancelPath = isOnboardingSource
-      ? "/onboarding"
-      : "/dashboard/billing?checkout=canceled";
+    const cancelPath = isOnboardingSource ? "/onboarding" : "/dashboard/billing?checkout=canceled";
 
     const sessionIdempotencyKey = getScopedIdempotencyKey(idempotencyKey, "session");
     const session = await stripe.checkout.sessions.create(

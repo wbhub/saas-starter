@@ -250,10 +250,7 @@ export async function PricingSection() {
         <h2 className="text-3xl font-semibold">{t("title")}</h2>
         <p className="app-muted mt-3">{t("description")}</p>
       </div>
-      <LandingPricingCards
-        plans={pricingCatalog}
-        showAnnualToggle={hasAnnualPricing}
-      />
+      <LandingPricingCards plans={pricingCatalog} showAnnualToggle={hasAnnualPricing} />
     </section>
   );
 }
