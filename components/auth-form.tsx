@@ -173,7 +173,7 @@ export function AuthForm({
 
         if (payload?.sessionCreated) {
           dispatch({ type: "SUBMIT_SUCCESS" });
-          router.push("/onboarding");
+          router.push(redirectTo);
           router.refresh();
           return;
         }
@@ -320,7 +320,7 @@ export function AuthForm({
         <div className="mt-5 flex items-center justify-between gap-3 text-sm">
           <p className="text-muted-foreground">
             {t("needAccount")}{" "}
-            <Link href="/signup" className="font-medium text-btn-accent hover:opacity-90">
+            <Link href="/onboarding" className="font-medium text-btn-accent hover:opacity-90">
               {t("signUp")}
             </Link>
           </p>

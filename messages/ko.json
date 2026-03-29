@@ -33,7 +33,8 @@
     "dashboard": "대시보드",
     "login": "로그인",
     "openApp": "앱 열기",
-    "startFree": "무료로 시작"
+    "startFree": "무료로 시작",
+    "getStarted": "시작하기"
   },
   "SiteFooter": {
     "companyPlaceholder": "[회사 이름]",
@@ -85,7 +86,8 @@
       "dashboard": "대시보드",
       "login": "로그인",
       "openApp": "앱 열기",
-      "startFree": "무료로 시작"
+      "startFree": "무료로 시작",
+      "getStarted": "시작하기"
     },
     "hero": {
       "badge": "플랫폼이 아니라 제품을 출시하세요",
@@ -93,6 +95,7 @@
       "description": "인증, 멀티테넌트 팀, 좌석 기반 Stripe 결제, DB 수준에서 강제되는 예산을 갖춘 AI, 감사 로그, 강화된 보안 파이프라인까지 Next.js 16, Supabase, React 19 위에 종단 간으로 연결되어 있으므로 제품 고유의 가치에만 집중할 수 있습니다.",
       "goDashboard": "대시보드로 이동",
       "startFreeNow": "지금 무료로 시작",
+      "getStartedNow": "지금 시작하기",
       "viewPricing": "요금 보기",
       "feature1": "멀티테넌트 팀 역할",
       "feature2": "좌석 기반 Stripe 결제",

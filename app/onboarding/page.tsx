@@ -9,7 +9,9 @@ import { getCachedTeamContextForUser } from "@/lib/team-context-cache";
 import { getDashboardBillingContext } from "@/lib/dashboard/team-snapshot";
 import { syncCheckoutSuccessForTeam } from "@/lib/stripe/checkout-success";
 import { plans, hasAnnualPricing } from "@/lib/stripe/config";
-import { FREE_PLAN_FEATURES } from "@/lib/stripe/plans";
+import { FREE_PLAN_FEATURES, PLAN_KEYS } from "@/lib/stripe/plans";
+import { createCheckoutUrl } from "@/lib/stripe/create-checkout-url";
+import { canManageTeamBilling } from "@/lib/team-context";
 import { logger } from "@/lib/logger";
 
 type OnboardingPageProps = {
@@ -24,67 +26,103 @@ function getFirstSearchParamValue(value: string | string[] | undefined) {
 
 export default async function OnboardingPage({ searchParams }: OnboardingPageProps) {
   const t = await getTranslations("Onboarding");
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login?next=/onboarding");
-  }
 
   // If billing is disabled entirely, skip onboarding
   if (!isBillingEnabled()) {
     redirect("/dashboard");
   }
 
-  const teamContext = await getCachedTeamContextForUser(supabase, user.id);
-  if (!teamContext) {
-    redirect("/dashboard");
-  }
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const resolvedSearchParams = (await searchParams) ?? {};
-  const checkoutStatus = getFirstSearchParamValue(resolvedSearchParams.checkout);
-  const checkoutSessionId = getFirstSearchParamValue(resolvedSearchParams.session_id);
+  const selectedPlan = getFirstSearchParamValue(resolvedSearchParams.plan) ?? null;
+  const selectedInterval = getFirstSearchParamValue(resolvedSearchParams.interval) ?? null;
+  const isAuthenticated = Boolean(user);
 
-  // Handle checkout success return
-  if (checkoutStatus === "success") {
-    try {
-      await syncCheckoutSuccessForTeam(teamContext.teamId, {
-        sessionId: checkoutSessionId ?? null,
-      });
-      // Mark onboarding complete
-      await supabase
-        .from("profiles")
-        .update({ onboarding_completed_at: new Date().toISOString() })
-        .eq("id", user.id);
-    } catch (error) {
-      logger.warn("Onboarding checkout-success sync failed; redirecting to dashboard.", {
-        teamId: teamContext.teamId,
-        checkoutSessionId: checkoutSessionId ?? null,
-        error,
-      });
-    }
-    redirect("/dashboard");
-  }
-
-  const billingContext = await getDashboardBillingContext(supabase, teamContext.teamId);
-
-  // Already on a paid plan — skip onboarding
-  if (billingContext.isPaidPlan) {
-    redirect("/dashboard");
-  }
-
-  // Already completed onboarding with a free plan — skip
-  if (billingContext.effectivePlanKey === "free") {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("onboarding_completed_at")
-      .eq("id", user.id)
-      .maybeSingle<{ onboarding_completed_at: string | null }>();
-
-    if (profile?.onboarding_completed_at) {
+  // --- Authenticated-only logic ---
+  if (user) {
+    const teamContext = await getCachedTeamContextForUser(supabase, user.id);
+    if (!teamContext) {
       redirect("/dashboard");
+    }
+
+    const checkoutStatus = getFirstSearchParamValue(resolvedSearchParams.checkout);
+    const checkoutSessionId = getFirstSearchParamValue(resolvedSearchParams.session_id);
+
+    // Handle checkout success return
+    if (checkoutStatus === "success") {
+      try {
+        await syncCheckoutSuccessForTeam(teamContext.teamId, {
+          sessionId: checkoutSessionId ?? null,
+        });
+        await supabase
+          .from("profiles")
+          .update({ onboarding_completed_at: new Date().toISOString() })
+          .eq("id", user.id);
+      } catch (error) {
+        logger.warn("Onboarding checkout-success sync failed; redirecting to dashboard.", {
+          teamId: teamContext.teamId,
+          checkoutSessionId: checkoutSessionId ?? null,
+          error,
+        });
+      }
+      redirect("/dashboard");
+    }
+
+    const billingContext = await getDashboardBillingContext(supabase, teamContext.teamId);
+
+    // Already on a paid plan — skip onboarding
+    if (billingContext.isPaidPlan) {
+      redirect("/dashboard");
+    }
+
+    // Already completed onboarding with a free plan — skip
+    if (billingContext.effectivePlanKey === "free") {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("onboarding_completed_at")
+        .eq("id", user.id)
+        .maybeSingle<{ onboarding_completed_at: string | null }>();
+
+      if (profile?.onboarding_completed_at) {
+        redirect("/dashboard");
+      }
+    }
+
+    // Server-side checkout redirect: if returning from signup with a paid plan
+    // param, create the Stripe session and redirect immediately (no page render).
+    const validPlanParam =
+      selectedPlan && (PLAN_KEYS as readonly string[]).includes(selectedPlan) ? selectedPlan : null;
+
+    if (validPlanParam && validPlanParam !== "free" && canManageTeamBilling(teamContext.role)) {
+      const checkoutUrl = await createCheckoutUrl({
+        teamId: teamContext.teamId,
+        userId: user.id,
+        userEmail: user.email ?? "",
+        planKey: validPlanParam as import("@/lib/stripe/plans").PlanKey,
+        interval: selectedInterval === "year" ? "year" : "month",
+        source: "onboarding",
+      });
+
+      if (checkoutUrl) {
+        redirect(checkoutUrl);
+      }
+    }
+
+    // Server-side free plan completion: if returning from signup with free plan
+    if (validPlanParam === "free") {
+      try {
+        await supabase
+          .from("profiles")
+          .update({ onboarding_completed_at: new Date().toISOString() })
+          .eq("id", user.id);
+        redirect("/dashboard");
+      } catch (error) {
+        logger.warn("Free plan onboarding completion failed", { error });
+      }
     }
   }
 
@@ -106,8 +144,8 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
     <div className="app-content flex min-h-screen flex-col bg-[color:var(--background)] text-[color:var(--foreground)]">
       <SiteHeader />
 
-      <main className="flex flex-1 flex-col items-center justify-center px-4 py-12">
-        <div className="w-full max-w-5xl">
+      <main className="flex flex-1 flex-col items-center px-4 py-12">
+        <div className={`my-auto w-full ${freePlanEnabled ? "max-w-7xl" : "max-w-5xl"}`}>
           <div className="text-center">
             <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">{t("title")}</h1>
             <p className="mt-3 text-lg text-muted-foreground">
@@ -120,6 +158,7 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
             freePlanEnabled={freePlanEnabled}
             freePlanFeatures={FREE_PLAN_FEATURES as unknown as string[]}
             showAnnualToggle={hasAnnualPricing}
+            isAuthenticated={isAuthenticated}
           />
         </div>
       </main>

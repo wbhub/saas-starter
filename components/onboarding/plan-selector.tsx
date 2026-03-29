@@ -24,6 +24,7 @@ type Props = {
   freePlanEnabled: boolean;
   freePlanFeatures: string[];
   showAnnualToggle: boolean;
+  isAuthenticated: boolean;
 };
 
 function formatUsd(amount: number) {
@@ -77,6 +78,7 @@ export function OnboardingPlanSelector({
   freePlanEnabled,
   freePlanFeatures,
   showAnnualToggle,
+  isAuthenticated,
 }: Props) {
   const t = useTranslations("Onboarding");
   const router = useRouter();
@@ -86,7 +88,17 @@ export function OnboardingPlanSelector({
 
   const isAnnual = interval === "year";
 
+  function redirectToSignup(plan: string) {
+    const params = new URLSearchParams({ plan });
+    if (isAnnual) params.set("interval", "year");
+    router.push(`/signup?${params.toString()}`);
+  }
+
   async function handleFreePlan() {
+    if (!isAuthenticated) {
+      redirectToSignup("free");
+      return;
+    }
     setLoadingAction("free");
     setError(null);
     try {
@@ -113,6 +125,10 @@ export function OnboardingPlanSelector({
   }
 
   async function handlePaidPlan(planKey: PlanKey) {
+    if (!isAuthenticated) {
+      redirectToSignup(planKey);
+      return;
+    }
     setLoadingAction(planKey);
     setError(null);
     try {
@@ -144,7 +160,7 @@ export function OnboardingPlanSelector({
     }
   }
 
-  const gridCols = freePlanEnabled ? "md:grid-cols-2 lg:grid-cols-4" : "md:grid-cols-3";
+  const gridCols = freePlanEnabled ? "md:grid-cols-2 xl:grid-cols-4" : "md:grid-cols-3";
 
   return (
     <div className="mt-10 space-y-8">
@@ -221,7 +237,11 @@ export function OnboardingPlanSelector({
         {plans.map((plan) => {
           const price =
             isAnnual && plan.amountAnnualMonthly ? plan.amountAnnualMonthly : plan.amountMonthly;
-          const canCheckout = isAnnual ? plan.hasAnnualPriceId : plan.hasPriceId;
+          const canCheckout = isAuthenticated
+            ? isAnnual
+              ? plan.hasAnnualPriceId
+              : plan.hasPriceId
+            : true;
 
           return (
             <div

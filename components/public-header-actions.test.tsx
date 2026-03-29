@@ -65,7 +65,7 @@ describe("PublicHeaderActions", () => {
     expect(screen.getByText("Log in")).toBeInTheDocument();
     expect(screen.getByTestId("auth-aware-link")).toHaveAttribute(
       "data-logged-out-href",
-      "/signup",
+      "/onboarding",
     );
   });
 

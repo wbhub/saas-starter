@@ -33,7 +33,8 @@
     "dashboard": "ダッシュボード",
     "login": "ログイン",
     "openApp": "アプリを開く",
-    "startFree": "無料で始める"
+    "startFree": "無料で始める",
+    "getStarted": "始める"
   },
   "SiteFooter": {
     "companyPlaceholder": "[会社名]",
@@ -85,7 +86,8 @@
       "dashboard": "ダッシュボード",
       "login": "ログイン",
       "openApp": "アプリを開く",
-      "startFree": "無料で始める"
+      "startFree": "無料で始める",
+      "getStarted": "始める"
     },
     "hero": {
       "badge": "基盤ではなく、プロダクトの出荷に集中する",
@@ -93,6 +95,7 @@
       "description": "認証、マルチテナントチーム、席数ベースの Stripe 課金、DB で強制される予算付き AI、監査ログ、そして強固なセキュリティパイプラインまで。すべてが Next.js 16、Supabase、React 19 上でエンドツーエンドに組み込まれているので、あなたは製品の差別化に集中できます。",
       "goDashboard": "ダッシュボードへ",
       "startFreeNow": "今すぐ無料で始める",
+      "getStartedNow": "今すぐ始める",
       "viewPricing": "料金を見る",
       "feature1": "マルチテナントのチーム権限",
       "feature2": "席数ベースの Stripe 課金",
