@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { CheckCircle2 } from "lucide-react";
 import { getCsrfHeaders } from "@/lib/http/csrf";
-import type { PlanKey } from "@/lib/stripe/plans";
+import type { PlanInterval, PlanKey } from "@/lib/stripe/plans";
 
 type PlanData = {
   key: PlanKey;
@@ -25,6 +25,9 @@ type Props = {
   freePlanFeatures: string[];
   showAnnualToggle: boolean;
   isAuthenticated: boolean;
+  initialInterval: PlanInterval;
+  autoStartPlanKey: PlanKey | null;
+  autoCompleteFreePlan: boolean;
 };
 
 function formatUsd(amount: number) {
@@ -79,12 +82,16 @@ export function OnboardingPlanSelector({
   freePlanFeatures,
   showAnnualToggle,
   isAuthenticated,
+  initialInterval,
+  autoStartPlanKey,
+  autoCompleteFreePlan,
 }: Props) {
   const t = useTranslations("Onboarding");
   const router = useRouter();
-  const [interval, setInterval] = useState<"month" | "year">("month");
+  const [interval, setInterval] = useState<"month" | "year">(initialInterval);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const autoStartedAction = useRef<string | null>(null);
 
   const isAnnual = interval === "year";
 
@@ -159,6 +166,41 @@ export function OnboardingPlanSelector({
       setLoadingAction(null);
     }
   }
+
+  const autoStartCheckout = useEffectEvent((planKey: PlanKey) => {
+    void handlePaidPlan(planKey);
+  });
+  const autoCompleteFree = useEffectEvent(() => {
+    void handleFreePlan();
+  });
+
+  useEffect(() => {
+    if (!isAuthenticated || !autoStartPlanKey) {
+      return;
+    }
+
+    const autoStartKey = `checkout:${autoStartPlanKey}:${initialInterval}`;
+    if (autoStartedAction.current === autoStartKey) {
+      return;
+    }
+
+    autoStartedAction.current = autoStartKey;
+    autoStartCheckout(autoStartPlanKey);
+  }, [autoStartPlanKey, initialInterval, isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !autoCompleteFreePlan) {
+      return;
+    }
+
+    const autoCompleteKey = "free";
+    if (autoStartedAction.current === autoCompleteKey) {
+      return;
+    }
+
+    autoStartedAction.current = autoCompleteKey;
+    autoCompleteFree();
+  }, [autoCompleteFreePlan, isAuthenticated]);
 
   const gridCols = freePlanEnabled ? "md:grid-cols-2 xl:grid-cols-4" : "md:grid-cols-3";
 

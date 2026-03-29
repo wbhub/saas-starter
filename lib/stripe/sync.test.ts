@@ -363,6 +363,47 @@ describe("syncSubscription", () => {
     );
   });
 
+  it("falls back to Stripe customer metadata during subscription sync when local mapping is absent", async () => {
+    const adminMock = createAdminMock({ mapping: null });
+    const retrieve = vi.fn().mockResolvedValue({
+      id: "cus_123",
+      metadata: { supabase_team_id: "team_from_stripe" },
+    });
+    const warn = vi.fn();
+    vi.doMock("@/lib/supabase/admin", () => ({
+      createAdminClient: () => adminMock,
+    }));
+    vi.doMock("@/lib/stripe/server", () => ({
+      getStripeServerClient: () => ({
+        customers: {
+          retrieve,
+        },
+      }),
+    }));
+    vi.doMock("@/lib/logger", () => ({
+      logger: { warn, error: vi.fn(), info: vi.fn() },
+    }));
+
+    const { syncSubscription } = await import("./sync");
+    await syncSubscription(createBaseSubscription() as never, {
+      eventCreatedUnix: 1_700_000_050,
+    });
+
+    expect(retrieve).toHaveBeenCalledWith("cus_123");
+    expect(adminMock.rpc).toHaveBeenCalledWith(
+      "sync_stripe_subscription_atomic",
+      expect.objectContaining({
+        p_team_id: "team_from_stripe",
+        p_stripe_customer_id: "cus_123",
+        p_stripe_subscription_id: "sub_123",
+      }),
+    );
+    expect(warn).not.toHaveBeenCalledWith(
+      "No team mapping found for Stripe customer during sync",
+      expect.anything(),
+    );
+  });
+
   it("does not throw when rpc reports stale event was ignored", async () => {
     const adminMock = createAdminMock({ rpcData: false });
     const warn = vi.fn();

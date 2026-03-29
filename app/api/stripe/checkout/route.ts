@@ -10,6 +10,7 @@ import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { createClient } from "@/lib/supabase/server";
 import { getPlanByKey, getPlanPriceId } from "@/lib/stripe/config";
 import { getStripeServerClient } from "@/lib/stripe/server";
+import { getOrCreateStripeCustomerForTeam } from "@/lib/stripe/customer";
 import { getAppUrl } from "@/lib/env";
 import { isBillingEnabled } from "@/lib/billing/capabilities";
 import { LIVE_SUBSCRIPTION_STATUSES } from "@/lib/stripe/plans";
@@ -25,10 +26,6 @@ const checkoutPayloadSchema = z.object({
 
 type ExistingSubscriptionRow = {
   stripe_subscription_id: string | null;
-};
-
-type StripeCustomerRow = {
-  stripe_customer_id: string | null;
 };
 
 function getCheckoutIdempotencyKey(request: Request, teamId: string, planKey: string) {
@@ -157,22 +154,15 @@ export async function POST(req: Request) {
     return err(t("errors.activeSubscriptionExists"), 409);
   }
 
-  // Look up existing Stripe customer from our DB (no Stripe API call).
-  // For returning users we pass customer ID; for new users we pass email
-  // and let Stripe auto-create the Customer in subscription mode.
-  const { data: customerRow, error: customerRowError } = await supabase
-    .from("stripe_customers")
-    .select("stripe_customer_id")
-    .eq("team_id", teamContext.teamId)
-    .maybeSingle<StripeCustomerRow>();
-
-  if (customerRowError) {
-    return err(t("errors.couldNotLoadStripeCustomer"), 500);
-  }
-
-  const customerId = customerRow?.stripe_customer_id;
-
   try {
+    const customerIdempotencyKey = getScopedIdempotencyKey(idempotencyKey, "customer");
+    const customerId = await getOrCreateStripeCustomerForTeam({
+      stripe,
+      teamId: teamContext.teamId,
+      userId: user.id,
+      email: user.email,
+      idempotencyKey: customerIdempotencyKey,
+    });
     const appUrl = getAppUrl();
 
     const isOnboardingSource = checkoutSource === "onboarding";
@@ -185,7 +175,7 @@ export async function POST(req: Request) {
     const session = await stripe.checkout.sessions.create(
       {
         mode: "subscription",
-        ...(customerId ? { customer: customerId } : { customer_email: user.email }),
+        customer: customerId,
         client_reference_id: teamContext.teamId,
         line_items: [{ price: resolvedPriceId, quantity: 1 }],
         success_url: `${appUrl}${successPath}`,

@@ -1,14 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const getOrCreateStripeCustomerForTeam = vi.fn();
+
 describe("POST /api/stripe/checkout", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    getOrCreateStripeCustomerForTeam.mockResolvedValue("cus_123");
     vi.doMock("@/lib/security/csrf", () => ({
       verifyCsrfProtection: vi.fn().mockReturnValue(null),
     }));
     vi.doMock("@/lib/billing/capabilities", () => ({
       isBillingEnabled: () => true,
+    }));
+    vi.doMock("@/lib/stripe/customer", () => ({
+      getOrCreateStripeCustomerForTeam,
     }));
   });
 
@@ -161,9 +167,8 @@ describe("POST /api/stripe/checkout", () => {
     });
   });
 
-  it("creates checkout session with customer_email for first-time users", async () => {
+  it("creates checkout session with a Stripe customer for first-time users", async () => {
     const subscriptionsMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
-    const customersMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
 
     const subscriptionsQuery = {
       select: vi.fn().mockReturnThis(),
@@ -172,11 +177,6 @@ describe("POST /api/stripe/checkout", () => {
       order: vi.fn().mockReturnThis(),
       limit: vi.fn().mockReturnThis(),
       maybeSingle: subscriptionsMaybeSingle,
-    };
-    const customersQuery = {
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      maybeSingle: customersMaybeSingle,
     };
     const teamMembershipsQuery = {
       select: vi.fn().mockReturnThis(),
@@ -197,9 +197,6 @@ describe("POST /api/stripe/checkout", () => {
         from: vi.fn((table: string) => {
           if (table === "subscriptions") {
             return subscriptionsQuery;
-          }
-          if (table === "stripe_customers") {
-            return customersQuery;
           }
           if (table === "team_memberships") {
             return teamMembershipsQuery;
@@ -250,9 +247,16 @@ describe("POST /api/stripe/checkout", () => {
       ok: true,
       url: "https://checkout.stripe.test",
     });
+    expect(getOrCreateStripeCustomerForTeam).toHaveBeenCalledWith({
+      stripe: expect.any(Object),
+      teamId: "team_123",
+      userId: "user_123",
+      email: "user@example.com",
+      idempotencyKey: "checkout:team_123:starter:client-key-1:customer",
+    });
     expect(sessionsCreate).toHaveBeenCalledWith(
       expect.objectContaining({
-        customer_email: "user@example.com",
+        customer: "cus_123",
         client_reference_id: "team_123",
         line_items: [{ price: "price_starter", quantity: 1 }],
         success_url:
@@ -265,7 +269,6 @@ describe("POST /api/stripe/checkout", () => {
 
   it("returns 409 when checkout for the same user/plan is already in progress", async () => {
     const subscriptionsMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
-    const customersMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
 
     const subscriptionsQuery = {
       select: vi.fn().mockReturnThis(),
@@ -274,11 +277,6 @@ describe("POST /api/stripe/checkout", () => {
       order: vi.fn().mockReturnThis(),
       limit: vi.fn().mockReturnThis(),
       maybeSingle: subscriptionsMaybeSingle,
-    };
-    const customersQuery = {
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      maybeSingle: customersMaybeSingle,
     };
     const teamMembershipsQuery = {
       select: vi.fn().mockReturnThis(),
@@ -297,9 +295,6 @@ describe("POST /api/stripe/checkout", () => {
         from: vi.fn((table: string) => {
           if (table === "subscriptions") {
             return subscriptionsQuery;
-          }
-          if (table === "stripe_customers") {
-            return customersQuery;
           }
           if (table === "team_memberships") {
             return teamMembershipsQuery;
