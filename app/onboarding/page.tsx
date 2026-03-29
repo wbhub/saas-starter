@@ -7,8 +7,8 @@ import { createClient } from "@/lib/supabase/server";
 import { isBillingEnabled, isFreePlanEnabled } from "@/lib/billing/capabilities";
 import { getCachedTeamContextForUser } from "@/lib/team-context-cache";
 import { getDashboardBillingContext } from "@/lib/dashboard/team-snapshot";
-import { syncCheckoutSuccessForTeam } from "@/lib/stripe/checkout-success";
 import { plans, hasAnnualPricing } from "@/lib/stripe/config";
+import { ensureStripeCustomerForTeam } from "@/lib/stripe/ensure-customer";
 import { FREE_PLAN_FEATURES, PLAN_KEYS } from "@/lib/stripe/plans";
 import { createCheckoutUrl } from "@/lib/stripe/create-checkout-url";
 import { canManageTeamBilling } from "@/lib/team-context";
@@ -49,23 +49,25 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
       redirect("/dashboard");
     }
 
-    const checkoutStatus = getFirstSearchParamValue(resolvedSearchParams.checkout);
-    const checkoutSessionId = getFirstSearchParamValue(resolvedSearchParams.session_id);
+    // Eagerly create Stripe customer so it's ready when the user clicks checkout.
+    // Awaited because the fast path (customer exists) is just a DB lookup, and
+    // the slow path (create) ensures createCheckoutUrl below can skip creation.
+    // Failures are non-fatal — checkout routes have their own fallback.
+    await ensureStripeCustomerForTeam(teamContext.teamId, user.id, user.email ?? "").catch(() => {});
 
-    // Handle checkout success return
+    const checkoutStatus = getFirstSearchParamValue(resolvedSearchParams.checkout);
+
+    // Handle checkout success return — the webhook handles subscription sync,
+    // so we just mark onboarding complete and redirect.
     if (checkoutStatus === "success") {
       try {
-        await syncCheckoutSuccessForTeam(teamContext.teamId, {
-          sessionId: checkoutSessionId ?? null,
-        });
         await supabase
           .from("profiles")
           .update({ onboarding_completed_at: new Date().toISOString() })
           .eq("id", user.id);
       } catch (error) {
-        logger.warn("Onboarding checkout-success sync failed; redirecting to dashboard.", {
+        logger.warn("Onboarding completion update failed; redirecting to dashboard anyway.", {
           teamId: teamContext.teamId,
-          checkoutSessionId: checkoutSessionId ?? null,
           error,
         });
       }

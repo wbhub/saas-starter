@@ -360,6 +360,9 @@
       "title": "Gérez votre abonnement",
       "description": "Mettez à jour les forfaits, ouvrez le portail Stripe et vérifiez l'état de votre abonnement."
     },
+    "checkoutSuccess": {
+      "message": "Paiement réussi ! Votre abonnement sera actif sous peu."
+    },
     "currentSubscription": {
       "title": "Abonnement en cours",
       "currentPlan": "Forfait actuel",

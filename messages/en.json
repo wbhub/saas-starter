@@ -360,6 +360,9 @@
       "title": "Manage your subscription",
       "description": "Update plans, open the Stripe portal, and review your subscription status."
     },
+    "checkoutSuccess": {
+      "message": "Payment successful! Your subscription will be active shortly."
+    },
     "currentSubscription": {
       "title": "Current subscription",
       "currentPlan": "Current plan",

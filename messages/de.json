@@ -360,6 +360,9 @@
       "title": "Verwalte dein Abonnement",
       "description": "Aktualisiere Pläne, öffne das Stripe-Portal und prüfe deinen Abonnementstatus."
     },
+    "checkoutSuccess": {
+      "message": "Zahlung erfolgreich! Dein Abonnement wird in Kürze aktiv."
+    },
     "currentSubscription": {
       "title": "Aktuelles Abonnement",
       "currentPlan": "Aktueller Plan",

@@ -360,6 +360,9 @@
       "title": "管理您的订阅",
       "description": "更新计划、打开 Stripe 门户并查看您的订阅状态。"
     },
+    "checkoutSuccess": {
+      "message": "支付成功！您的订阅将很快激活。"
+    },
     "currentSubscription": {
       "title": "当前订阅",
       "currentPlan": "目前计划",

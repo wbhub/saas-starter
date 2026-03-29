@@ -360,6 +360,9 @@
       "title": "サブスクリプションを管理",
       "description": "プランの更新、Stripe ポータルの起動、サブスクリプション状態の確認を行えます。"
     },
+    "checkoutSuccess": {
+      "message": "お支払いが完了しました！サブスクリプションはまもなく有効になります。"
+    },
     "currentSubscription": {
       "title": "現在のサブスクリプション",
       "currentPlan": "現在のプラン",
