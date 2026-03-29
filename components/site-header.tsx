@@ -11,12 +11,13 @@ type SiteHeaderProps = {
 
 export function SiteHeader(props: SiteHeaderProps) {
   const t = useTranslations();
+  const brandHref = props.dashboardUser ? "/dashboard" : "/";
 
   return (
     <header className="border-b app-border-subtle">
       <nav className="mx-auto flex max-w-[1440px] items-center justify-between px-6 py-5 lg:px-10">
         <Link
-          href="/"
+          href={brandHref}
           className="flex items-center gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-emerald-400 text-white shadow-sm shadow-indigo-500/30">
