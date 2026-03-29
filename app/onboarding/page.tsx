@@ -8,8 +8,7 @@ import { isBillingEnabled, isFreePlanEnabled } from "@/lib/billing/capabilities"
 import { getCachedTeamContextForUser } from "@/lib/team-context-cache";
 import { getDashboardBillingContext } from "@/lib/dashboard/team-snapshot";
 import { plans, hasAnnualPricing } from "@/lib/stripe/config";
-import { FREE_PLAN_FEATURES, PLAN_KEYS } from "@/lib/stripe/plans";
-import { createCheckoutUrl } from "@/lib/stripe/create-checkout-url";
+import { FREE_PLAN_FEATURES, PLAN_KEYS, type PlanInterval, type PlanKey } from "@/lib/stripe/plans";
 import { syncCheckoutSuccessForTeam } from "@/lib/stripe/checkout-success";
 import { getPublicPricingCatalog } from "@/lib/stripe/public-pricing";
 import { canManageTeamBilling } from "@/lib/team-context";
@@ -42,6 +41,13 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
   const selectedPlan = getFirstSearchParamValue(resolvedSearchParams.plan) ?? null;
   const selectedInterval = getFirstSearchParamValue(resolvedSearchParams.interval) ?? null;
   const isAuthenticated = Boolean(user);
+  const freePlanEnabled = isFreePlanEnabled();
+  const selectedPaidPlan = (PLAN_KEYS as readonly string[]).includes(selectedPlan ?? "")
+    ? (selectedPlan as PlanKey)
+    : null;
+  const initialInterval: PlanInterval = selectedInterval === "year" ? "year" : "month";
+  let autoStartPlanKey: PlanKey | null = null;
+  let autoCompleteFreePlan = false;
 
   // --- Authenticated-only logic ---
   if (user) {
@@ -83,25 +89,11 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
       redirect("/dashboard");
     }
 
-    // Server-side checkout redirect: if returning from signup with a paid plan
-    // param, create the Stripe customer + session and redirect immediately.
-    const validPlanParam =
-      selectedPlan && (PLAN_KEYS as readonly string[]).includes(selectedPlan) ? selectedPlan : null;
-
-    if (validPlanParam && validPlanParam !== "free" && canManageTeamBilling(teamContext.role)) {
-      const checkoutUrl = await createCheckoutUrl({
-        teamId: teamContext.teamId,
-        userId: user.id,
-        userEmail: user.email ?? "",
-        planKey: validPlanParam as import("@/lib/stripe/plans").PlanKey,
-        interval: selectedInterval === "year" ? "year" : "month",
-        source: "onboarding",
-      });
-
-      if (checkoutUrl) {
-        redirect(checkoutUrl);
-      }
-    }
+    // Preserve the smooth post-signup handoff into Checkout, but leave the
+    // actual Stripe side effect to the guarded POST route on the client.
+    autoStartPlanKey =
+      selectedPaidPlan && canManageTeamBilling(teamContext.role) ? selectedPaidPlan : null;
+    autoCompleteFreePlan = freePlanEnabled && selectedPlan === "free";
 
     const billingContext = await getDashboardBillingContext(supabase, teamContext.teamId);
 
@@ -122,22 +114,7 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
         redirect("/dashboard");
       }
     }
-
-    // Server-side free plan completion: if returning from signup with free plan
-    if (validPlanParam === "free") {
-      try {
-        await supabase
-          .from("profiles")
-          .update({ onboarding_completed_at: new Date().toISOString() })
-          .eq("id", user.id);
-        redirect("/dashboard");
-      } catch (error) {
-        logger.warn("Free plan onboarding completion failed", { error });
-      }
-    }
   }
-
-  const freePlanEnabled = isFreePlanEnabled();
 
   const livePricing = await getPublicPricingCatalog();
   const planData = livePricing.map((lp) => {
@@ -174,6 +151,9 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
             freePlanFeatures={FREE_PLAN_FEATURES as unknown as string[]}
             showAnnualToggle={hasAnnualPricing}
             isAuthenticated={isAuthenticated}
+            initialInterval={initialInterval}
+            autoStartPlanKey={autoStartPlanKey}
+            autoCompleteFreePlan={autoCompleteFreePlan}
           />
         </div>
       </main>
