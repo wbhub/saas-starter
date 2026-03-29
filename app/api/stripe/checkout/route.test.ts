@@ -161,16 +161,9 @@ describe("POST /api/stripe/checkout", () => {
     });
   });
 
-  it("creates and stamps first-time Stripe customers idempotently", async () => {
+  it("creates checkout session with customer_email for first-time users", async () => {
     const subscriptionsMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
-    const customersMaybeSingle = vi
-      .fn()
-      .mockResolvedValueOnce({ data: null, error: null })
-      .mockResolvedValueOnce({ data: { stripe_customer_id: "cus_new" }, error: null });
-    const customersUpsert = vi.fn().mockResolvedValue({ error: null });
-    const adminCustomersMaybeSingle = vi
-      .fn()
-      .mockResolvedValue({ data: { stripe_customer_id: "cus_new" }, error: null });
+    const customersMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
 
     const subscriptionsQuery = {
       select: vi.fn().mockReturnThis(),
@@ -183,23 +176,14 @@ describe("POST /api/stripe/checkout", () => {
     const customersQuery = {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
-      upsert: customersUpsert,
       maybeSingle: customersMaybeSingle,
     };
     const teamMembershipsQuery = {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockResolvedValue({ count: 3, error: null }),
     };
-    const adminCustomersQuery = {
-      upsert: customersUpsert,
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      maybeSingle: adminCustomersMaybeSingle,
-    };
 
-    const customersCreate = vi.fn().mockResolvedValue({ id: "cus_new" });
     const sessionsCreate = vi.fn().mockResolvedValue({ url: "https://checkout.stripe.test" });
-    const hasLiveSubscriptions = vi.fn().mockResolvedValue({ data: [] });
 
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: async () => ({
@@ -227,24 +211,12 @@ describe("POST /api/stripe/checkout", () => {
     vi.doMock("@/lib/security/rate-limit", () => ({
       checkRateLimit: async () => ({ allowed: true, retryAfterSeconds: 0 }),
     }));
-    vi.doMock("@/lib/supabase/admin", () => ({
-      createAdminClient: () => ({
-        from: vi.fn((table: string) => {
-          if (table === "stripe_customers") {
-            return adminCustomersQuery;
-          }
-          throw new Error(`Unexpected admin table: ${table}`);
-        }),
-      }),
-    }));
     vi.doMock("@/lib/stripe/config", () => ({
       getPlanByKey: () => ({ key: "starter", priceId: "price_starter" }),
       getPlanPriceId: () => "price_starter",
     }));
     vi.doMock("@/lib/stripe/server", () => ({
       getStripeServerClient: () => ({
-        customers: { retrieve: vi.fn(), create: customersCreate },
-        subscriptions: { list: hasLiveSubscriptions },
         checkout: { sessions: { create: sessionsCreate } },
       }),
     }));
@@ -278,30 +250,9 @@ describe("POST /api/stripe/checkout", () => {
       ok: true,
       url: "https://checkout.stripe.test",
     });
-    expect(customersCreate).toHaveBeenCalledWith(
-      {
-        email: "user@example.com",
-        metadata: { supabase_team_id: "team_123", supabase_user_id: "user_123" },
-      },
-      { idempotencyKey: "checkout:team_123:starter:client-key-1:customer" },
-    );
-    expect(customersUpsert).toHaveBeenCalledWith(
-      {
-        team_id: "team_123",
-        stripe_customer_id: "cus_new",
-      },
-      {
-        onConflict: "team_id",
-      },
-    );
-    expect(hasLiveSubscriptions).toHaveBeenCalledWith({
-      customer: "cus_new",
-      status: "all",
-      limit: 100,
-    });
     expect(sessionsCreate).toHaveBeenCalledWith(
       expect.objectContaining({
-        customer: "cus_new",
+        customer_email: "user@example.com",
         client_reference_id: "team_123",
         line_items: [{ price: "price_starter", quantity: 1 }],
         success_url:

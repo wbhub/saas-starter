@@ -8,7 +8,6 @@ import { isBillingEnabled, isFreePlanEnabled } from "@/lib/billing/capabilities"
 import { getCachedTeamContextForUser } from "@/lib/team-context-cache";
 import { getDashboardBillingContext } from "@/lib/dashboard/team-snapshot";
 import { plans, hasAnnualPricing } from "@/lib/stripe/config";
-import { ensureStripeCustomerForTeam } from "@/lib/stripe/ensure-customer";
 import { FREE_PLAN_FEATURES, PLAN_KEYS } from "@/lib/stripe/plans";
 import { createCheckoutUrl } from "@/lib/stripe/create-checkout-url";
 import { canManageTeamBilling } from "@/lib/team-context";
@@ -74,15 +73,6 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
       selectedPlan && (PLAN_KEYS as readonly string[]).includes(selectedPlan) ? selectedPlan : null;
 
     if (validPlanParam && validPlanParam !== "free" && canManageTeamBilling(teamContext.role)) {
-      // Create (or look up) the Stripe customer, then pass the verified ID
-      // directly to createCheckoutUrl so it can skip re-verification and go
-      // straight to sessions.create — saving 2-3 Stripe API round-trips.
-      const stripeCustomerId = await ensureStripeCustomerForTeam(
-        teamContext.teamId,
-        user.id,
-        user.email ?? "",
-      );
-
       const checkoutUrl = await createCheckoutUrl({
         teamId: teamContext.teamId,
         userId: user.id,
@@ -90,7 +80,6 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
         planKey: validPlanParam as import("@/lib/stripe/plans").PlanKey,
         interval: selectedInterval === "year" ? "year" : "month",
         source: "onboarding",
-        stripeCustomerId: stripeCustomerId ?? undefined,
       });
 
       if (checkoutUrl) {
