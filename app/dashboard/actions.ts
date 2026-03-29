@@ -12,7 +12,7 @@ import { syncTeamSeatQuantity } from "@/lib/stripe/seats";
 import { enqueueSeatSyncRetry } from "@/lib/stripe/seat-sync-retries";
 import { logger } from "@/lib/logger";
 import { invalidateCachedTeamContextForUser } from "@/lib/team-context-cache";
-import { ONBOARDING_COMPLETE_COOKIE } from "@/components/auth-aware-link";
+import { ONBOARDING_COMPLETE_COOKIE } from "@/lib/constants/onboarding";
 import {
   CSRF_CLIENT_COOKIE_NAME,
   CSRF_COOKIE_NAME,
@@ -564,6 +564,7 @@ export async function deleteAccount(
 
   await supabase.auth.signOut({ scope: "global" });
   await rotateCsrfTokenForServerAction();
+  await clearOnboardingCookie();
   revalidatePath("/");
   redirect("/?account=deleted");
 }

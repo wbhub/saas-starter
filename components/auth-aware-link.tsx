@@ -4,9 +4,8 @@ import Cookies from "js-cookie";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useSyncExternalStore } from "react";
+import { ONBOARDING_COMPLETE_COOKIE } from "@/lib/constants/onboarding";
 import { createClient } from "@/lib/supabase/client";
-
-export const ONBOARDING_COMPLETE_COOKIE = "onboarding_complete";
 
 type AuthAwareLinkProps = {
   loggedInHref: string;

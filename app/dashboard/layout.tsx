@@ -6,7 +6,7 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { IntercomProvider } from "@/components/intercom-provider";
 import { NoTeamCard } from "@/components/no-team-card";
 import { TeamContextErrorCard } from "@/components/team-context-error-card";
-import { ONBOARDING_COMPLETE_COOKIE } from "@/components/auth-aware-link";
+import { ONBOARDING_COMPLETE_COOKIE } from "@/lib/constants/onboarding";
 import { getDashboardShellData } from "@/lib/dashboard/server";
 import { isBillingEnabled } from "@/lib/billing/capabilities";
 import { env } from "@/lib/env";
