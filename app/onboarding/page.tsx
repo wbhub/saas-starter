@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { OnboardingPlanSelector } from "@/components/onboarding/plan-selector";
+import { OnboardingSignOutButton } from "@/components/onboarding/sign-out-button";
 import { createClient } from "@/lib/supabase/server";
 import { isBillingEnabled, isFreePlanEnabled } from "@/lib/billing/capabilities";
 import { getCachedTeamContextForUser } from "@/lib/team-context-cache";
@@ -142,7 +143,7 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
 
   return (
     <div className="app-content flex min-h-screen flex-col bg-[color:var(--background)] text-[color:var(--foreground)]">
-      <SiteHeader />
+      <SiteHeader hideOpenApp />
 
       <main className="flex flex-1 flex-col items-center px-4 py-12">
         <div className={`my-auto w-full ${freePlanEnabled ? "max-w-7xl" : "max-w-5xl"}`}>
@@ -151,6 +152,11 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
             <p className="mt-3 text-lg text-muted-foreground">
               {freePlanEnabled ? t("description") : t("descriptionPaidOnly")}
             </p>
+            {isAuthenticated ? (
+              <div className="mt-4">
+                <OnboardingSignOutButton label={t("signOut")} />
+              </div>
+            ) : null}
           </div>
 
           <OnboardingPlanSelector

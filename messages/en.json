@@ -1055,7 +1055,8 @@
       "missingCheckoutUrl": "Missing checkout URL.",
       "completeFailed": "Something went wrong. Please try again.",
       "requestFailed": "Request failed."
-    }
+    },
+    "signOut": "Sign out"
   },
   "ApiOnboardingComplete": {
     "errors": {
