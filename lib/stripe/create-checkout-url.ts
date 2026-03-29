@@ -14,6 +14,9 @@ type CreateCheckoutUrlParams = {
   planKey: PlanKey;
   interval?: PlanInterval;
   source?: string;
+  /** Pre-verified Stripe customer ID. When provided, skips customer lookup,
+   *  ownership verification, and subscription checks. */
+  stripeCustomerId?: string;
 };
 
 /**
@@ -22,7 +25,15 @@ type CreateCheckoutUrlParams = {
  * Returns `null` if checkout cannot be created.
  */
 export async function createCheckoutUrl(params: CreateCheckoutUrlParams): Promise<string | null> {
-  const { teamId, userId, userEmail, planKey, interval = "month", source } = params;
+  const {
+    teamId,
+    userId,
+    userEmail,
+    planKey,
+    interval = "month",
+    source,
+    stripeCustomerId: preVerifiedCustomerId,
+  } = params;
 
   const stripe = getStripeServerClient();
   if (!stripe) return null;
@@ -33,69 +44,74 @@ export async function createCheckoutUrl(params: CreateCheckoutUrlParams): Promis
   const priceId = getPlanPriceId(plan.key, interval);
   if (!priceId) return null;
 
-  const admin = createAdminClient();
-
-  // Look up existing Stripe customer for this team
-  const { data: customerRow } = await admin
-    .from("stripe_customers")
-    .select("stripe_customer_id")
-    .eq("team_id", teamId)
-    .maybeSingle<{ stripe_customer_id: string | null }>();
-
-  let customerId = customerRow?.stripe_customer_id ?? undefined;
+  let customerId = preVerifiedCustomerId;
 
   try {
-    // Verify ownership if customer exists
-    if (customerId) {
-      const customer = await stripe.customers.retrieve(customerId);
-      if ("deleted" in customer || customer.metadata?.supabase_team_id !== teamId) {
-        customerId = undefined;
-      }
-    }
-
-    // Create customer if needed
+    // When no pre-verified customer ID is provided, resolve and verify from scratch.
     if (!customerId) {
-      const customer = await stripe.customers.create({
-        email: userEmail,
-        metadata: {
-          supabase_team_id: teamId,
-          supabase_user_id: userId,
-        },
-      });
+      const admin = createAdminClient();
 
-      // Upsert mapping (handles races)
-      await admin
-        .from("stripe_customers")
-        .upsert({ team_id: teamId, stripe_customer_id: customer.id }, { onConflict: "team_id" });
-
-      const { data: mapping } = await admin
+      const { data: customerRow } = await admin
         .from("stripe_customers")
         .select("stripe_customer_id")
         .eq("team_id", teamId)
-        .maybeSingle<{ stripe_customer_id: string }>();
+        .maybeSingle<{ stripe_customer_id: string | null }>();
 
-      customerId = mapping?.stripe_customer_id ?? customer.id;
+      customerId = customerRow?.stripe_customer_id ?? undefined;
 
-      // Clean up duplicate if race occurred
-      if (customerId !== customer.id) {
-        await stripe.customers.del(customer.id).catch((err) => {
-          logger.warn("Failed to cleanup duplicate Stripe customer after race", {
-            teamId,
-            duplicateCustomerId: customer.id,
-            error: err,
-          });
-        });
+      // Verify ownership if customer exists
+      if (customerId) {
+        const customer = await stripe.customers.retrieve(customerId);
+        if ("deleted" in customer || customer.metadata?.supabase_team_id !== teamId) {
+          customerId = undefined;
+        }
       }
-    }
 
-    // Check for existing subscription
-    const subs = await stripe.subscriptions.list({
-      customer: customerId,
-      status: "all",
-      limit: 100,
-    });
-    if (subs.data.some((s) => LIVE_SUBSCRIPTION_STATUSES.includes(s.status))) {
-      return null;
+      // Create customer if needed
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: userEmail,
+          metadata: {
+            supabase_team_id: teamId,
+            supabase_user_id: userId,
+          },
+        });
+
+        await admin
+          .from("stripe_customers")
+          .upsert(
+            { team_id: teamId, stripe_customer_id: customer.id },
+            { onConflict: "team_id" },
+          );
+
+        const { data: mapping } = await admin
+          .from("stripe_customers")
+          .select("stripe_customer_id")
+          .eq("team_id", teamId)
+          .maybeSingle<{ stripe_customer_id: string }>();
+
+        customerId = mapping?.stripe_customer_id ?? customer.id;
+
+        if (customerId !== customer.id) {
+          await stripe.customers.del(customer.id).catch((err) => {
+            logger.warn("Failed to cleanup duplicate Stripe customer after race", {
+              teamId,
+              duplicateCustomerId: customer.id,
+              error: err,
+            });
+          });
+        }
+      }
+
+      // Check for existing subscription (only needed when customer wasn't pre-verified)
+      const subs = await stripe.subscriptions.list({
+        customer: customerId,
+        status: "all",
+        limit: 100,
+      });
+      if (subs.data.some((s) => LIVE_SUBSCRIPTION_STATUSES.includes(s.status))) {
+        return null;
+      }
     }
 
     const appUrl = getAppUrl();
