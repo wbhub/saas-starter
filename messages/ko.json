@@ -360,6 +360,9 @@
       "title": "구독 관리",
       "description": "요금제를 업데이트하고 Stripe 포털을 열며 구독 상태를 검토하세요."
     },
+    "checkoutSuccess": {
+      "message": "결제가 완료되었습니다! 구독이 곧 활성화됩니다."
+    },
     "currentSubscription": {
       "title": "현재 구독",
       "currentPlan": "현재 요금제",

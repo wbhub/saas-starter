@@ -7,7 +7,6 @@ import { createClient } from "@/lib/supabase/server";
 import { isBillingEnabled, isFreePlanEnabled } from "@/lib/billing/capabilities";
 import { getCachedTeamContextForUser } from "@/lib/team-context-cache";
 import { getDashboardBillingContext } from "@/lib/dashboard/team-snapshot";
-import { syncCheckoutSuccessForTeam } from "@/lib/stripe/checkout-success";
 import { plans, hasAnnualPricing } from "@/lib/stripe/config";
 import { FREE_PLAN_FEATURES, PLAN_KEYS } from "@/lib/stripe/plans";
 import { createCheckoutUrl } from "@/lib/stripe/create-checkout-url";
@@ -50,26 +49,42 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
     }
 
     const checkoutStatus = getFirstSearchParamValue(resolvedSearchParams.checkout);
-    const checkoutSessionId = getFirstSearchParamValue(resolvedSearchParams.session_id);
 
-    // Handle checkout success return
+    // Handle checkout success return — the webhook handles subscription sync,
+    // so we just mark onboarding complete and redirect.
     if (checkoutStatus === "success") {
       try {
-        await syncCheckoutSuccessForTeam(teamContext.teamId, {
-          sessionId: checkoutSessionId ?? null,
-        });
         await supabase
           .from("profiles")
           .update({ onboarding_completed_at: new Date().toISOString() })
           .eq("id", user.id);
       } catch (error) {
-        logger.warn("Onboarding checkout-success sync failed; redirecting to dashboard.", {
+        logger.warn("Onboarding completion update failed; redirecting to dashboard anyway.", {
           teamId: teamContext.teamId,
-          checkoutSessionId: checkoutSessionId ?? null,
           error,
         });
       }
       redirect("/dashboard");
+    }
+
+    // Server-side checkout redirect: if returning from signup with a paid plan
+    // param, create the Stripe customer + session and redirect immediately.
+    const validPlanParam =
+      selectedPlan && (PLAN_KEYS as readonly string[]).includes(selectedPlan) ? selectedPlan : null;
+
+    if (validPlanParam && validPlanParam !== "free" && canManageTeamBilling(teamContext.role)) {
+      const checkoutUrl = await createCheckoutUrl({
+        teamId: teamContext.teamId,
+        userId: user.id,
+        userEmail: user.email ?? "",
+        planKey: validPlanParam as import("@/lib/stripe/plans").PlanKey,
+        interval: selectedInterval === "year" ? "year" : "month",
+        source: "onboarding",
+      });
+
+      if (checkoutUrl) {
+        redirect(checkoutUrl);
+      }
     }
 
     const billingContext = await getDashboardBillingContext(supabase, teamContext.teamId);
@@ -89,26 +104,6 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
 
       if (profile?.onboarding_completed_at) {
         redirect("/dashboard");
-      }
-    }
-
-    // Server-side checkout redirect: if returning from signup with a paid plan
-    // param, create the Stripe session and redirect immediately (no page render).
-    const validPlanParam =
-      selectedPlan && (PLAN_KEYS as readonly string[]).includes(selectedPlan) ? selectedPlan : null;
-
-    if (validPlanParam && validPlanParam !== "free" && canManageTeamBilling(teamContext.role)) {
-      const checkoutUrl = await createCheckoutUrl({
-        teamId: teamContext.teamId,
-        userId: user.id,
-        userEmail: user.email ?? "",
-        planKey: validPlanParam as import("@/lib/stripe/plans").PlanKey,
-        interval: selectedInterval === "year" ? "year" : "month",
-        source: "onboarding",
-      });
-
-      if (checkoutUrl) {
-        redirect(checkoutUrl);
       }
     }
 

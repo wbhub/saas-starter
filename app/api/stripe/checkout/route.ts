@@ -8,7 +8,6 @@ import { getRouteTranslator } from "@/lib/i18n/locale";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { getPlanByKey, getPlanPriceId } from "@/lib/stripe/config";
 import { getStripeServerClient } from "@/lib/stripe/server";
 import { getAppUrl } from "@/lib/env";
@@ -32,35 +31,6 @@ type StripeCustomerRow = {
   stripe_customer_id: string | null;
 };
 
-async function isOwnedStripeCustomer(teamId: string, customerId: string) {
-  const stripe = getStripeServerClient();
-  if (!stripe) {
-    throw new Error("Stripe is not configured.");
-  }
-  const customer = await stripe.customers.retrieve(customerId);
-  if ("deleted" in customer) {
-    return false;
-  }
-
-  return customer.metadata?.supabase_team_id === teamId;
-}
-
-async function hasLiveStripeSubscription(customerId: string) {
-  const stripe = getStripeServerClient();
-  if (!stripe) {
-    throw new Error("Stripe is not configured.");
-  }
-  const subscriptions = await stripe.subscriptions.list({
-    customer: customerId,
-    status: "all",
-    limit: 100,
-  });
-
-  return subscriptions.data.some((subscription) =>
-    LIVE_SUBSCRIPTION_STATUSES.includes(subscription.status),
-  );
-}
-
 function getCheckoutIdempotencyKey(request: Request, teamId: string, planKey: string) {
   const rawKey = request.headers.get("x-idempotency-key")?.trim();
   if (!rawKey) {
@@ -77,39 +47,6 @@ function getScopedIdempotencyKey(baseKey: string | undefined, scope: string) {
   }
 
   return `${baseKey}:${scope}`;
-}
-
-async function claimTeamStripeCustomer(teamId: string, createdCustomerId: string) {
-  const admin = createAdminClient();
-  const { error: claimError } = await admin.from("stripe_customers").upsert(
-    {
-      team_id: teamId,
-      stripe_customer_id: createdCustomerId,
-    },
-    {
-      onConflict: "team_id",
-    },
-  );
-
-  if (claimError) {
-    throw new Error(`Failed to claim Stripe customer mapping: ${claimError.message}`);
-  }
-
-  const { data: mapping, error: mappingError } = await admin
-    .from("stripe_customers")
-    .select("stripe_customer_id")
-    .eq("team_id", teamId)
-    .maybeSingle<{ stripe_customer_id: string }>();
-
-  if (mappingError) {
-    throw new Error(`Failed to load Stripe customer mapping: ${mappingError.message}`);
-  }
-
-  if (!mapping?.stripe_customer_id) {
-    throw new Error("Stripe customer mapping was not created.");
-  }
-
-  return mapping.stripe_customer_id;
 }
 
 export async function POST(req: Request) {
@@ -202,6 +139,7 @@ export async function POST(req: Request) {
     });
   }
 
+  // Check our DB for an existing live subscription (fast, local query).
   const { data: existingSubscription, error: existingSubscriptionError } = await supabase
     .from("subscriptions")
     .select("stripe_subscription_id")
@@ -219,6 +157,9 @@ export async function POST(req: Request) {
     return err(t("errors.activeSubscriptionExists"), 409);
   }
 
+  // Look up existing Stripe customer from our DB (no Stripe API call).
+  // For returning users we pass customer ID; for new users we pass email
+  // and let Stripe auto-create the Customer in subscription mode.
   const { data: customerRow, error: customerRowError } = await supabase
     .from("stripe_customers")
     .select("stripe_customer_id")
@@ -229,46 +170,10 @@ export async function POST(req: Request) {
     return err(t("errors.couldNotLoadStripeCustomer"), 500);
   }
 
-  let customerId = customerRow?.stripe_customer_id;
+  const customerId = customerRow?.stripe_customer_id;
 
   try {
     const appUrl = getAppUrl();
-
-    if (customerId) {
-      const isOwned = await isOwnedStripeCustomer(teamContext.teamId, customerId);
-      if (!isOwned) {
-        customerId = undefined;
-      }
-    }
-
-    if (!customerId) {
-      const customerIdempotencyKey = getScopedIdempotencyKey(idempotencyKey, "customer");
-      const customer = await stripe.customers.create(
-        {
-          email: user.email,
-          metadata: {
-            supabase_team_id: teamContext.teamId,
-            supabase_user_id: user.id,
-          },
-        },
-        customerIdempotencyKey ? { idempotencyKey: customerIdempotencyKey } : undefined,
-      );
-      customerId = await claimTeamStripeCustomer(teamContext.teamId, customer.id);
-      if (customerId !== customer.id) {
-        await stripe.customers.del(customer.id).catch((cleanupError) => {
-          logger.warn("Failed to cleanup duplicate Stripe customer after race", {
-            teamId: teamContext.teamId,
-            duplicateCustomerId: customer.id,
-            mappedCustomerId: customerId,
-            error: cleanupError,
-          });
-        });
-      }
-    }
-
-    if (await hasLiveStripeSubscription(customerId)) {
-      return err(t("errors.activeSubscriptionExists"), 409);
-    }
 
     const isOnboardingSource = checkoutSource === "onboarding";
     const successPath = isOnboardingSource
@@ -280,7 +185,7 @@ export async function POST(req: Request) {
     const session = await stripe.checkout.sessions.create(
       {
         mode: "subscription",
-        customer: customerId,
+        ...(customerId ? { customer: customerId } : { customer_email: user.email }),
         client_reference_id: teamContext.teamId,
         line_items: [{ price: resolvedPriceId, quantity: 1 }],
         success_url: `${appUrl}${successPath}`,

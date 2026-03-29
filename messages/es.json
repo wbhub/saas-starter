@@ -360,6 +360,9 @@
       "title": "Gestiona tu suscripción",
       "description": "Actualiza planes, abre el portal de Stripe y revisa el estado de tu suscripción."
     },
+    "checkoutSuccess": {
+      "message": "¡Pago exitoso! Tu suscripción estará activa en breve."
+    },
     "currentSubscription": {
       "title": "Suscripción actual",
       "currentPlan": "Plan actual",

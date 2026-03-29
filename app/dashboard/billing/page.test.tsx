@@ -1,8 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 
-const syncCheckoutSuccessForTeam = vi.fn();
-
 function mockBillingPageDependencies(options: {
   billingContext: {
     billingEnabled?: boolean;
@@ -63,6 +61,8 @@ function mockBillingPageDependencies(options: {
             "paidSolo.title": "Invite teammates when you are ready",
             "paidSolo.description": "Collaboration is optional.",
             "paidSolo.action": "Invite teammates",
+            "checkoutSuccess.message":
+              "Payment successful! Your subscription will be active shortly.",
           };
           return dictionary[key] ?? key;
         };
@@ -113,16 +113,12 @@ function mockBillingPageDependencies(options: {
       />
     ),
   }));
-  vi.doMock("@/lib/stripe/checkout-success", () => ({
-    syncCheckoutSuccessForTeam,
-  }));
 }
 
 describe("Dashboard billing page free plan behavior", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
-    syncCheckoutSuccessForTeam.mockResolvedValue({ synced: true, subscriptionId: "sub_123" });
   });
 
   it("renders plan comparison cards for free mode", async () => {
@@ -200,6 +196,28 @@ describe("Dashboard billing page free plan behavior", () => {
     expect(html).toContain('data-has-subscription="true"');
   });
 
+  it("shows checkout success banner when redirected from Stripe", async () => {
+    mockBillingPageDependencies({
+      billingContext: {
+        billingEnabled: true,
+        subscription: null,
+        effectivePlanKey: "free",
+        memberCount: 1,
+        isPaidPlan: false,
+        canInviteMembers: false,
+      },
+    });
+
+    const BillingPage = (await import("./page")).default;
+    const html = renderToStaticMarkup(
+      await BillingPage({
+        searchParams: Promise.resolve({ checkout: "success" }),
+      }),
+    );
+
+    expect(html).toContain("Payment successful!");
+  });
+
   it("renders explicit billing-disabled state", async () => {
     mockBillingPageDependencies({
       billingContext: {
@@ -217,36 +235,5 @@ describe("Dashboard billing page free plan behavior", () => {
 
     expect(html).toContain("billingDisabled.title");
     expect(html).toContain('data-billing-enabled="false"');
-  });
-
-  it("syncs checkout success before rendering when Stripe redirects back to billing", async () => {
-    mockBillingPageDependencies({
-      billingContext: {
-        billingEnabled: true,
-        subscription: {
-          status: "active",
-          stripe_price_id: "price_growth",
-          seat_quantity: 1,
-          current_period_end: null,
-          cancel_at_period_end: false,
-        },
-        effectivePlanKey: "growth",
-        memberCount: 1,
-        isPaidPlan: true,
-        canInviteMembers: true,
-      },
-    });
-
-    const BillingPage = (await import("./page")).default;
-    await BillingPage({
-      searchParams: Promise.resolve({
-        checkout: "success",
-        session_id: "cs_test_123",
-      }),
-    });
-
-    expect(syncCheckoutSuccessForTeam).toHaveBeenCalledWith("team_123", {
-      sessionId: "cs_test_123",
-    });
   });
 });

@@ -4,10 +4,8 @@ import { BillingActions } from "@/components/billing-actions";
 import { formatUtcDate } from "@/lib/date";
 import { formatStaticUsdMonthlyLabel } from "@/lib/stripe/plan-price-display";
 import { canManageTeamBilling } from "@/lib/team-context";
-import { getDashboardBaseData, getDashboardShellData } from "@/lib/dashboard/server";
+import { getDashboardShellData } from "@/lib/dashboard/server";
 import { PLAN_CATALOG, type PlanKey } from "@/lib/stripe/plans";
-import { syncCheckoutSuccessForTeam } from "@/lib/stripe/checkout-success";
-import { logger } from "@/lib/logger";
 
 type DashboardBillingPageProps = {
   searchParams?:
@@ -30,25 +28,9 @@ export default async function DashboardBillingPage({
     formatStaticUsdMonthlyLabel(amountMonthly, locale, priceSuffixMonth);
   const resolvedSearchParams = (await searchParams) ?? {};
   const checkoutStatus = getFirstSearchParamValue(resolvedSearchParams.checkout);
-  const checkoutSessionId = getFirstSearchParamValue(resolvedSearchParams.session_id);
-  const baseData = await getDashboardBaseData();
 
-  if (checkoutStatus === "success" && baseData.teamContext) {
-    try {
-      await syncCheckoutSuccessForTeam(baseData.teamContext.teamId, {
-        sessionId: checkoutSessionId ?? null,
-      });
-    } catch (error) {
-      logger.warn(
-        "Billing page checkout-success sync failed; continuing with current billing view.",
-        {
-          teamId: baseData.teamContext.teamId,
-          checkoutSessionId: checkoutSessionId ?? null,
-          error,
-        },
-      );
-    }
-  }
+  // Subscription sync after checkout is handled by the Stripe webhook.
+  // The page renders current billing state; the webhook will update it shortly.
 
   const { teamContext, billingContext, teamUiMode } = await getDashboardShellData();
 
@@ -70,6 +52,12 @@ export default async function DashboardBillingPage({
 
   return (
     <>
+      {checkoutStatus === "success" ? (
+        <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-200">
+          {t("checkoutSuccess.message")}
+        </div>
+      ) : null}
+
       <div>
         <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
           {t("header.eyebrow")}
