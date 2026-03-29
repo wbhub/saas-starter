@@ -33,6 +33,7 @@
     "dashboard": "Dashboard",
     "login": "Login",
     "openApp": "Open App",
+    "choosePlan": "Choose a Plan",
     "startFree": "Start Free",
     "getStarted": "Get Started"
   },
@@ -94,6 +95,7 @@
       "title": "The SaaS infrastructure you'd spend months building is already done.",
       "description": "Auth, multi-tenant teams, seat-based Stripe billing, AI with DB-enforced budgets, audit logging, and a hardened security pipeline — wired end-to-end on Next.js 16, Supabase, and React 19 so you can focus entirely on what makes your product unique.",
       "goDashboard": "Go to dashboard",
+      "choosePlan": "Choose a plan",
       "startFreeNow": "Start free now",
       "getStartedNow": "Get started now",
       "viewPricing": "View pricing",
@@ -190,6 +192,7 @@
       "title": "Stop rebuilding infrastructure. Start shipping product.",
       "description": "Every SaaS needs auth, teams, billing, and security. Start with the version that took thousands of lines of production-minded code to get right, and put your time into what customers actually pay for.",
       "openDashboard": "Open dashboard",
+      "choosePlan": "Choose a plan",
       "createAccount": "Create your account",
       "comparePlans": "Compare plans",
       "faqTitle": "FAQ",

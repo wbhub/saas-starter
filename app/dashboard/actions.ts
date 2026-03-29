@@ -12,6 +12,7 @@ import { syncTeamSeatQuantity } from "@/lib/stripe/seats";
 import { enqueueSeatSyncRetry } from "@/lib/stripe/seat-sync-retries";
 import { logger } from "@/lib/logger";
 import { invalidateCachedTeamContextForUser } from "@/lib/team-context-cache";
+import { ONBOARDING_COMPLETE_COOKIE } from "@/components/auth-aware-link";
 import {
   CSRF_CLIENT_COOKIE_NAME,
   CSRF_COOKIE_NAME,
@@ -186,6 +187,11 @@ async function verifyDashboardActionCsrf(formData?: FormData) {
   });
 }
 
+async function clearOnboardingCookie() {
+  const cookieStore = await cookies();
+  cookieStore.delete(ONBOARDING_COMPLETE_COOKIE);
+}
+
 export async function logout(formData: FormData) {
   const csrfError = await verifyDashboardActionCsrf(formData);
   if (csrfError) {
@@ -195,6 +201,7 @@ export async function logout(formData: FormData) {
   const supabase = await createClient();
   await supabase.auth.signOut();
   await rotateCsrfTokenForServerAction();
+  await clearOnboardingCookie();
   redirect("/login");
 }
 
@@ -207,6 +214,7 @@ export async function logoutAllSessions(formData: FormData) {
   const supabase = await createClient();
   await supabase.auth.signOut({ scope: "global" });
   await rotateCsrfTokenForServerAction();
+  await clearOnboardingCookie();
   redirect("/login");
 }
 

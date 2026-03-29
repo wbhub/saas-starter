@@ -33,6 +33,7 @@
     "dashboard": "ダッシュボード",
     "login": "ログイン",
     "openApp": "アプリを開く",
+    "choosePlan": "プランを選択",
     "startFree": "無料で始める",
     "getStarted": "始める"
   },
@@ -94,6 +95,7 @@
       "title": "何か月もかけて作る SaaS 基盤は、すでに完成しています。",
       "description": "認証、マルチテナントチーム、席数ベースの Stripe 課金、DB で強制される予算付き AI、監査ログ、そして強固なセキュリティパイプラインまで。すべてが Next.js 16、Supabase、React 19 上でエンドツーエンドに組み込まれているので、あなたは製品の差別化に集中できます。",
       "goDashboard": "ダッシュボードへ",
+      "choosePlan": "プランを選択",
       "startFreeNow": "今すぐ無料で始める",
       "getStartedNow": "今すぐ始める",
       "viewPricing": "料金を見る",
@@ -190,6 +192,7 @@
       "title": "基盤の作り直しはやめて、プロダクトを出荷しましょう。",
       "description": "すべての SaaS に必要なのは認証、チーム、課金、セキュリティです。何千行もの本番志向コードで作り込まれた版から始めて、顧客が本当にお金を払う価値に時間を使いましょう。",
       "openDashboard": "ダッシュボードを開く",
+      "choosePlan": "プランを選択",
       "createAccount": "アカウントを作成",
       "comparePlans": "プランを比較",
       "faqTitle": "FAQ",

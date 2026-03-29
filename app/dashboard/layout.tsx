@@ -1,10 +1,12 @@
 import { Suspense } from "react";
 import type { ReactNode } from "react";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { IntercomProvider } from "@/components/intercom-provider";
 import { NoTeamCard } from "@/components/no-team-card";
 import { TeamContextErrorCard } from "@/components/team-context-error-card";
+import { ONBOARDING_COMPLETE_COOKIE } from "@/components/auth-aware-link";
 import { getDashboardShellData } from "@/lib/dashboard/server";
 import { isBillingEnabled } from "@/lib/billing/capabilities";
 import { env } from "@/lib/env";
@@ -51,6 +53,18 @@ export default async function DashboardLayout({ children }: Readonly<{ children:
         redirect("/onboarding");
       }
     }
+  }
+
+  // User passed the onboarding gate — mark onboarding complete for client-side UI hints
+  const cookieStore = await cookies();
+  if (!cookieStore.get(ONBOARDING_COMPLETE_COOKIE)) {
+    cookieStore.set(ONBOARDING_COMPLETE_COOKIE, "1", {
+      path: "/",
+      httpOnly: false,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 60 * 60 * 24 * 365,
+    });
   }
 
   return (

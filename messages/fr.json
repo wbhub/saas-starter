@@ -33,6 +33,7 @@
     "dashboard": "Tableau de bord",
     "login": "Se connecter",
     "openApp": "Ouvrir l'application",
+    "choosePlan": "Choisir un forfait",
     "startFree": "Commencer gratuitement",
     "getStarted": "Commencer"
   },
@@ -94,6 +95,7 @@
       "title": "L'infrastructure SaaS que vous mettriez des mois à construire est déjà prête.",
       "description": "Auth, équipes multi-tenant, facturation Stripe par siège, AI avec budgets de tokens appliqués en base, journalisation d'audit et pipeline de sécurité renforcé — câblé de bout en bout sur Next.js 16, Supabase et React 19 pour que vous vous concentriez entièrement sur ce qui rend votre produit unique.",
       "goDashboard": "Aller au tableau de bord",
+      "choosePlan": "Choisir un forfait",
       "startFreeNow": "Commencer gratuitement",
       "getStartedNow": "Commencer maintenant",
       "viewPricing": "Voir les tarifs",
@@ -190,6 +192,7 @@
       "title": "Arrêtez de reconstruire l'infrastructure. Commencez à livrer du produit.",
       "description": "Chaque SaaS a besoin d'auth, d'équipes, de facturation et de sécurité. Partez de la version qui a nécessité des milliers de lignes de code pensé pour la production, et consacrez votre temps à ce pour quoi vos clients paient vraiment.",
       "openDashboard": "Ouvrir le tableau de bord",
+      "choosePlan": "Choisir un forfait",
       "createAccount": "Créer votre compte",
       "comparePlans": "Comparer les forfaits",
       "faqTitle": "FAQ",
