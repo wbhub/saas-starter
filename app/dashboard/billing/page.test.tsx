@@ -185,13 +185,7 @@ function mockBillingPageDependencies(options: {
     ),
   }));
   vi.doMock("@/components/ai-usage-card", () => ({
-    AiUsageCard: ({
-      teamId,
-      copy,
-    }: {
-      teamId: string;
-      copy: { title: string };
-    }) => (
+    AiUsageCard: ({ teamId, copy }: { teamId: string; copy: { title: string } }) => (
       <div data-testid="ai-usage-card" data-title={copy.title}>
         {teamId}
       </div>
