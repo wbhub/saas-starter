@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 
 function mockBillingPageDependencies(options: {
+  aiUiGateVisible?: boolean;
   billingContext: {
     billingEnabled?: boolean;
     subscription: {
@@ -68,6 +69,20 @@ function mockBillingPageDependencies(options: {
           return dictionary[key] ?? key;
         };
       }
+      if (namespace === "DashboardUsagePage") {
+        return (key: string) => {
+          const dictionary: Record<string, string> = {
+            "header.title": "Team AI Usage",
+            "table.title": "AI usage and monthly totals",
+            "table.noUsage": "No usage data yet",
+            "table.noUsageDescription": "Track recent token usage for your team.",
+            "table.month": "Month",
+            "table.usedTokens": "Used tokens",
+            "table.reservedTokens": "Reserved tokens",
+          };
+          return dictionary[key] ?? key;
+        };
+      }
       return (key: string) => key;
     }),
     getLocale: vi.fn(async () => "en"),
@@ -84,6 +99,10 @@ function mockBillingPageDependencies(options: {
     getDashboardShellData: vi.fn().mockResolvedValue({
       teamContext: { teamId: "team_123", teamName: "Acme Team", role: "owner" },
       billingContext: billingContextWithInterval,
+      aiUiGate: {
+        isVisibleInUi: options.aiUiGateVisible ?? true,
+        reason: (options.aiUiGateVisible ?? true) ? "enabled" : "ai_not_configured",
+      },
       teamUiMode: options.billingContext.isPaidPlan
         ? options.billingContext.memberCount > 1
           ? "paid_team"
@@ -165,6 +184,14 @@ function mockBillingPageDependencies(options: {
       />
     ),
   }));
+  vi.doMock("@/components/ai-usage-card", () => ({
+    AiUsageCard: ({ teamId, copy }: { teamId: string; copy: { title: string } }) => (
+      <div data-testid="ai-usage-card" data-title={copy.title}>
+        {teamId}
+      </div>
+    ),
+    AiUsageCardSkeleton: () => <div data-testid="ai-usage-card-skeleton" />,
+  }));
 }
 
 describe("Dashboard billing page free plan behavior", () => {
@@ -193,6 +220,8 @@ describe("Dashboard billing page free plan behavior", () => {
     expect(html).toContain("Starter");
     expect(html).toContain('data-current-plan=""');
     expect(html).toContain('data-has-subscription="false"');
+    expect(html).toContain('data-testid="ai-usage-card"');
+    expect(html).toContain('data-title="Team AI Usage"');
   });
 
   it("renders invite nudge for paid solo teams", async () => {
@@ -289,5 +318,24 @@ describe("Dashboard billing page free plan behavior", () => {
 
     expect(html).toContain("billingDisabled.title");
     expect(html).toContain('data-billing-enabled="false"');
+  });
+
+  it("hides the usage card when AI is not enabled in the UI", async () => {
+    mockBillingPageDependencies({
+      aiUiGateVisible: false,
+      billingContext: {
+        billingEnabled: true,
+        subscription: null,
+        effectivePlanKey: "free",
+        memberCount: 1,
+        isPaidPlan: false,
+        canInviteMembers: false,
+      },
+    });
+
+    const BillingPage = (await import("./page")).default;
+    const html = renderToStaticMarkup(await BillingPage());
+
+    expect(html).not.toContain('data-testid="ai-usage-card"');
   });
 });

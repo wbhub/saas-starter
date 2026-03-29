@@ -12,6 +12,7 @@ import {
   mapUpstreamError,
   aiErrorResponse,
   insertAiUsageRow,
+  recordAiUsageMonthlyTotals,
 } from "@/lib/ai/request-context";
 
 const AI_OBJECT_MAX_TOKENS = 2_048;
@@ -117,8 +118,14 @@ export async function POST(request: Request) {
           promptTokens: resolvedUsage.promptTokens,
           completionTokens: resolvedUsage.completionTokens,
         });
+        if (!budgetClaim) {
+          await recordAiUsageMonthlyTotals({
+            teamId: teamContext.teamId,
+            actualTokens: resolvedUsage.actualTokens,
+          });
+        }
       } catch (error) {
-        logger.error("Failed to persist AI usage row (object)", error, {
+        logger.error("Failed to persist AI usage bookkeeping (object)", error, {
           teamId: teamContext.teamId,
           userId: user.id,
           model,

@@ -260,6 +260,112 @@ describe("getDashboardAiUiGate", () => {
   });
 });
 
+describe("getUsageMonthlyTotals", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+  });
+
+  function createMonthlyTotalsQuery({
+    data,
+    error = null,
+  }: {
+    data: Array<{ month_start: string; used_tokens: number; reserved_tokens: number }> | null;
+    error?: { message: string } | null;
+  }) {
+    return {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+      returns: vi.fn().mockResolvedValue({ data, error }),
+    };
+  }
+
+  function createUsageRowsQuery({
+    data,
+    error = null,
+  }: {
+    data: Array<{ created_at: string; prompt_tokens: number; completion_tokens: number }> | null;
+    error?: { message: string } | null;
+  }) {
+    return {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      gte: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      returns: vi.fn().mockResolvedValue({ data, error }),
+    };
+  }
+
+  it("falls back to raw ai usage rows when monthly totals are empty", async () => {
+    const monthlyTotalsQuery = createMonthlyTotalsQuery({ data: [] });
+    const usageRowsQuery = createUsageRowsQuery({
+      data: [
+        {
+          created_at: "2026-03-29T21:42:31.964318+00:00",
+          prompt_tokens: 73,
+          completion_tokens: 336,
+        },
+        {
+          created_at: "2026-03-29T21:42:07.642582+00:00",
+          prompt_tokens: 72,
+          completion_tokens: 12,
+        },
+        {
+          created_at: "2026-02-10T10:00:00.000000+00:00",
+          prompt_tokens: 10,
+          completion_tokens: 5,
+        },
+      ],
+    });
+    const supabase = {
+      from: vi.fn((table: string) => {
+        if (table === "ai_usage_monthly_totals") {
+          return monthlyTotalsQuery;
+        }
+        if (table === "ai_usage") {
+          return usageRowsQuery;
+        }
+        throw new Error(`Unexpected table ${table}`);
+      }),
+    };
+
+    const { getUsageMonthlyTotals } = await import("./server");
+    const result = await getUsageMonthlyTotals(supabase as never, "team_123");
+
+    expect(result).toEqual([
+      { month_start: "2026-03-01", used_tokens: 493, reserved_tokens: 0 },
+      { month_start: "2026-02-01", used_tokens: 15, reserved_tokens: 0 },
+    ]);
+  });
+
+  it("returns monthly totals directly when available", async () => {
+    const monthlyTotalsQuery = createMonthlyTotalsQuery({
+      data: [
+        { month_start: "2026-03-01", used_tokens: 400, reserved_tokens: 120 },
+        { month_start: "2026-02-01", used_tokens: 90, reserved_tokens: 15 },
+      ],
+    });
+    const supabase = {
+      from: vi.fn((table: string) => {
+        if (table === "ai_usage_monthly_totals") {
+          return monthlyTotalsQuery;
+        }
+        throw new Error(`Unexpected table ${table}`);
+      }),
+    };
+
+    const { getUsageMonthlyTotals } = await import("./server");
+    const result = await getUsageMonthlyTotals(supabase as never, "team_123");
+
+    expect(result).toEqual([
+      { month_start: "2026-03-01", used_tokens: 400, reserved_tokens: 120 },
+      { month_start: "2026-02-01", used_tokens: 90, reserved_tokens: 15 },
+    ]);
+  });
+});
+
 describe("getDashboardCanSwitchTeams", () => {
   beforeEach(() => {
     vi.resetModules();

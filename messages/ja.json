@@ -210,7 +210,7 @@
     "inviteTeammates": "チームメイトを招待",
     "switch": "切り替え",
     "overview": "概要",
-    "ai": "AI チャット",
+    "ai": "AI",
     "billing": "課金",
     "usage": "使用状況",
     "settings": "設定",
@@ -256,7 +256,7 @@
   "DashboardAiPage": {
     "header": {
       "eyebrow": "AI",
-      "title": "チーム AI チャット",
+      "title": "AI Chat & Agents",
       "description": "設定済みのモデルを、チームの課金と使用上限の範囲で利用できます。"
     },
     "unavailable": {
@@ -421,7 +421,7 @@
   "DashboardUsagePage": {
     "header": {
       "eyebrow": "使用状況",
-      "title": "AI 使用量と月次合計",
+      "title": "Team AI Usage",
       "description": "チームの最近のトークン使用量を追跡します。"
     },
     "table": {

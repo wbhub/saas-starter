@@ -210,7 +210,7 @@
     "inviteTeammates": "Inviter des coéquipiers",
     "switch": "Changer",
     "overview": "Aperçu",
-    "ai": "Chat IA",
+    "ai": "AI",
     "billing": "Facturation",
     "usage": "Usage",
     "settings": "Paramètres",
@@ -256,7 +256,7 @@
   "DashboardAiPage": {
     "header": {
       "eyebrow": "AI",
-      "title": "Team AI chat",
+      "title": "AI Chat & Agents",
       "description": "Chat with your configured model using your team billing and usage limits."
     },
     "unavailable": {
@@ -421,7 +421,7 @@
   "DashboardUsagePage": {
     "header": {
       "eyebrow": "Usage",
-      "title": "Utilisation de l'IA et totaux mensuels",
+      "title": "Team AI Usage",
       "description": "Suivez l'utilisation récente des jetons pour votre équipe."
     },
     "table": {

@@ -210,7 +210,7 @@
     "inviteTeammates": "Invite teammates",
     "switch": "Switch",
     "overview": "Overview",
-    "ai": "AI Chat",
+    "ai": "AI",
     "billing": "Billing",
     "usage": "Usage",
     "settings": "Settings",
@@ -256,7 +256,7 @@
   "DashboardAiPage": {
     "header": {
       "eyebrow": "AI",
-      "title": "Team AI chat",
+      "title": "AI Chat & Agents",
       "description": "Chat with your configured model using your team billing and usage limits."
     },
     "unavailable": {
@@ -451,7 +451,7 @@
   "DashboardUsagePage": {
     "header": {
       "eyebrow": "Usage",
-      "title": "AI usage and monthly totals",
+      "title": "Team AI Usage",
       "description": "Track recent token usage for your team."
     },
     "table": {

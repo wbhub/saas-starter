@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import { getLocale, getTranslations } from "next-intl/server";
 import Link from "next/link";
+import { AiUsageCard, AiUsageCardSkeleton } from "@/components/ai-usage-card";
 import { BillingActions } from "@/components/billing-actions";
 import { formatUtcDate } from "@/lib/date";
 import { formatStaticUsdMonthlyLabel } from "@/lib/stripe/plan-price-display";
@@ -26,6 +28,7 @@ export default async function DashboardBillingPage({
   searchParams,
 }: DashboardBillingPageProps = {}) {
   const t = await getTranslations("DashboardBillingPage");
+  const tUsage = await getTranslations("DashboardUsagePage");
   const tPlanCopy = await getTranslations("Landing.pricing");
   const locale = await getLocale();
   const priceSuffixMonth = tPlanCopy("priceSuffix.month");
@@ -60,7 +63,7 @@ export default async function DashboardBillingPage({
     }
   }
 
-  const { teamContext, billingContext, teamUiMode } = await getDashboardShellData();
+  const { teamContext, billingContext, teamUiMode, aiUiGate } = await getDashboardShellData();
 
   if (!teamContext || !billingContext || !teamUiMode) {
     return null;
@@ -235,6 +238,23 @@ export default async function DashboardBillingPage({
           canManageBilling={canManageBilling}
         />
       </section>
+
+      {aiUiGate.isVisibleInUi ? (
+        <Suspense fallback={<AiUsageCardSkeleton />}>
+          <AiUsageCard
+            teamId={teamContext.teamId}
+            locale={locale}
+            copy={{
+              title: tUsage("header.title"),
+              noUsage: tUsage("table.noUsage"),
+              noUsageDescription: tUsage("table.noUsageDescription"),
+              month: tUsage("table.month"),
+              usedTokens: tUsage("table.usedTokens"),
+              reservedTokens: tUsage("table.reservedTokens"),
+            }}
+          />
+        </Suspense>
+      ) : null}
 
       {teamUiMode === "paid_solo" && perSeatAmount !== null ? (
         <section className="rounded-xl bg-card ring-1 ring-border p-6">
