@@ -206,6 +206,7 @@ export function AiChatCard({
   toolsEnabled: boolean;
 }) {
   const t = useTranslations("AiChatCard");
+  const [chatSessionId, setChatSessionId] = useState(() => crypto.randomUUID());
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [initialMessages, setInitialMessages] = useState<UIMessage[]>([]);
   const [threadRefreshSignal, setThreadRefreshSignal] = useState(0);
@@ -244,7 +245,7 @@ export function AiChatCard({
   }, [toolsEnabled, activeThreadId]);
 
   const { messages, sendMessage, status, stop, error, clearError, setMessages } = useChat({
-    id: activeThreadId ?? undefined,
+    id: chatSessionId,
     transport,
   });
 
@@ -337,6 +338,7 @@ export function AiChatCard({
             metadata: msg.metadata ?? {},
           }),
         );
+        setChatSessionId(threadId);
         setActiveThreadId(threadId);
         setInitialMessages(loadedMessages);
       }
@@ -346,9 +348,9 @@ export function AiChatCard({
   }
 
   function handleNewThread() {
+    setChatSessionId(crypto.randomUUID());
     setActiveThreadId(null);
     setInitialMessages([]);
-    setMessages([]);
   }
 
   return (
