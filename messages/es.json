@@ -1055,8 +1055,7 @@
       "missingCheckoutUrl": "Falta la URL de checkout.",
       "completeFailed": "Algo salió mal. Por favor, inténtalo de nuevo.",
       "requestFailed": "La solicitud falló."
-    },
-    "signOut": "Cerrar sesión"
+    }
   },
   "ApiOnboardingComplete": {
     "errors": {

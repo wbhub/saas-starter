@@ -1055,8 +1055,7 @@
       "missingCheckoutUrl": "チェックアウトURLがありません。",
       "completeFailed": "問題が発生しました。もう一度お試しください。",
       "requestFailed": "リクエストに失敗しました。"
-    },
-    "signOut": "ログアウト"
+    }
   },
   "ApiOnboardingComplete": {
     "errors": {

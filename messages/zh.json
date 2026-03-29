@@ -1055,8 +1055,7 @@
       "missingCheckoutUrl": "缺少结账 URL。",
       "completeFailed": "出了点问题。请重试。",
       "requestFailed": "请求失败。"
-    },
-    "signOut": "退出登录"
+    }
   },
   "ApiOnboardingComplete": {
     "errors": {

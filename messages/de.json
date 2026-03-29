@@ -1055,8 +1055,7 @@
       "missingCheckoutUrl": "Checkout-URL fehlt.",
       "completeFailed": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
       "requestFailed": "Anfrage fehlgeschlagen."
-    },
-    "signOut": "Abmelden"
+    }
   },
   "ApiOnboardingComplete": {
     "errors": {

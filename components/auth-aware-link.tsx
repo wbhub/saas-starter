@@ -97,7 +97,6 @@ export function AuthAwareLink({
   children,
 }: AuthAwareLinkProps) {
   const isLoggedIn = useIsLoggedIn();
-
   const href = isLoggedIn ? loggedInHref : loggedOutHref;
   const label = isLoggedIn ? loggedInLabel : loggedOutLabel;
 
