@@ -41,6 +41,7 @@ export type UserDropdownProps = {
   teamName: string | null;
   role: "owner" | "admin" | "member";
   teamUiMode: "free" | "paid_solo" | "paid_team";
+  canSwitchTeams: boolean | null;
   activeTeamId: string;
   csrfToken: string;
 };
@@ -59,6 +60,7 @@ export function UserDropdown({
   teamName,
   role,
   teamUiMode,
+  canSwitchTeams,
   activeTeamId,
   csrfToken,
 }: UserDropdownProps) {
@@ -72,22 +74,24 @@ export function UserDropdown({
   const [showLocales, setShowLocales] = useState(false);
   const [teamOptions, setTeamOptions] = useState<DashboardTeamOption[]>([]);
   const [teamOptionsState, setTeamOptionsState] = useState<"idle" | "loading" | "loaded" | "error">(
-    teamUiMode === "free" ? "loaded" : "idle",
+    canSwitchTeams === false ? "loaded" : "idle",
   );
   const logoutFormRef = useRef<HTMLFormElement | null>(null);
   const teamSwitchFormRef = useRef<HTMLFormElement | null>(null);
+  const teamSwitchingDisabled = canSwitchTeams === false;
+  const teamSwitchingAvailableOrUnknown = !teamSwitchingDisabled;
 
   function handleOpenChange(nextOpen: boolean) {
     setOpen(nextOpen);
     if (!nextOpen) {
       setShowLocales(false);
     }
-    if (nextOpen && teamUiMode !== "free") {
+    if (nextOpen && teamSwitchingAvailableOrUnknown) {
       setTeamOptions([]);
       setTeamOptionsState("loading");
     }
     if (!nextOpen) {
-      if (teamUiMode === "free" || teamOptionsState !== "error") {
+      if (teamSwitchingDisabled || teamOptionsState !== "error") {
         return;
       }
       setTeamOptions([]);
@@ -96,7 +100,7 @@ export function UserDropdown({
   }
 
   useEffect(() => {
-    if (!open || teamUiMode === "free" || teamOptionsState !== "loading") {
+    if (!open || teamSwitchingDisabled || teamOptionsState !== "loading") {
       return;
     }
 
@@ -128,7 +132,7 @@ export function UserDropdown({
     return () => {
       cancelled = true;
     };
-  }, [open, teamOptionsState, teamUiMode]);
+  }, [open, teamOptionsState, teamSwitchingDisabled]);
 
   const initials = displayName
     .split(" ")
@@ -149,8 +153,8 @@ export function UserDropdown({
     router.refresh();
   }
 
-  const showTeamSwitcher = teamUiMode !== "free" && teamOptions.length > 1;
-  const showTeamSwitcherLoading = teamUiMode !== "free" && teamOptionsState === "loading";
+  const showTeamSwitcher = teamSwitchingAvailableOrUnknown && teamOptions.length > 1;
+  const showTeamSwitcherLoading = teamSwitchingAvailableOrUnknown && teamOptionsState === "loading";
 
   return (
     <DropdownMenu open={open} onOpenChange={handleOpenChange}>
@@ -173,7 +177,7 @@ export function UserDropdown({
             <div>
               <p className="truncate text-sm font-medium text-foreground">{displayName}</p>
               <p className="truncate text-xs text-muted-foreground">{userEmail}</p>
-              {teamUiMode !== "free" && (
+              {(teamUiMode !== "free" || canSwitchTeams === true) && (
                 <div className="mt-1.5 flex items-center gap-2">
                   <span className="truncate text-xs text-muted-foreground">
                     {teamName ?? t("Common.myTeam")}

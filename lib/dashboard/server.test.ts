@@ -259,3 +259,46 @@ describe("getDashboardAiUiGate", () => {
     expect(from).not.toHaveBeenCalled();
   });
 });
+
+describe("getDashboardCanSwitchTeams", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+  });
+
+  it("returns null when counting team memberships fails", async () => {
+    const supabase = {
+      from: vi.fn(() => ({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockResolvedValue({
+            count: null,
+            error: { message: "boom" },
+          }),
+        }),
+      })),
+    };
+
+    const { getDashboardCanSwitchTeams } = await import("./server");
+    const result = await getDashboardCanSwitchTeams(supabase as never, "user_123");
+
+    expect(result).toBeNull();
+  });
+
+  it("returns true when the user belongs to multiple teams", async () => {
+    const supabase = {
+      from: vi.fn(() => ({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockResolvedValue({
+            count: 2,
+            error: null,
+          }),
+        }),
+      })),
+    };
+
+    const { getDashboardCanSwitchTeams } = await import("./server");
+    const result = await getDashboardCanSwitchTeams(supabase as never, "user_123");
+
+    expect(result).toBe(true);
+  });
+});

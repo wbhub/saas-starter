@@ -69,6 +69,7 @@ function renderDropdown(overrides?: Partial<ComponentProps<typeof UserDropdown>>
       teamName="Alpha"
       role="owner"
       teamUiMode="paid_team"
+      canSwitchTeams
       activeTeamId="team_1"
       csrfToken="csrf_token"
       {...overrides}
@@ -97,6 +98,35 @@ describe("UserDropdown", () => {
     await new Promise((resolve) => window.setTimeout(resolve, 20));
 
     expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not load team options when team switching is unavailable", async () => {
+    renderDropdown({ canSwitchTeams: false });
+
+    fireEvent.click(screen.getByRole("button", { name: "UserDropdown.label" }));
+
+    await new Promise((resolve) => window.setTimeout(resolve, 20));
+
+    expect(fetch).not.toHaveBeenCalled();
+    expect(screen.queryByText("DashboardSidebar.team")).toBeNull();
+  });
+
+  it("still loads team options when switchability is unknown", async () => {
+    fetchMock.mockResolvedValueOnce(
+      createTeamOptionsResponse([
+        { teamId: "team_1", teamName: "Alpha", role: "owner" },
+        { teamId: "team_2", teamName: "Beta", role: "member" },
+      ]) as Response,
+    );
+
+    renderDropdown({ canSwitchTeams: null });
+
+    fireEvent.click(screen.getByRole("button", { name: "UserDropdown.label" }));
+
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledTimes(1);
+      expect(screen.getByRole("option", { name: "Beta" })).toBeTruthy();
+    });
   });
 
   it("refetches team options after refreshed team state changes", async () => {
@@ -133,6 +163,7 @@ describe("UserDropdown", () => {
         teamName="Alpha Renamed"
         role="owner"
         teamUiMode="paid_team"
+        canSwitchTeams
         activeTeamId="team_1"
         csrfToken="csrf_token"
       />,

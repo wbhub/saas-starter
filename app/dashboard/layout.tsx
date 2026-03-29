@@ -70,6 +70,7 @@ export default async function DashboardLayout({ children }: Readonly<{ children:
         teamName={shellData.teamContext.teamName}
         role={shellData.teamContext.role}
         teamUiMode={shellData.teamUiMode}
+        canSwitchTeams={shellData.canSwitchTeams}
         showAiNav={shellData.aiUiGate.isVisibleInUi}
         activeTeamId={shellData.teamContext.teamId}
         csrfToken={shellData.csrfToken}

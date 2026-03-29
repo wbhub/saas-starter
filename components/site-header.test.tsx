@@ -49,6 +49,7 @@ describe("SiteHeader", () => {
           teamName: "Alpha",
           role: "owner",
           teamUiMode: "paid_team",
+          canSwitchTeams: true,
           activeTeamId: "team_1",
           csrfToken: "csrf_token",
         }}
