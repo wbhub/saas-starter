@@ -70,6 +70,12 @@ describe("DashboardLayout", () => {
         INTERCOM_IDENTITY_SECRET: "identity-secret",
       },
     }));
+    vi.doMock("next/headers", () => ({
+      cookies: async () => ({
+        get: vi.fn(() => undefined),
+        set: vi.fn(),
+      }),
+    }));
 
     const DashboardLayout = (await import("./layout")).default;
     const html = renderToStaticMarkup(
