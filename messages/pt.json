@@ -1055,7 +1055,8 @@
       "missingCheckoutUrl": "URL de checkout ausente.",
       "completeFailed": "Algo deu errado. Por favor, tente novamente.",
       "requestFailed": "A solicitação falhou."
-    }
+    },
+    "signOut": "Sair"
   },
   "ApiOnboardingComplete": {
     "errors": {

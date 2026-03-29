@@ -1055,7 +1055,8 @@
       "missingCheckoutUrl": "URL de paiement manquante.",
       "completeFailed": "Une erreur est survenue. Veuillez réessayer.",
       "requestFailed": "La requête a échoué."
-    }
+    },
+    "signOut": "Se déconnecter"
   },
   "ApiOnboardingComplete": {
     "errors": {
