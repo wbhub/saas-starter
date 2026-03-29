@@ -82,13 +82,6 @@ describe("DashboardLayout", () => {
         INTERCOM_IDENTITY_SECRET: "identity-secret",
       },
     }));
-    vi.doMock("next/headers", () => ({
-      cookies: async () => ({
-        get: vi.fn(() => ({ value: "user_123" })),
-        set: vi.fn(),
-      }),
-    }));
-
     const DashboardLayout = (await import("./layout")).default;
     const html = renderToStaticMarkup(
       await DashboardLayout({
