@@ -210,7 +210,7 @@
     "inviteTeammates": "팀원 초대",
     "switch": "전환",
     "overview": "개요",
-    "ai": "AI 채팅",
+    "ai": "AI",
     "billing": "결제",
     "usage": "사용량",
     "settings": "설정",
@@ -256,7 +256,7 @@
   "DashboardAiPage": {
     "header": {
       "eyebrow": "AI",
-      "title": "팀 AI 채팅",
+      "title": "AI Chat & Agents",
       "description": "팀의 결제 및 사용량 한도 안에서 구성된 모델과 채팅하세요."
     },
     "unavailable": {
@@ -421,7 +421,7 @@
   "DashboardUsagePage": {
     "header": {
       "eyebrow": "사용량",
-      "title": "AI 사용량 및 월간 합계",
+      "title": "Team AI Usage",
       "description": "팀의 최근 토큰 사용량을 추적하세요."
     },
     "table": {

@@ -101,6 +101,14 @@ export type UsageMonthlyTotalsRow = {
   reserved_tokens: number;
 };
 
+type AiUsageRow = {
+  created_at: string;
+  prompt_tokens: number;
+  completion_tokens: number;
+};
+
+const USAGE_MONTH_LIMIT = 6;
+
 const getDashboardRequestContext = cache(async function getDashboardRequestContext() {
   const supabase = await createClient();
   const cookieStore = await cookies();
@@ -405,28 +413,83 @@ function mapMembershipsToTeamMembers(memberships: TeamMembershipRow[]): TeamMemb
   }));
 }
 
+function getUsageMonthStart(value: string) {
+  const date = new Date(value);
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1))
+    .toISOString()
+    .slice(0, 10);
+}
+
+function getUsageHistoryStartIso(now = new Date(), monthLimit = USAGE_MONTH_LIMIT) {
+  return new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (monthLimit - 1), 1),
+  ).toISOString();
+}
+
+function summarizeUsageRows(usageRows: AiUsageRow[]): UsageMonthlyTotalsRow[] {
+  const merged = new Map<string, UsageMonthlyTotalsRow>();
+  for (const row of usageRows) {
+    const monthStart = getUsageMonthStart(row.created_at);
+    const tokens = row.prompt_tokens + row.completion_tokens;
+    const existing = merged.get(monthStart);
+    if (existing) {
+      existing.used_tokens += tokens;
+      continue;
+    }
+    merged.set(monthStart, {
+      month_start: monthStart,
+      used_tokens: tokens,
+      reserved_tokens: 0,
+    });
+  }
+  return Array.from(merged.values())
+    .sort((a, b) => b.month_start.localeCompare(a.month_start))
+    .slice(0, USAGE_MONTH_LIMIT);
+}
+
 export async function getUsageMonthlyTotals(
   supabase: SupabaseClient,
   teamId: string,
 ): Promise<UsageMonthlyTotalsRow[]> {
   return measureDashboardTask("dashboard.usageMonthlyTotals", { teamId }, async () => {
     try {
-      const usageResult = await supabase
+      const monthlyTotalsResult = await supabase
         .from("ai_usage_monthly_totals")
         .select("month_start,used_tokens,reserved_tokens")
         .eq("team_id", teamId)
         .order("month_start", { ascending: false })
-        .limit(6)
+        .limit(USAGE_MONTH_LIMIT)
         .returns<UsageMonthlyTotalsRow[]>();
 
-      if (usageResult.error) {
-        logger.warn("Failed to load usage totals; using empty usage data.", {
-          error: usageResult.error,
+      if (monthlyTotalsResult.error) {
+        logger.warn("Failed to load usage totals; falling back to raw AI usage rows.", {
+          error: monthlyTotalsResult.error,
+          teamId,
+        });
+      }
+      const monthlyTotals = monthlyTotalsResult.error ? [] : (monthlyTotalsResult.data ?? []);
+      if (monthlyTotals.length > 0) {
+        return monthlyTotals;
+      }
+
+      const usageHistoryStart = getUsageHistoryStartIso();
+      const usageRowsResult = await supabase
+        .from("ai_usage")
+        .select("created_at,prompt_tokens,completion_tokens")
+        .eq("team_id", teamId)
+        .gte("created_at", usageHistoryStart)
+        .order("created_at", { ascending: false })
+        .returns<AiUsageRow[]>();
+
+      if (usageRowsResult.error) {
+        logger.warn("Failed to load raw AI usage rows for dashboard usage fallback.", {
+          error: usageRowsResult.error,
+          teamId,
         });
         return [];
       }
 
-      return usageResult.data ?? [];
+      return summarizeUsageRows(usageRowsResult.data ?? []);
     } catch (error) {
       logger.warn("Failed to load usage totals; using empty usage data.", { error });
       return [];

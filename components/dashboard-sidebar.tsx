@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   Sparkles,
   CreditCard,
-  BarChart3,
   Settings,
   Users,
   UserPlus,
@@ -43,29 +42,19 @@ export function DashboardSidebar({ teamUiMode, showAiNav }: DashboardSidebarProp
       icon: Sparkles,
     });
   }
+  if (teamUiMode !== "free") {
+    navItems.push({
+      label: t("DashboardSidebar.team"),
+      href: "/dashboard/team",
+      icon: teamUiMode === "paid_solo" ? UserPlus : Users,
+    });
+  }
   navItems.push(
     {
       label: t("DashboardSidebar.billing"),
       href: "/dashboard/billing",
       icon: CreditCard,
     },
-    {
-      label: t("DashboardSidebar.usage"),
-      href: "/dashboard/usage",
-      icon: BarChart3,
-    },
-  );
-  if (teamUiMode !== "free") {
-    navItems.push({
-      label:
-        teamUiMode === "paid_solo"
-          ? t("DashboardSidebar.inviteTeammates")
-          : t("DashboardSidebar.team"),
-      href: "/dashboard/team",
-      icon: teamUiMode === "paid_solo" ? UserPlus : Users,
-    });
-  }
-  navItems.push(
     {
       label: t("DashboardSidebar.settings"),
       href: "/dashboard/settings",

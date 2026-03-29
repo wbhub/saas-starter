@@ -25,6 +25,7 @@ import {
   mapUpstreamError,
   aiErrorResponse,
   insertAiUsageRow,
+  recordAiUsageMonthlyTotals,
   type AttachmentCounts,
 } from "@/lib/ai/request-context";
 
@@ -364,8 +365,14 @@ export async function POST(request: Request) {
             promptTokens: resolvedUsage.promptTokens,
             completionTokens: resolvedUsage.completionTokens,
           });
+          if (!budgetClaim) {
+            await recordAiUsageMonthlyTotals({
+              teamId: resolvedTeamId,
+              actualTokens: resolvedUsage.actualTokens,
+            });
+          }
         } catch (error) {
-          logger.error("Failed to persist AI usage row", error, {
+          logger.error("Failed to persist AI usage bookkeeping", error, {
             teamId: resolvedTeamId,
             userId: resolvedUserId,
             model,
@@ -597,8 +604,14 @@ export async function POST(request: Request) {
               promptTokens: resolvedUsage.promptTokens,
               completionTokens: resolvedUsage.completionTokens,
             });
+            if (!budgetClaim) {
+              await recordAiUsageMonthlyTotals({
+                teamId: teamContext.teamId,
+                actualTokens: resolvedUsage.actualTokens,
+              });
+            }
           } catch (error) {
-            logger.error("Failed to persist AI usage row", error, {
+            logger.error("Failed to persist AI usage bookkeeping", error, {
               teamId: teamContext.teamId,
               userId: user.id,
               model,

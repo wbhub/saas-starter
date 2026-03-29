@@ -210,7 +210,7 @@
     "inviteTeammates": "邀请队友",
     "switch": "转变",
     "overview": "概述",
-    "ai": "人工智能聊天",
+    "ai": "AI",
     "billing": "计费",
     "usage": "用法",
     "settings": "设置",
@@ -256,7 +256,7 @@
   "DashboardAiPage": {
     "header": {
       "eyebrow": "AI",
-      "title": "Team AI chat",
+      "title": "AI Chat & Agents",
       "description": "Chat with your configured model using your team billing and usage limits."
     },
     "unavailable": {
@@ -421,7 +421,7 @@
   "DashboardUsagePage": {
     "header": {
       "eyebrow": "用法",
-      "title": "AI 使用情况和每月总计",
+      "title": "Team AI Usage",
       "description": "跟踪您的团队最近的代币使用情况。"
     },
     "table": {

@@ -210,7 +210,7 @@
     "inviteTeammates": "Teammitglieder einladen",
     "switch": "Wechseln",
     "overview": "Übersicht",
-    "ai": "KI-Chat",
+    "ai": "AI",
     "billing": "Abrechnung",
     "usage": "Nutzung",
     "settings": "Einstellungen",
@@ -256,7 +256,7 @@
   "DashboardAiPage": {
     "header": {
       "eyebrow": "KI",
-      "title": "Team-KI-Chat",
+      "title": "AI Chat & Agents",
       "description": "Chatte mit deinem konfigurierten Modell unter Verwendung der Abrechnung und Nutzungslimits deines Teams."
     },
     "unavailable": {
@@ -421,7 +421,7 @@
   "DashboardUsagePage": {
     "header": {
       "eyebrow": "Nutzung",
-      "title": "KI-Nutzung und Monatssummen",
+      "title": "Team AI Usage",
       "description": "Verfolge die aktuelle Token-Nutzung deines Teams."
     },
     "table": {

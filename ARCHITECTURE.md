@@ -285,6 +285,9 @@ A single `getAiLanguageModel(model)` function that returns a Vercel AI SDK model
 
 ```
 Chat messages are automatically persisted to threads (ai_threads + ai_thread_messages).
+Threads are user-private within a team: AI access and token budgets are team-scoped,
+but thread history is scoped to the authenticated user and enforced in both route code
+and database RLS policies.
 
 1. POST /api/ai/chat (with or without threadId)
    - If threadId provided: validate ownership (team_id + user_id), return 404 if invalid

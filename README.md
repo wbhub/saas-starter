@@ -87,6 +87,8 @@ cp .env.example .env.local
 
 - `supabase/schema.sql` (core schema)
 - `supabase/migrations/20260329_ai_threads.sql` (AI thread persistence)
+- `supabase/migrations/20260329_ai_threads_rls.sql` (AI thread privacy hardening)
+- `supabase/migrations/20260329_ai_usage_totals_sync.sql` (AI usage totals sync + backfill)
 
 4. In Supabase Auth settings:
 
@@ -105,7 +107,7 @@ Open `http://localhost:3000`.
 ## What You Get
 
 - Public/auth pages: `/`, `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/privacy-policy`, `/terms-of-use`, `/onboarding`
-- App pages: `/dashboard`, `/dashboard/team`, `/dashboard/settings`, `/dashboard/usage`
+- App pages: `/dashboard`, `/dashboard/team`, `/dashboard/settings`, `/dashboard/billing`
 - Optional pages: `/dashboard/billing`, `/dashboard/ai`
 - Team invite flow: `/invite/[token]`
 - API routes for auth, onboarding, teams, billing, AI, support email, and cron tasks
@@ -171,7 +173,7 @@ If you want `/dashboard/ai` and `/api/ai/chat`:
   - `COMPOSIO_API_KEY` -- third-party actions (GitHub, Slack, etc.) via Composio
 - (Optional) Resumable streams: set `AI_RESUMABLE_STREAMS_ENABLED=true` (requires Redis) to enable reconnecting to interrupted AI streams.
 
-**Persisted threads:** Chat conversations are automatically saved to the database (`ai_threads` + `ai_thread_messages` tables). The thread sidebar in `/dashboard/ai` allows creating, switching, and deleting conversation threads. Thread API routes: `GET/POST /api/ai/threads`, `GET/PATCH/DELETE /api/ai/threads/[threadId]`, `GET /api/ai/threads/[threadId]/messages`.
+**Persisted threads:** Chat conversations are automatically saved to the database (`ai_threads` + `ai_thread_messages` tables). Threads are private to the signed-in user within their current team; teammates share AI access and team usage limits, but not each other's chat history. The thread sidebar in `/dashboard/ai` allows creating, switching, and deleting conversation threads. Thread API routes: `GET/POST /api/ai/threads`, `GET/PATCH/DELETE /api/ai/threads/[threadId]`, `GET /api/ai/threads/[threadId]/messages`.
 
 **Structured output (`/api/ai/object`):** A second AI endpoint streams typed JSON objects using `streamObject` + `useObject`. No extra env vars needed -- it inherits all AI config from the chat setup. Define schemas in `lib/ai/schemas/` and register them in `AI_SCHEMA_MAP`. Three schemas are included: sentiment analysis, entity extraction, and content classification. See `components/ai-object-card.tsx` for client usage.
 

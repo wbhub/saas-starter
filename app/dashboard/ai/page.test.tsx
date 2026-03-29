@@ -13,7 +13,7 @@ function mockAiPageDependencies({
     getTranslations: vi.fn().mockResolvedValue((key: string) => {
       const dictionary: Record<string, string> = {
         "header.eyebrow": "AI",
-        "header.title": "Team AI chat",
+        "header.title": "AI Chat & Agents",
         "header.description":
           "Chat with your configured model using your team billing and usage limits.",
         "unavailable.title": "AI chat is unavailable",
@@ -86,6 +86,7 @@ describe("Dashboard AI page UI gating", () => {
     const DashboardAiPage = (await import("./page")).default;
     const html = renderToStaticMarkup(await DashboardAiPage());
 
+    expect(html).toContain("AI Chat &amp; Agents");
     expect(html).toContain("AI chat is unavailable");
     expect(html).toContain("AI access requires an eligible paid plan.");
     expect(html).toContain('href="/dashboard/billing"');
@@ -98,6 +99,7 @@ describe("Dashboard AI page UI gating", () => {
     const DashboardAiPage = (await import("./page")).default;
     const html = renderToStaticMarkup(await DashboardAiPage());
 
+    expect(html).toContain("AI Chat &amp; Agents");
     expect(html).toContain("AiChatCardMock");
     expect(html).not.toContain("AI chat is unavailable");
   });

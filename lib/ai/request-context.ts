@@ -628,3 +628,24 @@ export async function insertAiUsageRow({
     throw error;
   }
 }
+
+export async function recordAiUsageMonthlyTotals({
+  teamId,
+  actualTokens,
+  now = new Date(),
+}: {
+  teamId: string;
+  actualTokens: number;
+  now?: Date;
+}) {
+  const supabase = createAdminClient();
+  const { error } = await supabase.rpc("record_ai_usage_tokens", {
+    p_team_id: teamId,
+    p_month_start: now.toISOString(),
+    p_actual_tokens: actualTokens,
+  });
+
+  if (error) {
+    throw error;
+  }
+}

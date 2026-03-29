@@ -609,6 +609,47 @@ revoke execute on function public.finalize_ai_token_budget_claim(uuid, integer) 
 revoke execute on function public.finalize_ai_token_budget_claim(uuid, integer) from authenticated;
 grant execute on function public.finalize_ai_token_budget_claim(uuid, integer) to service_role;
 
+create or replace function public.record_ai_usage_tokens(
+  p_team_id uuid,
+  p_month_start timestamptz,
+  p_actual_tokens integer
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_now timestamptz := timezone('utc', now());
+  v_month_start date := date_trunc('month', p_month_start at time zone 'utc')::date;
+begin
+  if p_actual_tokens < 0 then
+    raise exception 'p_actual_tokens must be non-negative';
+  end if;
+
+  insert into public.ai_usage_monthly_totals as totals (
+    team_id,
+    month_start,
+    reserved_tokens,
+    used_tokens,
+    created_at,
+    updated_at
+  )
+  values (p_team_id, v_month_start, 0, p_actual_tokens, v_now, v_now)
+  on conflict (team_id, month_start) do update
+  set
+    used_tokens = totals.used_tokens + p_actual_tokens,
+    updated_at = v_now;
+
+  return true;
+end;
+$$;
+
+revoke execute on function public.record_ai_usage_tokens(uuid, timestamptz, integer) from public;
+revoke execute on function public.record_ai_usage_tokens(uuid, timestamptz, integer) from anon;
+revoke execute on function public.record_ai_usage_tokens(uuid, timestamptz, integer) from authenticated;
+grant execute on function public.record_ai_usage_tokens(uuid, timestamptz, integer) to service_role;
+
 create or replace function public.enqueue_ai_budget_finalize_retry(
   p_claim_id uuid,
   p_actual_tokens integer,
@@ -1308,6 +1349,8 @@ alter table public.ai_usage enable row level security;
 alter table public.ai_usage_monthly_totals enable row level security;
 alter table public.ai_usage_budget_claims enable row level security;
 alter table public.ai_budget_claim_finalize_retries enable row level security;
+alter table public.ai_threads enable row level security;
+alter table public.ai_thread_messages enable row level security;
 alter table public.seat_sync_retries enable row level security;
 
 alter table public.subscriptions
@@ -1491,9 +1534,114 @@ using (
   )
 );
 
+drop policy if exists "Users can read own ai threads" on public.ai_threads;
+create policy "Users can read own ai threads"
+on public.ai_threads
+for select
+to authenticated
+using (auth.uid() = user_id and public.is_team_member(team_id));
+
+drop policy if exists "Users can insert own ai threads" on public.ai_threads;
+create policy "Users can insert own ai threads"
+on public.ai_threads
+for insert
+to authenticated
+with check (auth.uid() = user_id and public.is_team_member(team_id));
+
+drop policy if exists "Users can update own ai threads" on public.ai_threads;
+create policy "Users can update own ai threads"
+on public.ai_threads
+for update
+to authenticated
+using (auth.uid() = user_id and public.is_team_member(team_id))
+with check (auth.uid() = user_id and public.is_team_member(team_id));
+
+drop policy if exists "Users can delete own ai threads" on public.ai_threads;
+create policy "Users can delete own ai threads"
+on public.ai_threads
+for delete
+to authenticated
+using (auth.uid() = user_id and public.is_team_member(team_id));
+
+drop policy if exists "Users can read own ai thread messages" on public.ai_thread_messages;
+create policy "Users can read own ai thread messages"
+on public.ai_thread_messages
+for select
+to authenticated
+using (
+  exists (
+    select 1
+    from public.ai_threads threads
+    where threads.id = ai_thread_messages.thread_id
+      and threads.user_id = auth.uid()
+      and public.is_team_member(threads.team_id)
+  )
+);
+
+drop policy if exists "Users can insert own ai thread messages" on public.ai_thread_messages;
+create policy "Users can insert own ai thread messages"
+on public.ai_thread_messages
+for insert
+to authenticated
+with check (
+  exists (
+    select 1
+    from public.ai_threads threads
+    where threads.id = ai_thread_messages.thread_id
+      and threads.user_id = auth.uid()
+      and public.is_team_member(threads.team_id)
+  )
+);
+
+drop policy if exists "Users can update own ai thread messages" on public.ai_thread_messages;
+create policy "Users can update own ai thread messages"
+on public.ai_thread_messages
+for update
+to authenticated
+using (
+  exists (
+    select 1
+    from public.ai_threads threads
+    where threads.id = ai_thread_messages.thread_id
+      and threads.user_id = auth.uid()
+      and public.is_team_member(threads.team_id)
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.ai_threads threads
+    where threads.id = ai_thread_messages.thread_id
+      and threads.user_id = auth.uid()
+      and public.is_team_member(threads.team_id)
+  )
+);
+
+drop policy if exists "Users can delete own ai thread messages" on public.ai_thread_messages;
+create policy "Users can delete own ai thread messages"
+on public.ai_thread_messages
+for delete
+to authenticated
+using (
+  exists (
+    select 1
+    from public.ai_threads threads
+    where threads.id = ai_thread_messages.thread_id
+      and threads.user_id = auth.uid()
+      and public.is_team_member(threads.team_id)
+  )
+);
+
 drop policy if exists "Users can read team ai usage" on public.ai_usage;
 create policy "Users can read team ai usage"
 on public.ai_usage
+for select
+to authenticated
+using (public.is_team_member(team_id));
+
+drop policy if exists "Users can read team ai usage monthly totals" on public.ai_usage_monthly_totals;
+create policy "Users can read team ai usage monthly totals"
+on public.ai_usage_monthly_totals
 for select
 to authenticated
 using (public.is_team_member(team_id));
