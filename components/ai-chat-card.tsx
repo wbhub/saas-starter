@@ -1,27 +1,21 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
-import {
-  DefaultChatTransport,
-  getToolName,
-  isToolUIPart,
-  TextStreamChatTransport,
-  type UIMessage,
-} from "ai";
+import { DefaultChatTransport, TextStreamChatTransport, type UIMessage } from "ai";
 import { useTranslations } from "next-intl";
 import { getCsrfHeaders } from "@/lib/http/csrf";
 import { resolveUserFacingErrorMessage } from "@/lib/ai/error-message";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   type AttachmentProviderName,
   EXTENSION_MIME_MAP,
-  getSupportedAttachmentAccept,
   isSupportedFileMimeType,
   SUPPORTED_IMAGE_MIME_TYPES,
 } from "@/lib/ai/attachments";
+import { Conversation } from "@/components/ai/conversation";
+import { MessageBubble } from "@/components/ai/message-bubble";
+import { PromptInput } from "@/components/ai/prompt-input";
+import { ThreadSidebar } from "@/components/ai/thread-sidebar";
 
 const MAX_ATTACHMENTS_PER_MESSAGE = 8;
 const MAX_ATTACHMENTS_PER_REQUEST = 16;
@@ -98,7 +92,6 @@ function enforceRequestAttachmentBudget(
     return messages;
   }
 
-  // Keep the newest attachments by trimming older message attachments first.
   for (const message of messages) {
     if (!message.attachments?.length) {
       continue;
@@ -205,47 +198,6 @@ function toApiChatMessages(messages: UIMessage[]) {
   return enforceRequestAttachmentBudget(pruneHistoricalAttachments(recentMessages));
 }
 
-function ToolCallCard({
-  toolName,
-  args,
-  result,
-  state,
-}: {
-  toolName: string;
-  args: unknown;
-  result: unknown;
-  state: string;
-}) {
-  return (
-    <details className="max-w-[88%] rounded-lg border app-border-subtle bg-surface px-3 py-2 text-sm text-foreground">
-      <summary className="flex cursor-pointer items-center gap-2 font-medium">
-        <span className="inline-block rounded bg-surface-hover px-1.5 py-0.5 font-mono text-xs">
-          {toolName}
-        </span>
-        {state !== "output-available" && state !== "output-error" ? (
-          <span className="text-xs text-muted-foreground">running…</span>
-        ) : null}
-      </summary>
-      <div className="mt-2 space-y-2">
-        <div>
-          <p className="text-xs font-medium text-muted-foreground">Input</p>
-          <pre className="mt-0.5 overflow-x-auto rounded bg-surface-hover p-2 font-mono text-xs">
-            {JSON.stringify(args, null, 2)}
-          </pre>
-        </div>
-        {result !== undefined ? (
-          <div>
-            <p className="text-xs font-medium text-muted-foreground">Output</p>
-            <pre className="mt-0.5 overflow-x-auto rounded bg-surface-hover p-2 font-mono text-xs">
-              {JSON.stringify(result, null, 2)}
-            </pre>
-          </div>
-        ) : null}
-      </div>
-    </details>
-  );
-}
-
 export function AiChatCard({
   providerName,
   toolsEnabled,
@@ -254,11 +206,10 @@ export function AiChatCard({
   toolsEnabled: boolean;
 }) {
   const t = useTranslations("AiChatCard");
-  const [input, setInput] = useState("");
-  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
-  const [validationMessage, setValidationMessage] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const supportedAttachmentAccept = getSupportedAttachmentAccept(providerName);
+  const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
+  const [initialMessages, setInitialMessages] = useState<UIMessage[]>([]);
+  const [threadRefreshSignal, setThreadRefreshSignal] = useState(0);
+  const threadSwitchAbortRef = useRef<AbortController | null>(null);
 
   const transport = useMemo(() => {
     const prepareSendMessagesRequest = ({
@@ -274,6 +225,7 @@ export function AiChatCard({
       body: {
         ...body,
         messages: toApiChatMessages(messages),
+        ...(activeThreadId ? { threadId: activeThreadId } : {}),
       },
     });
 
@@ -289,11 +241,25 @@ export function AiChatCard({
       headers: getCsrfHeaders,
       prepareSendMessagesRequest,
     });
-  }, [toolsEnabled]);
+  }, [toolsEnabled, activeThreadId]);
 
-  const { messages, sendMessage, status, stop, error, clearError } = useChat({
+  const { messages, sendMessage, status, stop, error, clearError, setMessages } = useChat({
+    id: activeThreadId ?? undefined,
     transport,
   });
+
+  // Rehydrate messages when initialMessages changes (thread load or clear)
+  useEffect(() => {
+    setMessages(initialMessages);
+  }, [initialMessages, setMessages]);
+
+  // Abort in-flight thread load on unmount
+  useEffect(() => {
+    return () => {
+      threadSwitchAbortRef.current?.abort();
+    };
+  }, []);
+
   const errorMessagesByCode = {
     budget_exceeded: t("errors.budgetExceeded"),
     modality_not_allowed: t("errors.modalityNotAllowed"),
@@ -305,190 +271,143 @@ export function AiChatCard({
 
   const isSending = status === "submitted" || status === "streaming";
 
-  function validateFiles(files: File[]) {
-    if (files.length > MAX_ATTACHMENTS_PER_MESSAGE) {
-      return t("errors.maxAttachments", { max: MAX_ATTACHMENTS_PER_MESSAGE });
-    }
-    let totalEncodedChars = 0;
-    for (const file of files) {
-      const mimeType = resolveMimeType(file);
-      if (
-        !SUPPORTED_IMAGE_MIME_TYPES.has(mimeType) &&
-        !isSupportedFileMimeType(mimeType, providerName)
-      ) {
-        return t("errors.unsupportedType", { mimeType: mimeType || file.name || "unknown" });
+  const validateFiles = useCallback(
+    (files: File[]) => {
+      if (files.length > MAX_ATTACHMENTS_PER_MESSAGE) {
+        return t("errors.maxAttachments", { max: MAX_ATTACHMENTS_PER_MESSAGE });
       }
-      const encodedChars = estimateDataUrlLength(file.size, mimeType);
-      if (encodedChars > MAX_ATTACHMENT_DATA_CHARS) {
-        return t("errors.fileTooLarge");
+      let totalEncodedChars = 0;
+      for (const file of files) {
+        const mimeType = resolveMimeType(file);
+        if (
+          !SUPPORTED_IMAGE_MIME_TYPES.has(mimeType) &&
+          !isSupportedFileMimeType(mimeType, providerName)
+        ) {
+          return t("errors.unsupportedType", { mimeType: mimeType || file.name || "unknown" });
+        }
+        const encodedChars = estimateDataUrlLength(file.size, mimeType);
+        if (encodedChars > MAX_ATTACHMENT_DATA_CHARS) {
+          return t("errors.fileTooLarge");
+        }
+        totalEncodedChars += encodedChars;
+        if (totalEncodedChars > MAX_TOTAL_ATTACHMENT_DATA_CHARS) {
+          return t("errors.totalAttachmentsTooLarge");
+        }
       }
-      totalEncodedChars += encodedChars;
-      if (totalEncodedChars > MAX_TOTAL_ATTACHMENT_DATA_CHARS) {
-        return t("errors.totalAttachmentsTooLarge");
-      }
-    }
-    return null;
-  }
+      return null;
+    },
+    [t, providerName],
+  );
 
-  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files ?? []);
-    const validationError = validateFiles(files);
-    setValidationMessage(validationError);
-    if (validationError) {
-      setPendingFiles([]);
-      event.currentTarget.value = "";
-      return;
-    }
-    setPendingFiles(files);
-  }
-
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const value = input.trim();
-    const validationError = validateFiles(pendingFiles);
-    if (validationError) {
-      setValidationMessage(validationError);
-      return;
-    }
-    if (!value || isSending) {
-      return;
-    }
-
+  async function handleSubmit(text: string, files: File[]) {
     clearError();
-    setValidationMessage(null);
-    const draftInput = value;
-    const draftFiles = [...pendingFiles];
-    setInput("");
-    setPendingFiles([]);
-
     try {
-      const fileParts = await Promise.all(draftFiles.map((file) => fileToUiPart(file)));
+      const fileParts = await Promise.all(files.map((file) => fileToUiPart(file)));
       await sendMessage({
-        text: draftInput,
+        text,
         ...(fileParts.length > 0 ? { files: fileParts } : {}),
       });
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-    } catch (submitError) {
-      setInput(draftInput);
-      setPendingFiles(draftFiles);
-      setValidationMessage(
-        resolveUserFacingErrorMessage(submitError, t("errors.requestFailed"), errorMessagesByCode),
-      );
+      // Refresh thread sidebar after send
+      setThreadRefreshSignal((k) => k + 1);
+    } catch {
+      // Error is surfaced via the error prop from useChat
     }
+  }
+
+  async function handleSelectThread(threadId: string) {
+    // Abort any in-flight thread load
+    threadSwitchAbortRef.current?.abort();
+    const controller = new AbortController();
+    threadSwitchAbortRef.current = controller;
+
+    try {
+      const csrfHeaders = getCsrfHeaders();
+      const response = await fetch(`/api/ai/threads/${threadId}/messages`, {
+        headers: csrfHeaders,
+        signal: controller.signal,
+      });
+      if (controller.signal.aborted) return;
+      if (response.ok) {
+        const data = await response.json();
+        const loadedMessages: UIMessage[] = (data.messages ?? []).map(
+          (msg: { id: string; role: string; parts: unknown[]; metadata?: unknown }) => ({
+            id: msg.id,
+            role: msg.role,
+            parts: msg.parts,
+            metadata: msg.metadata ?? {},
+          }),
+        );
+        setActiveThreadId(threadId);
+        setInitialMessages(loadedMessages);
+      }
+    } catch {
+      // Silently fail (includes AbortError)
+    }
+  }
+
+  function handleNewThread() {
+    setActiveThreadId(null);
+    setInitialMessages([]);
+    setMessages([]);
   }
 
   return (
-    <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
-      <header>
-        <h2 className="text-lg font-semibold text-foreground">{t("title")}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{t("description")}</p>
-      </header>
-
-      <div className="mt-4 max-h-[460px] space-y-3 overflow-y-auto rounded-lg app-surface-subtle p-3">
-        {messages.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t("emptyState")}</p>
-        ) : (
-          messages.map((message) => {
-            const isUser = message.role === "user";
-            const hasContent = message.parts.some(
-              (part) => (part.type === "text" && part.text.length > 0) || isToolUIPart(part),
-            );
-            if (!hasContent) {
-              return null;
-            }
-
-            return (
-              <div key={message.id} className="space-y-2">
-                {message.parts.map((part, partIndex) => {
-                  if (part.type === "text" && part.text.length > 0) {
-                    return (
-                      <div
-                        key={partIndex}
-                        className={`max-w-[88%] rounded-lg px-3 py-2 text-sm ${
-                          isUser ? "ml-auto bg-btn-accent text-white" : "bg-surface text-foreground"
-                        }`}
-                      >
-                        {part.text}
-                      </div>
-                    );
-                  }
-                  if (isToolUIPart(part)) {
-                    return (
-                      <ToolCallCard
-                        key={partIndex}
-                        toolName={getToolName(part)}
-                        args={part.input}
-                        result={part.state === "output-available" ? part.output : undefined}
-                        state={part.state}
-                      />
-                    );
-                  }
-                  return null;
-                })}
-              </div>
-            );
-          })
-        )}
-      </div>
-
-      {error ? (
-        <p className="mt-3 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200">
-          {resolveUserFacingErrorMessage(error, t("errors.requestFailed"), errorMessagesByCode)}
-        </p>
-      ) : null}
-      {validationMessage ? (
-        <p className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
-          {validationMessage}
-        </p>
-      ) : null}
-
-      <form onSubmit={handleSubmit} className="mt-4 space-y-2">
-        <Textarea
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
-          rows={4}
-          placeholder={t("placeholder")}
-          disabled={isSending}
+    <section className="rounded-xl border app-border-subtle app-surface shadow-sm">
+      <div className="flex overflow-hidden rounded-xl">
+        <ThreadSidebar
+          activeThreadId={activeThreadId}
+          onSelectThread={handleSelectThread}
+          onNewThread={handleNewThread}
+          refreshSignal={threadRefreshSignal}
         />
-        <div className="space-y-2">
-          <Label className="text-muted-foreground">{t("attachments.label")}</Label>
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            disabled={isSending}
-            onChange={handleFileChange}
-            accept={supportedAttachmentAccept}
-            className="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border file:border-border-subtle file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium hover:file:bg-surface-hover disabled:opacity-60"
-          />
-          {pendingFiles.length > 0 ? (
-            <p className="text-xs text-muted-foreground">
-              {t("attachments.selected", { count: pendingFiles.length })}
+        <div className="flex-1 p-5">
+          <header>
+            <h2 className="text-lg font-semibold text-foreground">{t("title")}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{t("description")}</p>
+          </header>
+
+          <Conversation className="mt-4">
+            {messages.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t("emptyState")}</p>
+            ) : (
+              messages.map((message, index) => (
+                <MessageBubble
+                  key={message.id}
+                  message={message}
+                  isStreaming={
+                    isSending && message.role === "assistant" && index === messages.length - 1
+                  }
+                />
+              ))
+            )}
+          </Conversation>
+
+          {error ? (
+            <p className="mt-3 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200">
+              {resolveUserFacingErrorMessage(error, t("errors.requestFailed"), errorMessagesByCode)}
             </p>
           ) : null}
+
+          <div className="flex items-center gap-2">
+            {isSending ? (
+              <button
+                type="button"
+                onClick={() => void stop()}
+                className="mt-2 rounded-md border app-border-subtle px-3 py-1.5 text-sm text-muted-foreground hover:bg-surface-hover"
+              >
+                {t("actions.stop")}
+              </button>
+            ) : null}
+          </div>
+
+          <PromptInput
+            onSubmit={(text, files) => void handleSubmit(text, files)}
+            isSending={isSending}
+            providerName={providerName}
+            validateFiles={validateFiles}
+          />
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            type="submit"
-            disabled={isSending || input.trim().length === 0}
-            className="h-auto bg-indigo-500 px-4 py-2 text-white hover:bg-indigo-400"
-          >
-            {isSending ? t("actions.sending") : t("actions.send")}
-          </Button>
-          {isSending ? (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => void stop()}
-              className="h-auto px-4 py-2 text-muted-foreground"
-            >
-              {t("actions.stop")}
-            </Button>
-          ) : null}
-        </div>
-      </form>
+      </div>
     </section>
   );
 }

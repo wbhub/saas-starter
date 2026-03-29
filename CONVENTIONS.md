@@ -63,7 +63,9 @@ Prefer `withAuthedRoute` or `withTeamRoute` over manual pipelines. Use standalon
 
 ### AI routes with `resolveAiRequestContext`
 
-AI routes (`/api/ai/chat`, `/api/ai/object`) share a custom pre-flight pipeline via `resolveAiRequestContext()` from `lib/ai/request-context.ts`. It handles CSRF, auth, team context, rate limiting, body parsing, subscription/plan resolution, AI access checks, modality validation, and budget claiming in one call. Use this instead of `withTeamRoute` for new AI endpoints:
+AI model routes (`/api/ai/chat`, `/api/ai/object`) share a custom pre-flight pipeline via `resolveAiRequestContext()` from `lib/ai/request-context.ts`. It handles CSRF, auth, team context, rate limiting, body parsing, subscription/plan resolution, AI access checks, modality validation, and budget claiming in one call. Use this instead of `withTeamRoute` for new AI endpoints that call AI models:
+
+> **Note:** AI thread routes (`/api/ai/threads/...`) use `withTeamRoute` instead of `resolveAiRequestContext` because they are CRUD operations that don't invoke AI models or consume token budgets.
 
 ```ts
 const result = await resolveAiRequestContext(request, {
@@ -342,3 +344,40 @@ if (!triggered) {
 ```
 
 This pattern ensures the feature works with or without Trigger.dev configured.
+
+## Adding an AI Tool
+
+When adding a new server-side tool for the AI agent:
+
+1. Create `lib/ai/tools/my-tool.ts` with a Zod input schema and `tool()` from `ai`:
+
+```ts
+import { tool } from "ai";
+import { z } from "zod";
+
+const myToolParams = z.object({
+  query: z.string().min(1).max(400),
+});
+
+export const myTool = tool({
+  description: "What the tool does and when the model should use it.",
+  inputSchema: myToolParams,
+  execute: async ({ query }) => {
+    const apiKey = process.env.MY_TOOL_API_KEY;
+    if (!apiKey) return { error: "API key not configured." };
+    // Call external API...
+    return { result: "..." };
+  },
+});
+```
+
+2. Register in `lib/ai/tools/index.ts`, gated on the API key:
+
+```ts
+if (process.env.MY_TOOL_API_KEY) tools.myTool = myTool;
+```
+
+3. Add the env var to `lib/env.ts` as an `OptionalEnvKey` and to `.env.example`.
+4. (Optional) Add a custom result renderer in `components/ai/tool-card.tsx` by adding an entry to `TOOL_RENDERERS`.
+
+Validate tool inputs defensively: restrict URL schemes (no `file://`, `javascript:`), block private/internal hostnames for URL-based tools, and constrain string lengths.

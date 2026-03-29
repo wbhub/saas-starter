@@ -271,6 +271,32 @@
       "actions": {
         "goToBilling": "Go to billing"
       }
+    },
+    "tabs": {
+      "chat": "Chat",
+      "structuredOutput": "Structured Output"
+    }
+  },
+  "AiThreads": {
+    "title": "Threads",
+    "loading": "Loading threads...",
+    "empty": "No threads yet.",
+    "untitled": "Untitled thread",
+    "actions": {
+      "newThread": "New thread",
+      "delete": "Delete thread"
+    }
+  },
+  "ApiAiThreads": {
+    "errors": {
+      "unauthorized": "Unauthorized.",
+      "noTeamMembership": "No team membership found.",
+      "rateLimited": "Too many requests. Please try again shortly.",
+      "invalidPayload": "Invalid request.",
+      "invalidThreadId": "Invalid thread ID.",
+      "threadNotFound": "Thread not found.",
+      "createFailed": "Failed to create thread.",
+      "deleteFailed": "Failed to delete thread."
     }
   },
   "AiObjectCard": {
@@ -281,6 +307,9 @@
       "analyze": "Analyze",
       "analyzing": "Analyzing...",
       "stop": "Stop"
+    },
+    "schemaSelector": {
+      "label": "Analysis type"
     },
     "result": {
       "sentiment": "Sentiment",
@@ -945,7 +974,8 @@
       "planRequired": "AI access requires an eligible paid plan.",
       "upstreamRateLimited": "The AI provider is currently rate limited. Please retry shortly.",
       "upstreamBadRequest": "This AI request could not be processed. Adjust your input and try again.",
-      "unavailable": "AI assistant is currently unavailable."
+      "unavailable": "AI assistant is currently unavailable.",
+      "threadNotFound": "Thread not found."
     }
   },
   "ApiStripeCheckout": {

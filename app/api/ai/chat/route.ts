@@ -17,6 +17,7 @@ import { logAuditEvent } from "@/lib/audit";
 import { resolveActualTokenUsage } from "@/lib/ai/usage";
 import { z } from "@/lib/http/request-validation";
 import { logger } from "@/lib/logger";
+import { createThread, saveThreadMessages, getThread } from "@/lib/ai/threads";
 import { aiProviderName, supportsOpenAiFileIds } from "@/lib/ai/provider";
 import { SUPPORTED_IMAGE_MIME_TYPES, isSupportedFileMimeType } from "@/lib/ai/attachments";
 import {
@@ -84,6 +85,7 @@ const messageSchema = z.discriminatedUnion("role", [userMessageSchema, assistant
 
 const chatPayloadSchema = z.object({
   messages: z.array(messageSchema).min(1).max(30),
+  threadId: z.string().uuid().optional(),
 });
 
 type UsageTotals = {
@@ -288,6 +290,21 @@ export async function POST(request: Request) {
     );
   }
 
+  // ── Thread persistence setup ──
+  let resolvedThreadId = body.threadId ?? null;
+  if (resolvedThreadId) {
+    const thread = await getThread({
+      threadId: resolvedThreadId,
+      teamId: teamContext.teamId,
+      userId: user.id,
+    });
+    if (!thread) {
+      return withRequestId(jsonError(t("errors.threadNotFound"), 404), requestId);
+    }
+  }
+
+  const requestStartTime = Date.now();
+
   // ── Upstream error message helpers ──
   const aiUnavailableMessage = t("errors.unavailable");
   const upstreamRateLimitedMessage = t("errors.upstreamRateLimited");
@@ -401,12 +418,63 @@ export async function POST(request: Request) {
             }
           }
         },
-        onFinish: async ({ totalUsage }) => {
+        onFinish: async ({ totalUsage, text }) => {
           await finalizeAgentStream(
             totalUsage.inputTokens ?? 0,
             totalUsage.outputTokens ?? 0,
             "success",
           );
+
+          // Persist messages to thread
+          if (resolvedThreadId || body.threadId === undefined) {
+            try {
+              if (!resolvedThreadId) {
+                const lastUserMessage = body.messages.findLast((m) => m.role === "user");
+                const thread = await createThread({
+                  teamId: resolvedTeamId,
+                  userId: resolvedUserId,
+                  title: lastUserMessage?.content.slice(0, 100) ?? undefined,
+                });
+                if (thread) resolvedThreadId = thread.id;
+              }
+              if (resolvedThreadId) {
+                const lastUserMessage = body.messages[body.messages.length - 1];
+                const messagesToSave = [
+                  ...(lastUserMessage?.role === "user"
+                    ? [
+                        {
+                          role: "user" as const,
+                          parts: [{ type: "text", text: lastUserMessage.content }],
+                        },
+                      ]
+                    : []),
+                  {
+                    role: "assistant" as const,
+                    parts: [{ type: "text", text }],
+                    metadata: {
+                      model,
+                      promptTokens: totalUsage.inputTokens ?? 0,
+                      completionTokens: totalUsage.outputTokens ?? 0,
+                      toolCalls: toolCallNames.length > 0 ? toolCallNames : undefined,
+                      durationMs: Date.now() - requestStartTime,
+                    },
+                  },
+                ];
+                await saveThreadMessages({
+                  threadId: resolvedThreadId,
+                  teamId: resolvedTeamId,
+                  userId: resolvedUserId,
+                  messages: messagesToSave,
+                  ownershipVerified: true,
+                });
+              }
+            } catch (error) {
+              logger.error("Failed to persist thread messages", error, {
+                threadId: resolvedThreadId,
+                teamId: resolvedTeamId,
+              });
+            }
+          }
         },
         onError: async ({ error }) => {
           logger.error("Agent stream error", error, {
@@ -435,6 +503,17 @@ export async function POST(request: Request) {
         aiResult.toUIMessageStreamResponse({
           headers: { "Cache-Control": "no-store" },
           consumeSseStream: consumeStream,
+          sendSources: true,
+          messageMetadata: ({ part }) => {
+            if (part.type === "start" || part.type === "finish") {
+              return {
+                model,
+                timestamp: new Date().toISOString(),
+                threadId: resolvedThreadId,
+              };
+            }
+            return undefined;
+          },
         }),
         requestId,
       );
@@ -451,6 +530,7 @@ export async function POST(request: Request) {
     const encoder = new TextEncoder();
     const usage: UsageTotals = { promptTokens: 0, completionTokens: 0 };
     let streamedCompletionChars = 0;
+    let completionText = "";
 
     const responseBody = new ReadableStream<Uint8Array>({
       async start(controller) {
@@ -461,6 +541,7 @@ export async function POST(request: Request) {
             if (part.type === "text-delta") {
               controller.enqueue(encoder.encode(part.text));
               streamedCompletionChars += part.text.length;
+              completionText += part.text;
               continue;
             }
             if (part.type === "finish") {
@@ -561,6 +642,56 @@ export async function POST(request: Request) {
               attachmentCounts,
             },
           });
+
+          // Persist messages to thread (single-turn path)
+          if (completionText.length > 0 && (resolvedThreadId || body.threadId === undefined)) {
+            try {
+              if (!resolvedThreadId) {
+                const lastUserMessage = body.messages.findLast((m) => m.role === "user");
+                const thread = await createThread({
+                  teamId: teamContext.teamId,
+                  userId: user.id,
+                  title: lastUserMessage?.content.slice(0, 100) ?? undefined,
+                });
+                if (thread) resolvedThreadId = thread.id;
+              }
+              if (resolvedThreadId) {
+                const lastUserMessage = body.messages[body.messages.length - 1];
+                const messagesToSave = [
+                  ...(lastUserMessage?.role === "user"
+                    ? [
+                        {
+                          role: "user" as const,
+                          parts: [{ type: "text", text: lastUserMessage.content }],
+                        },
+                      ]
+                    : []),
+                  {
+                    role: "assistant" as const,
+                    parts: [{ type: "text", text: completionText }],
+                    metadata: {
+                      model,
+                      promptTokens: resolvedUsage.promptTokens,
+                      completionTokens: resolvedUsage.completionTokens,
+                      durationMs: Date.now() - requestStartTime,
+                    },
+                  },
+                ];
+                await saveThreadMessages({
+                  threadId: resolvedThreadId,
+                  teamId: teamContext.teamId,
+                  userId: user.id,
+                  messages: messagesToSave,
+                  ownershipVerified: true,
+                });
+              }
+            } catch (error) {
+              logger.error("Failed to persist thread messages (single-turn)", error, {
+                threadId: resolvedThreadId,
+                teamId: teamContext.teamId,
+              });
+            }
+          }
         }
       },
       cancel() {

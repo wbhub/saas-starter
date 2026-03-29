@@ -1,4 +1,6 @@
 import { sentimentSchema } from "./sentiment";
+import { entityExtractionSchema } from "./entity-extraction";
+import { contentClassificationSchema } from "./content-classification";
 import type { AiSchemaEntry } from "./types";
 
 export type { AiSchemaEntry } from "./types";
@@ -14,4 +16,6 @@ export type { AiSchemaEntry } from "./types";
  */
 export const AI_SCHEMA_MAP: Record<string, AiSchemaEntry> = {
   sentiment: sentimentSchema,
+  entityExtraction: entityExtractionSchema,
+  contentClassification: contentClassificationSchema,
 };

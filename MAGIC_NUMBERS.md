@@ -33,6 +33,10 @@ Defined in `lib/constants/rate-limits.ts`. All values use `MINUTE_MS` (60,000) a
 | `aiChatByTeam`                  | 120   | 10 min | 4x the per-user limit so a 4-person team can all use AI concurrently.                                                                                                         |
 | `aiObjectByUser`                | 30    | 10 min | Same as chat. Object requests are typically cheaper but share the same risk profile.                                                                                          |
 | `aiObjectByTeam`                | 120   | 10 min | Same as chat team limit. Note: chat and object limits are independent -- a user can make 30 chat AND 30 object requests in the same window.                                   |
+| `aiThreadListByUser`            | 60    | 10 min | Thread list is read-only and lightweight. 60 allows frequent navigation and sidebar refreshes.                                                                                |
+| `aiThreadCreateByUser`          | 30    | 10 min | Thread creation happens implicitly on first chat message. 30 is generous for active chatters.                                                                                 |
+| `aiThreadUpdateByUser`          | 30    | 10 min | Renames are infrequent. 30 prevents abuse while allowing batch renames.                                                                                                       |
+| `aiThreadDeleteByUser`          | 20    | 10 min | Same reasoning as create -- prevents mass-deletion scripts while allowing cleanup.                                                                                            |
 | `onboardingCompleteByUser`      | 10    | 1 min  | Marks onboarding as complete (free plan selection). Low limit since this is a one-time action; 10 allows retries on transient failures.                                       |
 | `stripeCheckoutByTeam`          | 10    | 1 min  | Checkout is expensive (creates Stripe sessions). Short window prevents runaway retry loops.                                                                                   |
 | `stripeChangePlanByTeam`        | 10    | 1 min  | Plan changes mutate subscriptions. Same reasoning as checkout.                                                                                                                |
@@ -188,6 +192,21 @@ Configured via `STRIPE_SEAT_PRORATION_BEHAVIOR` env var, defaults to `"create_pr
 | `prompt` max length     | 8,000 chars | Same as chat message content limit.                                                                                                                   |
 
 The object route uses `skipTools: true` when calling `resolveAiRequestContext`, which forces `maxSteps = 1` and skips loading the tool registry. This ensures the budget projection is not inflated by the global `AI_MAX_STEPS` setting.
+
+### Thread Persistence (`lib/ai/threads.ts`)
+
+| Constant                           | Value | Why                                                                                                                    |
+| ---------------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------------- |
+| `listThreads` default limit        | 50    | Default threads per page. 50 is enough for the sidebar without excessive DB load.                                      |
+| `listThreads` max limit            | 100   | Hard cap on threads per query. Prevents unbounded result sets from external callers.                                   |
+| `loadThreadMessages` default limit | 200   | Default messages per thread load. 200 covers long conversations while keeping the response size reasonable.            |
+| Thread title max length            | 100   | Auto-generated from the first user message (`content.slice(0, 100)`). Prevents excessively long titles in the sidebar. |
+
+### Resumable Streams (`lib/ai/stream-store.ts`)
+
+| Constant             | Value          | Why                                                                                                             |
+| -------------------- | -------------- | --------------------------------------------------------------------------------------------------------------- |
+| `STREAM_TTL_SECONDS` | 3,600 (1 hour) | Streams expire after 1 hour. Long enough for reconnection during network issues; short enough to limit storage. |
 
 ### Agent / Tool-Calling Defaults (`lib/ai/config.ts`)
 
