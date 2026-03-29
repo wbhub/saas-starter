@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { CheckCircle2 } from "lucide-react";
@@ -25,10 +25,6 @@ type Props = {
   freePlanFeatures: string[];
   showAnnualToggle: boolean;
   isAuthenticated: boolean;
-  /** Pre-selected plan key from URL (e.g. after returning from signup). */
-  selectedPlan?: string | null;
-  /** Pre-selected interval from URL. */
-  selectedInterval?: "year" | null;
 };
 
 function formatUsd(amount: number) {
@@ -83,30 +79,14 @@ export function OnboardingPlanSelector({
   freePlanFeatures,
   showAnnualToggle,
   isAuthenticated,
-  selectedPlan,
-  selectedInterval,
 }: Props) {
   const t = useTranslations("Onboarding");
   const router = useRouter();
-  const [interval, setInterval] = useState<"month" | "year">(selectedInterval ?? "month");
+  const [interval, setInterval] = useState<"month" | "year">("month");
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const autoTriggered = useRef(false);
 
   const isAnnual = interval === "year";
-
-  // Auto-trigger checkout when returning from signup with a plan param
-  useEffect(() => {
-    if (!isAuthenticated || !selectedPlan || autoTriggered.current) return;
-    autoTriggered.current = true;
-
-    if (selectedPlan === "free") {
-      handleFreePlan();
-    } else {
-      handlePaidPlan(selectedPlan as PlanKey);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, selectedPlan]);
 
   function redirectToSignup(plan: string) {
     const params = new URLSearchParams({ plan });
@@ -180,20 +160,7 @@ export function OnboardingPlanSelector({
     }
   }
 
-  // Show loading state immediately when returning from signup with a plan param
-  // to avoid a flash of the plan cards before the auto-trigger fires.
-  const isAutoTriggering = isAuthenticated && Boolean(selectedPlan);
-
   const gridCols = freePlanEnabled ? "md:grid-cols-2 xl:grid-cols-4" : "md:grid-cols-3";
-
-  if (isAutoTriggering && !error) {
-    return (
-      <div className="mt-10 flex flex-col items-center justify-center gap-4 py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-foreground" />
-        <p className="text-sm text-muted-foreground">{t("loading")}</p>
-      </div>
-    );
-  }
 
   return (
     <div className="mt-10 space-y-8">

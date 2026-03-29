@@ -10,6 +10,8 @@ import { getDashboardBillingContext } from "@/lib/dashboard/team-snapshot";
 import { syncCheckoutSuccessForTeam } from "@/lib/stripe/checkout-success";
 import { plans, hasAnnualPricing } from "@/lib/stripe/config";
 import { FREE_PLAN_FEATURES, PLAN_KEYS } from "@/lib/stripe/plans";
+import { createCheckoutUrl } from "@/lib/stripe/create-checkout-url";
+import { canManageTeamBilling } from "@/lib/team-context";
 import { logger } from "@/lib/logger";
 
 type OnboardingPageProps = {
@@ -89,6 +91,39 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
         redirect("/dashboard");
       }
     }
+
+    // Server-side checkout redirect: if returning from signup with a paid plan
+    // param, create the Stripe session and redirect immediately (no page render).
+    const validPlanParam =
+      selectedPlan && (PLAN_KEYS as readonly string[]).includes(selectedPlan) ? selectedPlan : null;
+
+    if (validPlanParam && validPlanParam !== "free" && canManageTeamBilling(teamContext.role)) {
+      const checkoutUrl = await createCheckoutUrl({
+        teamId: teamContext.teamId,
+        userId: user.id,
+        userEmail: user.email ?? "",
+        planKey: validPlanParam as import("@/lib/stripe/plans").PlanKey,
+        interval: selectedInterval === "year" ? "year" : "month",
+        source: "onboarding",
+      });
+
+      if (checkoutUrl) {
+        redirect(checkoutUrl);
+      }
+    }
+
+    // Server-side free plan completion: if returning from signup with free plan
+    if (validPlanParam === "free") {
+      try {
+        await supabase
+          .from("profiles")
+          .update({ onboarding_completed_at: new Date().toISOString() })
+          .eq("id", user.id);
+        redirect("/dashboard");
+      } catch (error) {
+        logger.warn("Free plan onboarding completion failed", { error });
+      }
+    }
   }
 
   const freePlanEnabled = isFreePlanEnabled();
@@ -104,10 +139,6 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
     hasPriceId: plan.priceId != null,
     hasAnnualPriceId: plan.annualPriceId != null,
   }));
-
-  // Validate selectedPlan param
-  const validSelectedPlan =
-    selectedPlan && (PLAN_KEYS as readonly string[]).includes(selectedPlan) ? selectedPlan : null;
 
   return (
     <div className="app-content flex min-h-screen flex-col bg-[color:var(--background)] text-[color:var(--foreground)]">
@@ -128,8 +159,6 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
             freePlanFeatures={FREE_PLAN_FEATURES as unknown as string[]}
             showAnnualToggle={hasAnnualPricing}
             isAuthenticated={isAuthenticated}
-            selectedPlan={validSelectedPlan}
-            selectedInterval={selectedInterval === "year" ? "year" : null}
           />
         </div>
       </main>
