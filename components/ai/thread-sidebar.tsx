@@ -74,7 +74,13 @@ export function ThreadSidebar({
           className="rounded-md p-1 text-muted-foreground hover:bg-surface-hover hover:text-foreground"
           title={t("actions.newThread")}
         >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
           </svg>
         </button>
@@ -107,7 +113,13 @@ export function ThreadSidebar({
                 className="hidden shrink-0 rounded p-0.5 text-muted-foreground hover:text-red-500 group-hover:block"
                 title={t("actions.delete")}
               >
-                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg
+                  className="h-3 w-3"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>

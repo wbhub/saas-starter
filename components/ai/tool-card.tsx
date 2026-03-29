@@ -16,7 +16,11 @@ function ToolStateIndicator({ state }: { state: ToolState }) {
     return (
       <span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
         <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+          <path
+            fillRule="evenodd"
+            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+            clipRule="evenodd"
+          />
         </svg>
         Done
       </span>
@@ -26,7 +30,11 @@ function ToolStateIndicator({ state }: { state: ToolState }) {
     return (
       <span className="inline-flex items-center gap-1 text-xs text-red-600 dark:text-red-400">
         <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+          <path
+            fillRule="evenodd"
+            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+            clipRule="evenodd"
+          />
         </svg>
         Error
       </span>
@@ -51,7 +59,9 @@ function isSafeHref(url: string | undefined): url is string {
 }
 
 function TavilyResultCard({ result }: { result: unknown }) {
-  const data = result as { results?: Array<{ title?: string; url?: string; content?: string }> } | undefined;
+  const data = result as
+    | { results?: Array<{ title?: string; url?: string; content?: string }> }
+    | undefined;
   if (!data?.results?.length) return <GenericResultCard result={result} />;
 
   return (
@@ -82,9 +92,7 @@ function FirecrawlResultCard({ result }: { result: unknown }) {
 
   return (
     <div className="mt-2 space-y-1">
-      {data.title ? (
-        <p className="text-xs font-medium text-foreground">{data.title}</p>
-      ) : null}
+      {data.title ? <p className="text-xs font-medium text-foreground">{data.title}</p> : null}
       <pre className="max-h-[200px] overflow-y-auto rounded-md bg-surface-hover p-2 font-mono text-xs text-muted-foreground">
         {data.markdown.slice(0, 2000)}
         {data.markdown.length > 2000 ? "..." : ""}

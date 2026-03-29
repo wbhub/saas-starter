@@ -27,9 +27,7 @@ export function ReasoningDisplay({
         >
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
         </svg>
-        <span>
-          {isStreaming ? "Thinking..." : "Reasoning"}
-        </span>
+        <span>{isStreaming ? "Thinking..." : "Reasoning"}</span>
         {isStreaming ? (
           <span className="ml-auto inline-block h-2 w-2 animate-pulse rounded-full bg-indigo-400" />
         ) : null}

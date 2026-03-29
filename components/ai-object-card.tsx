@@ -67,7 +67,11 @@ const SCHEMAS: SchemaConfig[] = [
   },
 ];
 
-function SentimentResult({ object }: { object: z.infer<typeof sentimentResponseSchema> | undefined }) {
+function SentimentResult({
+  object,
+}: {
+  object: z.infer<typeof sentimentResponseSchema> | undefined;
+}) {
   if (!object) return null;
   const sentimentColor =
     object.sentiment === "positive"
@@ -104,7 +108,11 @@ function SentimentResult({ object }: { object: z.infer<typeof sentimentResponseS
   );
 }
 
-function EntityResult({ object }: { object: z.infer<typeof entityExtractionResponseSchema> | undefined }) {
+function EntityResult({
+  object,
+}: {
+  object: z.infer<typeof entityExtractionResponseSchema> | undefined;
+}) {
   if (!object) return null;
 
   return (
@@ -175,9 +183,7 @@ function ClassificationResult({
               >
                 <span className="font-medium text-foreground">{cat.label}</span>
                 {cat.confidence !== undefined ? (
-                  <span className="text-muted-foreground">
-                    {Math.round(cat.confidence * 100)}%
-                  </span>
+                  <span className="text-muted-foreground">{Math.round(cat.confidence * 100)}%</span>
                 ) : null}
               </span>
             ))}

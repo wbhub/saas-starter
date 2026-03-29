@@ -111,9 +111,7 @@ export function MessageBubble({
         }
 
         if (part.type === "step-start") {
-          return (
-            <div key={partIndex} className="my-1 border-t app-border-subtle" />
-          );
+          return <div key={partIndex} className="my-1 border-t app-border-subtle" />;
         }
 
         if (isToolUIPart(part)) {

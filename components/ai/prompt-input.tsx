@@ -5,10 +5,7 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import {
-  type AttachmentProviderName,
-  getSupportedAttachmentAccept,
-} from "@/lib/ai/attachments";
+import { type AttachmentProviderName, getSupportedAttachmentAccept } from "@/lib/ai/attachments";
 
 const MAX_ATTACHMENTS_PER_MESSAGE = 8;
 

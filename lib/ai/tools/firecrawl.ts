@@ -8,27 +8,21 @@ const firecrawlScrapeParams = z.object({
   url: z
     .string()
     .url()
-    .refine(
-      (value) => {
-        try {
-          const protocol = new URL(value).protocol;
-          return protocol === "https:" || protocol === "http:";
-        } catch {
-          return false;
-        }
-      },
-      "URL must use http or https.",
-    )
-    .refine(
-      (value) => {
-        try {
-          return !PRIVATE_HOST_RE.test(new URL(value).hostname);
-        } catch {
-          return false;
-        }
-      },
-      "URL must not target private or internal addresses.",
-    )
+    .refine((value) => {
+      try {
+        const protocol = new URL(value).protocol;
+        return protocol === "https:" || protocol === "http:";
+      } catch {
+        return false;
+      }
+    }, "URL must use http or https.")
+    .refine((value) => {
+      try {
+        return !PRIVATE_HOST_RE.test(new URL(value).hostname);
+      } catch {
+        return false;
+      }
+    }, "URL must not target private or internal addresses.")
     .describe("The URL to scrape. Must be a valid public HTTP(S) URL."),
 });
 
@@ -64,9 +58,7 @@ export const firecrawlScrapeTool = tool({
       title: scrapeData.metadata?.title ?? null,
       description: scrapeData.metadata?.description ?? null,
       url: scrapeData.metadata?.sourceURL ?? url,
-      markdown: scrapeData.markdown
-        ? scrapeData.markdown.slice(0, 8000)
-        : null,
+      markdown: scrapeData.markdown ? scrapeData.markdown.slice(0, 8000) : null,
     };
   },
 });

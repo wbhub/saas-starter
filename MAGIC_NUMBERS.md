@@ -195,18 +195,18 @@ The object route uses `skipTools: true` when calling `resolveAiRequestContext`, 
 
 ### Thread Persistence (`lib/ai/threads.ts`)
 
-| Constant                          | Value | Why                                                                                                                                          |
-| --------------------------------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `listThreads` default limit       | 50    | Default threads per page. 50 is enough for the sidebar without excessive DB load.                                                            |
-| `listThreads` max limit           | 100   | Hard cap on threads per query. Prevents unbounded result sets from external callers.                                                         |
-| `loadThreadMessages` default limit | 200   | Default messages per thread load. 200 covers long conversations while keeping the response size reasonable.                                  |
-| Thread title max length           | 100   | Auto-generated from the first user message (`content.slice(0, 100)`). Prevents excessively long titles in the sidebar.                       |
+| Constant                           | Value | Why                                                                                                                    |
+| ---------------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------------- |
+| `listThreads` default limit        | 50    | Default threads per page. 50 is enough for the sidebar without excessive DB load.                                      |
+| `listThreads` max limit            | 100   | Hard cap on threads per query. Prevents unbounded result sets from external callers.                                   |
+| `loadThreadMessages` default limit | 200   | Default messages per thread load. 200 covers long conversations while keeping the response size reasonable.            |
+| Thread title max length            | 100   | Auto-generated from the first user message (`content.slice(0, 100)`). Prevents excessively long titles in the sidebar. |
 
 ### Resumable Streams (`lib/ai/stream-store.ts`)
 
-| Constant              | Value          | Why                                                                                                               |
-| --------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `STREAM_TTL_SECONDS`  | 3,600 (1 hour) | Streams expire after 1 hour. Long enough for reconnection during network issues; short enough to limit storage.   |
+| Constant             | Value          | Why                                                                                                             |
+| -------------------- | -------------- | --------------------------------------------------------------------------------------------------------------- |
+| `STREAM_TTL_SECONDS` | 3,600 (1 hour) | Streams expire after 1 hour. Long enough for reconnection during network issues; short enough to limit storage. |
 
 ### Agent / Tool-Calling Defaults (`lib/ai/config.ts`)
 

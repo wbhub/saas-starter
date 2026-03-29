@@ -25,9 +25,7 @@ export default async function DashboardAiPage() {
 
       {aiUiGate.isVisibleInUi ? (
         <AiPageTabs
-          chatContent={
-            <AiChatCard providerName={aiProviderName} toolsEnabled={aiToolsEnabled} />
-          }
+          chatContent={<AiChatCard providerName={aiProviderName} toolsEnabled={aiToolsEnabled} />}
           structuredOutputContent={<AiObjectCard />}
         />
       ) : (

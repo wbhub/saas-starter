@@ -16,5 +16,6 @@ export const entityExtractionSchema: AiSchemaEntry = {
       .describe("All named entities found in the text."),
     summary: z.string().describe("A one-sentence summary of what the text is about."),
   }),
-  description: "Extract named entities (people, organizations, locations, etc.) from the given text.",
+  description:
+    "Extract named entities (people, organizations, locations, etc.) from the given text.",
 };

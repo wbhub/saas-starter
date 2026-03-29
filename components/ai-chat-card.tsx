@@ -2,11 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
-import {
-  DefaultChatTransport,
-  TextStreamChatTransport,
-  type UIMessage,
-} from "ai";
+import { DefaultChatTransport, TextStreamChatTransport, type UIMessage } from "ai";
 import { useTranslations } from "next-intl";
 import { getCsrfHeaders } from "@/lib/http/csrf";
 import { resolveUserFacingErrorMessage } from "@/lib/ai/error-message";
@@ -379,9 +375,7 @@ export function AiChatCard({
                   key={message.id}
                   message={message}
                   isStreaming={
-                    isSending &&
-                    message.role === "assistant" &&
-                    index === messages.length - 1
+                    isSending && message.role === "assistant" && index === messages.length - 1
                   }
                 />
               ))

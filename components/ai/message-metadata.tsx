@@ -19,7 +19,13 @@ function formatDuration(ms: number) {
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
-export function MessageMetadata({ model, promptTokens, completionTokens, toolCallCount, durationMs }: MessageMetadataProps) {
+export function MessageMetadata({
+  model,
+  promptTokens,
+  completionTokens,
+  toolCallCount,
+  durationMs,
+}: MessageMetadataProps) {
   const chips: Array<{ label: string; value: string }> = [];
 
   if (model) {

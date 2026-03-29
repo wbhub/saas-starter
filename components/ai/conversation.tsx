@@ -2,13 +2,7 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 
-export function Conversation({
-  children,
-  className,
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
+export function Conversation({ children, className }: { children: ReactNode; className?: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const isNearBottom = useRef(true);
 

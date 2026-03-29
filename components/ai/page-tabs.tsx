@@ -39,9 +39,7 @@ export function AiPageTabs({
           {t("tabs.structuredOutput")}
         </button>
       </div>
-      <div className="mt-4">
-        {activeTab === "chat" ? chatContent : structuredOutputContent}
-      </div>
+      <div className="mt-4">{activeTab === "chat" ? chatContent : structuredOutputContent}</div>
     </div>
   );
 }

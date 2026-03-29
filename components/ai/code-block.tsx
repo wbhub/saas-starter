@@ -42,10 +42,7 @@ function CodeBlockInner({ code, language }: { code: string; language?: string })
         </div>
       ) : null}
       <pre className="overflow-x-auto bg-surface p-3">
-        <code
-          className="font-mono text-xs"
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
+        <code className="font-mono text-xs" dangerouslySetInnerHTML={{ __html: html }} />
       </pre>
     </div>
   );
