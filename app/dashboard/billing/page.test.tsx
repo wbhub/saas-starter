@@ -92,13 +92,39 @@ function mockBillingPageDependencies(options: {
     }),
   }));
   vi.doMock("@/lib/stripe/checkout-success", () => ({
-    syncCheckoutSuccessForTeam: vi.fn().mockResolvedValue({ synced: true, subscriptionId: "sub_1" }),
+    syncCheckoutSuccessForTeam: vi
+      .fn()
+      .mockResolvedValue({ synced: true, subscriptionId: "sub_1" }),
   }));
   vi.doMock("@/lib/stripe/public-pricing", () => ({
     getPublicPricingCatalog: vi.fn().mockResolvedValue([
-      { key: "starter", name: "Starter", description: "Starter desc", priceLabel: "$25/mo", amountMonthly: 25, popular: false, features: [] },
-      { key: "growth", name: "Growth", description: "Growth desc", priceLabel: "$50/mo", amountMonthly: 50, popular: true, features: [] },
-      { key: "pro", name: "Pro", description: "Pro desc", priceLabel: "$100/mo", amountMonthly: 100, popular: false, features: [] },
+      {
+        key: "starter",
+        name: "Starter",
+        description: "Starter desc",
+        priceLabel: "$25/mo",
+        amountMonthly: 25,
+        popular: false,
+        features: [],
+      },
+      {
+        key: "growth",
+        name: "Growth",
+        description: "Growth desc",
+        priceLabel: "$50/mo",
+        amountMonthly: 50,
+        popular: true,
+        features: [],
+      },
+      {
+        key: "pro",
+        name: "Pro",
+        description: "Pro desc",
+        priceLabel: "$100/mo",
+        amountMonthly: 100,
+        popular: false,
+        features: [],
+      },
     ]),
   }));
   vi.doMock("@/lib/supabase/server", () => ({

@@ -12,7 +12,11 @@ import { isBillingEnabled } from "@/lib/billing/capabilities";
 import { hasFeatureAccess } from "@/lib/billing/entitlements";
 import { resolveEffectivePlanKey, type EffectivePlanKey } from "@/lib/billing/effective-plan";
 import { logger } from "@/lib/logger";
-import { LIVE_SUBSCRIPTION_STATUSES, type PlanInterval, type SubscriptionStatus } from "@/lib/stripe/plans";
+import {
+  LIVE_SUBSCRIPTION_STATUSES,
+  type PlanInterval,
+  type SubscriptionStatus,
+} from "@/lib/stripe/plans";
 import { resolvePlanWithIntervalByPriceId } from "@/lib/stripe/price-id-lookup";
 import { measureDashboardTask } from "@/lib/dashboard/perf";
 
@@ -121,7 +125,8 @@ export async function getDashboardBillingContext(
   ]);
 
   const effectivePlanKey = resolveEffectivePlanKey(subscription);
-  const billingInterval = resolvePlanWithIntervalByPriceId(subscription?.stripe_price_id)?.interval ?? null;
+  const billingInterval =
+    resolvePlanWithIntervalByPriceId(subscription?.stripe_price_id)?.interval ?? null;
   const canInviteMembers = hasFeatureAccess(effectivePlanKey, "canInviteMembers");
   const isPaidPlan = Boolean(effectivePlanKey && effectivePlanKey !== "free");
 

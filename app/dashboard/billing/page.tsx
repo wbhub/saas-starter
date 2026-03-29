@@ -66,8 +66,14 @@ export default async function DashboardBillingPage({
     return null;
   }
 
-  const { billingEnabled, subscription, effectivePlanKey, billingInterval, memberCount, isPaidPlan } =
-    billingContext;
+  const {
+    billingEnabled,
+    subscription,
+    effectivePlanKey,
+    billingInterval,
+    memberCount,
+    isPaidPlan,
+  } = billingContext;
   const currentPaidPlanKey: PlanKey | null =
     isPaidPlan && effectivePlanKey && effectivePlanKey !== "free" ? effectivePlanKey : null;
 
@@ -127,9 +133,7 @@ export default async function DashboardBillingPage({
                 <p className="text-sm font-medium text-muted-foreground">
                   {tPlanCopy(`plans.${plan.key}.name`)}
                 </p>
-                <p className="mt-2 text-2xl font-semibold text-foreground">
-                  {plan.priceLabel}
-                </p>
+                <p className="mt-2 text-2xl font-semibold text-foreground">{plan.priceLabel}</p>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {tPlanCopy(`plans.${plan.key}.description`)}
                 </p>
@@ -205,7 +209,9 @@ export default async function DashboardBillingPage({
               {t("currentSubscription.noSubscription")}
             </div>
           )}
-          {teamUiMode === "paid_team" && perSeatAmount !== null && estimatedMonthlySeatTotal !== null ? (
+          {teamUiMode === "paid_team" &&
+          perSeatAmount !== null &&
+          estimatedMonthlySeatTotal !== null ? (
             <p className="mt-4 rounded-lg app-surface-subtle px-3 py-2 text-sm text-muted-foreground">
               {t("paidTeam.breakdown", {
                 seats: String(subscription?.seat_quantity ?? memberCount),

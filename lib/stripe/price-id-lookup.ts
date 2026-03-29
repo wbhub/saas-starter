@@ -52,7 +52,8 @@ export function getPlanWithIntervalByPriceIdMap(): ReadonlyMap<string, PlanWithI
       PLAN_CATALOG.flatMap((plan) => {
         const entries: [string, PlanWithInterval][] = [];
         const monthlyPriceId = readConfiguredPriceIdForPlan(plan.key);
-        if (monthlyPriceId) entries.push([monthlyPriceId, { planKey: plan.key, interval: "month" }]);
+        if (monthlyPriceId)
+          entries.push([monthlyPriceId, { planKey: plan.key, interval: "month" }]);
         const annualPriceId = readConfiguredAnnualPriceIdForPlan(plan.key);
         if (annualPriceId) entries.push([annualPriceId, { planKey: plan.key, interval: "year" }]);
         return entries;
