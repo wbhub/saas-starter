@@ -63,7 +63,7 @@ Use `.env.example` as the source of truth for all available variables.
 ## Enable by Feature (Optional)
 
 - Billing: Stripe (`BILLING_PROVIDER=stripe` + Stripe env vars). Set `APP_FREE_PLAN_ENABLED=true` to allow a free tier alongside paid plans.
-- AI chat + structured output: Vercel AI SDK (`AI_PROVIDER` + provider keys)
+- AI chat + structured output: Vercel AI SDK (`AI_PROVIDER` + provider keys). Optional tool integrations: `TAVILY_API_KEY` (web search), `FIRECRAWL_API_KEY` (web scraping), `COMPOSIO_API_KEY` (third-party actions). Optional resumable streams: `AI_RESUMABLE_STREAMS_ENABLED=true` (requires Redis).
 - In-app messenger: Intercom (`NEXT_PUBLIC_INTERCOM_APP_ID`, `INTERCOM_IDENTITY_SECRET`)
 - Multi-instance rate limiting/cache: Redis via Upstash (`UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`)
 - Background job offloading: Trigger.dev (`TRIGGER_SECRET_KEY`, `TRIGGER_PROJECT_REF`)
@@ -83,9 +83,10 @@ npm install
 cp .env.example .env.local
 ```
 
-3. Create a Supabase project, then run:
+3. Create a Supabase project, then run in Supabase SQL Editor:
 
-- `supabase/schema.sql` in Supabase SQL Editor
+- `supabase/schema.sql` (core schema)
+- `supabase/migrations/20260329_ai_threads.sql` (AI thread persistence)
 
 4. In Supabase Auth settings:
 
@@ -164,8 +165,15 @@ If you want `/dashboard/ai` and `/api/ai/chat`:
 - (Recommended) Set `AI_MODEL_MODALITIES_MAP_JSON` so model capability checks are explicit per provider/model
 - Configure AI policy vars in `.env.example` (`AI_ACCESS_MODE`, plan/model/budget settings)
 - (Optional) Enable agent tool-calling: set `AI_TOOLS_ENABLED=true` and `NEXT_PUBLIC_AI_TOOLS_ENABLED=true`. Set `AI_MAX_STEPS` to control how many steps the agent loop can take per request (default 5 when tools are enabled). When tools are disabled, chat remains single-turn. Tools are defined in `lib/ai/tools/`. Per-plan `maxSteps` can be configured via `AI_PLAN_RULES_JSON`.
+- (Optional) Tool integrations (each enabled when its API key is set):
+  - `TAVILY_API_KEY` -- web search via Tavily
+  - `FIRECRAWL_API_KEY` -- web scraping via Firecrawl
+  - `COMPOSIO_API_KEY` -- third-party actions (GitHub, Slack, etc.) via Composio
+- (Optional) Resumable streams: set `AI_RESUMABLE_STREAMS_ENABLED=true` (requires Redis) to enable reconnecting to interrupted AI streams.
 
-**Structured output (`/api/ai/object`):** A second AI endpoint streams typed JSON objects using `streamObject` + `useObject`. No extra env vars needed -- it inherits all AI config from the chat setup. Define schemas in `lib/ai/schemas/` and register them in `AI_SCHEMA_MAP`. An example sentiment-analysis schema is included. See `components/ai-object-card.tsx` for client usage.
+**Persisted threads:** Chat conversations are automatically saved to the database (`ai_threads` + `ai_thread_messages` tables). The thread sidebar in `/dashboard/ai` allows creating, switching, and deleting conversation threads. Thread API routes: `GET/POST /api/ai/threads`, `GET/PATCH/DELETE /api/ai/threads/[threadId]`, `GET /api/ai/threads/[threadId]/messages`.
+
+**Structured output (`/api/ai/object`):** A second AI endpoint streams typed JSON objects using `streamObject` + `useObject`. No extra env vars needed -- it inherits all AI config from the chat setup. Define schemas in `lib/ai/schemas/` and register them in `AI_SCHEMA_MAP`. Three schemas are included: sentiment analysis, entity extraction, and content classification. See `components/ai-object-card.tsx` for client usage.
 
 ### Intercom
 

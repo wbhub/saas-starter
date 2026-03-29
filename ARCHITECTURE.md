@@ -26,7 +26,8 @@ app/                          # Next.js App Router
     team/                     # invites, members, settings, ownership
     onboarding/               # complete (mark onboarding done for free plan)
     stripe/                   # checkout, change-plan, portal, webhook
-    ai/                       # chat (streaming), object (structured output)
+    ai/                       # chat (streaming), object (structured output), threads (persisted chat)
+      threads/                # CRUD for ai_threads + messages
     cron/                     # reconcile-seat-quantities, prune-webhook-events
     resend/                   # support email
     intercom/                 # identity boot
@@ -36,6 +37,7 @@ app/                          # Next.js App Router
     actions.ts                # Server actions (logout, update settings, delete account, etc.)
 
 components/                   # React components (flat structure)
+  ai/                         # Composable AI UI (conversation, message-bubble, prompt-input, etc.)
   landing/                    # Landing page components (grouped subdirectory)
   onboarding/                 # Onboarding plan selector with monthly/annual toggle
 
@@ -43,6 +45,8 @@ lib/                          # Shared business logic (organized by domain)
   ai/                         # AI access control, budgets, provider abstraction, token estimation
     schemas/                  # Structured output schema registry (used by /api/ai/object)
     tools/                    # Agent tool registry (opt-in via AI_TOOLS_ENABLED)
+    threads.ts                # Thread persistence data access layer
+    stream-store.ts           # Redis-backed resumable stream storage
   auth/                       # Social auth provider detection
   billing/                    # Plan capabilities, entitlements, effective plan resolution
   constants/                  # Durations, rate limits, billing timing
@@ -277,6 +281,29 @@ A single `getAiLanguageModel(model)` function that returns a Vercel AI SDK model
    - On finalize failure: enqueue retry to ai_budget_claim_finalize_retries
 ```
 
+### AI Thread Persistence
+
+```
+Chat messages are automatically persisted to threads (ai_threads + ai_thread_messages).
+
+1. POST /api/ai/chat (with or without threadId)
+   - If threadId provided: validate ownership (team_id + user_id), return 404 if invalid
+   - If threadId absent: auto-create a new thread on stream finish (title = first 100 chars of last user message)
+   - On stream finish (both agent and single-turn paths):
+     save last user message + assistant response to ai_thread_messages with metadata (model, tokens, duration)
+
+2. Thread CRUD: /api/ai/threads
+   - GET  /api/ai/threads                       — list threads (team + user scoped)
+   - POST /api/ai/threads                       — create thread
+   - GET  /api/ai/threads/[threadId]             — get thread (ownership check)
+   - PATCH /api/ai/threads/[threadId]            — rename thread
+   - DELETE /api/ai/threads/[threadId]           — delete thread (cascades to messages)
+   - GET  /api/ai/threads/[threadId]/messages    — load thread messages
+
+All thread routes use withTeamRoute (not resolveAiRequestContext) since they don't
+involve AI model calls or budget management.
+```
+
 Both `/api/ai/chat` and `/api/ai/object` share the same pre-flight pipeline via `resolveAiRequestContext()` in `lib/ai/request-context.ts`, which handles CSRF, auth, team context, rate limiting, body parsing, subscription/plan resolution, AI access checks, modality validation, and budget claiming.
 
 ### Seat Sync After Membership Change
@@ -315,6 +342,10 @@ Most features are toggled via environment variables, not code flags:
 | Redis caching         | `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` set | `getRedisClient()` returns non-null in `lib/redis/client.ts`   |
 | Intercom              | `NEXT_PUBLIC_INTERCOM_APP_ID` set                         | Checked in dashboard layout                                    |
 | Sentry                | `NEXT_PUBLIC_SENTRY_DSN` set                              | `SENTRY_ENABLED` in `lib/logger.ts`                            |
+| AI tool: Tavily       | `TAVILY_API_KEY` set                                      | Conditional registration in `lib/ai/tools/index.ts`            |
+| AI tool: Firecrawl    | `FIRECRAWL_API_KEY` set                                   | Conditional registration in `lib/ai/tools/index.ts`            |
+| AI tool: Composio     | `COMPOSIO_API_KEY` set                                    | Conditional registration in `lib/ai/tools/index.ts`            |
+| Resumable streams     | `AI_RESUMABLE_STREAMS_ENABLED=true` + Redis configured    | `isResumableStreamsEnabled()` in `lib/ai/stream-store.ts`      |
 | Social auth providers | `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true`, etc.              | `getEnabledSocialAuthProviders()` in `lib/auth/social-auth.ts` |
 
 Core integrations degrade gracefully when dependencies are missing. For example, if Trigger.dev isn't configured, webhook processing falls back to inline execution. If Redis isn't configured, rate limiting falls back to Supabase RPC, then to in-memory.

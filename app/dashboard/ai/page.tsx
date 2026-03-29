@@ -1,6 +1,8 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { AiChatCard } from "@/components/ai-chat-card";
+import { AiObjectCard } from "@/components/ai-object-card";
+import { AiPageTabs } from "@/components/ai/page-tabs";
 import { env } from "@/lib/env";
 import { parseAiProviderName } from "@/lib/ai/provider-name";
 import { getDashboardShellData } from "@/lib/dashboard/server";
@@ -22,7 +24,12 @@ export default async function DashboardAiPage() {
       </div>
 
       {aiUiGate.isVisibleInUi ? (
-        <AiChatCard providerName={aiProviderName} toolsEnabled={aiToolsEnabled} />
+        <AiPageTabs
+          chatContent={
+            <AiChatCard providerName={aiProviderName} toolsEnabled={aiToolsEnabled} />
+          }
+          structuredOutputContent={<AiObjectCard />}
+        />
       ) : (
         <section className="rounded-xl bg-card ring-1 ring-border p-6">
           <h2 className="text-lg font-semibold text-foreground">{t("unavailable.title")}</h2>

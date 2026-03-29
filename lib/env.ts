@@ -56,6 +56,10 @@ type OptionalEnvKey =
   | "NEXT_PUBLIC_AI_TOOLS_ENABLED"
   | "TRIGGER_SECRET_KEY"
   | "TRIGGER_PROJECT_REF"
+  | "TAVILY_API_KEY"
+  | "FIRECRAWL_API_KEY"
+  | "COMPOSIO_API_KEY"
+  | "AI_RESUMABLE_STREAMS_ENABLED"
   | StripeAnnualPriceIdEnvKey;
 
 const warnedMissingEnv = new Set<string>();
@@ -252,6 +256,18 @@ const envBase = {
   },
   get TRIGGER_PROJECT_REF() {
     return optionalEnv("TRIGGER_PROJECT_REF");
+  },
+  get TAVILY_API_KEY() {
+    return optionalEnv("TAVILY_API_KEY");
+  },
+  get FIRECRAWL_API_KEY() {
+    return optionalEnv("FIRECRAWL_API_KEY");
+  },
+  get COMPOSIO_API_KEY() {
+    return optionalEnv("COMPOSIO_API_KEY");
+  },
+  get AI_RESUMABLE_STREAMS_ENABLED() {
+    return optionalEnv("AI_RESUMABLE_STREAMS_ENABLED") === "true";
   },
 };
 
