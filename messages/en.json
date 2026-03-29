@@ -361,7 +361,7 @@
       "description": "Update plans, open the Stripe portal, and review your subscription status."
     },
     "checkoutSuccess": {
-      "message": "Payment successful! Your subscription will be active shortly."
+      "message": "Payment successful! Your subscription is now active."
     },
     "currentSubscription": {
       "title": "Current subscription",
@@ -370,6 +370,10 @@
       "status": "Status",
       "seats": "Seats",
       "perSeatCost": "Per-seat cost",
+      "billingInterval": "Billing interval",
+      "monthly": "Monthly",
+      "annual": "Annual",
+      "billedAnnually": "billed annually",
       "periodEnd": "Period end",
       "notAvailable": "N/A",
       "currentPlanFree": "Current plan: Free",

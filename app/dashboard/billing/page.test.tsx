@@ -12,6 +12,7 @@ function mockBillingPageDependencies(options: {
       cancel_at_period_end: boolean;
     } | null;
     effectivePlanKey: "free" | "starter" | "growth" | "pro" | null;
+    billingInterval?: "month" | "year" | null;
     memberCount: number;
     isPaidPlan: boolean;
     canInviteMembers: boolean;
@@ -72,19 +73,44 @@ function mockBillingPageDependencies(options: {
     getLocale: vi.fn(async () => "en"),
   }));
 
+  const billingContextWithInterval = {
+    billingInterval: null,
+    ...options.billingContext,
+  };
   vi.doMock("@/lib/dashboard/server", () => ({
     getDashboardBaseData: vi.fn().mockResolvedValue({
       teamContext: { teamId: "team_123", teamName: "Acme Team", role: "owner" },
     }),
     getDashboardShellData: vi.fn().mockResolvedValue({
       teamContext: { teamId: "team_123", teamName: "Acme Team", role: "owner" },
-      billingContext: options.billingContext,
+      billingContext: billingContextWithInterval,
       teamUiMode: options.billingContext.isPaidPlan
         ? options.billingContext.memberCount > 1
           ? "paid_team"
           : "paid_solo"
         : "free",
     }),
+  }));
+  vi.doMock("@/lib/stripe/checkout-success", () => ({
+    syncCheckoutSuccessForTeam: vi.fn().mockResolvedValue({ synced: true, subscriptionId: "sub_1" }),
+  }));
+  vi.doMock("@/lib/stripe/public-pricing", () => ({
+    getPublicPricingCatalog: vi.fn().mockResolvedValue([
+      { key: "starter", name: "Starter", description: "Starter desc", priceLabel: "$25/mo", amountMonthly: 25, popular: false, features: [] },
+      { key: "growth", name: "Growth", description: "Growth desc", priceLabel: "$50/mo", amountMonthly: 50, popular: true, features: [] },
+      { key: "pro", name: "Pro", description: "Pro desc", priceLabel: "$100/mo", amountMonthly: 100, popular: false, features: [] },
+    ]),
+  }));
+  vi.doMock("@/lib/supabase/server", () => ({
+    createClient: vi.fn().mockResolvedValue({
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "user_1" } } }) },
+    }),
+  }));
+  vi.doMock("@/lib/team-context-cache", () => ({
+    getCachedTeamContextForUser: vi.fn().mockResolvedValue({ teamId: "team_123" }),
+  }));
+  vi.doMock("@/lib/logger", () => ({
+    logger: { warn: vi.fn(), info: vi.fn(), error: vi.fn() },
   }));
   vi.doMock("@/lib/team-context", () => ({
     canManageTeamBilling: vi.fn().mockReturnValue(true),
@@ -155,6 +181,7 @@ describe("Dashboard billing page free plan behavior", () => {
           cancel_at_period_end: false,
         },
         effectivePlanKey: "growth",
+        billingInterval: "month",
         memberCount: 1,
         isPaidPlan: true,
         canInviteMembers: true,
@@ -182,6 +209,7 @@ describe("Dashboard billing page free plan behavior", () => {
           cancel_at_period_end: false,
         },
         effectivePlanKey: "growth",
+        billingInterval: "month",
         memberCount: 3,
         isPaidPlan: true,
         canInviteMembers: true,

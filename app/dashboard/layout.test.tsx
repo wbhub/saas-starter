@@ -63,6 +63,7 @@ describe("DashboardLayout", () => {
           billingEnabled: true,
           subscription: null,
           effectivePlanKey: "free",
+          billingInterval: null,
           memberCount: 1,
           isPaidPlan: false,
           canInviteMembers: false,

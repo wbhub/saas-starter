@@ -361,7 +361,7 @@
       "description": "Actualiza planes, abre el portal de Stripe y revisa el estado de tu suscripción."
     },
     "checkoutSuccess": {
-      "message": "¡Pago exitoso! Tu suscripción estará activa en breve."
+      "message": "¡Pago exitoso! Tu suscripción ya está activa."
     },
     "currentSubscription": {
       "title": "Suscripción actual",
@@ -370,6 +370,10 @@
       "status": "Estado",
       "seats": "Asientos",
       "perSeatCost": "Costo por asiento",
+      "billingInterval": "Intervalo de facturación",
+      "monthly": "Mensual",
+      "annual": "Anual",
+      "billedAnnually": "facturado anualmente",
       "periodEnd": "Fin del período",
       "notAvailable": "N/D",
       "currentPlanFree": "Plan actual: Gratis",

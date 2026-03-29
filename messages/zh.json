@@ -361,7 +361,7 @@
       "description": "更新计划、打开 Stripe 门户并查看您的订阅状态。"
     },
     "checkoutSuccess": {
-      "message": "支付成功！您的订阅将很快激活。"
+      "message": "支付成功！您的订阅已激活。"
     },
     "currentSubscription": {
       "title": "当前订阅",
@@ -370,6 +370,10 @@
       "status": "地位",
       "seats": "座位数",
       "perSeatCost": "每席位成本",
+      "billingInterval": "计费周期",
+      "monthly": "月付",
+      "annual": "年付",
+      "billedAnnually": "按年计费",
       "periodEnd": "期末",
       "notAvailable": "不适用",
       "currentPlanFree": "当前计划：免费",

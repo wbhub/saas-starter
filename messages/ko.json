@@ -361,7 +361,7 @@
       "description": "요금제를 업데이트하고 Stripe 포털을 열며 구독 상태를 검토하세요."
     },
     "checkoutSuccess": {
-      "message": "결제가 완료되었습니다! 구독이 곧 활성화됩니다."
+      "message": "결제가 완료되었습니다! 구독이 활성화되었습니다."
     },
     "currentSubscription": {
       "title": "현재 구독",
@@ -370,6 +370,10 @@
       "status": "상태",
       "seats": "좌석 수",
       "perSeatCost": "좌석당 비용",
+      "billingInterval": "결제 주기",
+      "monthly": "월간",
+      "annual": "연간",
+      "billedAnnually": "연간 결제",
       "periodEnd": "기간 종료",
       "notAvailable": "N/A",
       "currentPlanFree": "현재 요금제: 무료",

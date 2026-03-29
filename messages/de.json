@@ -361,7 +361,7 @@
       "description": "Aktualisiere Pläne, öffne das Stripe-Portal und prüfe deinen Abonnementstatus."
     },
     "checkoutSuccess": {
-      "message": "Zahlung erfolgreich! Dein Abonnement wird in Kürze aktiv."
+      "message": "Zahlung erfolgreich! Dein Abonnement ist jetzt aktiv."
     },
     "currentSubscription": {
       "title": "Aktuelles Abonnement",
@@ -370,6 +370,10 @@
       "status": "Status",
       "seats": "Sitzplätze",
       "perSeatCost": "Kosten pro Sitzplatz",
+      "billingInterval": "Abrechnungszeitraum",
+      "monthly": "Monatlich",
+      "annual": "Jährlich",
+      "billedAnnually": "jährlich abgerechnet",
       "periodEnd": "Laufzeitende",
       "notAvailable": "k. A.",
       "currentPlanFree": "Aktueller Plan: Kostenlos",

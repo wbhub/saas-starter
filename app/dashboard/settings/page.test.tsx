@@ -59,6 +59,7 @@ describe("Dashboard settings page data loading", () => {
             cancel_at_period_end: false,
           },
           effectivePlanKey: "growth",
+          billingInterval: "month",
           memberCount: 2,
           isPaidPlan: true,
           canInviteMembers: true,

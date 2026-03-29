@@ -5,7 +5,12 @@ import { formatUtcDate } from "@/lib/date";
 import { formatStaticUsdMonthlyLabel } from "@/lib/stripe/plan-price-display";
 import { canManageTeamBilling } from "@/lib/team-context";
 import { getDashboardShellData } from "@/lib/dashboard/server";
-import { PLAN_CATALOG, type PlanKey } from "@/lib/stripe/plans";
+import type { PlanKey } from "@/lib/stripe/plans";
+import { syncCheckoutSuccessForTeam } from "@/lib/stripe/checkout-success";
+import { getPublicPricingCatalog } from "@/lib/stripe/public-pricing";
+import { createClient } from "@/lib/supabase/server";
+import { getCachedTeamContextForUser } from "@/lib/team-context-cache";
+import { logger } from "@/lib/logger";
 
 type DashboardBillingPageProps = {
   searchParams?:
@@ -28,9 +33,32 @@ export default async function DashboardBillingPage({
     formatStaticUsdMonthlyLabel(amountMonthly, locale, priceSuffixMonth);
   const resolvedSearchParams = (await searchParams) ?? {};
   const checkoutStatus = getFirstSearchParamValue(resolvedSearchParams.checkout);
+  const sessionId = getFirstSearchParamValue(resolvedSearchParams.session_id) ?? null;
 
-  // Subscription sync after checkout is handled by the Stripe webhook.
-  // The page renders current billing state; the webhook will update it shortly.
+  // Eagerly sync the subscription from the Stripe session before loading
+  // billing data, so the page reflects the new plan immediately. The webhook
+  // remains authoritative; this is best-effort. syncSubscription inside
+  // syncCheckoutSuccessForTeam invalidates the dashboard team snapshot cache,
+  // so getDashboardShellData below reads fresh data.
+  if (checkoutStatus === "success" && sessionId) {
+    try {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        const teamCtx = await getCachedTeamContextForUser(supabase, user.id);
+        if (teamCtx) {
+          await syncCheckoutSuccessForTeam(teamCtx.teamId, { sessionId });
+        }
+      }
+    } catch (error) {
+      logger.warn("Eager checkout sync failed on billing page; webhook will handle it.", {
+        sessionId,
+        error,
+      });
+    }
+  }
 
   const { teamContext, billingContext, teamUiMode } = await getDashboardShellData();
 
@@ -38,15 +66,25 @@ export default async function DashboardBillingPage({
     return null;
   }
 
-  const { billingEnabled, subscription, effectivePlanKey, memberCount, isPaidPlan } =
+  const { billingEnabled, subscription, effectivePlanKey, billingInterval, memberCount, isPaidPlan } =
     billingContext;
   const currentPaidPlanKey: PlanKey | null =
     isPaidPlan && effectivePlanKey && effectivePlanKey !== "free" ? effectivePlanKey : null;
-  const currentPlan = currentPaidPlanKey
-    ? (PLAN_CATALOG.find((plan) => plan.key === currentPaidPlanKey) ?? null)
+
+  // Fetch live Stripe pricing for both free-user plan grid and paid-user
+  // per-seat display, so prices always match what Stripe actually charges.
+  // cache() deduplicates within the same React request.
+  const livePricing = await getPublicPricingCatalog();
+  const livePlan = currentPaidPlanKey
+    ? (livePricing.find((plan) => plan.key === currentPaidPlanKey) ?? null)
+    : null;
+  const perSeatAmount = livePlan
+    ? billingInterval === "year" && livePlan.amountAnnualMonthly
+      ? livePlan.amountAnnualMonthly
+      : livePlan.amountMonthly
     : null;
   const estimatedMonthlySeatTotal =
-    subscription && currentPlan ? subscription.seat_quantity * currentPlan.amountMonthly : null;
+    subscription && perSeatAmount !== null ? subscription.seat_quantity * perSeatAmount : null;
   const hasSubscription = Boolean(subscription);
   const canManageBilling = canManageTeamBilling(teamContext.role);
 
@@ -81,7 +119,7 @@ export default async function DashboardBillingPage({
             <p className="mt-2 text-muted-foreground">{t("freeMode.description")}</p>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
-            {PLAN_CATALOG.map((plan) => (
+            {livePricing.map((plan) => (
               <article
                 key={plan.key}
                 className="rounded-xl bg-card ring-1 ring-border p-6 transition-colors hover:bg-muted/50"
@@ -90,13 +128,13 @@ export default async function DashboardBillingPage({
                   {tPlanCopy(`plans.${plan.key}.name`)}
                 </p>
                 <p className="mt-2 text-2xl font-semibold text-foreground">
-                  {catalogSeatPrice(plan.amountMonthly)}
+                  {plan.priceLabel}
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {tPlanCopy(`plans.${plan.key}.description`)}
                 </p>
                 <p className="mt-3 text-sm text-muted-foreground">
-                  {t("freeMode.perSeat", { amount: catalogSeatPrice(plan.amountMonthly) })}
+                  {t("freeMode.perSeat", { amount: plan.priceLabel })}
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {t("freeMode.collaborationIncluded")}
@@ -124,14 +162,33 @@ export default async function DashboardBillingPage({
                 <dt className="text-muted-foreground">{t("currentSubscription.status")}</dt>
                 <dd className="uppercase tracking-wide text-foreground">{subscription.status}</dd>
               </div>
+              {billingInterval ? (
+                <div className="flex items-center justify-between">
+                  <dt className="text-muted-foreground">
+                    {t("currentSubscription.billingInterval")}
+                  </dt>
+                  <dd className="text-foreground">
+                    {billingInterval === "year"
+                      ? t("currentSubscription.annual")
+                      : t("currentSubscription.monthly")}
+                  </dd>
+                </div>
+              ) : null}
               <div className="flex items-center justify-between">
                 <dt className="text-muted-foreground">{t("currentSubscription.seats")}</dt>
                 <dd className="text-foreground">{subscription.seat_quantity}</dd>
               </div>
-              {currentPlan ? (
+              {perSeatAmount !== null ? (
                 <div className="flex items-center justify-between">
                   <dt className="text-muted-foreground">{t("currentSubscription.perSeatCost")}</dt>
-                  <dd className="text-foreground">{catalogSeatPrice(currentPlan.amountMonthly)}</dd>
+                  <dd className="text-foreground">
+                    {catalogSeatPrice(perSeatAmount)}
+                    {billingInterval === "year" ? (
+                      <span className="ml-1 text-sm text-muted-foreground">
+                        ({t("currentSubscription.billedAnnually")})
+                      </span>
+                    ) : null}
+                  </dd>
                 </div>
               ) : null}
               <div className="flex items-center justify-between">
@@ -148,11 +205,11 @@ export default async function DashboardBillingPage({
               {t("currentSubscription.noSubscription")}
             </div>
           )}
-          {teamUiMode === "paid_team" && currentPlan && estimatedMonthlySeatTotal !== null ? (
+          {teamUiMode === "paid_team" && perSeatAmount !== null && estimatedMonthlySeatTotal !== null ? (
             <p className="mt-4 rounded-lg app-surface-subtle px-3 py-2 text-sm text-muted-foreground">
               {t("paidTeam.breakdown", {
                 seats: String(subscription?.seat_quantity ?? memberCount),
-                seatCost: catalogSeatPrice(currentPlan.amountMonthly),
+                seatCost: catalogSeatPrice(perSeatAmount),
                 monthlyTotal: new Intl.NumberFormat(locale, {
                   style: "currency",
                   currency: "USD",
@@ -173,11 +230,11 @@ export default async function DashboardBillingPage({
         />
       </section>
 
-      {teamUiMode === "paid_solo" && currentPlan ? (
+      {teamUiMode === "paid_solo" && perSeatAmount !== null ? (
         <section className="rounded-xl bg-card ring-1 ring-border p-6">
           <h2 className="text-lg font-semibold text-foreground">{t("paidSolo.title")}</h2>
           <p className="mt-2 text-muted-foreground">
-            {t("paidSolo.description", { amount: catalogSeatPrice(currentPlan.amountMonthly) })}
+            {t("paidSolo.description", { amount: catalogSeatPrice(perSeatAmount) })}
           </p>
           <Link
             href="/dashboard/team"
