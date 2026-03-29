@@ -154,8 +154,7 @@ export function UserDropdown({
   }
 
   const showTeamSwitcher = teamSwitchingAvailableOrUnknown && teamOptions.length > 1;
-  const showTeamSwitcherLoading =
-    teamSwitchingAvailableOrUnknown && teamOptionsState === "loading";
+  const showTeamSwitcherLoading = teamSwitchingAvailableOrUnknown && teamOptionsState === "loading";
 
   return (
     <DropdownMenu open={open} onOpenChange={handleOpenChange}>
