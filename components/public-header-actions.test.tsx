@@ -59,7 +59,7 @@ describe("PublicHeaderActions", () => {
 
   it("shows login and signup CTAs when logged out", () => {
     render(
-      <PublicHeaderActions loginLabel="Log in" signupLabel="Start free" openAppLabel="Open app" choosePlanLabel="Choose a plan" />,
+      <PublicHeaderActions loginLabel="Log in" signupLabel="Start free" openAppLabel="Open app" />,
     );
 
     expect(screen.getByText("Log in")).toBeInTheDocument();
@@ -73,7 +73,7 @@ describe("PublicHeaderActions", () => {
     useIsLoggedIn.mockReturnValue(true);
 
     render(
-      <PublicHeaderActions loginLabel="Log in" signupLabel="Start free" openAppLabel="Open app" choosePlanLabel="Choose a plan" />,
+      <PublicHeaderActions loginLabel="Log in" signupLabel="Start free" openAppLabel="Open app" />,
     );
 
     expect(screen.queryByText("Log in")).not.toBeInTheDocument();

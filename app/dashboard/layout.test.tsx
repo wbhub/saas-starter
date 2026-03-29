@@ -39,14 +39,26 @@ describe("DashboardLayout", () => {
     vi.doMock("@/components/team-context-error-card", () => ({
       TeamContextErrorCard: () => <div>Team context error</div>,
     }));
+    const mockSupabase = {
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            maybeSingle: vi.fn().mockResolvedValue({
+              data: { onboarding_completed_at: "2024-01-01T00:00:00Z" },
+            }),
+          }),
+        }),
+      }),
+    };
     vi.doMock("@/lib/dashboard/server", () => ({
       getDashboardShellData: vi.fn().mockResolvedValue({
-        user: { email: "owner@example.com" },
+        user: { id: "user_123", email: "owner@example.com" },
         profile: { avatar_url: null },
         teamContext: { teamId: "team_123", teamName: "Acme Team", role: "owner" },
         teamContextLoadFailed: false,
         displayName: "Owner",
         csrfToken: "csrf_token",
+        supabase: mockSupabase,
         billingContext: {
           billingEnabled: true,
           subscription: null,
@@ -72,7 +84,7 @@ describe("DashboardLayout", () => {
     }));
     vi.doMock("next/headers", () => ({
       cookies: async () => ({
-        get: vi.fn(() => undefined),
+        get: vi.fn(() => ({ value: "user_123" })),
         set: vi.fn(),
       }),
     }));

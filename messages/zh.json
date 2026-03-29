@@ -33,7 +33,6 @@
     "dashboard": "控制台",
     "login": "登录",
     "openApp": "打开应用",
-    "choosePlan": "选择方案",
     "startFree": "免费开始",
     "getStarted": "开始使用"
   },
@@ -95,7 +94,6 @@
       "title": "您需要花数月构建的 SaaS 基础设施已经就绪。",
       "description": "身份验证、多租户团队、按席位 Stripe 计费、数据库级 AI 令牌预算、审计日志和加固的安全管道 — 基于 Next.js 16、Supabase 和 React 19 端到端连接，让您完全专注于产品的独特价值。",
       "goDashboard": "前往控制台",
-      "choosePlan": "选择方案",
       "startFreeNow": "立即免费开始",
       "getStartedNow": "立即开始",
       "viewPricing": "查看定价",
@@ -192,7 +190,6 @@
       "title": "不要重复造基础设施的轮子。开始交付产品。",
       "description": "每个 SaaS 都需要身份验证、团队、计费和安全性。从这个经过数千行生产级代码打磨的版本开始，把时间花在客户真正付费的功能上。",
       "openDashboard": "打开控制台",
-      "choosePlan": "选择方案",
       "createAccount": "创建账户",
       "comparePlans": "比较计划",
       "faqTitle": "常见问题",
@@ -1058,8 +1055,7 @@
       "missingCheckoutUrl": "缺少结账 URL。",
       "completeFailed": "出了点问题。请重试。",
       "requestFailed": "请求失败。"
-    },
-    "signOut": "退出登录"
+    }
   },
   "ApiOnboardingComplete": {
     "errors": {

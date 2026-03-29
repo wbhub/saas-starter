@@ -33,7 +33,6 @@
     "dashboard": "Panel",
     "login": "Iniciar sesión",
     "openApp": "Abrir app",
-    "choosePlan": "Elegir un plan",
     "startFree": "Comenzar gratis",
     "getStarted": "Comenzar"
   },
@@ -95,7 +94,6 @@
       "title": "La infraestructura SaaS que tardarías meses en construir ya está lista.",
       "description": "Auth, equipos multi-tenant, facturación Stripe por asientos, AI con presupuestos de tokens en la base de datos, auditoría y un pipeline de seguridad endurecido — conectado de extremo a extremo con Next.js 16, Supabase y React 19 para que te centres por completo en lo que hace único a tu producto.",
       "goDashboard": "Ir al panel",
-      "choosePlan": "Elegir un plan",
       "startFreeNow": "Comenzar gratis",
       "getStartedNow": "Comenzar ahora",
       "viewPricing": "Ver precios",
@@ -192,7 +190,6 @@
       "title": "Deja de reconstruir infraestructura. Empieza a enviar producto.",
       "description": "Todo SaaS necesita auth, equipos, facturación y seguridad. Empieza con la versión que requirió miles de líneas de código pensado para producción, y dedica tu tiempo a lo que tus clientes realmente pagan.",
       "openDashboard": "Abrir panel",
-      "choosePlan": "Elegir un plan",
       "createAccount": "Crear cuenta",
       "comparePlans": "Comparar planes",
       "faqTitle": "Preguntas frecuentes",
@@ -1058,8 +1055,7 @@
       "missingCheckoutUrl": "Falta la URL de checkout.",
       "completeFailed": "Algo salió mal. Por favor, inténtalo de nuevo.",
       "requestFailed": "La solicitud falló."
-    },
-    "signOut": "Cerrar sesión"
+    }
   },
   "ApiOnboardingComplete": {
     "errors": {

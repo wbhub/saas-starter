@@ -1,12 +1,13 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import type { User } from "@supabase/supabase-js";
+import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 
 export async function updateSession(request: NextRequest, options?: { requestHeaders?: Headers }) {
   const requestHeaders = options?.requestHeaders ?? request.headers;
   let user: User | null = null;
+  let supabase: SupabaseClient | null = null;
   let response = NextResponse.next({
     request: {
       headers: requestHeaders,
@@ -14,7 +15,7 @@ export async function updateSession(request: NextRequest, options?: { requestHea
   });
 
   try {
-    const supabase = createServerClient(
+    supabase = createServerClient(
       env.NEXT_PUBLIC_SUPABASE_URL,
       env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
       {
@@ -47,5 +48,5 @@ export async function updateSession(request: NextRequest, options?: { requestHea
       error,
     );
   }
-  return { response, user };
+  return { response, user, supabase };
 }

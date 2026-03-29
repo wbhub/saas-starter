@@ -45,8 +45,6 @@ export function HeroSection() {
               loggedOutHref="/onboarding"
               loggedInLabel={t("goDashboard")}
               loggedOutLabel={t(env.APP_FREE_PLAN_ENABLED ? "startFreeNow" : "getStartedNow")}
-              onboardingLabel={t("choosePlan")}
-              onboardingHref="/onboarding"
               className="inline-flex items-center gap-2 rounded-lg bg-indigo-500 px-5 py-3 font-medium text-white hover:bg-indigo-400"
             >
               <ArrowRight className="h-4 w-4" />
@@ -281,8 +279,6 @@ export function CtaFaqSection() {
               loggedOutHref="/onboarding"
               loggedInLabel={t("openDashboard")}
               loggedOutLabel={t("createAccount")}
-              onboardingLabel={t("choosePlan")}
-              onboardingHref="/onboarding"
               className="inline-flex items-center gap-2 rounded-lg bg-indigo-500 px-5 py-3 font-medium text-white hover:bg-indigo-400"
             >
               <ArrowRight className="h-4 w-4" />

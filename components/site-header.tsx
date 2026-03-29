@@ -7,7 +7,6 @@ import { env } from "@/lib/env";
 
 type SiteHeaderProps = {
   dashboardUser?: UserDropdownProps;
-  hideOpenApp?: boolean;
 };
 
 export function SiteHeader(props: SiteHeaderProps) {
@@ -45,8 +44,6 @@ export function SiteHeader(props: SiteHeaderProps) {
                 env.APP_FREE_PLAN_ENABLED ? "SiteHeader.startFree" : "SiteHeader.getStarted",
               )}
               openAppLabel={t("SiteHeader.openApp")}
-              choosePlanLabel={t("SiteHeader.choosePlan")}
-              hideOpenApp={props.hideOpenApp}
             />
           )}
         </div>

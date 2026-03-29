@@ -10,16 +10,12 @@ type PublicHeaderActionsProps = {
   loginLabel: string;
   signupLabel: string;
   openAppLabel: string;
-  choosePlanLabel: string;
-  hideOpenApp?: boolean;
 };
 
 export function PublicHeaderActions({
   loginLabel,
   signupLabel,
   openAppLabel,
-  choosePlanLabel,
-  hideOpenApp,
 }: PublicHeaderActionsProps) {
   const isLoggedIn = useIsLoggedIn();
 
@@ -40,19 +36,15 @@ export function PublicHeaderActions({
             loggedOutHref="/onboarding"
             loggedInLabel={openAppLabel}
             loggedOutLabel={signupLabel}
-            onboardingLabel={choosePlanLabel}
-            onboardingHref="/onboarding"
             className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400"
           />
         </>
-      ) : hideOpenApp ? null : (
+      ) : (
         <AuthAwareLink
           loggedInHref="/dashboard"
           loggedOutHref="/onboarding"
           loggedInLabel={openAppLabel}
           loggedOutLabel={signupLabel}
-          onboardingLabel={choosePlanLabel}
-          onboardingHref="/onboarding"
           className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400"
         />
       )}

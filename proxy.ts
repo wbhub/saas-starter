@@ -8,6 +8,8 @@ import {
 } from "@/lib/security/csrf";
 import { createRequestId, REQUEST_ID_HEADER } from "@/lib/http/request-id";
 import { updateSession } from "@/lib/supabase/middleware";
+import { isFreePlanEnabled } from "@/lib/billing/provider";
+import { ONBOARDING_COMPLETE_COOKIE } from "@/lib/constants/onboarding";
 
 function getSupabaseOrigin() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -158,10 +160,51 @@ export async function proxy(request: NextRequest) {
   });
   let user = null;
 
-  if (shouldRefreshSession(request.nextUrl.pathname)) {
+  let supabase = null;
+  // Refresh session on known auth-sensitive paths. When free plan is disabled,
+  // also refresh on public pages if auth cookies are present (to detect limbo users).
+  const freePlanEnabled = isFreePlanEnabled();
+  const hasAuthCookies = request.cookies.getAll().some((c) => c.name.startsWith("sb-"));
+  if (shouldRefreshSession(request.nextUrl.pathname) || (!freePlanEnabled && hasAuthCookies)) {
     const sessionResult = await updateSession(request, { requestHeaders });
     response = sessionResult.response;
     user = sessionResult.user;
+    supabase = sessionResult.supabase;
+  }
+
+  // Auto sign-out limbo users: authenticated but haven't completed onboarding,
+  // navigating to a public page when there's no free plan to fall back on.
+  if (user && supabase && !freePlanEnabled) {
+    const pathname = request.nextUrl.pathname;
+    const isPublicPage =
+      !pathname.startsWith("/onboarding") &&
+      !pathname.startsWith("/api/") &&
+      !pathname.startsWith("/dashboard") &&
+      !pathname.startsWith("/auth/") &&
+      !pathname.startsWith("/signup");
+
+    if (isPublicPage) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("onboarding_completed_at")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (!profile?.onboarding_completed_at) {
+        await supabase.auth.signOut();
+        const redirectUrl = request.nextUrl.clone();
+        const signOutResponse = NextResponse.redirect(redirectUrl);
+        for (const cookie of request.cookies.getAll()) {
+          if (cookie.name.startsWith("sb-")) {
+            signOutResponse.cookies.delete(cookie.name);
+          }
+        }
+        signOutResponse.cookies.delete(ONBOARDING_COMPLETE_COOKIE);
+        signOutResponse.headers.set("Content-Security-Policy", buildCspHeader(nonce));
+        signOutResponse.headers.set(REQUEST_ID_HEADER, requestId);
+        return signOutResponse;
+      }
+    }
   }
 
   if (!user && isProtectedDashboardPath(request.nextUrl.pathname)) {
