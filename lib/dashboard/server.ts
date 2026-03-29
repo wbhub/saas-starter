@@ -77,6 +77,7 @@ export type DashboardShellData = Awaited<ReturnType<typeof getDashboardBaseData>
   billingContext: DashboardBillingContext | null;
   aiUiGate: DashboardAiUiGate;
   teamUiMode: DashboardTeamUiMode | null;
+  canSwitchTeams: boolean | null;
 };
 
 export {
@@ -235,6 +236,34 @@ export async function getDashboardTeamOptions(
   }
 }
 
+export async function getDashboardCanSwitchTeams(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<boolean | null> {
+  try {
+    const teamMembershipsResult = await supabase
+      .from("team_memberships")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId);
+
+    if (teamMembershipsResult.error) {
+      logger.warn("Failed to count dashboard team memberships; leaving switchability unknown.", {
+        userId,
+        error: teamMembershipsResult.error,
+      });
+      return null;
+    }
+
+    return (teamMembershipsResult.count ?? 0) > 1;
+  } catch (error) {
+    logger.warn("Failed to count dashboard team memberships; leaving switchability unknown.", {
+      userId,
+      error,
+    });
+    return null;
+  }
+}
+
 export const getDashboardShellData = cache(async function getDashboardShellData() {
   return measureDashboardTask("dashboard.shellData", {}, async () => {
     const baseData = await getDashboardBaseData();
@@ -245,6 +274,7 @@ export const getDashboardShellData = cache(async function getDashboardShellData(
         billingContext: null,
         aiUiGate: await getDashboardAiUiGate(baseData.supabase, null),
         teamUiMode: null,
+        canSwitchTeams: false,
       } satisfies DashboardShellData;
     }
 
@@ -254,19 +284,21 @@ export const getDashboardShellData = cache(async function getDashboardShellData(
         billingContext: null,
         aiUiGate: await getDashboardAiUiGate(baseData.supabase, null),
         teamUiMode: null,
+        canSwitchTeams: false,
       } satisfies DashboardShellData;
     }
 
-    const snapshot = await getCachedDashboardTeamSnapshot(
-      baseData.supabase,
-      baseData.teamContext.teamId,
-    );
+    const [snapshot, canSwitchTeams] = await Promise.all([
+      getCachedDashboardTeamSnapshot(baseData.supabase, baseData.teamContext.teamId),
+      getDashboardCanSwitchTeams(baseData.supabase, baseData.user.id),
+    ]);
 
     return {
       ...baseData,
       billingContext: snapshot.billingContext,
       aiUiGate: snapshot.aiUiGate,
       teamUiMode: snapshot.teamUiMode,
+      canSwitchTeams,
     } satisfies DashboardShellData;
   });
 });
