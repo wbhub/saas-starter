@@ -236,5 +236,4 @@ describe("Dashboard billing page free plan behavior", () => {
     expect(html).toContain("billingDisabled.title");
     expect(html).toContain('data-billing-enabled="false"');
   });
-
 });
