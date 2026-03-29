@@ -33,16 +33,20 @@ export function ThreadSidebar({
   const t = useTranslations("AiThreads");
   const [threads, setThreads] = useState<Thread[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   const loadThreads = useCallback(async () => {
+    setLoadError(false);
     try {
       const response = await fetchWithCsrf("/api/ai/threads");
       if (response.ok) {
         const data = await response.json();
         setThreads(data.threads ?? []);
+      } else {
+        setLoadError(true);
       }
     } catch {
-      // Silently fail — threads are optional
+      setLoadError(true);
     } finally {
       setIsLoading(false);
     }
@@ -88,6 +92,14 @@ export function ThreadSidebar({
       <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
         {isLoading ? (
           <p className="p-2 text-xs text-muted-foreground">{t("loading")}</p>
+        ) : loadError ? (
+          <button
+            type="button"
+            onClick={() => void loadThreads()}
+            className="w-full p-2 text-left text-xs text-red-500 hover:underline"
+          >
+            {t("loadError")}
+          </button>
         ) : threads.length === 0 ? (
           <p className="p-2 text-xs text-muted-foreground">{t("empty")}</p>
         ) : (

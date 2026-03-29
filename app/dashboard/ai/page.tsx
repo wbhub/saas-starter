@@ -4,12 +4,14 @@ import { AiChatCard } from "@/components/ai-chat-card";
 import { AiObjectCard } from "@/components/ai-object-card";
 import { AiPageTabs } from "@/components/ai/page-tabs";
 import { env } from "@/lib/env";
+import { getAiToolsEnabled } from "@/lib/ai/config";
+import { AI_TOOL_MAP } from "@/lib/ai/tools";
 import { parseAiProviderName } from "@/lib/ai/provider-name";
 import { getDashboardShellData } from "@/lib/dashboard/server";
 
 export default async function DashboardAiPage() {
   const aiProviderName = parseAiProviderName(env.AI_PROVIDER);
-  const aiToolsEnabled = env.NEXT_PUBLIC_AI_TOOLS_ENABLED === "true";
+  const aiToolsEnabled = getAiToolsEnabled() && Object.keys(AI_TOOL_MAP).length > 0;
   const t = await getTranslations("DashboardAiPage");
   const { aiUiGate } = await getDashboardShellData();
 

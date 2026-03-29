@@ -280,6 +280,7 @@
   "AiThreads": {
     "title": "Threads",
     "loading": "Loading threads...",
+    "loadError": "Failed to load threads. Tap to retry.",
     "empty": "No threads yet.",
     "untitled": "Untitled thread",
     "actions": {

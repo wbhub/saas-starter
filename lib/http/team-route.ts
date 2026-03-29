@@ -66,9 +66,13 @@ export async function withTeamRoute<TBody = undefined>({
   const jsonErr = (error: string, status: number, init?: ResponseInit) =>
     jsonWithRequestId(requestId, { ok: false as const, error }, { ...init, status });
 
-  const csrfError = verifyCsrfProtection(request, csrfMessages);
-  if (csrfError) {
-    return withRequestId(csrfError, requestId);
+  const isSafeMethod =
+    request.method === "GET" || request.method === "HEAD" || request.method === "OPTIONS";
+  if (!isSafeMethod) {
+    const csrfError = verifyCsrfProtection(request, csrfMessages);
+    if (csrfError) {
+      return withRequestId(csrfError, requestId);
+    }
   }
 
   if (requireJsonBody || schema) {
