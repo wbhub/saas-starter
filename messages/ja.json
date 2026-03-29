@@ -361,7 +361,7 @@
       "description": "プランの更新、Stripe ポータルの起動、サブスクリプション状態の確認を行えます。"
     },
     "checkoutSuccess": {
-      "message": "お支払いが完了しました！サブスクリプションはまもなく有効になります。"
+      "message": "お支払いが完了しました！サブスクリプションが有効になりました。"
     },
     "currentSubscription": {
       "title": "現在のサブスクリプション",
@@ -370,6 +370,10 @@
       "status": "ステータス",
       "seats": "席数",
       "perSeatCost": "1 席あたりの料金",
+      "billingInterval": "請求間隔",
+      "monthly": "月額",
+      "annual": "年額",
+      "billedAnnually": "年払い",
       "periodEnd": "期間終了日",
       "notAvailable": "N/A",
       "currentPlanFree": "現在のプラン: Free",

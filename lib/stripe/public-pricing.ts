@@ -12,8 +12,10 @@ export type PublicPricingPlan = {
   description: string;
   priceLabel: string;
   annualPriceLabel?: string;
+  amountMonthly: number;
   amountAnnualMonthly?: number;
   popular?: boolean;
+  features: string[];
 };
 
 let warnedStripePricingDisabled = false;
@@ -75,64 +77,112 @@ export const getPublicPricingCatalog = cache(async (): Promise<PublicPricingPlan
       annualPriceLabel: plan.amountAnnualMonthly
         ? catalogPrice(plan.amountAnnualMonthly)
         : undefined,
+      amountMonthly: plan.amountMonthly,
       amountAnnualMonthly: plan.amountAnnualMonthly,
       popular: plan.popular,
+      features: plan.features,
     }));
   }
 
+  type StripePrice = Awaited<ReturnType<typeof stripe.prices.retrieve>>;
+  const formatRetrieveError = (error: unknown) =>
+    error instanceof Error ? { name: error.name, message: error.message } : String(error);
+
   const stripePrices = await Promise.all(
     plans.map(async (plan) => {
-      if (!plan.priceId) {
-        logger.warn("Missing Stripe price id for plan; using static label.", {
-          planKey: plan.key,
-        });
-        return [plan.key, null] as const;
-      }
-      try {
-        const stripePrice = await stripe.prices.retrieve(plan.priceId);
-        return [plan.key, stripePrice] as const;
-      } catch (error) {
-        logger.warn("Failed to retrieve Stripe price for plan; using static label.", {
-          planKey: plan.key,
-          error:
-            error instanceof Error ? { name: error.name, message: error.message } : String(error),
-        });
-        return [plan.key, null] as const;
-      }
+      const monthlyPromise: Promise<StripePrice | null> = plan.priceId
+        ? stripe.prices.retrieve(plan.priceId).catch((error) => {
+            logger.warn("Failed to retrieve Stripe monthly price for plan; using static label.", {
+              planKey: plan.key,
+              error: formatRetrieveError(error),
+            });
+            return null;
+          })
+        : (() => {
+            logger.warn("Missing Stripe price id for plan; using static label.", {
+              planKey: plan.key,
+            });
+            return Promise.resolve(null);
+          })();
+
+      const annualPromise: Promise<StripePrice | null> = plan.annualPriceId
+        ? stripe.prices.retrieve(plan.annualPriceId).catch((error) => {
+            logger.warn("Failed to retrieve Stripe annual price for plan; using static label.", {
+              planKey: plan.key,
+              error: formatRetrieveError(error),
+            });
+            return null;
+          })
+        : Promise.resolve(null);
+
+      const [monthlyPrice, annualPrice] = await Promise.all([monthlyPromise, annualPromise]);
+      return [plan.key, { monthlyPrice, annualPrice }] as const;
     }),
   );
 
   const stripePriceByPlanKey = new Map(stripePrices);
 
   return plans.map((plan) => {
-    const stripePrice = stripePriceByPlanKey.get(plan.key);
-    const resolvedLabel =
-      stripePrice &&
-      formatStripePriceLabel(
-        {
-          currency: stripePrice.currency,
-          unit_amount: stripePrice.unit_amount,
-          recurring: stripePrice.recurring
-            ? {
-                interval: stripePrice.recurring.interval,
-                interval_count: stripePrice.recurring.interval_count,
-              }
-            : null,
-        },
-        locale,
-        t,
-      );
+    const prices = stripePriceByPlanKey.get(plan.key);
+    const monthlyStripePrice = prices?.monthlyPrice ?? null;
+    const annualStripePrice = prices?.annualPrice ?? null;
+
+    const resolvedMonthlyLabel = monthlyStripePrice
+      ? formatStripePriceLabel(
+          {
+            currency: monthlyStripePrice.currency,
+            unit_amount: monthlyStripePrice.unit_amount,
+            recurring: monthlyStripePrice.recurring
+              ? {
+                  interval: monthlyStripePrice.recurring.interval,
+                  interval_count: monthlyStripePrice.recurring.interval_count,
+                }
+              : null,
+          },
+          locale,
+          t,
+        )
+      : null;
+
+    const resolvedAnnualMonthlyLabel = annualStripePrice
+      ? formatStripePriceLabel(
+          {
+            currency: annualStripePrice.currency,
+            unit_amount:
+              annualStripePrice.unit_amount !== null
+                ? Math.round(annualStripePrice.unit_amount / 12)
+                : null,
+            recurring: { interval: "month", interval_count: 1 },
+          },
+          locale,
+          t,
+        )
+      : null;
+
+    const liveAmountMonthly =
+      monthlyStripePrice?.unit_amount !== null && monthlyStripePrice?.unit_amount !== undefined
+        ? monthlyStripePrice.unit_amount / 100
+        : plan.amountMonthly;
+
+    const liveAmountAnnualMonthly =
+      annualStripePrice?.unit_amount !== null && annualStripePrice?.unit_amount !== undefined
+        ? annualStripePrice.unit_amount / 100 / 12
+        : plan.amountAnnualMonthly;
 
     return {
       key: plan.key,
       name: plan.name,
       description: plan.description,
-      priceLabel: resolvedLabel ?? catalogPrice(plan.amountMonthly),
-      annualPriceLabel: plan.amountAnnualMonthly
-        ? catalogPrice(plan.amountAnnualMonthly)
-        : undefined,
-      amountAnnualMonthly: plan.amountAnnualMonthly,
+      priceLabel: resolvedMonthlyLabel ?? catalogPrice(plan.amountMonthly),
+      annualPriceLabel: resolvedAnnualMonthlyLabel
+        ? resolvedAnnualMonthlyLabel
+        : plan.amountAnnualMonthly
+          ? catalogPrice(plan.amountAnnualMonthly)
+          : undefined,
+      amountMonthly: liveAmountMonthly,
+      amountAnnualMonthly: liveAmountAnnualMonthly,
       popular: plan.popular,
+      features: plan.features,
     };
   });
 });

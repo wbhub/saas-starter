@@ -10,6 +10,8 @@ import { getDashboardBillingContext } from "@/lib/dashboard/team-snapshot";
 import { plans, hasAnnualPricing } from "@/lib/stripe/config";
 import { FREE_PLAN_FEATURES, PLAN_KEYS } from "@/lib/stripe/plans";
 import { createCheckoutUrl } from "@/lib/stripe/create-checkout-url";
+import { syncCheckoutSuccessForTeam } from "@/lib/stripe/checkout-success";
+import { getPublicPricingCatalog } from "@/lib/stripe/public-pricing";
 import { canManageTeamBilling } from "@/lib/team-context";
 import { logger } from "@/lib/logger";
 
@@ -49,10 +51,24 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
     }
 
     const checkoutStatus = getFirstSearchParamValue(resolvedSearchParams.checkout);
+    const sessionId = getFirstSearchParamValue(resolvedSearchParams.session_id) ?? null;
 
-    // Handle checkout success return — the webhook handles subscription sync,
-    // so we just mark onboarding complete and redirect.
+    // Handle checkout success return — eagerly sync the subscription via the
+    // session_id so the dashboard reflects the new plan immediately, then mark
+    // onboarding complete and redirect. The webhook remains authoritative.
     if (checkoutStatus === "success") {
+      if (sessionId) {
+        try {
+          await syncCheckoutSuccessForTeam(teamContext.teamId, { sessionId });
+        } catch (error) {
+          logger.warn("Eager checkout sync failed on onboarding; webhook will handle it.", {
+            teamId: teamContext.teamId,
+            sessionId,
+            error,
+          });
+        }
+      }
+
       try {
         await supabase
           .from("profiles")
@@ -123,17 +139,21 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
 
   const freePlanEnabled = isFreePlanEnabled();
 
-  const planData = plans.map((plan) => ({
-    key: plan.key,
-    name: plan.name,
-    amountMonthly: plan.amountMonthly,
-    amountAnnualMonthly: plan.amountAnnualMonthly,
-    description: plan.description,
-    popular: plan.popular ?? false,
-    features: plan.features,
-    hasPriceId: plan.priceId != null,
-    hasAnnualPriceId: plan.annualPriceId != null,
-  }));
+  const livePricing = await getPublicPricingCatalog();
+  const planData = livePricing.map((lp) => {
+    const configPlan = plans.find((p) => p.key === lp.key);
+    return {
+      key: lp.key,
+      name: lp.name,
+      amountMonthly: lp.amountMonthly,
+      amountAnnualMonthly: lp.amountAnnualMonthly,
+      description: lp.description,
+      popular: lp.popular ?? false,
+      features: lp.features,
+      hasPriceId: configPlan?.priceId != null,
+      hasAnnualPriceId: configPlan?.annualPriceId != null,
+    };
+  });
 
   return (
     <div className="app-content flex min-h-screen flex-col bg-[color:var(--background)] text-[color:var(--foreground)]">

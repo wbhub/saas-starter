@@ -41,6 +41,7 @@ function mockDashboardDependencies({
         billingEnabled: true,
         subscription,
         effectivePlanKey,
+        billingInterval: subscription ? "month" : null,
         memberCount,
         isPaidPlan,
         canInviteMembers: isPaidPlan,

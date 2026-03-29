@@ -5,6 +5,7 @@ type DashboardTeamSnapshot = {
     billingEnabled: boolean;
     subscription: null;
     effectivePlanKey: "free";
+    billingInterval: null;
     memberCount: number;
     isPaidPlan: boolean;
     canInviteMembers: boolean;
@@ -33,6 +34,7 @@ const TEST_SNAPSHOT: DashboardTeamSnapshot = {
     billingEnabled: true,
     subscription: null,
     effectivePlanKey: "free",
+    billingInterval: null,
     memberCount: 1,
     isPaidPlan: false,
     canInviteMembers: false,

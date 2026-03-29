@@ -361,7 +361,7 @@
       "description": "Mettez à jour les forfaits, ouvrez le portail Stripe et vérifiez l'état de votre abonnement."
     },
     "checkoutSuccess": {
-      "message": "Paiement réussi ! Votre abonnement sera actif sous peu."
+      "message": "Paiement réussi ! Votre abonnement est maintenant actif."
     },
     "currentSubscription": {
       "title": "Abonnement en cours",
@@ -370,6 +370,10 @@
       "status": "Statut",
       "seats": "Sièges",
       "perSeatCost": "Coût par siège",
+      "billingInterval": "Intervalle de facturation",
+      "monthly": "Mensuel",
+      "annual": "Annuel",
+      "billedAnnually": "facturé annuellement",
       "periodEnd": "Fin de période",
       "notAvailable": "N / A",
       "currentPlanFree": "Forfait actuel : Gratuit",
