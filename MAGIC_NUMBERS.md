@@ -183,6 +183,18 @@ Configured via `STRIPE_SEAT_PRORATION_BEHAVIOR` env var, defaults to `"create_pr
 | Attachment `name` max length     | 255 chars     | Standard filesystem path component limit.                                                                                                                                              |
 | Attachment `mimeType` max length | 255 chars     | Generous for any valid MIME type.                                                                                                                                                      |
 
+### Client image compression (`lib/ai/compress-chat-image.ts`, `components/ai-chat-card.tsx`)
+
+Images are decoded in the browser, downscaled, and re-encoded (prefer **WebP** when `canvas.toDataURL("image/webp")` is supported, else **JPEG**; **PNG** as fallback when alpha is likely and WebP is unavailable). **Animated GIFs** become a single static frame in the output format. After compression, each attachment’s data URL is still capped by `MAX_ATTACHMENT_DATA_CHARS`; the sum of all inline `data:` URLs in one send is capped by `MAX_TOTAL_ATTACHMENT_DATA_CHARS` in `handleSubmit`.
+
+| Constant                         | Value            | Why                                                                                                                                                         |
+| -------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MAX_CHAT_IMAGE_RAW_BYTES`       | 25 MiB           | Max image file size before compression. Rejects oversized uploads early (sync validation and compressor guard).                                            |
+| `MAX_CHAT_IMAGE_DECODED_PIXELS`  | 25,000,000       | Max decoded width×height (~25 MP). Limits memory/CPU from huge bitmaps.                                                                                     |
+| `CHAT_IMAGE_COMPRESS_LONG_EDGE_PX` | 2,048          | Starting long-edge length in px; the loop also lowers quality and then scales the long edge by ~0.85 until under the data URL budget or a 256px floor.      |
+| `MAX_ATTACHMENT_DATA_CHARS`      | 180,000          | Per-attachment target for encoded `data:` length after compression (unchanged; non-image inline files still use the same cap in validation where applicable). |
+| `MAX_TOTAL_ATTACHMENT_DATA_CHARS`| 220,000          | Enforced after compression: total length of all `data:` attachment URLs in one outgoing message.                                                            |
+
 ### AI Structured Output (`app/api/ai/object/route.ts`)
 
 | Constant                | Value       | Why                                                                                                                                                   |

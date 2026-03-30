@@ -16,6 +16,13 @@ import {
   SUPPORTED_IMAGE_MIME_TYPES,
   toProviderFilePlaceholderUrl,
 } from "@/lib/ai/attachments";
+import {
+  CHAT_IMAGE_COMPRESS_LONG_EDGE_PX,
+  ChatImageCompressionError,
+  compressImageFileForChat,
+  MAX_CHAT_IMAGE_RAW_BYTES,
+  MAX_CHAT_IMAGE_RAW_MB,
+} from "@/lib/ai/compress-chat-image";
 import { Sparkles } from "lucide-react";
 import { Conversation } from "@/components/ai/conversation";
 import { MessageBubble } from "@/components/ai/message-bubble";
@@ -147,7 +154,16 @@ function pruneHistoricalAttachments(
 }
 
 async function fileToUiPart(file: File) {
-  const mediaType = resolveMimeType(file) || "application/octet-stream";
+  let workFile = file;
+  let mediaType = resolveMimeType(file) || "application/octet-stream";
+  if (SUPPORTED_IMAGE_MIME_TYPES.has(mediaType)) {
+    workFile = await compressImageFileForChat(file, {
+      maxDataUrlChars: MAX_ATTACHMENT_DATA_CHARS,
+      maxLongEdgePx: CHAT_IMAGE_COMPRESS_LONG_EDGE_PX,
+    });
+    mediaType = resolveMimeType(workFile) || mediaType;
+  }
+
   const url = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -158,13 +174,13 @@ async function fileToUiPart(file: File) {
       reject(new Error("Unable to read selected file."));
     };
     reader.onerror = () => reject(reader.error ?? new Error("Unable to read selected file."));
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(workFile);
   });
 
   return {
     type: "file" as const,
     mediaType,
-    filename: file.name,
+    filename: workFile.name,
     url,
   };
 }
@@ -355,6 +371,12 @@ export function AiChatCard({
         ) {
           continue;
         }
+        if (SUPPORTED_IMAGE_MIME_TYPES.has(mimeType)) {
+          if (file.size > MAX_CHAT_IMAGE_RAW_BYTES) {
+            return t("errors.imageRawTooLarge", { maxMb: MAX_CHAT_IMAGE_RAW_MB });
+          }
+          continue;
+        }
         const encodedChars = estimateDataUrlLength(file.size, mimeType);
         if (encodedChars > MAX_ATTACHMENT_DATA_CHARS) {
           return t("errors.fileTooLarge");
@@ -385,6 +407,16 @@ export function AiChatCard({
           return fileToUiPart(file);
         }),
       );
+      const totalDataUrlChars = fileParts.reduce((sum, part) => {
+        if (part.url.startsWith("data:")) {
+          return sum + part.url.length;
+        }
+        return sum;
+      }, 0);
+      if (totalDataUrlChars > MAX_TOTAL_ATTACHMENT_DATA_CHARS) {
+        setUploadErrorMessage(t("errors.totalAttachmentsTooLarge"));
+        return;
+      }
       await sendMessage({
         text,
         ...(fileParts.length > 0 ? { files: fileParts } : {}),
@@ -392,6 +424,16 @@ export function AiChatCard({
       // Refresh thread sidebar after send
       setThreadRefreshSignal((k) => k + 1);
     } catch (error) {
+      if (error instanceof ChatImageCompressionError) {
+        if (error.code === "raw_too_large") {
+          setUploadErrorMessage(t("errors.imageRawTooLarge", { maxMb: MAX_CHAT_IMAGE_RAW_MB }));
+        } else if (error.code === "pixels_too_large") {
+          setUploadErrorMessage(t("errors.imagePixelsTooLarge"));
+        } else {
+          setUploadErrorMessage(t("errors.imageCompressionFailed"));
+        }
+        return;
+      }
       if (error instanceof Error && error.message.trim().length > 0) {
         setUploadErrorMessage(error.message);
       } else {

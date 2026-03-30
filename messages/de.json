@@ -328,6 +328,9 @@
       "maxAttachments": "Maximal {max} Anhänge sind pro Nachricht erlaubt.",
       "unsupportedType": "Nicht unterstützter Anhangstyp: {mimeType}",
       "fileTooLarge": "Der Anhang ist zu groß. Halte Dateien unter ca. 180.000 codierten Zeichen.",
+      "imageRawTooLarge": "Diese Bilddatei ist zu groß (max. {maxMb} MB vor der Komprimierung).",
+      "imagePixelsTooLarge": "Dieses Bild hat zu viele Pixel für eine sichere Verarbeitung. Verwende ein kleineres Bild.",
+      "imageCompressionFailed": "Dieses Bild ließ sich nicht genug verkleinern zum Senden. Versuche ein kleineres oder einfacheres Bild.",
       "totalAttachmentsTooLarge": "Die Gesamtgröße der Anhänge ist für eine Nachricht zu groß. Verwende weniger oder kleinere Dateien."
     }
   },

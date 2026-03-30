@@ -328,6 +328,9 @@
       "maxAttachments": "Se permite un máximo de {max} adjuntos por mensaje.",
       "unsupportedType": "Tipo de adjunto no compatible: {mimeType}",
       "fileTooLarge": "El adjunto es demasiado grande. Mantén archivos por debajo de ~180.000 caracteres codificados.",
+      "imageRawTooLarge": "Esta imagen es demasiado grande (máx. {maxMb} MB antes de comprimir).",
+      "imagePixelsTooLarge": "Esta imagen tiene demasiados píxeles para procesarla con seguridad. Usa una imagen más pequeña.",
+      "imageCompressionFailed": "No se pudo reducir lo suficiente esta imagen para enviarla. Prueba con una imagen más pequeña o más simple.",
       "totalAttachmentsTooLarge": "El tamaño total de adjuntos es demasiado grande para un mensaje. Usa menos archivos o más pequeños."
     }
   },

@@ -328,6 +328,9 @@
       "maxAttachments": "{max} 個まで添付できます。",
       "unsupportedType": "未対応の添付ファイル形式です: {mimeType}",
       "fileTooLarge": "添付ファイルが大きすぎます。エンコード後で約 180,000 文字未満にしてください。",
+      "imageRawTooLarge": "画像ファイルが大きすぎます（圧縮前は最大 {maxMb} MB）。",
+      "imagePixelsTooLarge": "この画像のピクセル数が多すぎて安全に処理できません。より小さい画像を使用してください。",
+      "imageCompressionFailed": "送信できるサイズまで縮小できませんでした。より小さい、または単純な画像を試してください。",
       "totalAttachmentsTooLarge": "添付ファイルの合計サイズが 1 メッセージとして大きすぎます。ファイル数を減らすか、より小さいファイルを使用してください。"
     }
   },
