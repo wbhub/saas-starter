@@ -328,6 +328,9 @@
       "maxAttachments": "每条消息最多允许 {max} 个附件。",
       "unsupportedType": "不受支持的附件类型：{mimeType}",
       "fileTooLarge": "附件太大。将文件的编码字符数控制在约 180,000 个以内。",
+      "imageRawTooLarge": "图片文件过大（压缩前最大 {maxMb} MB）。",
+      "imagePixelsTooLarge": "此图像像素过多，无法安全处理。请使用较小的图像。",
+      "imageCompressionFailed": "无法将图像缩小到可发送的大小。请尝试更小或更简单的图像。",
       "totalAttachmentsTooLarge": "对于一封邮件来说，附件总大小太大。使用更少或更小的文件。"
     }
   },

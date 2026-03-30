@@ -60,6 +60,9 @@ export function resolveAttachmentMimeType({
 }) {
   const normalizedMimeType = mimeType?.trim().toLowerCase() ?? "";
   if (normalizedMimeType.length > 0) {
+    if (normalizedMimeType === "image/jpg" || normalizedMimeType === "image/pjpeg") {
+      return "image/jpeg";
+    }
     return normalizedMimeType;
   }
   return inferMimeTypeFromFilename(fileName);

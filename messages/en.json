@@ -354,6 +354,9 @@
       "maxAttachments": "A maximum of {max} attachments is allowed per message.",
       "unsupportedType": "Unsupported attachment type: {mimeType}",
       "fileTooLarge": "Attachment is too large. Keep files under ~180,000 encoded characters.",
+      "imageRawTooLarge": "This image file is too large (max {maxMb} MB before compression).",
+      "imagePixelsTooLarge": "This image has too many pixels to process safely. Use a smaller image.",
+      "imageCompressionFailed": "Could not shrink this image enough to send. Try a smaller or simpler image.",
       "totalAttachmentsTooLarge": "Total attachment size is too large for one message. Use fewer or smaller files."
     }
   },

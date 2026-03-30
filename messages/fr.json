@@ -328,6 +328,9 @@
       "maxAttachments": "Un maximum de {max} pièces jointes est autorisé par message.",
       "unsupportedType": "Type de pièce jointe non pris en charge : {mimeType}",
       "fileTooLarge": "La pièce jointe est trop volumineuse. Conservez les fichiers sous environ 180 000 caractères codés.",
+      "imageRawTooLarge": "Ce fichier image est trop volumineux (max. {maxMb} Mo avant compression).",
+      "imagePixelsTooLarge": "Cette image comporte trop de pixels pour être traitée correctement. Utilisez une image plus petite.",
+      "imageCompressionFailed": "Impossible de réduire suffisamment cette image pour l’envoi. Essayez une image plus petite ou plus simple.",
       "totalAttachmentsTooLarge": "La taille totale des pièces jointes est trop grande pour un seul message. Utilisez moins de fichiers ou des fichiers plus petits."
     }
   },
