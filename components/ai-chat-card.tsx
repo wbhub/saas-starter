@@ -373,9 +373,7 @@ export function AiChatCard({
         >
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold tracking-tight text-foreground">
-                {t("title")}
-              </h2>
+              <h2 className="text-lg font-semibold tracking-tight text-foreground">{t("title")}</h2>
               <p className="mt-1 max-w-prose text-sm leading-relaxed text-muted-foreground">
                 {t("description")}
               </p>
