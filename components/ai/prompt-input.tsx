@@ -54,7 +54,7 @@ export function PromptInput({
       setValidationMessage(validationError);
       return;
     }
-    if (!value || isSending) return;
+    if ((value.length === 0 && pendingFiles.length === 0) || isSending) return;
 
     setValidationMessage(null);
     const draftInput = value;
@@ -120,7 +120,7 @@ export function PromptInput({
             <Button
               type="submit"
               size="lg"
-              disabled={isSending || input.trim().length === 0}
+              disabled={isSending || (input.trim().length === 0 && pendingFiles.length === 0)}
               className="shrink-0 min-w-[7.5rem] gap-2 bg-primary px-5 text-primary-foreground shadow-sm hover:bg-primary/90"
             >
               {isSending ? (
