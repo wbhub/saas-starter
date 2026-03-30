@@ -1,5 +1,5 @@
--- Generic SaaS Starter Supabase schema (team-based)
--- Run in Supabase SQL editor
+-- Canonical SaaS Starter Supabase schema.
+-- Run this file only in the Supabase SQL editor when setting up the project.
 
 create extension if not exists "pgcrypto";
 

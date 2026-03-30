@@ -83,12 +83,9 @@ npm install
 cp .env.example .env.local
 ```
 
-3. Create a Supabase project, then run in Supabase SQL Editor:
+3. Create a Supabase project, then run `supabase/schema.sql` in the Supabase SQL Editor.
 
-- `supabase/schema.sql` (core schema)
-- `supabase/migrations/20260329_ai_threads.sql` (AI thread persistence)
-- `supabase/migrations/20260329_ai_threads_rls.sql` (AI thread privacy hardening)
-- `supabase/migrations/20260329_ai_usage_totals_sync.sql` (AI usage totals sync + backfill)
+For this repo, `supabase/schema.sql` is the only setup script you need.
 
 4. In Supabase Auth settings:
 
