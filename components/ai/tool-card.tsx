@@ -140,7 +140,10 @@ function E2BResultCard({ result }: { result: unknown }) {
       {data.results?.length ? (
         <div className="space-y-1">
           {data.results.slice(0, 3).map((item, index) => (
-            <div key={index} className="rounded-md bg-surface-hover p-2 text-xs text-muted-foreground">
+            <div
+              key={index}
+              className="rounded-md bg-surface-hover p-2 text-xs text-muted-foreground"
+            >
               {item.text ? <p className="font-mono">{item.text}</p> : null}
               <p className="mt-1">
                 Formats: {item.formats?.join(", ") || "unknown"}

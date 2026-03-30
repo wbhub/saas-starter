@@ -17,13 +17,21 @@ const E2B_LANGUAGE_ALIASES = {
 } as const;
 
 const e2bRunCodeParams = z.object({
-  code: z
-    .string()
-    .min(1)
-    .max(20000)
-    .describe("Code to execute inside an isolated E2B sandbox."),
+  code: z.string().min(1).max(20000).describe("Code to execute inside an isolated E2B sandbox."),
   language: z
-    .enum(["python", "py", "javascript", "js", "typescript", "ts", "bash", "sh", "shell", "r", "java"])
+    .enum([
+      "python",
+      "py",
+      "javascript",
+      "js",
+      "typescript",
+      "ts",
+      "bash",
+      "sh",
+      "shell",
+      "r",
+      "java",
+    ])
     .optional()
     .describe(
       "Execution language. Defaults to python. Short aliases like py, js, ts, and sh are accepted.",

@@ -49,7 +49,9 @@ describe("e2bRunCodeTool", () => {
     }));
 
     const { e2bRunCodeTool } = await import("./e2b");
-    const execute = getExecute(e2bRunCodeTool as { execute?: (input: unknown) => Promise<unknown> });
+    const execute = getExecute(
+      e2bRunCodeTool as { execute?: (input: unknown) => Promise<unknown> },
+    );
 
     const result = (await execute({
       code: "print(1 + 1)",
@@ -96,7 +98,9 @@ describe("e2bRunCodeTool", () => {
     }));
 
     const { e2bRunCodeTool } = await import("./e2b");
-    const execute = getExecute(e2bRunCodeTool as { execute?: (input: unknown) => Promise<unknown> });
+    const execute = getExecute(
+      e2bRunCodeTool as { execute?: (input: unknown) => Promise<unknown> },
+    );
 
     const result = (await execute({
       code: "print('x')",
