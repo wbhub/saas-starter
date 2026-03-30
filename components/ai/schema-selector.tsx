@@ -30,7 +30,14 @@ export function SchemaSelector({
       >
         {t("schemaSelector.label")}
       </label>
-      <Select value={selected} onValueChange={onSelect}>
+      <Select
+        value={selected}
+        onValueChange={(value) => {
+          if (value != null) {
+            onSelect(value);
+          }
+        }}
+      >
         <SelectTrigger
           id="schema-select"
           size="default"
