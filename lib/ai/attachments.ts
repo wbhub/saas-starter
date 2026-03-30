@@ -1,10 +1,7 @@
 import type { AiProviderName } from "@/lib/ai/provider-name";
 
 export type AttachmentProviderName = AiProviderName;
-export type ProviderFileIdAttachmentProviderName = Extract<
-  AttachmentProviderName,
-  "openai" | "anthropic"
->;
+export type ProviderFileIdAttachmentProviderName = Extract<AttachmentProviderName, "openai">;
 
 export const SUPPORTED_IMAGE_MIME_TYPE_LIST = [
   "image/png",
@@ -39,7 +36,11 @@ export function isSupportedFileMimeType(mimeType: string, providerName: Attachme
 export function providerSupportsFileIds(
   providerName: AttachmentProviderName,
 ): providerName is ProviderFileIdAttachmentProviderName {
-  return providerName === "openai" || providerName === "anthropic";
+  return providerName === "openai";
+}
+
+export function providerSupportsUploadedFileReferences(providerName: AttachmentProviderName) {
+  return providerName === "openai" || providerName === "google";
 }
 
 export function inferMimeTypeFromFilename(fileName: string) {

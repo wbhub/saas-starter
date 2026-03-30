@@ -124,7 +124,7 @@ const providerApiKey = (() => {
 })();
 
 export const aiProviderName = provider;
-export const supportsProviderFileIds = provider === "openai" || provider === "anthropic";
+export const supportsProviderFileIds = provider === "openai";
 export const isAiProviderConfigured = Boolean(providerApiKey);
 const customModelModalityMap = parseModelModalityMap(env.AI_MODEL_MODALITIES_MAP_JSON);
 
