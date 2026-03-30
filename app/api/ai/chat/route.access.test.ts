@@ -7,7 +7,7 @@ const aiMockState = vi.hoisted(() => ({
 
 const providerMockState = vi.hoisted(() => ({
   aiProviderName: "openai" as "openai" | "anthropic" | "google",
-  supportsOpenAiFileIds: true,
+  supportsProviderFileIds: true,
   providerSupportsModalities: vi.fn(),
   getAiLanguageModel: vi.fn(),
 }));
@@ -25,8 +25,8 @@ vi.mock("@/lib/ai/provider", () => ({
     return providerMockState.aiProviderName;
   },
   isAiProviderConfigured: true,
-  get supportsOpenAiFileIds() {
-    return providerMockState.supportsOpenAiFileIds;
+  get supportsProviderFileIds() {
+    return providerMockState.supportsProviderFileIds;
   },
   providerSupportsModalities: providerMockState.providerSupportsModalities,
   getAiLanguageModel: providerMockState.getAiLanguageModel,
@@ -53,13 +53,13 @@ function mockAiTextResponse(text: string) {
 
 function mockProviderModule({
   aiProviderName = "openai",
-  supportsOpenAiFileIds = aiProviderName === "openai",
+  supportsProviderFileIds = aiProviderName === "openai" || aiProviderName === "anthropic",
 }: {
   aiProviderName?: "openai" | "anthropic" | "google";
-  supportsOpenAiFileIds?: boolean;
+  supportsProviderFileIds?: boolean;
 } = {}) {
   providerMockState.aiProviderName = aiProviderName;
-  providerMockState.supportsOpenAiFileIds = supportsOpenAiFileIds;
+  providerMockState.supportsProviderFileIds = supportsProviderFileIds;
   providerMockState.providerSupportsModalities.mockReset();
   providerMockState.providerSupportsModalities.mockImplementation(
     (model: string) => !model.startsWith("gpt-3.5"),
@@ -726,7 +726,7 @@ describe("POST /api/ai/chat access and gating", () => {
     mockAiTextResponse("anthropic-ok");
     mockProviderModule({
       aiProviderName: "anthropic",
-      supportsOpenAiFileIds: false,
+      supportsProviderFileIds: false,
     });
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: async () => ({
@@ -788,6 +788,407 @@ describe("POST /api/ai/chat access and gating", () => {
 
     expect(response.status).toBe(200);
     await expect(response.text()).resolves.toBe("anthropic-ok");
+  });
+
+  it("accepts attachment-only PDF messages via OpenAI fileIds and persists attachment parts", async () => {
+    mockAiTextResponse("pdf-ok");
+    mockProviderModule({
+      aiProviderName: "openai",
+      supportsProviderFileIds: true,
+    });
+
+    const createThread = vi.fn().mockResolvedValue({
+      id: "11111111-1111-1111-1111-111111111111",
+    });
+    const saveThreadMessages = vi.fn().mockResolvedValue(true);
+    vi.doMock("@/lib/ai/threads", () => ({
+      createThread,
+      saveThreadMessages,
+      getThread: vi.fn().mockResolvedValue(null),
+    }));
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          getUser: async () => ({
+            data: { user: { id: "user_123" } },
+          }),
+        },
+        from: vi.fn(() => ({
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          in: vi.fn().mockReturnThis(),
+          order: vi.fn().mockReturnThis(),
+          limit: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({
+            data: { stripe_price_id: "price_growth", status: "active" },
+            error: null,
+          }),
+        })),
+      }),
+    }));
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
+        teamId: "team_123",
+        teamName: "Acme Team",
+        role: "owner",
+      }),
+    }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({
+        allowed: true,
+        retryAfterSeconds: 0,
+      }),
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: "user",
+              content: "",
+              attachments: [
+                {
+                  type: "file",
+                  mimeType: "application/pdf",
+                  name: "contract.pdf",
+                  fileId: "file_123",
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.text()).resolves.toBe("pdf-ok");
+
+    const { streamText } = await import("ai");
+    expect(streamText).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "file-id",
+                fileId: "file_123",
+              },
+            ],
+          },
+        ],
+      }),
+    );
+
+    expect(createThread).toHaveBeenCalledWith({
+      teamId: "team_123",
+      userId: "user_123",
+      title: "contract.pdf",
+    });
+    expect(saveThreadMessages).toHaveBeenCalledWith(
+      expect.objectContaining({
+        threadId: "11111111-1111-1111-1111-111111111111",
+        messages: [
+          expect.objectContaining({
+            role: "user",
+            attachments: [
+              {
+                type: "file",
+                mimeType: "application/pdf",
+                name: "contract.pdf",
+                fileId: "file_123",
+              },
+            ],
+            parts: [
+              {
+                type: "file",
+                mediaType: "application/pdf",
+                filename: "contract.pdf",
+                url: "openai-file://file_123",
+                providerMetadata: {
+                  openai: {
+                    fileId: "file_123",
+                  },
+                },
+              },
+            ],
+          }),
+          expect.objectContaining({
+            role: "assistant",
+          }),
+        ],
+      }),
+    );
+  });
+
+  it("accepts attachment-only PDF messages via Anthropic fileIds and persists attachment parts", async () => {
+    mockAiTextResponse("anthropic-pdf-ok");
+    mockProviderModule({
+      aiProviderName: "anthropic",
+      supportsProviderFileIds: true,
+    });
+
+    const createThread = vi.fn().mockResolvedValue({
+      id: "22222222-2222-2222-2222-222222222222",
+    });
+    const saveThreadMessages = vi.fn().mockResolvedValue(true);
+    vi.doMock("@/lib/ai/threads", () => ({
+      createThread,
+      saveThreadMessages,
+      getThread: vi.fn().mockResolvedValue(null),
+    }));
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          getUser: async () => ({
+            data: { user: { id: "user_123" } },
+          }),
+        },
+        from: vi.fn(() => ({
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          in: vi.fn().mockReturnThis(),
+          order: vi.fn().mockReturnThis(),
+          limit: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({
+            data: { stripe_price_id: "price_growth", status: "active" },
+            error: null,
+          }),
+        })),
+      }),
+    }));
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
+        teamId: "team_123",
+        teamName: "Acme Team",
+        role: "owner",
+      }),
+    }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({
+        allowed: true,
+        retryAfterSeconds: 0,
+      }),
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: "user",
+              content: "",
+              attachments: [
+                {
+                  type: "file",
+                  mimeType: "application/pdf",
+                  name: "brief.pdf",
+                  fileId: "file_ant_123",
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.text()).resolves.toBe("anthropic-pdf-ok");
+
+    const { streamText } = await import("ai");
+    expect(streamText).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "file-id",
+                fileId: "file_ant_123",
+              },
+            ],
+          },
+        ],
+      }),
+    );
+
+    expect(createThread).toHaveBeenCalledWith({
+      teamId: "team_123",
+      userId: "user_123",
+      title: "brief.pdf",
+    });
+    expect(saveThreadMessages).toHaveBeenCalledWith(
+      expect.objectContaining({
+        threadId: "22222222-2222-2222-2222-222222222222",
+        messages: [
+          expect.objectContaining({
+            role: "user",
+            attachments: [
+              {
+                type: "file",
+                mimeType: "application/pdf",
+                name: "brief.pdf",
+                fileId: "file_ant_123",
+              },
+            ],
+            parts: [
+              {
+                type: "file",
+                mediaType: "application/pdf",
+                filename: "brief.pdf",
+                url: "anthropic-file://file_ant_123",
+                providerMetadata: {
+                  anthropic: {
+                    fileId: "file_ant_123",
+                  },
+                },
+              },
+            ],
+          }),
+          expect.objectContaining({
+            role: "assistant",
+          }),
+        ],
+      }),
+    );
+  });
+
+  it("accepts uploaded Google file URLs and persists attachment parts", async () => {
+    mockAiTextResponse("google-file-ok");
+    mockProviderModule({
+      aiProviderName: "google",
+      supportsProviderFileIds: false,
+    });
+
+    const createThread = vi.fn().mockResolvedValue({
+      id: "33333333-3333-3333-3333-333333333333",
+    });
+    const saveThreadMessages = vi.fn().mockResolvedValue(true);
+    vi.doMock("@/lib/ai/threads", () => ({
+      createThread,
+      saveThreadMessages,
+      getThread: vi.fn().mockResolvedValue(null),
+    }));
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          getUser: async () => ({
+            data: { user: { id: "user_123" } },
+          }),
+        },
+        from: vi.fn(() => ({
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          in: vi.fn().mockReturnThis(),
+          order: vi.fn().mockReturnThis(),
+          limit: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({
+            data: { stripe_price_id: "price_growth", status: "active" },
+            error: null,
+          }),
+        })),
+      }),
+    }));
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
+        teamId: "team_123",
+        teamName: "Acme Team",
+        role: "owner",
+      }),
+    }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({
+        allowed: true,
+        retryAfterSeconds: 0,
+      }),
+    }));
+
+    const uploadedUrl = "https://generativelanguage.googleapis.com/v1beta/files/file_google_123";
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: "user",
+              content: "",
+              attachments: [
+                {
+                  type: "file",
+                  mimeType: "application/pdf",
+                  name: "deck.pdf",
+                  url: uploadedUrl,
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.text()).resolves.toBe("google-file-ok");
+
+    const { streamText } = await import("ai");
+    expect(streamText).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "file-url",
+                url: uploadedUrl,
+              },
+            ],
+          },
+        ],
+      }),
+    );
+
+    expect(createThread).toHaveBeenCalledWith({
+      teamId: "team_123",
+      userId: "user_123",
+      title: "deck.pdf",
+    });
+    expect(saveThreadMessages).toHaveBeenCalledWith(
+      expect.objectContaining({
+        threadId: "33333333-3333-3333-3333-333333333333",
+        messages: [
+          expect.objectContaining({
+            role: "user",
+            attachments: [
+              {
+                type: "file",
+                mimeType: "application/pdf",
+                name: "deck.pdf",
+                url: uploadedUrl,
+              },
+            ],
+            parts: [
+              {
+                type: "file",
+                mediaType: "application/pdf",
+                filename: "deck.pdf",
+                url: uploadedUrl,
+              },
+            ],
+          }),
+          expect.objectContaining({
+            role: "assistant",
+          }),
+        ],
+      }),
+    );
   });
 
   it("rejects assistant-role attachments", async () => {

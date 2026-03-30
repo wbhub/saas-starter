@@ -1,6 +1,10 @@
 import type { AiProviderName } from "@/lib/ai/provider-name";
 
 export type AttachmentProviderName = AiProviderName;
+export type ProviderFileIdAttachmentProviderName = Extract<
+  AttachmentProviderName,
+  "openai" | "anthropic"
+>;
 
 export const SUPPORTED_IMAGE_MIME_TYPE_LIST = [
   "image/png",
@@ -30,6 +34,58 @@ export function getSupportedFileMimeTypes(providerName: AttachmentProviderName) 
 
 export function isSupportedFileMimeType(mimeType: string, providerName: AttachmentProviderName) {
   return getSupportedFileMimeTypes(providerName).has(mimeType);
+}
+
+export function providerSupportsFileIds(
+  providerName: AttachmentProviderName,
+): providerName is ProviderFileIdAttachmentProviderName {
+  return providerName === "openai" || providerName === "anthropic";
+}
+
+export function inferMimeTypeFromFilename(fileName: string) {
+  const extension = fileName.toLowerCase().split(".").pop();
+  if (!extension) {
+    return "";
+  }
+  return EXTENSION_MIME_MAP[extension] ?? "";
+}
+
+export function resolveAttachmentMimeType({
+  mimeType,
+  fileName,
+}: {
+  mimeType?: string | null;
+  fileName: string;
+}) {
+  const normalizedMimeType = mimeType?.trim().toLowerCase() ?? "";
+  if (normalizedMimeType.length > 0) {
+    return normalizedMimeType;
+  }
+  return inferMimeTypeFromFilename(fileName);
+}
+
+export function getProviderFileId(
+  providerName: AttachmentProviderName,
+  providerMetadata: unknown,
+) {
+  if (!providerMetadata || typeof providerMetadata !== "object") {
+    return undefined;
+  }
+
+  const providerEntry = (providerMetadata as Record<string, unknown>)[providerName];
+  if (!providerEntry || typeof providerEntry !== "object") {
+    return undefined;
+  }
+
+  const fileId = (providerEntry as { fileId?: unknown }).fileId;
+  return typeof fileId === "string" && fileId.trim().length > 0 ? fileId : undefined;
+}
+
+export function toProviderFilePlaceholderUrl(
+  providerName: ProviderFileIdAttachmentProviderName,
+  fileId: string,
+) {
+  return `${providerName}-file://${fileId}`;
 }
 
 export function getSupportedAttachmentAccept(providerName: AttachmentProviderName) {

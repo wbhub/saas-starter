@@ -8,9 +8,12 @@ import { getCsrfHeaders } from "@/lib/http/csrf";
 import { resolveUserFacingErrorMessage } from "@/lib/ai/error-message";
 import {
   type AttachmentProviderName,
-  EXTENSION_MIME_MAP,
+  getProviderFileId,
   isSupportedFileMimeType,
+  providerSupportsFileIds,
+  resolveAttachmentMimeType,
   SUPPORTED_IMAGE_MIME_TYPES,
+  toProviderFilePlaceholderUrl,
 } from "@/lib/ai/attachments";
 import { Sparkles } from "lucide-react";
 import { Conversation } from "@/components/ai/conversation";
@@ -39,14 +42,13 @@ function toApiAttachment(part: {
   filename?: string;
   url: string;
   providerMetadata?: unknown;
-}) {
+}, providerName: AttachmentProviderName) {
   const mimeType = part.mediaType.toLowerCase();
   const fileType = mimeType.startsWith("image/") ? "image" : "file";
   const source = (() => {
-    const openAiFileId = (part.providerMetadata as { openai?: { fileId?: string } } | undefined)
-      ?.openai?.fileId;
-    if (typeof openAiFileId === "string" && openAiFileId.length > 0) {
-      return { fileId: openAiFileId };
+    const providerFileId = getProviderFileId(providerName, part.providerMetadata);
+    if (providerFileId) {
+      return { fileId: providerFileId };
     }
     if (part.url.startsWith("data:")) {
       return { data: part.url };
@@ -68,15 +70,10 @@ function estimateDataUrlLength(sizeInBytes: number, mimeType: string) {
 }
 
 function resolveMimeType(file: File) {
-  const rawMimeType = file.type.trim().toLowerCase();
-  if (rawMimeType.length > 0) {
-    return rawMimeType;
-  }
-  const extension = file.name.toLowerCase().split(".").pop();
-  if (!extension) {
-    return "";
-  }
-  return EXTENSION_MIME_MAP[extension] ?? "";
+  return resolveAttachmentMimeType({
+    mimeType: file.type,
+    fileName: file.name,
+  });
 }
 
 function enforceRequestAttachmentBudget(
@@ -168,7 +165,55 @@ async function fileToUiPart(file: File) {
   };
 }
 
-function toApiChatMessages(messages: UIMessage[]) {
+async function providerFileToUiPart(file: File, providerName: AttachmentProviderName) {
+  const response = await fetch("/api/ai/files", {
+    method: "POST",
+    headers: getCsrfHeaders(),
+    body: (() => {
+      const formData = new FormData();
+      formData.set("file", file);
+      return formData;
+    })(),
+  });
+
+  const payload = (await response.json().catch(() => null)) as
+    | { ok?: boolean; error?: string; fileId?: string; url?: string }
+    | null;
+
+  if (
+    !response.ok ||
+    payload?.ok !== true ||
+    (typeof payload.fileId !== "string" && typeof payload.url !== "string")
+  ) {
+    throw new Error(payload?.error ?? "File upload failed.");
+  }
+
+  const fileId =
+    typeof payload.fileId === "string" && providerSupportsFileIds(providerName)
+      ? payload.fileId
+      : undefined;
+
+  return {
+    type: "file" as const,
+    mediaType: resolveMimeType(file) || "application/octet-stream",
+    filename: file.name,
+    url:
+      fileId && providerSupportsFileIds(providerName)
+        ? toProviderFilePlaceholderUrl(providerName, fileId)
+        : (payload.url as string),
+    ...(fileId
+      ? {
+          providerMetadata: {
+            [providerName]: {
+              fileId,
+            },
+          },
+        }
+      : {}),
+  };
+}
+
+function toApiChatMessages(messages: UIMessage[], providerName: AttachmentProviderName) {
   const apiMessages = messages
     .filter(
       (message): message is UIMessage & { role: "user" | "assistant" } =>
@@ -186,7 +231,7 @@ function toApiChatMessages(messages: UIMessage[]) {
                   filename: part.filename,
                   url: part.url,
                   providerMetadata: part.providerMetadata,
-                }),
+                }, providerName),
               )
           : [];
       return {
@@ -195,7 +240,11 @@ function toApiChatMessages(messages: UIMessage[]) {
         ...(attachments.length > 0 ? { attachments } : {}),
       };
     })
-    .filter((message) => message.content.length > 0);
+    .filter((message) =>
+      message.role === "user"
+        ? message.content.length > 0 || (message.attachments?.length ?? 0) > 0
+        : message.content.length > 0,
+    );
 
   const recentMessages = apiMessages.slice(-MAX_MESSAGES_PER_REQUEST);
   return enforceRequestAttachmentBudget(pruneHistoricalAttachments(recentMessages));
@@ -213,6 +262,7 @@ export function AiChatCard({
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [initialMessages, setInitialMessages] = useState<UIMessage[]>([]);
   const [threadRefreshSignal, setThreadRefreshSignal] = useState(0);
+  const [uploadErrorMessage, setUploadErrorMessage] = useState<string | null>(null);
   const threadSwitchAbortRef = useRef<AbortController | null>(null);
 
   const transport = useMemo(() => {
@@ -228,7 +278,7 @@ export function AiChatCard({
       ...request,
       body: {
         ...body,
-        messages: toApiChatMessages(messages),
+        messages: toApiChatMessages(messages, providerName),
         ...(activeThreadId ? { threadId: activeThreadId } : {}),
       },
     });
@@ -245,7 +295,7 @@ export function AiChatCard({
       headers: getCsrfHeaders,
       prepareSendMessagesRequest,
     });
-  }, [toolsEnabled, activeThreadId]);
+  }, [toolsEnabled, activeThreadId, providerName]);
 
   const { messages, sendMessage, status, stop, error, clearError, setMessages } = useChat({
     id: chatSessionId,
@@ -289,6 +339,9 @@ export function AiChatCard({
         ) {
           return t("errors.unsupportedType", { mimeType: mimeType || file.name || "unknown" });
         }
+        if (isSupportedFileMimeType(mimeType, providerName)) {
+          continue;
+        }
         const encodedChars = estimateDataUrlLength(file.size, mimeType);
         if (encodedChars > MAX_ATTACHMENT_DATA_CHARS) {
           return t("errors.fileTooLarge");
@@ -305,16 +358,29 @@ export function AiChatCard({
 
   async function handleSubmit(text: string, files: File[]) {
     clearError();
+    setUploadErrorMessage(null);
     try {
-      const fileParts = await Promise.all(files.map((file) => fileToUiPart(file)));
+      const fileParts = await Promise.all(
+        files.map((file) => {
+          const mimeType = resolveMimeType(file);
+          if (isSupportedFileMimeType(mimeType, providerName)) {
+            return providerFileToUiPart(file, providerName);
+          }
+          return fileToUiPart(file);
+        }),
+      );
       await sendMessage({
         text,
         ...(fileParts.length > 0 ? { files: fileParts } : {}),
       });
       // Refresh thread sidebar after send
       setThreadRefreshSignal((k) => k + 1);
-    } catch {
-      // Error is surfaced via the error prop from useChat
+    } catch (error) {
+      if (error instanceof Error && error.message.trim().length > 0) {
+        setUploadErrorMessage(error.message);
+      } else {
+        setUploadErrorMessage(t("errors.upstreamError"));
+      }
     }
   }
 
@@ -434,14 +500,20 @@ export function AiChatCard({
             )}
           </Conversation>
 
-          {error ? (
+          {error || uploadErrorMessage ? (
             <p
               className={cn(
                 "mt-3 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700",
                 "dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200",
               )}
             >
-              {resolveUserFacingErrorMessage(error, t("errors.requestFailed"), errorMessagesByCode)}
+              {uploadErrorMessage
+                ? uploadErrorMessage
+                : resolveUserFacingErrorMessage(
+                    error,
+                    t("errors.requestFailed"),
+                    errorMessagesByCode,
+                  )}
             </p>
           ) : null}
 

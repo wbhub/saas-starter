@@ -18,8 +18,12 @@ import { resolveActualTokenUsage } from "@/lib/ai/usage";
 import { z } from "@/lib/http/request-validation";
 import { logger } from "@/lib/logger";
 import { createThread, saveThreadMessages, getThread } from "@/lib/ai/threads";
-import { aiProviderName, supportsOpenAiFileIds } from "@/lib/ai/provider";
-import { SUPPORTED_IMAGE_MIME_TYPES, isSupportedFileMimeType } from "@/lib/ai/attachments";
+import { aiProviderName, supportsProviderFileIds } from "@/lib/ai/provider";
+import {
+  SUPPORTED_IMAGE_MIME_TYPES,
+  isSupportedFileMimeType,
+  toProviderFilePlaceholderUrl,
+} from "@/lib/ai/attachments";
 import {
   resolveAiRequestContext,
   mapUpstreamError,
@@ -74,8 +78,15 @@ type ChatAttachment = z.infer<typeof attachmentSchema>;
 
 const userMessageSchema = z.object({
   role: z.literal("user"),
-  content: z.string().trim().min(1).max(8_000),
+  content: z.string().trim().max(8_000),
   attachments: z.array(attachmentSchema).max(MAX_ATTACHMENTS_PER_MESSAGE).optional(),
+}).superRefine((message, context) => {
+  if (message.content.length === 0 && (message.attachments?.length ?? 0) === 0) {
+    context.addIssue({
+      code: "custom",
+      message: "User message must include content or attachments.",
+    });
+  }
 });
 const assistantMessageSchema = z.object({
   role: z.literal("assistant"),
@@ -127,7 +138,7 @@ function getAttachmentCounts(messages: ChatMessage[]): AttachmentCounts {
 function validateAttachmentTypes(messages: ChatMessage[]): AttachmentValidationFailure | null {
   for (const message of messages) {
     for (const attachment of message.attachments ?? []) {
-      if (attachment.fileId && !supportsOpenAiFileIds) {
+      if (attachment.fileId && !supportsProviderFileIds) {
         return {
           reason: "unsupported_attachment_source",
           fileType: attachment.type,
@@ -158,6 +169,15 @@ function validateAttachmentTypes(messages: ChatMessage[]): AttachmentValidationF
 }
 
 function toAttachmentData(attachment: ChatAttachment) {
+  if (attachment.data) {
+    return attachment.data.startsWith("data:")
+      ? (attachment.data.split(",", 2)[1] ?? "")
+      : attachment.data;
+  }
+  return "";
+}
+
+function toAttachmentUrl(attachment: ChatAttachment) {
   if (attachment.url) {
     return attachment.url;
   }
@@ -166,7 +186,64 @@ function toAttachmentData(attachment: ChatAttachment) {
       ? attachment.data
       : `data:${attachment.mimeType};base64,${attachment.data}`;
   }
-  return attachment.fileId ?? "";
+  if (attachment.fileId && supportsProviderFileIds) {
+    return aiProviderName === "anthropic"
+      ? toProviderFilePlaceholderUrl("anthropic", attachment.fileId)
+      : toProviderFilePlaceholderUrl("openai", attachment.fileId);
+  }
+  return "attachment://file";
+}
+
+function getUserMessageTitle(message: ChatMessage | undefined) {
+  if (!message) {
+    return undefined;
+  }
+
+  if (message.content.length > 0) {
+    return message.content.slice(0, 100);
+  }
+
+  const firstAttachmentName = message.attachments?.[0]?.name?.trim();
+  if (firstAttachmentName) {
+    return firstAttachmentName.slice(0, 100);
+  }
+
+  return undefined;
+}
+
+function toPersistedUserMessageParts(message: ChatMessage) {
+  const parts: Array<Record<string, unknown>> = [];
+
+  if (message.content.length > 0) {
+    parts.push({ type: "text", text: message.content });
+  }
+
+  for (const attachment of message.attachments ?? []) {
+    const providerMetadata =
+      attachment.fileId && supportsProviderFileIds
+        ? aiProviderName === "anthropic"
+          ? {
+              anthropic: {
+                fileId: attachment.fileId,
+              },
+            }
+          : {
+              openai: {
+                fileId: attachment.fileId,
+              },
+            }
+        : undefined;
+
+    parts.push({
+      type: "file",
+      mediaType: attachment.mimeType,
+      ...(attachment.name ? { filename: attachment.name } : {}),
+      url: toAttachmentUrl(attachment),
+      ...(providerMetadata ? { providerMetadata } : {}),
+    });
+  }
+
+  return parts;
 }
 
 function toUserMessageContent(message: ChatMessage): UserContent {
@@ -175,32 +252,58 @@ function toUserMessageContent(message: ChatMessage): UserContent {
     return message.content;
   }
 
-  const content: Array<Record<string, unknown>> = [{ type: "text", text: message.content }];
-  for (const attachment of attachments) {
-    const providerOptions =
-      attachment.fileId && supportsOpenAiFileIds
-        ? {
-            openai: {
-              fileId: attachment.fileId,
-            },
-          }
-        : undefined;
+  const content: Array<Record<string, unknown>> = [];
+  if (message.content.length > 0) {
+    content.push({ type: "text", text: message.content });
+  }
 
+  for (const attachment of attachments) {
     if (attachment.type === "image") {
+      if (attachment.fileId && supportsProviderFileIds) {
+        content.push({
+          type: "image-file-id",
+          fileId: attachment.fileId,
+        });
+        continue;
+      }
+
+      if (attachment.url) {
+        content.push({
+          type: "image-url",
+          url: attachment.url,
+        });
+        continue;
+      }
+
       content.push({
-        type: "image",
-        image: toAttachmentData(attachment),
-        ...(providerOptions ? { providerOptions } : {}),
+        type: "image-data",
+        data: toAttachmentData(attachment),
+        mediaType: attachment.mimeType,
+      });
+      continue;
+    }
+
+    if (attachment.fileId && supportsProviderFileIds) {
+      content.push({
+        type: "file-id",
+        fileId: attachment.fileId,
+      });
+      continue;
+    }
+
+    if (attachment.url) {
+      content.push({
+        type: "file-url",
+        url: attachment.url,
       });
       continue;
     }
 
     content.push({
-      type: "file",
+      type: "file-data",
       data: toAttachmentData(attachment),
       mediaType: attachment.mimeType,
       filename: attachment.name ?? "attachment",
-      ...(providerOptions ? { providerOptions } : {}),
     });
   }
 
@@ -440,18 +543,19 @@ export async function POST(request: Request) {
                 const thread = await createThread({
                   teamId: resolvedTeamId,
                   userId: resolvedUserId,
-                  title: lastUserMessage?.content.slice(0, 100) ?? undefined,
+                  title: getUserMessageTitle(lastUserMessage),
                 });
                 if (thread) resolvedThreadId = thread.id;
               }
               if (resolvedThreadId) {
-                const lastUserMessage = body.messages[body.messages.length - 1];
+                const lastUserMessage = body.messages.findLast((m) => m.role === "user");
                 const messagesToSave = [
                   ...(lastUserMessage?.role === "user"
                     ? [
                         {
                           role: "user" as const,
-                          parts: [{ type: "text", text: lastUserMessage.content }],
+                          parts: toPersistedUserMessageParts(lastUserMessage),
+                          attachments: lastUserMessage.attachments,
                         },
                       ]
                     : []),
@@ -664,18 +768,19 @@ export async function POST(request: Request) {
                 const thread = await createThread({
                   teamId: teamContext.teamId,
                   userId: user.id,
-                  title: lastUserMessage?.content.slice(0, 100) ?? undefined,
+                  title: getUserMessageTitle(lastUserMessage),
                 });
                 if (thread) resolvedThreadId = thread.id;
               }
               if (resolvedThreadId) {
-                const lastUserMessage = body.messages[body.messages.length - 1];
+                const lastUserMessage = body.messages.findLast((m) => m.role === "user");
                 const messagesToSave = [
                   ...(lastUserMessage?.role === "user"
                     ? [
                         {
                           role: "user" as const,
-                          parts: [{ type: "text", text: lastUserMessage.content }],
+                          parts: toPersistedUserMessageParts(lastUserMessage),
+                          attachments: lastUserMessage.attachments,
                         },
                       ]
                     : []),
