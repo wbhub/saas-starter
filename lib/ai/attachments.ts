@@ -64,10 +64,7 @@ export function resolveAttachmentMimeType({
   return inferMimeTypeFromFilename(fileName);
 }
 
-export function getProviderFileId(
-  providerName: AttachmentProviderName,
-  providerMetadata: unknown,
-) {
+export function getProviderFileId(providerName: AttachmentProviderName, providerMetadata: unknown) {
   if (!providerMetadata || typeof providerMetadata !== "object") {
     return undefined;
   }

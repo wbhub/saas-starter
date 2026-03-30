@@ -76,18 +76,20 @@ const attachmentSchema = z
 
 type ChatAttachment = z.infer<typeof attachmentSchema>;
 
-const userMessageSchema = z.object({
-  role: z.literal("user"),
-  content: z.string().trim().max(8_000),
-  attachments: z.array(attachmentSchema).max(MAX_ATTACHMENTS_PER_MESSAGE).optional(),
-}).superRefine((message, context) => {
-  if (message.content.length === 0 && (message.attachments?.length ?? 0) === 0) {
-    context.addIssue({
-      code: "custom",
-      message: "User message must include content or attachments.",
-    });
-  }
-});
+const userMessageSchema = z
+  .object({
+    role: z.literal("user"),
+    content: z.string().trim().max(8_000),
+    attachments: z.array(attachmentSchema).max(MAX_ATTACHMENTS_PER_MESSAGE).optional(),
+  })
+  .superRefine((message, context) => {
+    if (message.content.length === 0 && (message.attachments?.length ?? 0) === 0) {
+      context.addIssue({
+        code: "custom",
+        message: "User message must include content or attachments.",
+      });
+    }
+  });
 const assistantMessageSchema = z.object({
   role: z.literal("assistant"),
   content: z.string().trim().min(1).max(8_000),

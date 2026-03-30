@@ -43,7 +43,10 @@ function getProviderApiKey() {
   return (env.OPENAI_API_KEY || "").trim();
 }
 
-function toUpstreamErrorResponse(status: number, t: Awaited<ReturnType<typeof getRouteTranslator>>) {
+function toUpstreamErrorResponse(
+  status: number,
+  t: Awaited<ReturnType<typeof getRouteTranslator>>,
+) {
   if (status === 429) {
     return jsonError(t("errors.upstreamRateLimited"), 429);
   }
@@ -86,7 +89,12 @@ async function uploadToAnthropic(file: File, apiKey: string, signal: AbortSignal
   });
 }
 
-async function startGoogleUpload(file: File, mimeType: string, apiKey: string, signal: AbortSignal) {
+async function startGoogleUpload(
+  file: File,
+  mimeType: string,
+  apiKey: string,
+  signal: AbortSignal,
+) {
   return fetch(GOOGLE_FILES_UPLOAD_API_URL, {
     method: "POST",
     headers: {

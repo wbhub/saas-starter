@@ -37,12 +37,15 @@ function getMessageText(message: UIMessage) {
     .join("");
 }
 
-function toApiAttachment(part: {
-  mediaType: string;
-  filename?: string;
-  url: string;
-  providerMetadata?: unknown;
-}, providerName: AttachmentProviderName) {
+function toApiAttachment(
+  part: {
+    mediaType: string;
+    filename?: string;
+    url: string;
+    providerMetadata?: unknown;
+  },
+  providerName: AttachmentProviderName,
+) {
   const mimeType = part.mediaType.toLowerCase();
   const fileType = mimeType.startsWith("image/") ? "image" : "file";
   const source = (() => {
@@ -176,9 +179,12 @@ async function providerFileToUiPart(file: File, providerName: AttachmentProvider
     })(),
   });
 
-  const payload = (await response.json().catch(() => null)) as
-    | { ok?: boolean; error?: string; fileId?: string; url?: string }
-    | null;
+  const payload = (await response.json().catch(() => null)) as {
+    ok?: boolean;
+    error?: string;
+    fileId?: string;
+    url?: string;
+  } | null;
 
   if (
     !response.ok ||
@@ -226,12 +232,15 @@ function toApiChatMessages(messages: UIMessage[], providerName: AttachmentProvid
           ? message.parts
               .filter((part) => part.type === "file")
               .map((part) =>
-                toApiAttachment({
-                  mediaType: part.mediaType,
-                  filename: part.filename,
-                  url: part.url,
-                  providerMetadata: part.providerMetadata,
-                }, providerName),
+                toApiAttachment(
+                  {
+                    mediaType: part.mediaType,
+                    filename: part.filename,
+                    url: part.url,
+                    providerMetadata: part.providerMetadata,
+                  },
+                  providerName,
+                ),
               )
           : [];
       return {
