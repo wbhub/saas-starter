@@ -478,14 +478,28 @@
     }
   },
   "TeamInviteCard": {
-    "title": "팀 멤버",
-    "description": "{teamName}에 접근할 수 있는 사용자를 관리하세요.",
+    "title": "내 팀",
+    "description": "{teamName}을(를) 관리합니다 — 멤버, 초대, 다른 사람에게 보이는 이름.",
+    "teamName": {
+      "sectionTitle": "팀 이름",
+      "sectionDescription": "앱, 이메일, 초대에 표시됩니다. 언제든지 바꿀 수 있습니다.",
+      "save": "이름 저장",
+      "saving": "저장 중..."
+    },
+    "members": {
+      "title": "구성원",
+      "description": "이 워크스페이스에 액세스할 수 있는 사람입니다.",
+      "emptyList": "표시할 멤버가 없습니다.",
+      "noOtherMembers": "아직 다른 멤버가 없습니다. 지금은 이 워크스페이스에 본인만 있습니다.",
+      "unnamed": "팀원"
+    },
     "roles": {
       "owner": "소유자",
       "admin": "관리자",
       "member": "멤버"
     },
     "actions": {
+      "cancel": "취소",
       "saving": "저장 중...",
       "makeMember": "멤버로 변경",
       "makeAdmin": "관리자로 변경",
@@ -499,9 +513,11 @@
       "sendInvite": "초대 보내기"
     },
     "inviteForm": {
+      "sectionTitle": "팀원 초대",
+      "sectionDescription": "참여할 수 있는 안전한 링크를 이메일로 보냅니다.",
       "teamNameLabel": "팀 이름",
       "teamNamePlaceholder": "Acme Team",
-      "teamNameHint": "첫 초대를 보내기 전에 팀 이름을 설정하세요.",
+      "teamNameHint": "첫 초대 전에 알아보기 쉬운 이름을 정하면 받는 사람이 워크스페이스를 구분하기 쉽습니다.",
       "emailLabel": "초대 이메일",
       "emailPlaceholder": "teammate@example.com",
       "roleLabel": "역할"
@@ -518,10 +534,14 @@
       "onlyOwnersAdmins": "팀 소유자와 관리자만 팀원을 초대할 수 있습니다."
     },
     "confirmations": {
+      "removeMemberTitle": "멤버 제거",
       "removeMember": "이 멤버를 팀에서 제거하시겠습니까? 즉시 접근 권한을 잃게 됩니다.",
+      "revokeInviteTitle": "초대 철회",
       "revokeInvite": "이 초대를 철회하시겠습니까?"
     },
     "feedback": {
+      "teamNameUpdated": "팀 이름이 저장되었습니다.",
+      "teamNameUnchanged": "저장할 변경 사항이 없습니다.",
       "inviteEmailSent": "초대 이메일을 보냈습니다.",
       "inviteCreatedEmailFailed": "초대는 생성되었지만 이메일 전송에 실패했습니다. 나중에 재전송으로 다시 시도하세요.",
       "memberRemoved": "멤버가 제거되었습니다.",
@@ -534,6 +554,7 @@
     "errors": {
       "sendInvite": "초대 전송에 실패했습니다.",
       "teamNameRequired": "첫 초대를 보내기 전에 팀 이름을 입력하세요.",
+      "teamNameTooShort": "팀 이름은 2자 이상이어야 합니다.",
       "updateTeamName": "팀 이름 저장에 실패했습니다.",
       "removeMember": "멤버 제거에 실패했습니다.",
       "updateRole": "멤버 역할 업데이트에 실패했습니다.",

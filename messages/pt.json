@@ -478,14 +478,28 @@
     }
   },
   "TeamInviteCard": {
-    "title": "Membros da equipe",
-    "description": "Gerencie quem pode acessar {teamName}.",
+    "title": "Sua equipe",
+    "description": "Gerencie {teamName} — membros, convites e como seu espaço de trabalho aparece para outros.",
+    "teamName": {
+      "sectionTitle": "Nome da equipe",
+      "sectionDescription": "Este nome aparece no app, nos e-mails e nos convites. Você pode alterá-lo a qualquer momento.",
+      "save": "Salvar nome",
+      "saving": "Salvando..."
+    },
+    "members": {
+      "title": "Pessoas",
+      "description": "Todos com acesso a este espaço de trabalho.",
+      "emptyList": "Nenhum membro para exibir.",
+      "noOtherMembers": "Ainda não há outros membros — por enquanto só você neste espaço de trabalho.",
+      "unnamed": "Colega"
+    },
     "roles": {
       "owner": "Proprietário",
       "admin": "Administrador",
       "member": "Membro"
     },
     "actions": {
+      "cancel": "Cancelar",
       "saving": "Salvando...",
       "makeMember": "Tornar membro",
       "makeAdmin": "Tornar administrador",
@@ -499,9 +513,11 @@
       "sendInvite": "Enviar convite"
     },
     "inviteForm": {
+      "sectionTitle": "Convidar um colega",
+      "sectionDescription": "Enviaremos um link seguro por e-mail para entrar.",
       "teamNameLabel": "Nome da equipe",
       "teamNamePlaceholder": "Equipe Acme",
-      "teamNameHint": "Defina o nome da equipe antes de enviar seu primeiro convite.",
+      "teamNameHint": "Escolha um nome claro antes do primeiro convite — ajuda a identificar seu espaço de trabalho.",
       "emailLabel": "E-mail de convite",
       "emailPlaceholder": "colega de equipe@exemplo.com",
       "roleLabel": "Papel"
@@ -518,10 +534,14 @@
       "onlyOwnersAdmins": "Somente proprietários e administradores podem convidar colegas de equipe."
     },
     "confirmations": {
+      "removeMemberTitle": "Remover membro",
       "removeMember": "Remover este membro da equipe? Eles perderão imediatamente o acesso.",
+      "revokeInviteTitle": "Revogar convite",
       "revokeInvite": "Revogar este convite?"
     },
     "feedback": {
+      "teamNameUpdated": "Nome da equipe salvo.",
+      "teamNameUnchanged": "Nada para salvar.",
       "inviteEmailSent": "E-mail de convite enviado.",
       "inviteCreatedEmailFailed": "Convite criado, mas falha na entrega do e-mail. Use reenviar mais tarde para tentar novamente.",
       "memberRemoved": "Membro removido.",
@@ -534,6 +554,7 @@
     "errors": {
       "sendInvite": "Falha ao enviar o convite.",
       "teamNameRequired": "Informe um nome de equipe antes de enviar seu primeiro convite.",
+      "teamNameTooShort": "O nome da equipe deve ter pelo menos 2 caracteres.",
       "updateTeamName": "Falha ao salvar o nome da equipe.",
       "removeMember": "Falha ao remover membro.",
       "updateRole": "Falha ao atualizar a função do membro.",

@@ -478,14 +478,28 @@
     }
   },
   "TeamInviteCard": {
-    "title": "团队成员",
-    "description": "管理谁可以访问 {teamName}。",
+    "title": "你的团队",
+    "description": "管理 {teamName} — 成员、邀请以及向他人显示的名称。",
+    "teamName": {
+      "sectionTitle": "团队名称",
+      "sectionDescription": "该名称会显示在应用、邮件和邀请中。可随时修改。",
+      "save": "保存名称",
+      "saving": "保存中..."
+    },
+    "members": {
+      "title": "成员",
+      "description": "有权访问此工作区的所有人。",
+      "emptyList": "暂无成员可显示。",
+      "noOtherMembers": "还没有其他成员——目前此工作区只有你。",
+      "unnamed": "队友"
+    },
     "roles": {
       "owner": "所有者",
       "admin": "行政",
       "member": "成员"
     },
     "actions": {
+      "cancel": "取消",
       "saving": "保存...",
       "makeMember": "成为会员",
       "makeAdmin": "设为管理员",
@@ -499,9 +513,11 @@
       "sendInvite": "发送邀请"
     },
     "inviteForm": {
+      "sectionTitle": "邀请队友",
+      "sectionDescription": "我们将通过电子邮件发送用于加入的安全链接。",
       "teamNameLabel": "团队名称",
       "teamNamePlaceholder": "Acme 团队",
-      "teamNameHint": "发送第一封邀请前，请先设置团队名称。",
+      "teamNameHint": "在首次邀请前起一个清晰的名称，有助于对方识别你的工作区。",
       "emailLabel": "邀请邮件",
       "emailPlaceholder": "teammate@example.com",
       "roleLabel": "角色"
@@ -518,10 +534,14 @@
       "onlyOwnersAdmins": "只有所有者和管理员才能邀请队友。"
     },
     "confirmations": {
+      "removeMemberTitle": "移除成员",
       "removeMember": "从团队中删除该成员吗？他们将立即失去访问权限。",
+      "revokeInviteTitle": "撤销邀请",
       "revokeInvite": "撤销此邀请？"
     },
     "feedback": {
+      "teamNameUpdated": "团队名称已保存。",
+      "teamNameUnchanged": "没有需要保存的更改。",
       "inviteEmailSent": "邀请电子邮件已发送。",
       "inviteCreatedEmailFailed": "邀请已创建，但电子邮件发送失败。稍后使用重新发送来重试。",
       "memberRemoved": "会员已删除。",
@@ -534,6 +554,7 @@
     "errors": {
       "sendInvite": "发送邀请失败。",
       "teamNameRequired": "发送第一封邀请前，请先输入团队名称。",
+      "teamNameTooShort": "团队名称至少需要 2 个字符。",
       "updateTeamName": "保存团队名称失败。",
       "removeMember": "删除成员失败。",
       "updateRole": "无法更新成员角色。",

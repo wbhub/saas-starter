@@ -478,14 +478,28 @@
     }
   },
   "TeamInviteCard": {
-    "title": "チームメンバー",
-    "description": "{teamName} にアクセスできるユーザーを管理します。",
+    "title": "あなたのチーム",
+    "description": "{teamName} を管理します — メンバー、招待、他のユーザーへの表示名。",
+    "teamName": {
+      "sectionTitle": "チーム名",
+      "sectionDescription": "アプリ、メール、招待に表示されます。いつでも変更できます。",
+      "save": "名前を保存",
+      "saving": "保存中..."
+    },
+    "members": {
+      "title": "メンバー",
+      "description": "このワークスペースにアクセスできる人。",
+      "emptyList": "表示できるメンバーがいません。",
+      "noOtherMembers": "まだ他のメンバーはいません。今はあなただけです。",
+      "unnamed": "チームメイト"
+    },
     "roles": {
       "owner": "オーナー",
       "admin": "管理者",
       "member": "メンバー"
     },
     "actions": {
+      "cancel": "キャンセル",
       "saving": "保存中...",
       "makeMember": "メンバーにする",
       "makeAdmin": "管理者にする",
@@ -499,9 +513,11 @@
       "sendInvite": "招待を送信"
     },
     "inviteForm": {
+      "sectionTitle": "チームメイトを招待",
+      "sectionDescription": "参加用の安全なリンクをメールで送ります。",
       "teamNameLabel": "チーム名",
       "teamNamePlaceholder": "Acme Team",
-      "teamNameHint": "最初の招待を送る前にチーム名を設定してください。",
+      "teamNameHint": "最初の招待の前に分かりやすい名前を付けると、受信者がワークスペースを識別しやすくなります。",
       "emailLabel": "招待メールアドレス",
       "emailPlaceholder": "teammate@example.com",
       "roleLabel": "ロール"
@@ -518,10 +534,14 @@
       "onlyOwnersAdmins": "チームメイトを招待できるのはオーナーと管理者のみです。"
     },
     "confirmations": {
+      "removeMemberTitle": "メンバーを削除",
       "removeMember": "このメンバーをチームから削除しますか？ 直ちにアクセス権を失います。",
+      "revokeInviteTitle": "招待を取り消す",
       "revokeInvite": "この招待を取り消しますか？"
     },
     "feedback": {
+      "teamNameUpdated": "チーム名を保存しました。",
+      "teamNameUnchanged": "変更はありません。",
       "inviteEmailSent": "招待メールを送信しました。",
       "inviteCreatedEmailFailed": "招待は作成されましたが、メール送信に失敗しました。後で再送してください。",
       "memberRemoved": "メンバーを削除しました。",
@@ -534,6 +554,7 @@
     "errors": {
       "sendInvite": "招待の送信に失敗しました。",
       "teamNameRequired": "最初の招待を送る前にチーム名を入力してください。",
+      "teamNameTooShort": "チーム名は2文字以上にしてください。",
       "updateTeamName": "チーム名の保存に失敗しました。",
       "removeMember": "メンバーの削除に失敗しました。",
       "updateRole": "メンバーのロール更新に失敗しました。",

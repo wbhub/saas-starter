@@ -19,6 +19,7 @@ function TeamInviteSectionSkeleton() {
 async function TeamInviteSection({
   teamId,
   canInvite,
+  canEditTeamName,
   teamName,
   currentUserId,
   currentUserRole,
@@ -27,6 +28,7 @@ async function TeamInviteSection({
 }: {
   teamId: string;
   canInvite: boolean;
+  canEditTeamName: boolean;
   teamName: string;
   currentUserId: string;
   currentUserRole: "owner" | "admin" | "member";
@@ -40,6 +42,7 @@ async function TeamInviteSection({
     <section>
       <TeamInviteCard
         canInvite={canInvite}
+        canEditTeamName={canEditTeamName}
         teamName={teamName}
         members={teamMembers}
         pendingInvites={pendingInvites}
@@ -76,6 +79,7 @@ export default async function DashboardTeamPage() {
   const canInvite =
     billingContext.canInviteMembers &&
     (teamContext.role === "owner" || teamContext.role === "admin");
+  const canEditTeamName = teamContext.role === "owner" || teamContext.role === "admin";
   const teamName = teamContext.teamName ?? tCommon("myTeam");
 
   return (
@@ -92,6 +96,7 @@ export default async function DashboardTeamPage() {
         <TeamInviteSection
           teamId={teamContext.teamId}
           canInvite={canInvite}
+          canEditTeamName={canEditTeamName}
           teamName={teamName}
           currentUserId={user.id}
           currentUserRole={teamContext.role}

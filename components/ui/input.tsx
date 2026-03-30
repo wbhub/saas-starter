@@ -1,4 +1,5 @@
 import { forwardRef, type InputHTMLAttributes } from "react";
+import { cn } from "@/lib/utils";
 
 const editableClasses =
   "w-full rounded-lg border app-border-subtle bg-transparent px-3 py-2 text-sm text-foreground outline-none ring-ring placeholder:text-muted-foreground focus:ring-2";
@@ -20,7 +21,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     <input
       ref={ref}
       readOnly={isReadonly}
-      className={className ?? (isReadonly ? readonlyClasses : editableClasses)}
+      className={cn(isReadonly ? readonlyClasses : editableClasses, className)}
       {...rest}
     />
   );

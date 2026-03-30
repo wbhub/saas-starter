@@ -504,14 +504,28 @@
     }
   },
   "TeamInviteCard": {
-    "title": "Team members",
-    "description": "Manage who can access {teamName}.",
+    "title": "Your team",
+    "description": "Manage {teamName} — members, invites, and how your workspace appears to others.",
+    "teamName": {
+      "sectionTitle": "Team name",
+      "sectionDescription": "This name appears in the app, emails, and invites. You can change it anytime.",
+      "save": "Save name",
+      "saving": "Saving..."
+    },
+    "members": {
+      "title": "People",
+      "description": "Everyone with access to this workspace.",
+      "emptyList": "No members to show.",
+      "noOtherMembers": "No other members yet — it's just you in this workspace for now.",
+      "unnamed": "Teammate"
+    },
     "roles": {
       "owner": "Owner",
       "admin": "Admin",
       "member": "Member"
     },
     "actions": {
+      "cancel": "Cancel",
       "saving": "Saving...",
       "makeMember": "Make member",
       "makeAdmin": "Make admin",
@@ -525,9 +539,11 @@
       "sendInvite": "Send invite"
     },
     "inviteForm": {
+      "sectionTitle": "Invite a teammate",
+      "sectionDescription": "We'll email a secure link they can use to join.",
       "teamNameLabel": "Team name",
       "teamNamePlaceholder": "Acme Team",
-      "teamNameHint": "Set your team name before sending your first invite.",
+      "teamNameHint": "Choose a clear name before your first invite — it helps recipients recognize your workspace.",
       "emailLabel": "Invite email",
       "emailPlaceholder": "teammate@example.com",
       "roleLabel": "Role"
@@ -544,10 +560,14 @@
       "onlyOwnersAdmins": "Only owners and admins can invite teammates."
     },
     "confirmations": {
+      "removeMemberTitle": "Remove member",
       "removeMember": "Remove this member from the team? They will immediately lose access.",
+      "revokeInviteTitle": "Revoke invite",
       "revokeInvite": "Revoke this invite?"
     },
     "feedback": {
+      "teamNameUpdated": "Team name saved.",
+      "teamNameUnchanged": "No changes to save.",
       "inviteEmailSent": "Invite email sent.",
       "inviteCreatedEmailFailed": "Invite created, but email delivery failed. Use resend later to retry.",
       "memberRemoved": "Member removed.",
@@ -560,6 +580,7 @@
     "errors": {
       "sendInvite": "Failed to send invite.",
       "teamNameRequired": "Enter a team name before sending your first invite.",
+      "teamNameTooShort": "Team name must be at least 2 characters.",
       "updateTeamName": "Failed to save team name.",
       "removeMember": "Failed to remove member.",
       "updateRole": "Failed to update member role.",
