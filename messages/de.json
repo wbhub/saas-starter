@@ -332,24 +332,35 @@
     }
   },
   "BillingActions": {
-    "title": "Abrechnungsaktionen",
+    "title": "Abonnement & Abrechnung",
     "description": {
-      "noPermission": "Nur Team-Owner und Admins können die Abrechnung verwalten.",
-      "hasSubscription": "Upgrade, Downgrade oder Stripe Billing Portal öffnen.",
-      "noSubscription": "Wähle einen Plan, um dein Abonnement zu starten.",
-      "billingDisabled": "Die Abrechnung ist für dieses Deployment deaktiviert. Konfiguriere Stripe, um kostenpflichtige Pläne zu aktivieren."
+      "noPermission": "Nur Team-Owner und Admins können die Abrechnung für diesen Workspace verwalten.",
+      "hasSubscription": "Planwechsel unten. Zahlungsmittel, Rechnungen und Kündigung im Abrechnungsportal.",
+      "noSubscription": "Wähle einen Plan zum Starten. Der Checkout öffnet sich in einem sicheren Fenster.",
+      "billingDisabled": "Kostenpflichtige Pläne sind in dieser Umgebung nicht verfügbar."
+    },
+    "portal": {
+      "cardTitle": "Zahlungsmittel & Rechnungen",
+      "cardSubtitle": "Karte aktualisieren, Belege laden und kündigen. Up- und Downgrades erledigst du unten.",
+      "cta": "Abrechnungsportal öffnen",
+      "ctaAria": "Abrechnungsportal in neuem Tab öffnen"
+    },
+    "changePlan": {
+      "title": "Plan upgraden oder wechseln",
+      "subtitle": "Hier auf eine andere Stufe wechseln. Stripe berechnet die Abrechnung anteilig automatisch."
+    },
+    "subscribe": {
+      "hint": "Plan wählen, um zum Checkout zu gelangen."
     },
     "actions": {
       "opening": "Wird geöffnet...",
       "updating": "Wird aktualisiert...",
-      "manageBilling": "Abrechnung verwalten",
-      "subscribe": "{name} abonnieren",
+      "subscribePlan": "Weiter zum Checkout",
       "switchTo": "Zu {name} wechseln"
     },
     "messages": {
-      "syncPending": "Plan in Stripe aktualisiert. Synchronisierung läuft. In Kürze wird aktualisiert...",
-      "planUpdated": "Plan aktualisiert. Abrechnungsdetails werden neu geladen...",
-      "billingDisabled": "Stripe-Abrechnung ist derzeit deaktiviert."
+      "syncPending": "Plan in Stripe aktualisiert. Synchronisierung läuft. Seite wird gleich neu geladen...",
+      "planUpdated": "Plan aktualisiert. Abrechnungsdetails werden neu geladen..."
     },
     "errors": {
       "checkoutFailed": "Checkout fehlgeschlagen",
@@ -367,13 +378,26 @@
       "description": "Aktualisiere Pläne, öffne das Stripe-Portal und prüfe deinen Abonnementstatus."
     },
     "checkoutSuccess": {
-      "message": "Zahlung erfolgreich! Dein Abonnement ist jetzt aktiv."
+      "title": "Zahlung eingegangen",
+      "message": "Dein Abonnement ist aktiv. Wenn etwas noch nicht stimmt, lade die Seite in Kürze neu."
     },
     "currentSubscription": {
-      "title": "Aktuelles Abonnement",
+      "title": "Abonnementübersicht",
+      "subtitle": "Plan, Verlängerung und Sitzplätze für diesen Workspace.",
       "currentPlan": "Aktueller Plan",
       "unknown": "Unbekannt",
       "status": "Status",
+      "statusLabels": {
+        "active": "Aktiv",
+        "trialing": "Testphase",
+        "past_due": "Überfällig",
+        "canceled": "Gekündigt",
+        "unpaid": "Unbezahlt",
+        "incomplete": "Unvollständig",
+        "incomplete_expired": "Unvollständig (abgelaufen)",
+        "paused": "Pausiert"
+      },
+      "cancelScheduled": "Die Kündigung ist zum Ende der aktuellen Abrechnungsperiode geplant. Bis dahin bleibt der Zugriff bestehen.",
       "seats": "Sitzplätze",
       "perSeatCost": "Kosten pro Sitzplatz",
       "billingInterval": "Abrechnungszeitraum",
@@ -389,6 +413,9 @@
     "freeMode": {
       "title": "Premium-Funktionen freischalten",
       "description": "Wähle einen kostenpflichtigen Plan, um erweiterte Funktionen freizuschalten. Team-Zusammenarbeit ist enthalten und Sitzplätze werden pro Teammitglied berechnet.",
+      "compareTitle": "Pläne vergleichen",
+      "compareDescription": "Preis pro Sitzplatz für jede Stufe. Unten abonnieren, wenn du soweit bist.",
+      "popularBadge": "Beliebt",
       "perSeat": "Jedes Teammitglied kostet {amount}.",
       "collaborationIncluded": "Team-Zusammenarbeit ist in allen kostenpflichtigen Plänen enthalten."
     },
@@ -402,7 +429,8 @@
       "action": "Teammitglieder einladen"
     },
     "paidTeam": {
-      "breakdown": "{seats} Sitzplätze x {seatCost} = {monthlyTotal}/Monat"
+      "estimateLabel": "Geschätzt pro Monat",
+      "breakdown": "{seats} Sitzplätze × {seatCost} = {monthlyTotal}/Monat"
     }
   },
   "DashboardSettingsPage": {

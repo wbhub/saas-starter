@@ -332,24 +332,35 @@
     }
   },
   "BillingActions": {
-    "title": "Ações de faturamento",
+    "title": "Assinatura e faturamento",
     "description": {
-      "noPermission": "Somente proprietários e administradores de equipes podem gerenciar o faturamento.",
-      "hasSubscription": "Atualize, faça downgrade ou abra o Stripe Billing Portal.",
-      "noSubscription": "Escolha um plano para iniciar sua assinatura.",
-      "billingDisabled": "O faturamento está desativado nesta implantação. Configure o Stripe para habilitar planos pagos."
+      "noPermission": "Somente proprietários e administradores podem gerenciar o faturamento deste workspace.",
+      "hasSubscription": "Mude de plano abaixo. Use o portal para forma de pagamento, faturas e cancelamento.",
+      "noSubscription": "Escolha um plano para começar. O checkout abre numa janela segura.",
+      "billingDisabled": "Planos pagos não estão disponíveis neste ambiente."
+    },
+    "portal": {
+      "cardTitle": "Forma de pagamento e faturas",
+      "cardSubtitle": "Atualize o cartão, baixe recibos e cancele. Mudanças de plano são feitas abaixo.",
+      "cta": "Abrir portal de faturamento",
+      "ctaAria": "Abrir o portal de faturamento numa nova aba"
+    },
+    "changePlan": {
+      "title": "Fazer upgrade ou mudar de plano",
+      "subtitle": "Troque de nível aqui. A Stripe prorrateia a assinatura automaticamente."
+    },
+    "subscribe": {
+      "hint": "Selecione um plano para ir ao checkout."
     },
     "actions": {
       "opening": "Abertura...",
       "updating": "Atualizando...",
-      "manageBilling": "Gerenciar faturamento",
-      "subscribe": "Inscrever-se {name}",
+      "subscribePlan": "Continuar para o checkout",
       "switchTo": "Mudar para {name}"
     },
     "messages": {
-      "syncPending": "Plano atualizado no Stripe. Sincronização em andamento. Atualizando em breve...",
-      "planUpdated": "Plano atualizado. Atualizando detalhes de faturamento...",
-      "billingDisabled": "O faturamento do Stripe está desativado no momento."
+      "syncPending": "Plano atualizado no Stripe. A sincronizar. A atualizar em breve…",
+      "planUpdated": "Plano atualizado. A atualizar detalhes de faturamento…"
     },
     "errors": {
       "checkoutFailed": "Falha na finalização da compra",
@@ -367,13 +378,26 @@
       "description": "Atualize planos, abra o portal Stripe e revise o status da sua assinatura."
     },
     "checkoutSuccess": {
-      "message": "Pagamento realizado com sucesso! Sua assinatura está ativa."
+      "title": "Pagamento recebido",
+      "message": "Sua assinatura está ativa. Se algo parecer desatualizado, atualize a página em instantes."
     },
     "currentSubscription": {
-      "title": "Assinatura atual",
+      "title": "Visão geral da assinatura",
+      "subtitle": "Plano, renovação e assentos deste workspace.",
       "currentPlan": "Plano atual",
       "unknown": "Desconhecido",
       "status": "Status",
+      "statusLabels": {
+        "active": "Ativa",
+        "trialing": "Teste",
+        "past_due": "Em atraso",
+        "canceled": "Cancelada",
+        "unpaid": "Não paga",
+        "incomplete": "Incompleta",
+        "incomplete_expired": "Incompleta (expirada)",
+        "paused": "Pausada"
+      },
+      "cancelScheduled": "O cancelamento está agendado para o fim do período de cobrança atual. Você mantém o acesso até lá.",
       "seats": "Assentos",
       "perSeatCost": "Custo por assento",
       "billingInterval": "Intervalo de cobrança",
@@ -389,6 +413,9 @@
     "freeMode": {
       "title": "Desbloqueie recursos premium",
       "description": "Escolha um plano pago para desbloquear recursos avançados. A colaboração em equipe está incluída e os assentos são cobrados por colega.",
+      "compareTitle": "Comparar planos",
+      "compareDescription": "Preço por assento em cada nível. Assine abaixo quando quiser.",
+      "popularBadge": "Popular",
       "perSeat": "Cada colega custa {amount}.",
       "collaborationIncluded": "Colaboração em equipe incluída em todos os planos pagos."
     },
@@ -402,7 +429,8 @@
       "action": "Convidar colegas"
     },
     "paidTeam": {
-      "breakdown": "{seats} assentos x {seatCost} = {monthlyTotal}/mês"
+      "estimateLabel": "Estimativa mensal",
+      "breakdown": "{seats} assentos × {seatCost} = {monthlyTotal}/mês"
     }
   },
   "DashboardSettingsPage": {

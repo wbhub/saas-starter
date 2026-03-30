@@ -40,7 +40,7 @@ function mockBillingPageDependencies(options: {
       if (namespace === "DashboardBillingPage") {
         return (key: string, values?: Record<string, string>) => {
           if (key === "paidTeam.breakdown") {
-            return `${values?.seats ?? ""} seats x ${values?.seatCost ?? ""} = ${values?.monthlyTotal ?? ""}/mo`;
+            return `${values?.seats ?? ""} seats × ${values?.seatCost ?? ""} = ${values?.monthlyTotal ?? ""}/mo`;
           }
           const dictionary: Record<string, string> = {
             "header.eyebrow": "Billing",
@@ -48,9 +48,11 @@ function mockBillingPageDependencies(options: {
             "header.description":
               "Update plans, open the Stripe portal, and review your subscription status.",
             "currentSubscription.title": "Current subscription",
+            "currentSubscription.subtitle": "Plan details",
             "currentSubscription.currentPlan": "Current plan",
             "currentSubscription.unknown": "Unknown",
             "currentSubscription.status": "Status",
+            "currentSubscription.statusLabels.active": "ACTIVE",
             "currentSubscription.seats": "Seats",
             "currentSubscription.perSeatCost": "Per-seat cost",
             "currentSubscription.periodEnd": "Period end",
@@ -58,13 +60,13 @@ function mockBillingPageDependencies(options: {
             "currentSubscription.noSubscription": "No subscription yet.",
             "freeMode.title": "Unlock premium features",
             "freeMode.description": "Choose a paid plan to unlock advanced features.",
+            "freeMode.compareTitle": "Compare plans",
+            "freeMode.compareDescription": "Compare tiers.",
+            "freeMode.popularBadge": "Popular",
             "freeMode.perSeat": `Each teammate costs ${values?.amount ?? ""}.`,
             "freeMode.collaborationIncluded": "Team collaboration included on all paid plans.",
-            "paidSolo.title": "Invite teammates when you are ready",
-            "paidSolo.description": "Collaboration is optional.",
-            "paidSolo.action": "Invite teammates",
-            "checkoutSuccess.message":
-              "Payment successful! Your subscription will be active shortly.",
+            "checkoutSuccess.title": "Payment received",
+            "checkoutSuccess.message": "Payment successful! Your subscription is now active.",
           };
           return dictionary[key] ?? key;
         };
@@ -224,7 +226,7 @@ describe("Dashboard billing page free plan behavior", () => {
     expect(html).toContain('data-title="Team AI Usage"');
   });
 
-  it("renders invite nudge for paid solo teams", async () => {
+  it("renders billing for paid solo teams without invite nudge section", async () => {
     mockBillingPageDependencies({
       billingContext: {
         billingEnabled: true,
@@ -246,8 +248,7 @@ describe("Dashboard billing page free plan behavior", () => {
     const BillingPage = (await import("./page")).default;
     const html = renderToStaticMarkup(await BillingPage());
 
-    expect(html).toContain("Invite teammates when you are ready");
-    expect(html).toContain("Invite teammates");
+    expect(html).not.toContain("Invite teammates when you are ready");
     expect(html).toContain('data-current-plan="growth"');
     expect(html).toContain('data-has-subscription="true"');
   });
@@ -274,7 +275,7 @@ describe("Dashboard billing page free plan behavior", () => {
     const BillingPage = (await import("./page")).default;
     const html = renderToStaticMarkup(await BillingPage());
 
-    expect(html).toContain("3 seats x $50/mo = $150/mo");
+    expect(html).toContain("3 seats × $50/mo = $150/mo");
     expect(html).toContain('data-current-plan="growth"');
     expect(html).toContain('data-has-subscription="true"');
   });
@@ -298,7 +299,7 @@ describe("Dashboard billing page free plan behavior", () => {
       }),
     );
 
-    expect(html).toContain("Payment successful!");
+    expect(html).toContain("Payment received");
   });
 
   it("renders explicit billing-disabled state", async () => {

@@ -332,24 +332,35 @@
     }
   },
   "BillingActions": {
-    "title": "결제 작업",
+    "title": "구독 및 결제",
     "description": {
-      "noPermission": "팀 소유자와 관리자만 결제를 관리할 수 있습니다.",
-      "hasSubscription": "업그레이드, 다운그레이드하거나 Stripe 결제 포털을 여세요.",
-      "noSubscription": "구독을 시작할 요금제를 선택하세요.",
-      "billingDisabled": "이 배포에서는 결제가 비활성화되어 있습니다. Stripe를 구성해 유료 요금제를 활성화하세요."
+      "noPermission": "팀 소유자와 관리자만 이 워크스페이스의 결제를 관리할 수 있습니다.",
+      "hasSubscription": "요금제 변경은 아래에서. 결제 수단·청구서·해지는 결제 포털에서 처리하세요.",
+      "noSubscription": "요금제를 선택하면 보안 창에서 결제로 이동합니다.",
+      "billingDisabled": "이 환경에서는 유료 요금제를 사용할 수 없습니다."
+    },
+    "portal": {
+      "cardTitle": "결제 수단 및 청구서",
+      "cardSubtitle": "카드 업데이트, 영수증 다운로드, 해지 관리. 요금제 변경은 아래에서 진행합니다.",
+      "cta": "결제 포털 열기",
+      "ctaAria": "새 탭에서 결제 포털 열기"
+    },
+    "changePlan": {
+      "title": "업그레이드 또는 요금제 변경",
+      "subtitle": "여기서 다른 요금제로 전환합니다. Stripe가 일할 계산을 자동으로 적용합니다."
+    },
+    "subscribe": {
+      "hint": "요금제를 선택해 결제로 이동합니다."
     },
     "actions": {
       "opening": "여는 중...",
       "updating": "업데이트 중...",
-      "manageBilling": "결제 관리",
-      "subscribe": "{name} 구독",
+      "subscribePlan": "결제로 계속",
       "switchTo": "{name}로 변경"
     },
     "messages": {
-      "syncPending": "Stripe에서 요금제가 업데이트되었습니다. 동기화가 진행 중입니다. 곧 새로고침합니다...",
-      "planUpdated": "요금제가 업데이트되었습니다. 결제 상세 정보를 새로고침합니다...",
-      "billingDisabled": "Stripe 결제가 현재 비활성화되어 있습니다."
+      "syncPending": "Stripe에서 요금제가 업데이트되었습니다. 동기화 중입니다. 곧 새로고침합니다…",
+      "planUpdated": "요금제가 업데이트되었습니다. 결제 상세 정보를 새로고침합니다…"
     },
     "errors": {
       "checkoutFailed": "체크아웃 실패",
@@ -367,13 +378,26 @@
       "description": "요금제를 업데이트하고 Stripe 포털을 열며 구독 상태를 검토하세요."
     },
     "checkoutSuccess": {
-      "message": "결제가 완료되었습니다! 구독이 활성화되었습니다."
+      "title": "결제가 접수되었습니다",
+      "message": "구독이 활성화되었습니다. 표시가 맞지 않으면 잠시 후 페이지를 새로고침하세요."
     },
     "currentSubscription": {
-      "title": "현재 구독",
+      "title": "구독 개요",
+      "subtitle": "이 워크스페이스의 요금제, 갱신 및 좌석입니다.",
       "currentPlan": "현재 요금제",
       "unknown": "알 수 없음",
       "status": "상태",
+      "statusLabels": {
+        "active": "활성",
+        "trialing": "체험",
+        "past_due": "연체",
+        "canceled": "취소됨",
+        "unpaid": "미결제",
+        "incomplete": "미완료",
+        "incomplete_expired": "미완료(만료)",
+        "paused": "일시중지"
+      },
+      "cancelScheduled": "현재 청구 기간 종료 시 해지가 예정되어 있습니다. 그때까지는 계속 이용할 수 있습니다.",
       "seats": "좌석 수",
       "perSeatCost": "좌석당 비용",
       "billingInterval": "결제 주기",
@@ -389,6 +413,9 @@
     "freeMode": {
       "title": "프리미엄 기능 잠금 해제",
       "description": "고급 기능을 사용하려면 유료 요금제를 선택하세요. 팀 협업은 모든 유료 요금제에 포함되며 좌석은 팀원당 청구됩니다.",
+      "compareTitle": "요금제 비교",
+      "compareDescription": "각 단계별 좌석당 요금입니다. 준비되면 아래에서 구독하세요.",
+      "popularBadge": "인기",
       "perSeat": "각 팀원은 {amount}입니다.",
       "collaborationIncluded": "팀 협업은 모든 유료 요금제에 포함됩니다."
     },
@@ -402,7 +429,8 @@
       "action": "팀원 초대"
     },
     "paidTeam": {
-      "breakdown": "{seats}개 좌석 x {seatCost} = {monthlyTotal}/월"
+      "estimateLabel": "예상 월 금액",
+      "breakdown": "{seats}개 좌석 × {seatCost} = {monthlyTotal}/월"
     }
   },
   "DashboardSettingsPage": {

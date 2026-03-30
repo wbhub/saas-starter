@@ -332,24 +332,35 @@
     }
   },
   "BillingActions": {
-    "title": "Actions de facturation",
+    "title": "Abonnement et facturation",
     "description": {
-      "noPermission": "Seuls les propriétaires et administrateurs d’équipe peuvent gérer la facturation.",
-      "hasSubscription": "Mettez à niveau, rétrogradez ou ouvrez le portail de facturation Stripe.",
-      "noSubscription": "Choisissez un forfait pour démarrer votre abonnement.",
-      "billingDisabled": "La facturation est désactivée pour ce déploiement. Configurez Stripe pour activer les forfaits payants."
+      "noPermission": "Seuls les propriétaires et administrateurs peuvent gérer la facturation de cet espace.",
+      "hasSubscription": "Changez de forfait ci-dessous. Utilisez le portail pour le moyen de paiement, les factures et la résiliation.",
+      "noSubscription": "Choisissez un forfait pour commencer. Le paiement s’ouvre dans une fenêtre sécurisée.",
+      "billingDisabled": "Les forfaits payants ne sont pas disponibles dans cet environnement."
+    },
+    "portal": {
+      "cardTitle": "Moyen de paiement et factures",
+      "cardSubtitle": "Mettez à jour la carte, téléchargez les reçus et gérez la résiliation. Les changements de forfait se font ci-dessous.",
+      "cta": "Ouvrir le portail de facturation",
+      "ctaAria": "Ouvrir le portail de facturation dans un nouvel onglet"
+    },
+    "changePlan": {
+      "title": "Changer ou améliorer le forfait",
+      "subtitle": "Passez à un autre niveau ici. Stripe applique la proration automatiquement."
+    },
+    "subscribe": {
+      "hint": "Sélectionnez un forfait pour accéder au paiement."
     },
     "actions": {
       "opening": "Ouverture...",
       "updating": "Mise à jour...",
-      "manageBilling": "Gérer la facturation",
-      "subscribe": "Abonnez-vous {name}",
+      "subscribePlan": "Continuer vers le paiement",
       "switchTo": "Passer à {name}"
     },
     "messages": {
-      "syncPending": "Plan mis à jour dans Stripe. Synchronisation en cours. Rafraîchissement sous peu...",
-      "planUpdated": "Plan mis à jour. Actualisation des détails de facturation...",
-      "billingDisabled": "La facturation Stripe est actuellement désactivée."
+      "syncPending": "Forfait mis à jour dans Stripe. Synchronisation en cours. Actualisation sous peu…",
+      "planUpdated": "Forfait mis à jour. Actualisation des détails de facturation…"
     },
     "errors": {
       "checkoutFailed": "Échec du paiement",
@@ -367,13 +378,26 @@
       "description": "Mettez à jour les forfaits, ouvrez le portail Stripe et vérifiez l'état de votre abonnement."
     },
     "checkoutSuccess": {
-      "message": "Paiement réussi ! Votre abonnement est maintenant actif."
+      "title": "Paiement reçu",
+      "message": "Votre abonnement est actif. Si l’affichage est encore incorrect, actualisez la page dans un instant."
     },
     "currentSubscription": {
-      "title": "Abonnement en cours",
+      "title": "Vue d’ensemble de l’abonnement",
+      "subtitle": "Forfait, renouvellement et sièges pour cet espace de travail.",
       "currentPlan": "Forfait actuel",
       "unknown": "Inconnu",
       "status": "Statut",
+      "statusLabels": {
+        "active": "Actif",
+        "trialing": "Essai",
+        "past_due": "Impayé (en retard)",
+        "canceled": "Annulé",
+        "unpaid": "Impayé",
+        "incomplete": "Incomplet",
+        "incomplete_expired": "Incomplet (expiré)",
+        "paused": "En pause"
+      },
+      "cancelScheduled": "Une résiliation est planifiée pour la fin de la période de facturation en cours. Vous gardez l’accès jusqu’à cette date.",
       "seats": "Sièges",
       "perSeatCost": "Coût par siège",
       "billingInterval": "Intervalle de facturation",
@@ -389,6 +413,9 @@
     "freeMode": {
       "title": "Débloquez les fonctionnalités premium",
       "description": "Choisissez un forfait payant pour débloquer des fonctionnalités avancées. La collaboration d'équipe est incluse et les sièges sont facturés par coéquipier.",
+      "compareTitle": "Comparer les forfaits",
+      "compareDescription": "Tarification par siège pour chaque niveau. Abonnez-vous ci-dessous quand vous êtes prêt.",
+      "popularBadge": "Populaire",
       "perSeat": "Chaque coéquipier coûte {amount}.",
       "collaborationIncluded": "La collaboration d'équipe est incluse dans tous les forfaits payants."
     },
@@ -402,7 +429,8 @@
       "action": "Inviter des coéquipiers"
     },
     "paidTeam": {
-      "breakdown": "{seats} sièges x {seatCost} = {monthlyTotal}/mo"
+      "estimateLabel": "Estimation mensuelle",
+      "breakdown": "{seats} sièges × {seatCost} = {monthlyTotal}/mo"
     }
   },
   "DashboardSettingsPage": {
