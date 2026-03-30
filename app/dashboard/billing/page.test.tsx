@@ -66,8 +66,7 @@ function mockBillingPageDependencies(options: {
             "freeMode.perSeat": `Each teammate costs ${values?.amount ?? ""}.`,
             "freeMode.collaborationIncluded": "Team collaboration included on all paid plans.",
             "checkoutSuccess.title": "Payment received",
-            "checkoutSuccess.message":
-              "Payment successful! Your subscription is now active.",
+            "checkoutSuccess.message": "Payment successful! Your subscription is now active.",
           };
           return dictionary[key] ?? key;
         };

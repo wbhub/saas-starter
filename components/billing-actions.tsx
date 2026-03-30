@@ -3,10 +3,7 @@
 import { useState } from "react";
 import { ExternalLink, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import {
-  CLIENT_IDEMPOTENCY_TTL_MS,
-  SYNC_PENDING_RELOAD_DELAY_MS,
-} from "@/lib/constants/billing";
+import { CLIENT_IDEMPOTENCY_TTL_MS, SYNC_PENDING_RELOAD_DELAY_MS } from "@/lib/constants/billing";
 import { getCsrfHeaders } from "@/lib/http/csrf";
 import { PLAN_KEYS, type PlanKey } from "@/lib/stripe/plans";
 import { Button } from "@/components/ui/button";
@@ -256,7 +253,9 @@ export function BillingActions({
                   <Separator />
                   <div className="space-y-3">
                     <div className="space-y-1">
-                      <h3 className="text-sm font-medium text-foreground">{t("changePlan.title")}</h3>
+                      <h3 className="text-sm font-medium text-foreground">
+                        {t("changePlan.title")}
+                      </h3>
                       <p className="text-sm leading-relaxed text-muted-foreground">
                         {t("changePlan.subtitle")}
                       </p>
@@ -302,7 +301,9 @@ export function BillingActions({
                     {loadingAction === `checkout-${key}` ? (
                       <>
                         <Loader2 className="size-4 animate-spin" aria-hidden />
-                        <span className="text-xs font-normal opacity-90">{t("actions.opening")}</span>
+                        <span className="text-xs font-normal opacity-90">
+                          {t("actions.opening")}
+                        </span>
                       </>
                     ) : (
                       <>

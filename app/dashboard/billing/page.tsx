@@ -1,13 +1,6 @@
 import { Suspense, type ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
-import {
-  CalendarDays,
-  CheckCircle2,
-  Coins,
-  CreditCard,
-  Sparkles,
-  Users,
-} from "lucide-react";
+import { CalendarDays, CheckCircle2, Coins, CreditCard, Sparkles, Users } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { AiUsageCard, AiUsageCardSkeleton } from "@/components/ai-usage-card";
 import { BillingActions } from "@/components/billing-actions";
@@ -28,10 +21,7 @@ import { cn } from "@/lib/utils";
 /** Matches `AiUsageCard` / `AiUsageCardSkeleton` outer shell for visual consistency. */
 const billingSectionClass = "rounded-xl bg-card ring-1 ring-border p-6";
 
-function subscriptionStatusLabel(
-  translate: (key: string) => string,
-  status: SubscriptionStatus,
-) {
+function subscriptionStatusLabel(translate: (key: string) => string, status: SubscriptionStatus) {
   return translate(`currentSubscription.statusLabels.${status}`);
 }
 
@@ -189,10 +179,17 @@ export default async function DashboardBillingPage({
         <div className="space-y-6">
           {!billingEnabled ? (
             <section
-              className={cn(billingSectionClass, "bg-destructive/5 ring-destructive/30 dark:bg-destructive/10")}
+              className={cn(
+                billingSectionClass,
+                "bg-destructive/5 ring-destructive/30 dark:bg-destructive/10",
+              )}
             >
-              <h2 className="text-lg font-semibold text-foreground">{t("billingDisabled.title")}</h2>
-              <p className="mt-2 text-sm text-muted-foreground">{t("billingDisabled.description")}</p>
+              <h2 className="text-lg font-semibold text-foreground">
+                {t("billingDisabled.title")}
+              </h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {t("billingDisabled.description")}
+              </p>
             </section>
           ) : null}
 
@@ -241,7 +238,9 @@ export default async function DashboardBillingPage({
                     <p className="text-sm text-muted-foreground">
                       {t("freeMode.perSeat", { amount: plan.priceLabel })}
                     </p>
-                    <p className="text-xs text-muted-foreground">{t("freeMode.collaborationIncluded")}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("freeMode.collaborationIncluded")}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -252,7 +251,9 @@ export default async function DashboardBillingPage({
         <section className={billingSectionClass}>
           <div className="flex flex-col gap-3 border-b border-border pb-6 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0 space-y-1">
-              <h2 className="text-lg font-semibold text-foreground">{t("currentSubscription.title")}</h2>
+              <h2 className="text-lg font-semibold text-foreground">
+                {t("currentSubscription.title")}
+              </h2>
               <p className="text-sm text-muted-foreground">{t("currentSubscription.subtitle")}</p>
             </div>
             {subscription ? (
@@ -276,7 +277,10 @@ export default async function DashboardBillingPage({
                   </div>
                 ) : null}
                 <div className="grid gap-5 sm:grid-cols-2">
-                  <SubscriptionDetail icon={CreditCard} label={t("currentSubscription.currentPlan")}>
+                  <SubscriptionDetail
+                    icon={CreditCard}
+                    label={t("currentSubscription.currentPlan")}
+                  >
                     {currentPaidPlanKey
                       ? tPlanCopy(`plans.${currentPaidPlanKey}.name`)
                       : t("currentSubscription.unknown")}
@@ -306,7 +310,10 @@ export default async function DashboardBillingPage({
                       </span>
                     </SubscriptionDetail>
                   ) : null}
-                  <SubscriptionDetail icon={CalendarDays} label={t("currentSubscription.periodEnd")}>
+                  <SubscriptionDetail
+                    icon={CalendarDays}
+                    label={t("currentSubscription.periodEnd")}
+                  >
                     {subscription.current_period_end
                       ? formatUtcDate(subscription.current_period_end, undefined, locale)
                       : t("currentSubscription.notAvailable")}
