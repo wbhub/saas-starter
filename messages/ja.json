@@ -271,6 +271,12 @@
       "actions": {
         "goToBilling": "課金へ移動"
       }
+    },
+    "tabs": {
+      "chat": "チャット",
+      "structuredOutput": "構造化出力",
+      "ariaLabel": "AI ワークスペースのモード",
+      "hint": "自由なチャットと型付きの構造化結果を切り替えます。"
     }
   },
   "AiObjectCard": {
@@ -301,7 +307,7 @@
     "title": "アシスタント",
     "description": "メッセージはリアルタイムで配信され、使用量は自動で追跡されます。",
     "placeholder": "プロダクト、ドキュメント、ワークフローについて何でも質問してください...",
-    "emptyState": "まずはメッセージを送信してください。",
+    "emptyState": "下の欄からメッセージを送信してください。",
     "attachments": {
       "label": "添付ファイル",
       "selected": "{count} 件を選択"

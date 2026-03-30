@@ -271,6 +271,12 @@
       "actions": {
         "goToBilling": "Go to billing"
       }
+    },
+    "tabs": {
+      "chat": "对话",
+      "structuredOutput": "结构化输出",
+      "ariaLabel": "AI 工作区模式",
+      "hint": "在自由对话与类型化结构化结果之间切换。"
     }
   },
   "AiObjectCard": {
@@ -301,7 +307,7 @@
     "title": "助手",
     "description": "消息实时传输并自动跟踪使用情况。",
     "placeholder": "询问有关您的产品、文档或工作流程的任何信息...",
-    "emptyState": "首先发送消息。",
+    "emptyState": "请在下方发送消息开始。",
     "attachments": {
       "label": "附件",
       "selected": "已选择 {count}"

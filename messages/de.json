@@ -271,6 +271,12 @@
       "actions": {
         "goToBilling": "Zur Abrechnung"
       }
+    },
+    "tabs": {
+      "chat": "Chat",
+      "structuredOutput": "Strukturierte Ausgabe",
+      "ariaLabel": "KI-Arbeitsmodus",
+      "hint": "Wechseln Sie zwischen freiem Chat und typisierten strukturierten Ergebnissen."
     }
   },
   "AiObjectCard": {
@@ -301,7 +307,7 @@
     "title": "Assistent",
     "description": "Nachrichten werden in Echtzeit gestreamt und die Nutzung automatisch erfasst.",
     "placeholder": "Frage alles zu deinem Produkt, deinen Docs oder deinem Workflow...",
-    "emptyState": "Starte, indem du eine Nachricht sendest.",
+    "emptyState": "Beginne, indem du unten eine Nachricht sendest.",
     "attachments": {
       "label": "Anhänge",
       "selected": "{count} ausgewählt"

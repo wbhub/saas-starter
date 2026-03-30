@@ -274,7 +274,9 @@
     },
     "tabs": {
       "chat": "Chat",
-      "structuredOutput": "Structured Output"
+      "structuredOutput": "Structured Output",
+      "ariaLabel": "AI workspace mode",
+      "hint": "Switch between free-form chat and typed structured results."
     }
   },
   "AiThreads": {
@@ -331,7 +333,7 @@
     "title": "Assistant",
     "description": "Messages stream in real time and usage is tracked automatically.",
     "placeholder": "Ask anything about your product, docs, or workflow...",
-    "emptyState": "Start by sending a message.",
+    "emptyState": "Start by sending a message below.",
     "attachments": {
       "label": "Attachments",
       "selected": "{count} selected"

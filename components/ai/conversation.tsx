@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 
+import { cn } from "@/lib/utils";
+
 export function Conversation({ children, className }: { children: ReactNode; className?: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const isNearBottom = useRef(true);
@@ -23,7 +25,13 @@ export function Conversation({ children, className }: { children: ReactNode; cla
     <div
       ref={containerRef}
       onScroll={handleScroll}
-      className={`max-h-[460px] space-y-3 overflow-y-auto rounded-lg app-surface-subtle p-3 ${className ?? ""}`}
+      className={cn(
+        "min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-xl border border-border/50",
+        "bg-gradient-to-b from-muted/40 via-muted/25 to-muted/10 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]",
+        "dark:from-muted/20 dark:via-muted/10 dark:to-muted/5 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]",
+        "space-y-3",
+        className,
+      )}
     >
       {children}
     </div>

@@ -12,10 +12,13 @@ import {
   isSupportedFileMimeType,
   SUPPORTED_IMAGE_MIME_TYPES,
 } from "@/lib/ai/attachments";
+import { Sparkles } from "lucide-react";
 import { Conversation } from "@/components/ai/conversation";
 import { MessageBubble } from "@/components/ai/message-bubble";
 import { PromptInput } from "@/components/ai/prompt-input";
 import { ThreadSidebar } from "@/components/ai/thread-sidebar";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const MAX_ATTACHMENTS_PER_MESSAGE = 8;
 const MAX_ATTACHMENTS_PER_REQUEST = 16;
@@ -354,23 +357,47 @@ export function AiChatCard({
   }
 
   return (
-    <section className="rounded-xl border app-border-subtle app-surface shadow-sm">
-      <div className="flex overflow-hidden rounded-xl">
-        <ThreadSidebar
-          activeThreadId={activeThreadId}
-          onSelectThread={handleSelectThread}
-          onNewThread={handleNewThread}
-          refreshSignal={threadRefreshSignal}
-        />
-        <div className="flex-1 p-5">
-          <header>
-            <h2 className="text-lg font-semibold text-foreground">{t("title")}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">{t("description")}</p>
-          </header>
+    <div className="flex min-h-[min(560px,calc(100vh-260px))] flex-col overflow-hidden lg:flex-row">
+      <ThreadSidebar
+        activeThreadId={activeThreadId}
+        onSelectThread={handleSelectThread}
+        onNewThread={handleNewThread}
+        refreshSignal={threadRefreshSignal}
+      />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="border-b border-border/50 bg-gradient-to-r from-muted/30 to-transparent px-5 py-4 sm:px-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold tracking-tight text-foreground">{t("title")}</h2>
+              <p className="mt-1 max-w-prose text-sm leading-relaxed text-muted-foreground">
+                {t("description")}
+              </p>
+            </div>
+            {isSending ? (
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary",
+                )}
+              >
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+                </span>
+                {t("actions.sending")}
+              </span>
+            ) : null}
+          </div>
+        </header>
 
-          <Conversation className="mt-4">
+        <div className="flex min-h-0 flex-1 flex-col gap-0 px-5 py-4 sm:px-6">
+          <Conversation>
             {messages.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{t("emptyState")}</p>
+              <div className="flex min-h-[220px] flex-col items-center justify-center gap-4 px-4 py-12 text-center">
+                <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-inner ring-1 ring-primary/15">
+                  <Sparkles className="size-7" aria-hidden />
+                </div>
+                <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">{t("emptyState")}</p>
+              </div>
             ) : (
               messages.map((message, index) => (
                 <MessageBubble
@@ -390,18 +417,16 @@ export function AiChatCard({
             </p>
           ) : null}
 
-          <div className="flex items-center gap-2">
-            {isSending ? (
-              <button
-                type="button"
-                onClick={() => void stop()}
-                className="mt-2 rounded-md border app-border-subtle px-3 py-1.5 text-sm text-muted-foreground hover:bg-surface-hover"
-              >
+          {isSending ? (
+            <div className="mt-3 flex justify-end">
+              <Button type="button" variant="outline" size="sm" onClick={() => void stop()}>
                 {t("actions.stop")}
-              </button>
-            ) : null}
-          </div>
+              </Button>
+            </div>
+          ) : null}
+        </div>
 
+        <div className="border-t border-border/50 bg-muted/20 px-5 py-4 sm:px-6 dark:bg-muted/10">
           <PromptInput
             onSubmit={(text, files) => void handleSubmit(text, files)}
             isSending={isSending}
@@ -410,6 +435,6 @@ export function AiChatCard({
           />
         </div>
       </div>
-    </section>
+    </div>
   );
 }
