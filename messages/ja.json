@@ -332,24 +332,35 @@
     }
   },
   "BillingActions": {
-    "title": "課金アクション",
+    "title": "サブスクリプションと請求",
     "description": {
       "noPermission": "課金を管理できるのはチームのオーナーと管理者のみです。",
-      "hasSubscription": "アップグレード、ダウングレード、または Stripe Billing Portal を開けます。",
-      "noSubscription": "プランを選択してサブスクリプションを開始してください。",
-      "billingDisabled": "このデプロイでは課金が無効です。有料プランを有効にするには Stripe を設定してください。"
+      "hasSubscription": "プラン変更は下から。お支払い方法・請求書・解約は請求ポータルで。",
+      "noSubscription": "プランを選ぶと、安全なウィンドウでチェックアウトが開きます。",
+      "billingDisabled": "この環境では有料プランを利用できません。"
+    },
+    "portal": {
+      "cardTitle": "お支払い方法と請求書",
+      "cardSubtitle": "カードの更新、領収書のダウンロード、解約はこちら。プランの変更は下で行います。",
+      "cta": "請求ポータルを開く",
+      "ctaAria": "請求ポータルを新しいタブで開く"
+    },
+    "changePlan": {
+      "title": "プランをアップグレードまたは変更",
+      "subtitle": "別のプランに切り替えます。Stripe が日割りで自動計算します。"
+    },
+    "subscribe": {
+      "hint": "プランを選んでチェックアウトへ進みます。"
     },
     "actions": {
       "opening": "開いています...",
       "updating": "更新中...",
-      "manageBilling": "課金を管理",
-      "subscribe": "{name} を購読",
+      "subscribePlan": "チェックアウトへ進む",
       "switchTo": "{name} に切り替え"
     },
     "messages": {
-      "syncPending": "Stripe でプランを更新しました。同期中です。まもなく再読み込みします...",
-      "planUpdated": "プランを更新しました。課金情報を再読み込みしています...",
-      "billingDisabled": "Stripe 課金は現在無効です。"
+      "syncPending": "Stripe でプランを更新しました。同期中です。まもなく再読み込みします…",
+      "planUpdated": "プランを更新しました。課金情報を再読み込みしています…"
     },
     "errors": {
       "checkoutFailed": "Checkout に失敗しました",
@@ -367,13 +378,26 @@
       "description": "プランの更新、Stripe ポータルの起動、サブスクリプション状態の確認を行えます。"
     },
     "checkoutSuccess": {
-      "message": "お支払いが完了しました！サブスクリプションが有効になりました。"
+      "title": "お支払いを受け付けました",
+      "message": "サブスクリプションは有効です。表示が古い場合は、しばらくしてからページを再読み込みしてください。"
     },
     "currentSubscription": {
-      "title": "現在のサブスクリプション",
+      "title": "サブスクリプション概要",
+      "subtitle": "このワークスペースのプラン、更新、席数です。",
       "currentPlan": "現在のプラン",
       "unknown": "不明",
       "status": "ステータス",
+      "statusLabels": {
+        "active": "有効",
+        "trialing": "トライアル",
+        "past_due": "未払い（期限超過）",
+        "canceled": "キャンセル済み",
+        "unpaid": "未払い",
+        "incomplete": "未完了",
+        "incomplete_expired": "未完了（期限切れ）",
+        "paused": "一時停止"
+      },
+      "cancelScheduled": "現在の請求期間の終了時に解約が予定されています。それまではアクセスを維持します。",
       "seats": "席数",
       "perSeatCost": "1 席あたりの料金",
       "billingInterval": "請求間隔",
@@ -389,6 +413,9 @@
     "freeMode": {
       "title": "プレミアム機能を解放",
       "description": "有料プランを選択して高度な機能を利用しましょう。チームコラボレーションは含まれており、席数はチームメイトごとに課金されます。",
+      "compareTitle": "プランを比較",
+      "compareDescription": "各ティアの 1 席あたりの料金です。準備ができたら下から申し込みください。",
+      "popularBadge": "人気",
       "perSeat": "各チームメイトの料金は {amount} です。",
       "collaborationIncluded": "すべての有料プランでチームコラボレーションを利用できます。"
     },
@@ -402,7 +429,8 @@
       "action": "チームメイトを招待"
     },
     "paidTeam": {
-      "breakdown": "{seats} 席 x {seatCost} = {monthlyTotal}/月"
+      "estimateLabel": "月額の目安",
+      "breakdown": "{seats} 席 × {seatCost} = {monthlyTotal}/月"
     }
   },
   "DashboardSettingsPage": {

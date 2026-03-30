@@ -1,10 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { ExternalLink, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { CLIENT_IDEMPOTENCY_TTL_MS, SYNC_PENDING_RELOAD_DELAY_MS } from "@/lib/constants/billing";
+import {
+  CLIENT_IDEMPOTENCY_TTL_MS,
+  SYNC_PENDING_RELOAD_DELAY_MS,
+} from "@/lib/constants/billing";
 import { getCsrfHeaders } from "@/lib/http/csrf";
 import { PLAN_KEYS, type PlanKey } from "@/lib/stripe/plans";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+
+/** Matches `AiUsageCard` outer shell (`rounded-xl bg-card ring-1 ring-border p-6`). */
+const billingSectionClass = "rounded-xl bg-card ring-1 ring-border p-6";
 
 type Props = {
   billingEnabled: boolean;
@@ -190,65 +199,142 @@ export function BillingActions({
   }
 
   const availablePlanKeys = PLAN_KEYS.filter((key) => key !== currentPlanKey);
+  const showActions = billingEnabled && canManageBilling;
+  const isBusy = loadingAction !== null;
+
+  const description = !billingEnabled
+    ? t("description.billingDisabled")
+    : !canManageBilling
+      ? t("description.noPermission")
+      : hasSubscription
+        ? t("description.hasSubscription")
+        : t("description.noSubscription");
 
   return (
-    <div className="space-y-4 rounded-xl border app-border-subtle app-surface p-5">
-      <h3 className="text-lg font-semibold text-foreground">{t("title")}</h3>
-      <p className="text-sm text-muted-foreground">
-        {!billingEnabled
-          ? t("description.billingDisabled")
-          : !canManageBilling
-            ? t("description.noPermission")
-            : hasSubscription
-              ? t("description.hasSubscription")
-              : t("description.noSubscription")}
-      </p>
+    <section className={billingSectionClass}>
+      <h2 className="text-lg font-semibold text-foreground">{t("title")}</h2>
+      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{description}</p>
 
-      <div className="flex flex-wrap gap-2">
-        {!billingEnabled || !canManageBilling
-          ? null
-          : !hasSubscription
-            ? PLAN_KEYS.map((key) => (
-                <button
-                  key={key}
-                  onClick={() => startCheckout(key)}
-                  disabled={loadingAction !== null}
-                  className="rounded-lg bg-btn-accent px-4 py-2 text-sm font-medium text-white hover:bg-btn-accent-hover disabled:opacity-60"
-                >
-                  {loadingAction === `checkout-${key}`
-                    ? t("actions.opening")
-                    : t("actions.subscribe", { name: tPlans(`plans.${key}.name`) })}
-                </button>
-              ))
-            : availablePlanKeys.map((key) => (
-                <button
-                  key={key}
-                  onClick={() => changePlan(key)}
-                  disabled={loadingAction !== null}
-                  className="rounded-lg border app-border-subtle px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-surface-hover disabled:opacity-60"
-                >
-                  {loadingAction === `change-${key}`
-                    ? t("actions.updating")
-                    : t("actions.switchTo", { name: tPlans(`plans.${key}.name`) })}
-                </button>
-              ))}
+      {showActions ? (
+        <div className="mt-6 space-y-8">
+          {hasSubscription ? (
+            <>
+              <div className="rounded-lg border border-border bg-muted/40 p-4 sm:p-5 dark:bg-muted/25">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+                  <div className="min-w-0 space-y-1">
+                    <h3 className="text-sm font-medium text-foreground">{t("portal.cardTitle")}</h3>
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                      {t("portal.cardSubtitle")}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="lg"
+                    className="w-full shrink-0 gap-2 sm:w-auto"
+                    onClick={openPortal}
+                    disabled={isBusy}
+                    aria-label={t("portal.ctaAria")}
+                  >
+                    {loadingAction === "portal" ? (
+                      <>
+                        <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden />
+                        {t("actions.opening")}
+                      </>
+                    ) : (
+                      <>
+                        <ExternalLink className="size-4 shrink-0 opacity-90" aria-hidden />
+                        {t("portal.cta")}
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
 
-        {billingEnabled && canManageBilling && hasSubscription ? (
-          <button
-            onClick={openPortal}
-            disabled={loadingAction !== null}
-            className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400 disabled:opacity-60"
-          >
-            {loadingAction === "portal" ? t("actions.opening") : t("actions.manageBilling")}
-          </button>
-        ) : null}
-      </div>
+              {availablePlanKeys.length > 0 ? (
+                <>
+                  <Separator />
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <h3 className="text-sm font-medium text-foreground">{t("changePlan.title")}</h3>
+                      <p className="text-sm leading-relaxed text-muted-foreground">
+                        {t("changePlan.subtitle")}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {availablePlanKeys.map((key) => (
+                        <Button
+                          key={key}
+                          type="button"
+                          variant="outline"
+                          size="default"
+                          onClick={() => changePlan(key)}
+                          disabled={isBusy}
+                        >
+                          {loadingAction === `change-${key}` ? (
+                            <>
+                              <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden />
+                              {t("actions.updating")}
+                            </>
+                          ) : (
+                            t("actions.switchTo", { name: tPlans(`plans.${key}.name`) })
+                          )}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              ) : null}
+            </>
+          ) : (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">{t("subscribe.hint")}</p>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {PLAN_KEYS.map((key) => (
+                  <Button
+                    key={key}
+                    type="button"
+                    variant="default"
+                    className="h-auto w-full flex-col gap-1 py-3"
+                    onClick={() => startCheckout(key)}
+                    disabled={isBusy}
+                  >
+                    {loadingAction === `checkout-${key}` ? (
+                      <>
+                        <Loader2 className="size-4 animate-spin" aria-hidden />
+                        <span className="text-xs font-normal opacity-90">{t("actions.opening")}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-sm font-semibold">{tPlans(`plans.${key}.name`)}</span>
+                        <span className="text-xs font-normal opacity-90">
+                          {t("actions.subscribePlan")}
+                        </span>
+                      </>
+                    )}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
 
-      {message ? (
-        <p className="rounded-lg app-surface-subtle px-3 py-2 text-sm text-muted-foreground">
-          {message}
-        </p>
+          {message ? (
+            <div
+              className="rounded-lg border border-border bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground"
+              role="status"
+            >
+              {loadingAction === "sync-pending" ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+                  {message}
+                </span>
+              ) : (
+                message
+              )}
+            </div>
+          ) : null}
+        </div>
       ) : null}
-    </div>
+    </section>
   );
 }

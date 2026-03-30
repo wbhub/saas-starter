@@ -1,18 +1,39 @@
-import { Suspense } from "react";
+import { Suspense, type ReactNode } from "react";
+import type { LucideIcon } from "lucide-react";
+import {
+  CalendarDays,
+  CheckCircle2,
+  Coins,
+  CreditCard,
+  Sparkles,
+  Users,
+} from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
-import Link from "next/link";
 import { AiUsageCard, AiUsageCardSkeleton } from "@/components/ai-usage-card";
 import { BillingActions } from "@/components/billing-actions";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { formatUtcDate } from "@/lib/date";
 import { formatStaticUsdMonthlyLabel } from "@/lib/stripe/plan-price-display";
 import { canManageTeamBilling } from "@/lib/team-context";
 import { getDashboardShellData } from "@/lib/dashboard/server";
-import type { PlanKey } from "@/lib/stripe/plans";
+import type { PlanKey, SubscriptionStatus } from "@/lib/stripe/plans";
 import { syncCheckoutSuccessForTeam } from "@/lib/stripe/checkout-success";
 import { getPublicPricingCatalog } from "@/lib/stripe/public-pricing";
 import { createClient } from "@/lib/supabase/server";
 import { getCachedTeamContextForUser } from "@/lib/team-context-cache";
 import { logger } from "@/lib/logger";
+import { cn } from "@/lib/utils";
+
+/** Matches `AiUsageCard` / `AiUsageCardSkeleton` outer shell for visual consistency. */
+const billingSectionClass = "rounded-xl bg-card ring-1 ring-border p-6";
+
+function subscriptionStatusLabel(
+  translate: (key: string) => string,
+  status: SubscriptionStatus,
+) {
+  return translate(`currentSubscription.statusLabels.${status}`);
+}
 
 type DashboardBillingPageProps = {
   searchParams?:
@@ -22,6 +43,44 @@ type DashboardBillingPageProps = {
 
 function getFirstSearchParamValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
+}
+
+function subscriptionStatusBadgeVariant(
+  status: SubscriptionStatus,
+): "success" | "secondary" | "destructive" | "outline" {
+  switch (status) {
+    case "active":
+      return "success";
+    case "trialing":
+      return "secondary";
+    case "past_due":
+    case "unpaid":
+      return "destructive";
+    default:
+      return "outline";
+  }
+}
+
+function SubscriptionDetail({
+  icon: Icon,
+  label,
+  children,
+}: {
+  icon: LucideIcon;
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted/80 ring-1 ring-border">
+        <Icon className="h-4 w-4 text-muted-foreground" aria-hidden />
+      </div>
+      <div className="min-w-0 flex-1 space-y-0.5 leading-tight">
+        <p className="text-xs font-medium leading-normal text-muted-foreground">{label}</p>
+        <div className="text-sm font-medium leading-normal text-foreground">{children}</div>
+      </div>
+    </div>
+  );
 }
 
 export default async function DashboardBillingPage({
@@ -100,9 +159,22 @@ export default async function DashboardBillingPage({
   return (
     <>
       {checkoutStatus === "success" ? (
-        <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-200">
-          {t("checkoutSuccess.message")}
-        </div>
+        <section
+          className={cn(
+            billingSectionClass,
+            "bg-emerald-500/5 ring-emerald-500/30 dark:bg-emerald-500/10",
+          )}
+        >
+          <div className="flex gap-3 sm:items-start">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
+              <CheckCircle2 className="h-5 w-5" aria-hidden />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-foreground">{t("checkoutSuccess.title")}</p>
+              <p className="text-sm text-muted-foreground">{t("checkoutSuccess.message")}</p>
+            </div>
+          </div>
+        </section>
       ) : null}
 
       <div>
@@ -110,134 +182,176 @@ export default async function DashboardBillingPage({
           {t("header.eyebrow")}
         </p>
         <h1 className="mt-1.5 text-3xl font-semibold tracking-tight">{t("header.title")}</h1>
-        <p className="mt-2 text-base text-muted-foreground">{t("header.description")}</p>
+        <p className="mt-2 max-w-2xl text-base text-muted-foreground">{t("header.description")}</p>
       </div>
 
       {!isPaidPlan ? (
-        <section className="space-y-4">
+        <div className="space-y-6">
           {!billingEnabled ? (
-            <div className="rounded-xl bg-card ring-1 ring-border p-6">
-              <h2 className="text-lg font-semibold text-foreground">
-                {t("billingDisabled.title")}
-              </h2>
-              <p className="mt-2 text-muted-foreground">{t("billingDisabled.description")}</p>
-            </div>
+            <section
+              className={cn(billingSectionClass, "bg-destructive/5 ring-destructive/30 dark:bg-destructive/10")}
+            >
+              <h2 className="text-lg font-semibold text-foreground">{t("billingDisabled.title")}</h2>
+              <p className="mt-2 text-sm text-muted-foreground">{t("billingDisabled.description")}</p>
+            </section>
           ) : null}
-          <div className="rounded-xl bg-card ring-1 ring-border p-6">
-            <h2 className="text-lg font-semibold text-foreground">{t("freeMode.title")}</h2>
-            <p className="mt-2 text-muted-foreground">{t("freeMode.description")}</p>
-          </div>
-          <div className="grid gap-4 md:grid-cols-3">
-            {livePricing.map((plan) => (
-              <article
-                key={plan.key}
-                className="rounded-xl bg-card ring-1 ring-border p-6 transition-colors hover:bg-muted/50"
-              >
-                <p className="text-sm font-medium text-muted-foreground">
-                  {tPlanCopy(`plans.${plan.key}.name`)}
-                </p>
-                <p className="mt-2 text-2xl font-semibold text-foreground">{plan.priceLabel}</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {tPlanCopy(`plans.${plan.key}.description`)}
-                </p>
-                <p className="mt-3 text-sm text-muted-foreground">
-                  {t("freeMode.perSeat", { amount: plan.priceLabel })}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {t("freeMode.collaborationIncluded")}
-                </p>
-              </article>
-            ))}
-          </div>
-        </section>
+
+          <section className={billingSectionClass}>
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Sparkles className="h-5 w-5" aria-hidden />
+              </div>
+              <div className="min-w-0 space-y-2">
+                <h2 className="text-lg font-semibold text-foreground">{t("freeMode.title")}</h2>
+                <p className="text-sm text-muted-foreground">{t("freeMode.description")}</p>
+              </div>
+            </div>
+          </section>
+
+          <section className={billingSectionClass}>
+            <h2 className="text-lg font-semibold text-foreground">{t("freeMode.compareTitle")}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{t("freeMode.compareDescription")}</p>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {livePricing.map((plan) => (
+                <div
+                  key={plan.key}
+                  className={cn(
+                    "relative rounded-xl bg-muted/30 p-6 ring-1 ring-border transition-shadow hover:shadow-md",
+                    plan.popular &&
+                      "bg-card ring-2 ring-primary ring-offset-2 ring-offset-background dark:ring-offset-card",
+                  )}
+                >
+                  {plan.popular ? (
+                    <div className="absolute -top-2.5 left-6">
+                      <Badge variant="default" className="shadow-sm">
+                        {t("freeMode.popularBadge")}
+                      </Badge>
+                    </div>
+                  ) : null}
+                  <h3 className="text-base font-medium text-foreground">
+                    {tPlanCopy(`plans.${plan.key}.name`)}
+                  </h3>
+                  <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
+                    {plan.priceLabel}
+                  </p>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {tPlanCopy(`plans.${plan.key}.description`)}
+                  </p>
+                  <div className="mt-4 space-y-2 border-t border-border pt-4">
+                    <p className="text-sm text-muted-foreground">
+                      {t("freeMode.perSeat", { amount: plan.priceLabel })}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{t("freeMode.collaborationIncluded")}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
       ) : (
-        <section className="rounded-xl bg-card ring-1 ring-border p-6">
-          <h2 className="text-lg font-semibold text-foreground">
-            {t("currentSubscription.title")}
-          </h2>
-          {subscription ? (
-            <dl className="mt-4 space-y-2">
-              <div className="flex items-center justify-between">
-                <dt className="text-muted-foreground">{t("currentSubscription.currentPlan")}</dt>
-                <dd className="font-medium text-foreground">
-                  {currentPaidPlanKey
-                    ? tPlanCopy(`plans.${currentPaidPlanKey}.name`)
-                    : t("currentSubscription.unknown")}
-                </dd>
-              </div>
-              <div className="flex items-center justify-between">
-                <dt className="text-muted-foreground">{t("currentSubscription.status")}</dt>
-                <dd className="uppercase tracking-wide text-foreground">{subscription.status}</dd>
-              </div>
-              {billingInterval ? (
-                <div className="flex items-center justify-between">
-                  <dt className="text-muted-foreground">
-                    {t("currentSubscription.billingInterval")}
-                  </dt>
-                  <dd className="text-foreground">
-                    {billingInterval === "year"
-                      ? t("currentSubscription.annual")
-                      : t("currentSubscription.monthly")}
-                  </dd>
-                </div>
-              ) : null}
-              <div className="flex items-center justify-between">
-                <dt className="text-muted-foreground">{t("currentSubscription.seats")}</dt>
-                <dd className="text-foreground">{subscription.seat_quantity}</dd>
-              </div>
-              {perSeatAmount !== null ? (
-                <div className="flex items-center justify-between">
-                  <dt className="text-muted-foreground">{t("currentSubscription.perSeatCost")}</dt>
-                  <dd className="text-foreground">
-                    {catalogSeatPrice(perSeatAmount)}
-                    {billingInterval === "year" ? (
-                      <span className="ml-1 text-sm text-muted-foreground">
-                        ({t("currentSubscription.billedAnnually")})
-                      </span>
-                    ) : null}
-                  </dd>
-                </div>
-              ) : null}
-              <div className="flex items-center justify-between">
-                <dt className="text-muted-foreground">{t("currentSubscription.periodEnd")}</dt>
-                <dd className="text-foreground">
-                  {subscription.current_period_end
-                    ? formatUtcDate(subscription.current_period_end, undefined, locale)
-                    : t("currentSubscription.notAvailable")}
-                </dd>
-              </div>
-            </dl>
-          ) : (
-            <div className="mt-4 rounded-lg app-surface-subtle p-4 text-sm text-muted-foreground">
-              {t("currentSubscription.noSubscription")}
+        <section className={billingSectionClass}>
+          <div className="flex flex-col gap-3 border-b border-border pb-6 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0 space-y-1">
+              <h2 className="text-lg font-semibold text-foreground">{t("currentSubscription.title")}</h2>
+              <p className="text-sm text-muted-foreground">{t("currentSubscription.subtitle")}</p>
             </div>
-          )}
-          {teamUiMode === "paid_team" &&
-          perSeatAmount !== null &&
-          estimatedMonthlySeatTotal !== null ? (
-            <p className="mt-4 rounded-lg app-surface-subtle px-3 py-2 text-sm text-muted-foreground">
-              {t("paidTeam.breakdown", {
-                seats: String(subscription?.seat_quantity ?? memberCount),
-                seatCost: catalogSeatPrice(perSeatAmount),
-                monthlyTotal: new Intl.NumberFormat(locale, {
-                  style: "currency",
-                  currency: "USD",
-                  maximumFractionDigits: 0,
-                }).format(estimatedMonthlySeatTotal),
-              })}
-            </p>
-          ) : null}
+            {subscription ? (
+              <Badge
+                variant={subscriptionStatusBadgeVariant(subscription.status)}
+                className="h-6 w-fit shrink-0 sm:mt-0.5"
+              >
+                {subscriptionStatusLabel(t, subscription.status)}
+              </Badge>
+            ) : null}
+          </div>
+          <div className="mt-6 space-y-6">
+            {subscription ? (
+              <>
+                {subscription.cancel_at_period_end ? (
+                  <div
+                    className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-950 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-100"
+                    role="status"
+                  >
+                    {t("currentSubscription.cancelScheduled")}
+                  </div>
+                ) : null}
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <SubscriptionDetail icon={CreditCard} label={t("currentSubscription.currentPlan")}>
+                    {currentPaidPlanKey
+                      ? tPlanCopy(`plans.${currentPaidPlanKey}.name`)
+                      : t("currentSubscription.unknown")}
+                  </SubscriptionDetail>
+                  <SubscriptionDetail icon={Users} label={t("currentSubscription.seats")}>
+                    {subscription.seat_quantity}
+                  </SubscriptionDetail>
+                  {billingInterval ? (
+                    <SubscriptionDetail
+                      icon={CalendarDays}
+                      label={t("currentSubscription.billingInterval")}
+                    >
+                      {billingInterval === "year"
+                        ? t("currentSubscription.annual")
+                        : t("currentSubscription.monthly")}
+                    </SubscriptionDetail>
+                  ) : null}
+                  {perSeatAmount !== null ? (
+                    <SubscriptionDetail icon={Coins} label={t("currentSubscription.perSeatCost")}>
+                      <span>
+                        {catalogSeatPrice(perSeatAmount)}
+                        {billingInterval === "year" ? (
+                          <span className="ml-1.5 text-sm font-normal text-muted-foreground">
+                            ({t("currentSubscription.billedAnnually")})
+                          </span>
+                        ) : null}
+                      </span>
+                    </SubscriptionDetail>
+                  ) : null}
+                  <SubscriptionDetail icon={CalendarDays} label={t("currentSubscription.periodEnd")}>
+                    {subscription.current_period_end
+                      ? formatUtcDate(subscription.current_period_end, undefined, locale)
+                      : t("currentSubscription.notAvailable")}
+                  </SubscriptionDetail>
+                </div>
+              </>
+            ) : (
+              <div className="rounded-lg border border-dashed border-border bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground">
+                {t("currentSubscription.noSubscription")}
+              </div>
+            )}
+            {teamUiMode === "paid_team" &&
+            subscription &&
+            perSeatAmount !== null &&
+            estimatedMonthlySeatTotal !== null ? (
+              <>
+                <Separator />
+                <div className="rounded-lg bg-muted/50 px-4 py-3">
+                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    {t("paidTeam.estimateLabel")}
+                  </p>
+                  <p className="mt-1 text-sm font-medium text-foreground">
+                    {t("paidTeam.breakdown", {
+                      seats: String(subscription.seat_quantity ?? memberCount),
+                      seatCost: catalogSeatPrice(perSeatAmount),
+                      monthlyTotal: new Intl.NumberFormat(locale, {
+                        style: "currency",
+                        currency: "USD",
+                        maximumFractionDigits: 0,
+                      }).format(estimatedMonthlySeatTotal),
+                    })}
+                  </p>
+                </div>
+              </>
+            ) : null}
+          </div>
         </section>
       )}
 
-      <section>
-        <BillingActions
-          billingEnabled={billingEnabled}
-          currentPlanKey={currentPaidPlanKey}
-          hasSubscription={hasSubscription}
-          canManageBilling={canManageBilling}
-        />
-      </section>
+      <BillingActions
+        billingEnabled={billingEnabled}
+        currentPlanKey={currentPaidPlanKey}
+        hasSubscription={hasSubscription}
+        canManageBilling={canManageBilling}
+      />
 
       {aiUiGate.isVisibleInUi ? (
         <Suspense fallback={<AiUsageCardSkeleton />}>
@@ -254,21 +368,6 @@ export default async function DashboardBillingPage({
             }}
           />
         </Suspense>
-      ) : null}
-
-      {teamUiMode === "paid_solo" && perSeatAmount !== null ? (
-        <section className="rounded-xl bg-card ring-1 ring-border p-6">
-          <h2 className="text-lg font-semibold text-foreground">{t("paidSolo.title")}</h2>
-          <p className="mt-2 text-muted-foreground">
-            {t("paidSolo.description", { amount: catalogSeatPrice(perSeatAmount) })}
-          </p>
-          <Link
-            href="/dashboard/team"
-            className="mt-4 inline-flex rounded-lg border app-border-subtle px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-[color:var(--surface-subtle)]"
-          >
-            {t("paidSolo.action")}
-          </Link>
-        </section>
       ) : null}
     </>
   );

@@ -332,28 +332,39 @@
     }
   },
   "BillingActions": {
-    "title": "计费操作",
+    "title": "订阅与账单",
     "description": {
-      "noPermission": "只有团队所有者和管理员可以管理计费。",
-      "hasSubscription": "升级、降级或打开 Stripe Billing Portal。",
-      "noSubscription": "选择一个计划来开始订阅。",
-      "billingDisabled": "此部署未启用计费。配置 Stripe 后即可启用付费计划。"
+      "noPermission": "只有团队所有者和管理员可以管理此工作区的账单。",
+      "hasSubscription": "在下方更改方案。付款方式、发票和取消订阅请使用账单门户。",
+      "noSubscription": "选择方案以开始。结账会在安全窗口中打开。",
+      "billingDisabled": "当前环境不提供付费方案。"
+    },
+    "portal": {
+      "cardTitle": "付款方式与发票",
+      "cardSubtitle": "更新卡片、下载收据、管理取消订阅。升降级请在下方操作。",
+      "cta": "打开账单门户",
+      "ctaAria": "在新标签页打开账单门户"
+    },
+    "changePlan": {
+      "title": "升级或更换方案",
+      "subtitle": "在此切换到其他档位。Stripe 会自动按用量比例计费。"
+    },
+    "subscribe": {
+      "hint": "选择方案以进入结账。"
     },
     "actions": {
-      "opening": "开幕...",
-      "updating": "更新中...",
-      "manageBilling": "管理账单",
-      "subscribe": "订阅 {name}",
+      "opening": "正在打开…",
+      "updating": "更新中…",
+      "subscribePlan": "前往结账",
       "switchTo": "切换到 {name}"
     },
     "messages": {
-      "syncPending": "计划已在 Stripe 中更新。同步正在进行中。刷新不久...",
-      "planUpdated": "计划已更新。正在刷新帐单详细信息...",
-      "billingDisabled": "Stripe 计费当前已禁用。"
+      "syncPending": "方案已在 Stripe 更新，正在同步，即将刷新…",
+      "planUpdated": "方案已更新，正在刷新账单信息…"
     },
     "errors": {
       "checkoutFailed": "结帐失败",
-      "planChangeFailed": "计划变更失败",
+      "planChangeFailed": "方案变更失败",
       "portalUnavailable": "门户不可用",
       "missingCheckoutUrl": "缺少结账网址",
       "missingPortalUrl": "缺少门户 URL",
@@ -367,13 +378,26 @@
       "description": "更新计划、打开 Stripe 门户并查看您的订阅状态。"
     },
     "checkoutSuccess": {
-      "message": "支付成功！您的订阅已激活。"
+      "title": "已收到付款",
+      "message": "你的订阅已激活。若显示仍不正确，请稍后刷新页面。"
     },
     "currentSubscription": {
-      "title": "当前订阅",
+      "title": "订阅概览",
+      "subtitle": "此工作区的方案、续订与席位数。",
       "currentPlan": "目前计划",
       "unknown": "未知",
       "status": "地位",
+      "statusLabels": {
+        "active": "有效",
+        "trialing": "试用",
+        "past_due": "逾期",
+        "canceled": "已取消",
+        "unpaid": "未付款",
+        "incomplete": "未完成",
+        "incomplete_expired": "未完成（已过期）",
+        "paused": "已暂停"
+      },
+      "cancelScheduled": "已安排在当前计费周期结束时取消。在此之前你仍可访问。",
       "seats": "座位数",
       "perSeatCost": "每席位成本",
       "billingInterval": "计费周期",
@@ -389,6 +413,9 @@
     "freeMode": {
       "title": "解锁高级功能",
       "description": "选择付费计划以解锁高级功能。所有付费计划都包含团队协作，并按每位队友计费。",
+      "compareTitle": "比较方案",
+      "compareDescription": "各级别的每席位定价。准备好后在下方订阅。",
+      "popularBadge": "热门",
       "perSeat": "每位队友费用为 {amount}。",
       "collaborationIncluded": "所有付费计划均包含团队协作。"
     },
@@ -402,7 +429,8 @@
       "action": "邀请队友"
     },
     "paidTeam": {
-      "breakdown": "{seats} 个席位 x {seatCost} = {monthlyTotal}/月"
+      "estimateLabel": "预计每月",
+      "breakdown": "{seats} 个席位 × {seatCost} = {monthlyTotal}/月"
     }
   },
   "DashboardSettingsPage": {

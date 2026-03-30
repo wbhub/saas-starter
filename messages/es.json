@@ -332,24 +332,35 @@
     }
   },
   "BillingActions": {
-    "title": "Acciones de facturación",
+    "title": "Suscripción y facturación",
     "description": {
-      "noPermission": "Solo los propietarios y administradores del equipo pueden gestionar la facturación.",
-      "hasSubscription": "Mejora, baja de plan o abre el portal de facturación de Stripe.",
-      "noSubscription": "Elige un plan para iniciar tu suscripción.",
-      "billingDisabled": "La facturación está deshabilitada en este despliegue. Configura Stripe para habilitar planes de pago."
+      "noPermission": "Solo los propietarios y administradores pueden gestionar la facturación de este espacio.",
+      "hasSubscription": "Cambia de plan abajo. Usa el portal para método de pago, facturas y cancelación.",
+      "noSubscription": "Elige un plan para empezar. El checkout se abre en una ventana segura.",
+      "billingDisabled": "Los planes de pago no están disponibles en este entorno."
+    },
+    "portal": {
+      "cardTitle": "Método de pago y facturas",
+      "cardSubtitle": "Actualiza la tarjeta, descarga recibos y gestiona la cancelación. Los cambios de plan se hacen abajo.",
+      "cta": "Abrir portal de facturación",
+      "ctaAria": "Abrir el portal de facturación en una pestaña nueva"
+    },
+    "changePlan": {
+      "title": "Mejorar o cambiar de plan",
+      "subtitle": "Cambia de nivel aquí. Stripe prorratea la suscripción automáticamente."
+    },
+    "subscribe": {
+      "hint": "Selecciona un plan para ir al checkout."
     },
     "actions": {
       "opening": "Abriendo...",
       "updating": "Actualizando...",
-      "manageBilling": "Gestionar facturación",
-      "subscribe": "Suscribirse a {name}",
+      "subscribePlan": "Continuar al checkout",
       "switchTo": "Cambiar a {name}"
     },
     "messages": {
-      "syncPending": "Plan actualizado en Stripe. Sincronización en progreso. Actualizando en breve...",
-      "planUpdated": "Plan actualizado. Actualizando detalles de facturación...",
-      "billingDisabled": "La facturación con Stripe está deshabilitada actualmente."
+      "syncPending": "Plan actualizado en Stripe. Sincronizando. Actualizando en breve…",
+      "planUpdated": "Plan actualizado. Actualizando detalles de facturación…"
     },
     "errors": {
       "checkoutFailed": "Falló el checkout",
@@ -367,13 +378,26 @@
       "description": "Actualiza planes, abre el portal de Stripe y revisa el estado de tu suscripción."
     },
     "checkoutSuccess": {
-      "message": "¡Pago exitoso! Tu suscripción ya está activa."
+      "title": "Pago recibido",
+      "message": "Tu suscripción está activa. Si algo no se ve actualizado, vuelve a cargar la página en unos momentos."
     },
     "currentSubscription": {
-      "title": "Suscripción actual",
+      "title": "Resumen de la suscripción",
+      "subtitle": "Plan, renovación y asientos de este espacio de trabajo.",
       "currentPlan": "Plan actual",
       "unknown": "Desconocido",
       "status": "Estado",
+      "statusLabels": {
+        "active": "Activa",
+        "trialing": "Prueba",
+        "past_due": "Vencida",
+        "canceled": "Cancelada",
+        "unpaid": "Impaga",
+        "incomplete": "Incompleta",
+        "incomplete_expired": "Incompleta (expirada)",
+        "paused": "En pausa"
+      },
+      "cancelScheduled": "La cancelación está programada para el final del período de facturación actual. Mantienes acceso hasta entonces.",
       "seats": "Asientos",
       "perSeatCost": "Costo por asiento",
       "billingInterval": "Intervalo de facturación",
@@ -389,6 +413,9 @@
     "freeMode": {
       "title": "Desbloquea funciones premium",
       "description": "Elige un plan de pago para desbloquear funciones avanzadas. La colaboración en equipo está incluida y los asientos se cobran por compañero.",
+      "compareTitle": "Comparar planes",
+      "compareDescription": "Precio por asiento en cada nivel. Suscríbete abajo cuando quieras.",
+      "popularBadge": "Popular",
       "perSeat": "Cada compañero cuesta {amount}.",
       "collaborationIncluded": "La colaboración en equipo está incluida en todos los planes de pago."
     },
@@ -402,7 +429,8 @@
       "action": "Invitar compañeros"
     },
     "paidTeam": {
-      "breakdown": "{seats} asientos x {seatCost} = {monthlyTotal}/mes"
+      "estimateLabel": "Estimado mensual",
+      "breakdown": "{seats} asientos × {seatCost} = {monthlyTotal}/mes"
     }
   },
   "DashboardSettingsPage": {

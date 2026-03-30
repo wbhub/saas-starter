@@ -12,8 +12,7 @@ vi.mock("next-intl", () => ({
       };
       return names[key] ?? key;
     }
-    if (key === "actions.manageBilling") return "Manage billing";
-    if (key === "actions.subscribe") return `Subscribe ${values?.name ?? ""}`.trim();
+    if (key === "portal.cta") return "Open billing portal";
     if (key === "actions.switchTo") return `Switch to ${values?.name ?? ""}`.trim();
     return key;
   },
@@ -24,7 +23,7 @@ describe("BillingActions", () => {
     vi.clearAllMocks();
   });
 
-  it("hides Manage billing for roles that cannot manage billing", () => {
+  it("hides billing portal CTA for roles that cannot manage billing", () => {
     const html = renderToStaticMarkup(
       <BillingActions
         billingEnabled={true}
@@ -34,10 +33,10 @@ describe("BillingActions", () => {
       />,
     );
 
-    expect(html).not.toContain("Manage billing");
+    expect(html).not.toContain("Open billing portal");
   });
 
-  it("shows Manage billing when role can manage and subscription exists", () => {
+  it("shows billing portal CTA when role can manage and subscription exists", () => {
     const html = renderToStaticMarkup(
       <BillingActions
         billingEnabled={true}
@@ -47,10 +46,24 @@ describe("BillingActions", () => {
       />,
     );
 
-    expect(html).toContain("Manage billing");
+    expect(html).toContain("Open billing portal");
   });
 
-  it("hides Manage billing when there is no subscription", () => {
+  it("shows plan switch buttons for other tiers when subscribed", () => {
+    const html = renderToStaticMarkup(
+      <BillingActions
+        billingEnabled={true}
+        currentPlanKey="starter"
+        hasSubscription={true}
+        canManageBilling={true}
+      />,
+    );
+
+    expect(html).toContain("Switch to Growth");
+    expect(html).toContain("Switch to Pro");
+  });
+
+  it("hides billing portal CTA when there is no subscription", () => {
     const html = renderToStaticMarkup(
       <BillingActions
         billingEnabled={true}
@@ -60,7 +73,7 @@ describe("BillingActions", () => {
       />,
     );
 
-    expect(html).not.toContain("Manage billing");
+    expect(html).not.toContain("Open billing portal");
   });
 
   it("hides billing actions when billing is disabled", () => {
@@ -73,7 +86,7 @@ describe("BillingActions", () => {
       />,
     );
 
-    expect(html).not.toContain("Manage billing");
+    expect(html).not.toContain("Open billing portal");
     expect(html).toContain("description.billingDisabled");
   });
 });

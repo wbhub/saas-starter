@@ -358,24 +358,35 @@
     }
   },
   "BillingActions": {
-    "title": "Billing actions",
+    "title": "Subscription & billing",
     "description": {
-      "noPermission": "Only team owners and admins can manage billing.",
-      "hasSubscription": "Upgrade, downgrade, or open Stripe Billing Portal.",
-      "noSubscription": "Choose a plan to start your subscription.",
-      "billingDisabled": "Billing is disabled for this deployment. Configure Stripe to enable paid plans."
+      "noPermission": "Only team owners and admins can manage billing for this workspace.",
+      "hasSubscription": "Change your plan below. Use the billing portal for payment method, invoices, and cancellation.",
+      "noSubscription": "Choose a plan to start. Checkout opens in a secure window.",
+      "billingDisabled": "Paid plans are not available in this environment."
+    },
+    "portal": {
+      "cardTitle": "Payment method & invoices",
+      "cardSubtitle": "Update your card, download receipts, and manage cancellation. Plan upgrades and downgrades are handled below.",
+      "cta": "Open billing portal",
+      "ctaAria": "Open the billing portal in a new tab"
+    },
+    "changePlan": {
+      "title": "Upgrade or change plan",
+      "subtitle": "Switch to another tier here. Stripe prorates your subscription automatically."
+    },
+    "subscribe": {
+      "hint": "Select a plan to continue to checkout."
     },
     "actions": {
-      "opening": "Opening...",
-      "updating": "Updating...",
-      "manageBilling": "Manage billing",
-      "subscribe": "Subscribe {name}",
+      "opening": "Opening…",
+      "updating": "Updating…",
+      "subscribePlan": "Continue to checkout",
       "switchTo": "Switch to {name}"
     },
     "messages": {
-      "syncPending": "Plan updated in Stripe. Sync in progress. Refreshing shortly...",
-      "planUpdated": "Plan updated. Refreshing billing details...",
-      "billingDisabled": "Stripe billing is currently disabled."
+      "syncPending": "Plan updated in Stripe. Sync in progress. Refreshing shortly…",
+      "planUpdated": "Plan updated. Refreshing billing details…"
     },
     "errors": {
       "checkoutFailed": "Checkout failed",
@@ -393,13 +404,26 @@
       "description": "Update plans, open the Stripe portal, and review your subscription status."
     },
     "checkoutSuccess": {
-      "message": "Payment successful! Your subscription is now active."
+      "title": "Payment received",
+      "message": "Your subscription is active. If something still looks out of date, refresh in a moment."
     },
     "currentSubscription": {
-      "title": "Current subscription",
+      "title": "Subscription overview",
+      "subtitle": "Plan, renewal, and seats for this workspace.",
       "currentPlan": "Current plan",
       "unknown": "Unknown",
       "status": "Status",
+      "statusLabels": {
+        "active": "Active",
+        "trialing": "Trialing",
+        "past_due": "Past due",
+        "canceled": "Canceled",
+        "unpaid": "Unpaid",
+        "incomplete": "Incomplete",
+        "incomplete_expired": "Incomplete (expired)",
+        "paused": "Paused"
+      },
+      "cancelScheduled": "Cancellation is scheduled for the end of the current billing period. You keep access until then.",
       "seats": "Seats",
       "perSeatCost": "Per-seat cost",
       "billingInterval": "Billing interval",
@@ -415,6 +439,9 @@
     "freeMode": {
       "title": "Unlock premium features",
       "description": "Choose a paid plan to unlock advanced features. Team collaboration is included and seats are billed per teammate.",
+      "compareTitle": "Compare plans",
+      "compareDescription": "Per-seat pricing across every tier. Subscribe below when you are ready.",
+      "popularBadge": "Popular",
       "perSeat": "Each teammate costs {amount}.",
       "collaborationIncluded": "Team collaboration included on all paid plans."
     },
@@ -428,7 +455,8 @@
       "action": "Invite teammates"
     },
     "paidTeam": {
-      "breakdown": "{seats} seats x {seatCost} = {monthlyTotal}/mo"
+      "estimateLabel": "Estimated monthly",
+      "breakdown": "{seats} seats × {seatCost} = {monthlyTotal}/mo"
     }
   },
   "DashboardSettingsPage": {
