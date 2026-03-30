@@ -111,9 +111,7 @@ function teamInviteReducer(state: TeamInviteState, action: TeamInviteAction): Te
       return {
         ...state,
         removingUserId: null,
-        banner: action.message
-          ? { message: action.message, variant: action.variant }
-          : clearBanner,
+        banner: action.message ? { message: action.message, variant: action.variant } : clearBanner,
       };
     case "UPDATE_ROLE_START":
       return { ...state, updatingRoleUserId: action.userId, banner: clearBanner };
@@ -121,9 +119,7 @@ function teamInviteReducer(state: TeamInviteState, action: TeamInviteAction): Te
       return {
         ...state,
         updatingRoleUserId: null,
-        banner: action.message
-          ? { message: action.message, variant: action.variant }
-          : clearBanner,
+        banner: action.message ? { message: action.message, variant: action.variant } : clearBanner,
       };
     case "REVOKE_INVITE_START":
       return { ...state, revokeInviteId: action.inviteId, banner: clearBanner };
@@ -131,9 +127,7 @@ function teamInviteReducer(state: TeamInviteState, action: TeamInviteAction): Te
       return {
         ...state,
         revokeInviteId: null,
-        banner: action.message
-          ? { message: action.message, variant: action.variant }
-          : clearBanner,
+        banner: action.message ? { message: action.message, variant: action.variant } : clearBanner,
       };
     case "RESEND_INVITE_START":
       return { ...state, resendInviteId: action.inviteId, banner: clearBanner };
@@ -141,9 +135,7 @@ function teamInviteReducer(state: TeamInviteState, action: TeamInviteAction): Te
       return {
         ...state,
         resendInviteId: null,
-        banner: action.message
-          ? { message: action.message, variant: action.variant }
-          : clearBanner,
+        banner: action.message ? { message: action.message, variant: action.variant } : clearBanner,
       };
     case "CLEAR_BANNER":
       return { ...state, banner: clearBanner };
@@ -159,7 +151,12 @@ function memberInitials(fullName: string | null, userId: string) {
     }
     return name.slice(0, 2).toUpperCase();
   }
-  return userId.replace(/[^a-zA-Z0-9]/g, "").slice(0, 2).toUpperCase() || "?";
+  return (
+    userId
+      .replace(/[^a-zA-Z0-9]/g, "")
+      .slice(0, 2)
+      .toUpperCase() || "?"
+  );
 }
 
 export function TeamInviteCard({
@@ -496,10 +493,16 @@ export function TeamInviteCard({
           <>
             <div className="px-5 pt-5 sm:px-6">
               <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={2} aria-hidden />
+                <Building2
+                  className="h-4 w-4 shrink-0 text-muted-foreground"
+                  strokeWidth={2}
+                  aria-hidden
+                />
                 {t("teamName.sectionTitle")}
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">{t("teamName.sectionDescription")}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {t("teamName.sectionDescription")}
+              </p>
               <form
                 className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end"
                 onSubmit={handleSaveTeamName}
@@ -535,10 +538,7 @@ export function TeamInviteCard({
               {requireTeamNameOnFirstInvite ? (
                 <p className="mt-2 text-xs text-muted-foreground">{t("inviteForm.teamNameHint")}</p>
               ) : null}
-              <FormMessage
-                status={teamNameBanner.variant}
-                message={teamNameBanner.message}
-              />
+              <FormMessage status={teamNameBanner.variant} message={teamNameBanner.message} />
             </div>
             <Separator className="my-6" />
           </>
@@ -615,7 +615,9 @@ export function TeamInviteCard({
           ) : null}
 
           {!canInvite ? (
-            <p className="mt-4 text-sm text-muted-foreground">{t("permissions.onlyOwnersAdmins")}</p>
+            <p className="mt-4 text-sm text-muted-foreground">
+              {t("permissions.onlyOwnersAdmins")}
+            </p>
           ) : null}
 
           <FormMessage status={banner.variant} message={banner.message} />
@@ -664,7 +666,9 @@ export function TeamInviteCard({
                         <p className="truncate font-medium text-foreground">
                           {member.fullName?.trim() || t("members.unnamed")}
                         </p>
-                        <p className="truncate font-mono text-xs text-muted-foreground">{member.userId}</p>
+                        <p className="truncate font-mono text-xs text-muted-foreground">
+                          {member.userId}
+                        </p>
                       </div>
                     </div>
                     <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 pl-10 sm:pl-0">
