@@ -1,5 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+const e2bMockState = vi.hoisted(() => ({
+  create: vi.fn(),
+  runCode: vi.fn(),
+  kill: vi.fn(),
+}));
+
+vi.mock("@e2b/code-interpreter", () => ({
+  Sandbox: {
+    create: e2bMockState.create,
+  },
+}));
+
 function getExecute(tool: { execute?: (input: unknown) => Promise<unknown> }) {
   if (!tool.execute) {
     throw new Error("Tool execute handler is not defined.");
@@ -13,16 +25,20 @@ describe("e2bRunCodeTool", () => {
     vi.resetModules();
     vi.unstubAllEnvs();
     vi.stubEnv("E2B_API_KEY", "e2b_test_key");
+    e2bMockState.runCode.mockReset();
+    e2bMockState.kill.mockReset().mockResolvedValue(undefined);
+    e2bMockState.create.mockReset().mockResolvedValue({
+      runCode: e2bMockState.runCode,
+      kill: e2bMockState.kill,
+    });
   });
 
   afterEach(() => {
-    vi.doUnmock("@e2b/code-interpreter");
     vi.unstubAllEnvs();
-    vi.restoreAllMocks();
   });
 
   it("creates a sandbox with outbound internet disabled and kills it after successful execution", async () => {
-    const runCode = vi.fn().mockResolvedValue({
+    e2bMockState.runCode.mockResolvedValue({
       error: undefined,
       text: "2",
       logs: { stdout: ["hello"], stderr: [] },
@@ -38,15 +54,6 @@ describe("e2bRunCodeTool", () => {
         },
       ],
     });
-    const kill = vi.fn().mockResolvedValue(undefined);
-    const create = vi.fn().mockResolvedValue({
-      runCode,
-      kill,
-    });
-
-    vi.doMock("@e2b/code-interpreter", () => ({
-      Sandbox: { create },
-    }));
 
     const { e2bRunCodeTool } = await import("./e2b");
     const execute = getExecute(
@@ -66,17 +73,17 @@ describe("e2bRunCodeTool", () => {
       results: Array<{ formats: string[] }>;
     };
 
-    expect(create).toHaveBeenCalledWith({
+    expect(e2bMockState.create).toHaveBeenCalledWith({
       allowInternetAccess: false,
       timeoutMs: 12000,
       requestTimeoutMs: 2500,
     });
-    expect(runCode).toHaveBeenCalledWith("print(1 + 1)", {
+    expect(e2bMockState.runCode).toHaveBeenCalledWith("print(1 + 1)", {
       language: "python",
       timeoutMs: 1500,
       requestTimeoutMs: 2500,
     });
-    expect(kill).toHaveBeenCalledWith({ requestTimeoutMs: 2500 });
+    expect(e2bMockState.kill).toHaveBeenCalledWith({ requestTimeoutMs: 2500 });
     expect(result).toMatchObject({
       success: true,
       text: "2",
@@ -86,16 +93,7 @@ describe("e2bRunCodeTool", () => {
   });
 
   it("kills the sandbox when execution throws", async () => {
-    const runCode = vi.fn().mockRejectedValue(new Error("boom"));
-    const kill = vi.fn().mockResolvedValue(undefined);
-    const create = vi.fn().mockResolvedValue({
-      runCode,
-      kill,
-    });
-
-    vi.doMock("@e2b/code-interpreter", () => ({
-      Sandbox: { create },
-    }));
+    e2bMockState.runCode.mockRejectedValue(new Error("boom"));
 
     const { e2bRunCodeTool } = await import("./e2b");
     const execute = getExecute(
@@ -110,7 +108,7 @@ describe("e2bRunCodeTool", () => {
       error: { name: string; value: string };
     };
 
-    expect(kill).toHaveBeenCalledWith({ requestTimeoutMs: 2200 });
+    expect(e2bMockState.kill).toHaveBeenCalledWith({ requestTimeoutMs: 2200 });
     expect(result).toMatchObject({
       success: false,
       error: {

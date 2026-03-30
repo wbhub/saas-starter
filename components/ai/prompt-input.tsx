@@ -2,10 +2,11 @@
 
 import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { Loader2, Paperclip, SendHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { type AttachmentProviderName, getSupportedAttachmentAccept } from "@/lib/ai/attachments";
+import { cn } from "@/lib/utils";
 
 const MAX_ATTACHMENTS_PER_MESSAGE = 8;
 
@@ -67,43 +68,74 @@ export function PromptInput({
   return (
     <>
       {validationMessage ? (
-        <p className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
+        <p className="mb-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
           {validationMessage}
         </p>
       ) : null}
-      <form onSubmit={handleSubmit} className="mt-4 space-y-2">
-        <Textarea
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
-          rows={4}
-          placeholder={t("placeholder")}
-          disabled={isSending}
-        />
-        <div className="space-y-2">
-          <Label className="text-muted-foreground">{t("attachments.label")}</Label>
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <div
+          className={cn(
+            "rounded-2xl border border-border/70 bg-background/90 p-1 shadow-sm ring-1 ring-black/[0.04] dark:bg-background/80 dark:ring-white/[0.06]",
+            "focus-within:border-primary/35 focus-within:ring-2 focus-within:ring-primary/20",
+          )}
+        >
+          <Textarea
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            rows={3}
+            placeholder={t("placeholder")}
             disabled={isSending}
-            onChange={handleFileChange}
-            accept={supportedAttachmentAccept}
-            className="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border file:border-border-subtle file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-medium hover:file:bg-surface-hover disabled:opacity-60"
+            className="min-h-[88px] resize-none border-0 bg-transparent px-3 py-2.5 text-[15px] leading-relaxed shadow-none focus-visible:ring-0 md:min-h-[96px]"
           />
-          {pendingFiles.length > 0 ? (
-            <p className="text-xs text-muted-foreground">
-              {t("attachments.selected", { count: pendingFiles.length })}
-            </p>
-          ) : null}
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            type="submit"
-            disabled={isSending || input.trim().length === 0}
-            className="h-auto bg-indigo-500 px-4 py-2 text-white hover:bg-indigo-400"
-          >
-            {isSending ? t("actions.sending") : t("actions.send")}
-          </Button>
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-b-[13px] border-t border-border/50 bg-muted/35 px-2.5 py-2.5 dark:bg-muted/25">
+            <div className="flex min-w-0 flex-1 items-center gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                disabled={isSending}
+                onChange={handleFileChange}
+                accept={supportedAttachmentAccept}
+                className="sr-only"
+                id="ai-chat-attachments-input"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={isSending}
+                className="shrink-0 gap-1.5 border-dashed border-border/90 bg-background/80 text-muted-foreground hover:border-solid hover:border-border hover:bg-muted/50 hover:text-foreground"
+                onClick={() => fileInputRef.current?.click()}
+                aria-label={t("attachments.label")}
+              >
+                <Paperclip className="size-3.5" aria-hidden />
+                <span className="hidden sm:inline">{t("attachments.label")}</span>
+              </Button>
+              {pendingFiles.length > 0 ? (
+                <span className="truncate rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                  {t("attachments.selected", { count: pendingFiles.length })}
+                </span>
+              ) : null}
+            </div>
+            <Button
+              type="submit"
+              size="lg"
+              disabled={isSending || input.trim().length === 0}
+              className="shrink-0 min-w-[7.5rem] gap-2 bg-primary px-5 text-primary-foreground shadow-sm hover:bg-primary/90"
+            >
+              {isSending ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                  {t("actions.sending")}
+                </>
+              ) : (
+                <>
+                  <SendHorizontal className="size-4" aria-hidden />
+                  {t("actions.send")}
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </form>
     </>

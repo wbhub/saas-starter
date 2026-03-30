@@ -271,6 +271,12 @@
       "actions": {
         "goToBilling": "Go to billing"
       }
+    },
+    "tabs": {
+      "chat": "Chat",
+      "structuredOutput": "Saída estruturada",
+      "ariaLabel": "Modo do espaço de IA",
+      "hint": "Alterne entre chat livre e resultados estruturados tipados."
     }
   },
   "AiObjectCard": {
@@ -301,7 +307,7 @@
     "title": "Assistente",
     "description": "As mensagens são transmitidas em tempo real e o uso é rastreado automaticamente.",
     "placeholder": "Pergunte qualquer coisa sobre seu produto, documentos ou fluxo de trabalho...",
-    "emptyState": "Comece enviando uma mensagem.",
+    "emptyState": "Comece enviando uma mensagem abaixo.",
     "attachments": {
       "label": "Anexos",
       "selected": "{count} selecionado"

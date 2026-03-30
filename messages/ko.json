@@ -271,6 +271,12 @@
       "actions": {
         "goToBilling": "결제로 이동"
       }
+    },
+    "tabs": {
+      "chat": "채팅",
+      "structuredOutput": "구조화된 출력",
+      "ariaLabel": "AI 작업 공간 모드",
+      "hint": "자유 형식 채팅과 타입이 지정된 구조화된 결과 사이를 전환합니다."
     }
   },
   "AiObjectCard": {
@@ -301,7 +307,7 @@
     "title": "어시스턴트",
     "description": "메시지가 실시간으로 스트리밍되고 사용량이 자동으로 추적됩니다.",
     "placeholder": "제품, 문서, 워크플로에 대해 무엇이든 물어보세요...",
-    "emptyState": "메시지를 보내며 시작하세요.",
+    "emptyState": "아래에서 메시지를 보내며 시작하세요.",
     "attachments": {
       "label": "첨부파일",
       "selected": "{count}개 선택됨"
