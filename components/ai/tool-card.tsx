@@ -101,6 +101,67 @@ function FirecrawlResultCard({ result }: { result: unknown }) {
   );
 }
 
+function E2BResultCard({ result }: { result: unknown }) {
+  const data = result as
+    | {
+        text?: string | null;
+        stdout?: string[];
+        stderr?: string[];
+        error?: { name?: string; value?: string; traceback?: string } | null;
+        results?: Array<{ text?: string | null; formats?: string[]; hasChart?: boolean }>;
+      }
+    | undefined;
+
+  if (!data) return <GenericResultCard result={result} />;
+
+  return (
+    <div className="mt-2 space-y-2">
+      {data.text ? (
+        <pre className="max-h-[200px] overflow-y-auto rounded-md bg-surface-hover p-2 font-mono text-xs text-muted-foreground">
+          {data.text}
+        </pre>
+      ) : null}
+      {data.stdout?.length ? (
+        <div>
+          <p className="text-xs font-medium text-foreground">stdout</p>
+          <pre className="max-h-[160px] overflow-y-auto rounded-md bg-surface-hover p-2 font-mono text-xs text-muted-foreground">
+            {data.stdout.join("\n")}
+          </pre>
+        </div>
+      ) : null}
+      {data.stderr?.length ? (
+        <div>
+          <p className="text-xs font-medium text-red-600 dark:text-red-400">stderr</p>
+          <pre className="max-h-[160px] overflow-y-auto rounded-md bg-surface-hover p-2 font-mono text-xs text-muted-foreground">
+            {data.stderr.join("\n")}
+          </pre>
+        </div>
+      ) : null}
+      {data.results?.length ? (
+        <div className="space-y-1">
+          {data.results.slice(0, 3).map((item, index) => (
+            <div
+              key={index}
+              className="rounded-md bg-surface-hover p-2 text-xs text-muted-foreground"
+            >
+              {item.text ? <p className="font-mono">{item.text}</p> : null}
+              <p className="mt-1">
+                Formats: {item.formats?.join(", ") || "unknown"}
+                {item.hasChart ? " • chart" : ""}
+              </p>
+            </div>
+          ))}
+        </div>
+      ) : null}
+      {data.error ? (
+        <pre className="max-h-[200px] overflow-y-auto rounded-md bg-surface-hover p-2 font-mono text-xs text-red-600 dark:text-red-400">
+          {JSON.stringify(data.error, null, 2)}
+        </pre>
+      ) : null}
+    </div>
+  );
+}
+
 function GenericResultCard({ result }: { result: unknown }) {
   return (
     <pre className="mt-2 overflow-x-auto rounded-md bg-surface-hover p-2 font-mono text-xs">
@@ -112,6 +173,7 @@ function GenericResultCard({ result }: { result: unknown }) {
 const TOOL_RENDERERS: Record<string, React.ComponentType<{ result: unknown }>> = {
   tavilySearch: TavilyResultCard,
   firecrawlScrape: FirecrawlResultCard,
+  e2bRunCode: E2BResultCard,
 };
 
 export function ToolCard({

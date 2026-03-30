@@ -63,7 +63,7 @@ Use `.env.example` as the source of truth for all available variables.
 ## Enable by Feature (Optional)
 
 - Billing: Stripe (`BILLING_PROVIDER=stripe` + Stripe env vars). Set `APP_FREE_PLAN_ENABLED=true` to allow a free tier alongside paid plans.
-- AI chat + structured output: Vercel AI SDK (`AI_PROVIDER` + provider keys). Optional tool integrations: `TAVILY_API_KEY` (web search), `FIRECRAWL_API_KEY` (web scraping), `COMPOSIO_API_KEY` (third-party actions). Optional resumable streams: `AI_RESUMABLE_STREAMS_ENABLED=true` (requires Redis).
+- AI chat + structured output: Vercel AI SDK (`AI_PROVIDER` + provider keys). Optional tool integrations: `E2B_API_KEY` (sandboxed code execution), `TAVILY_API_KEY` (web search), `FIRECRAWL_API_KEY` (web scraping), `COMPOSIO_API_KEY` (third-party actions). Optional resumable streams: `AI_RESUMABLE_STREAMS_ENABLED=true` (requires Redis).
 - In-app messenger: Intercom (`NEXT_PUBLIC_INTERCOM_APP_ID`, `INTERCOM_IDENTITY_SECRET`)
 - Multi-instance rate limiting/cache: Redis via Upstash (`UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`)
 - Background job offloading: Trigger.dev (`TRIGGER_SECRET_KEY`, `TRIGGER_PROJECT_REF`)
@@ -168,6 +168,7 @@ If you want `/dashboard/ai` and `/api/ai/chat`:
 - Configure AI policy vars in `.env.example` (`AI_ACCESS_MODE`, plan/model/budget settings)
 - (Optional) Enable agent tool-calling: set `AI_TOOLS_ENABLED=true` and `NEXT_PUBLIC_AI_TOOLS_ENABLED=true`. Set `AI_MAX_STEPS` to control how many steps the agent loop can take per request (default 5 when tools are enabled). When tools are disabled, chat remains single-turn. Tools are defined in `lib/ai/tools/`. Per-plan `maxSteps` can be configured via `AI_PLAN_RULES_JSON`.
 - (Optional) Tool integrations (each enabled when its API key is set):
+  - `E2B_API_KEY` -- isolated code execution via E2B Code Interpreter
   - `TAVILY_API_KEY` -- web search via Tavily
   - `FIRECRAWL_API_KEY` -- web scraping via Firecrawl
   - `COMPOSIO_API_KEY` -- third-party actions (GitHub, Slack, etc.) via Composio

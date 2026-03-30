@@ -1,3 +1,4 @@
+import { env } from "@/lib/env";
 import { tool } from "ai";
 import { z } from "zod";
 
@@ -17,7 +18,7 @@ export const tavilySearchTool = tool({
     "Search the web for current information using Tavily. Use this when the user asks about recent events, facts you are unsure about, or anything that benefits from real-time web results.",
   inputSchema: tavilySearchParams,
   execute: async ({ query, maxResults }) => {
-    const apiKey = process.env.TAVILY_API_KEY;
+    const apiKey = env.TAVILY_API_KEY;
     if (!apiKey) {
       return { error: "Tavily API key is not configured." };
     }

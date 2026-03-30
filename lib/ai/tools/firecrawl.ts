@@ -1,3 +1,4 @@
+import { env } from "@/lib/env";
 import { tool } from "ai";
 import { z } from "zod";
 
@@ -31,7 +32,7 @@ export const firecrawlScrapeTool = tool({
     "Scrape a web page and return its content as clean markdown. Use this when the user wants to read, summarize, or extract information from a specific URL.",
   inputSchema: firecrawlScrapeParams,
   execute: async ({ url }) => {
-    const apiKey = process.env.FIRECRAWL_API_KEY;
+    const apiKey = env.FIRECRAWL_API_KEY;
     if (!apiKey) {
       return { error: "Firecrawl API key is not configured." };
     }

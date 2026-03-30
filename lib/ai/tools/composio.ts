@@ -1,3 +1,4 @@
+import { env } from "@/lib/env";
 import { tool } from "ai";
 import { z } from "zod";
 
@@ -22,7 +23,7 @@ export const composioActionTool = tool({
     "Execute an action on a connected third-party service via Composio. Supports integrations like GitHub, Slack, Google, Notion, and more. Use this when the user wants to interact with an external service.",
   inputSchema: composioActionParams,
   execute: async ({ action, params }) => {
-    const apiKey = process.env.COMPOSIO_API_KEY;
+    const apiKey = env.COMPOSIO_API_KEY;
     if (!apiKey) {
       return { error: "Composio API key is not configured." };
     }

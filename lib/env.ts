@@ -26,6 +26,7 @@ type OptionalEnvKey =
   | "OPENAI_API_KEY"
   | "ANTHROPIC_API_KEY"
   | "GOOGLE_GENERATIVE_AI_API_KEY"
+  | "E2B_API_KEY"
   | "AI_PROVIDER"
   | "AI_PROVIDER_API_KEY"
   | "AI_ACCESS_MODE"
@@ -142,6 +143,9 @@ const envBase = {
   },
   get GOOGLE_GENERATIVE_AI_API_KEY() {
     return optionalEnv("GOOGLE_GENERATIVE_AI_API_KEY");
+  },
+  get E2B_API_KEY() {
+    return optionalEnv("E2B_API_KEY");
   },
   get AI_PROVIDER() {
     return optionalEnv("AI_PROVIDER");
