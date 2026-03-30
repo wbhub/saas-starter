@@ -11,6 +11,7 @@ import {
   getProviderFileId,
   isSupportedFileMimeType,
   providerSupportsFileIds,
+  providerSupportsUploadedFileReferences,
   resolveAttachmentMimeType,
   SUPPORTED_IMAGE_MIME_TYPES,
   toProviderFilePlaceholderUrl,
@@ -348,7 +349,10 @@ export function AiChatCard({
         ) {
           return t("errors.unsupportedType", { mimeType: mimeType || file.name || "unknown" });
         }
-        if (isSupportedFileMimeType(mimeType, providerName)) {
+        if (
+          isSupportedFileMimeType(mimeType, providerName) &&
+          providerSupportsUploadedFileReferences(providerName)
+        ) {
           continue;
         }
         const encodedChars = estimateDataUrlLength(file.size, mimeType);
@@ -372,7 +376,10 @@ export function AiChatCard({
       const fileParts = await Promise.all(
         files.map((file) => {
           const mimeType = resolveMimeType(file);
-          if (isSupportedFileMimeType(mimeType, providerName)) {
+          if (
+            isSupportedFileMimeType(mimeType, providerName) &&
+            providerSupportsUploadedFileReferences(providerName)
+          ) {
             return providerFileToUiPart(file, providerName);
           }
           return fileToUiPart(file);

@@ -170,15 +170,6 @@ function validateAttachmentTypes(messages: ChatMessage[]): AttachmentValidationF
   return null;
 }
 
-function toAttachmentData(attachment: ChatAttachment) {
-  if (attachment.data) {
-    return attachment.data.startsWith("data:")
-      ? (attachment.data.split(",", 2)[1] ?? "")
-      : attachment.data;
-  }
-  return "";
-}
-
 function toAttachmentUrl(attachment: ChatAttachment) {
   if (attachment.url) {
     return attachment.url;
@@ -189,9 +180,7 @@ function toAttachmentUrl(attachment: ChatAttachment) {
       : `data:${attachment.mimeType};base64,${attachment.data}`;
   }
   if (attachment.fileId && supportsProviderFileIds) {
-    return aiProviderName === "anthropic"
-      ? toProviderFilePlaceholderUrl("anthropic", attachment.fileId)
-      : toProviderFilePlaceholderUrl("openai", attachment.fileId);
+    return toProviderFilePlaceholderUrl("openai", attachment.fileId);
   }
   return "attachment://file";
 }
@@ -260,50 +249,12 @@ function toUserMessageContent(message: ChatMessage): UserContent {
   }
 
   for (const attachment of attachments) {
-    if (attachment.type === "image") {
-      if (attachment.fileId && supportsProviderFileIds) {
-        content.push({
-          type: "image-file-id",
-          fileId: attachment.fileId,
-        });
-        continue;
-      }
-
-      if (attachment.url) {
-        content.push({
-          type: "image-url",
-          url: attachment.url,
-        });
-        continue;
-      }
-
-      content.push({
-        type: "image-data",
-        data: toAttachmentData(attachment),
-        mediaType: attachment.mimeType,
-      });
-      continue;
-    }
-
-    if (attachment.fileId && supportsProviderFileIds) {
-      content.push({
-        type: "file-id",
-        fileId: attachment.fileId,
-      });
-      continue;
-    }
-
-    if (attachment.url) {
-      content.push({
-        type: "file-url",
-        url: attachment.url,
-      });
-      continue;
-    }
-
     content.push({
-      type: "file-data",
-      data: toAttachmentData(attachment),
+      type: "file",
+      data:
+        attachment.fileId && supportsProviderFileIds
+          ? attachment.fileId
+          : toAttachmentUrl(attachment),
       mediaType: attachment.mimeType,
       filename: attachment.name ?? "attachment",
     });

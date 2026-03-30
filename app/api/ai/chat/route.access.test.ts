@@ -53,7 +53,7 @@ function mockAiTextResponse(text: string) {
 
 function mockProviderModule({
   aiProviderName = "openai",
-  supportsProviderFileIds = aiProviderName === "openai" || aiProviderName === "anthropic",
+  supportsProviderFileIds = aiProviderName === "openai",
 }: {
   aiProviderName?: "openai" | "anthropic" | "google";
   supportsProviderFileIds?: boolean;
@@ -66,6 +66,19 @@ function mockProviderModule({
   );
   providerMockState.getAiLanguageModel.mockReset();
   providerMockState.getAiLanguageModel.mockReturnValue("provider-model");
+}
+
+async function expectLatestStreamTextMessagesToMatchModelSchema() {
+  const { modelMessageSchema, streamText } = await import("ai");
+  const latestCall = vi.mocked(streamText).mock.calls.at(-1);
+
+  expect(latestCall).toBeDefined();
+
+  const validation = modelMessageSchema.array().safeParse(latestCall?.[0]?.messages);
+  expect(
+    validation.success,
+    validation.success ? undefined : JSON.stringify(validation.error.issues, null, 2),
+  ).toBe(true);
 }
 
 describe("POST /api/ai/chat access and gating", () => {
@@ -788,6 +801,7 @@ describe("POST /api/ai/chat access and gating", () => {
 
     expect(response.status).toBe(200);
     await expect(response.text()).resolves.toBe("anthropic-ok");
+    await expectLatestStreamTextMessagesToMatchModelSchema();
   });
 
   it("accepts attachment-only PDF messages via OpenAI fileIds and persists attachment parts", async () => {
@@ -855,7 +869,7 @@ describe("POST /api/ai/chat access and gating", () => {
                   type: "file",
                   mimeType: "application/pdf",
                   name: "contract.pdf",
-                  fileId: "file_123",
+                  fileId: "file-123",
                 },
               ],
             },
@@ -866,6 +880,7 @@ describe("POST /api/ai/chat access and gating", () => {
 
     expect(response.status).toBe(200);
     await expect(response.text()).resolves.toBe("pdf-ok");
+    await expectLatestStreamTextMessagesToMatchModelSchema();
 
     const { streamText } = await import("ai");
     expect(streamText).toHaveBeenCalledWith(
@@ -875,8 +890,10 @@ describe("POST /api/ai/chat access and gating", () => {
             role: "user",
             content: [
               {
-                type: "file-id",
-                fileId: "file_123",
+                type: "file",
+                data: "file-123",
+                mediaType: "application/pdf",
+                filename: "contract.pdf",
               },
             ],
           },
@@ -900,7 +917,7 @@ describe("POST /api/ai/chat access and gating", () => {
                 type: "file",
                 mimeType: "application/pdf",
                 name: "contract.pdf",
-                fileId: "file_123",
+                fileId: "file-123",
               },
             ],
             parts: [
@@ -908,10 +925,10 @@ describe("POST /api/ai/chat access and gating", () => {
                 type: "file",
                 mediaType: "application/pdf",
                 filename: "contract.pdf",
-                url: "openai-file://file_123",
+                url: "openai-file://file-123",
                 providerMetadata: {
                   openai: {
-                    fileId: "file_123",
+                    fileId: "file-123",
                   },
                 },
               },
@@ -925,22 +942,11 @@ describe("POST /api/ai/chat access and gating", () => {
     );
   });
 
-  it("accepts attachment-only PDF messages via Anthropic fileIds and persists attachment parts", async () => {
-    mockAiTextResponse("anthropic-pdf-ok");
+  it("rejects Anthropic fileId attachments because the model message schema only supports OpenAI file IDs", async () => {
     mockProviderModule({
       aiProviderName: "anthropic",
-      supportsProviderFileIds: true,
+      supportsProviderFileIds: false,
     });
-
-    const createThread = vi.fn().mockResolvedValue({
-      id: "22222222-2222-2222-2222-222222222222",
-    });
-    const saveThreadMessages = vi.fn().mockResolvedValue(true);
-    vi.doMock("@/lib/ai/threads", () => ({
-      createThread,
-      saveThreadMessages,
-      getThread: vi.fn().mockResolvedValue(null),
-    }));
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: async () => ({
         auth: {
@@ -999,65 +1005,14 @@ describe("POST /api/ai/chat access and gating", () => {
       }),
     );
 
-    expect(response.status).toBe(200);
-    await expect(response.text()).resolves.toBe("anthropic-pdf-ok");
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      ok: false,
+      error: "Invalid request payload.",
+    });
 
     const { streamText } = await import("ai");
-    expect(streamText).toHaveBeenCalledWith(
-      expect.objectContaining({
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "file-id",
-                fileId: "file_ant_123",
-              },
-            ],
-          },
-        ],
-      }),
-    );
-
-    expect(createThread).toHaveBeenCalledWith({
-      teamId: "team_123",
-      userId: "user_123",
-      title: "brief.pdf",
-    });
-    expect(saveThreadMessages).toHaveBeenCalledWith(
-      expect.objectContaining({
-        threadId: "22222222-2222-2222-2222-222222222222",
-        messages: [
-          expect.objectContaining({
-            role: "user",
-            attachments: [
-              {
-                type: "file",
-                mimeType: "application/pdf",
-                name: "brief.pdf",
-                fileId: "file_ant_123",
-              },
-            ],
-            parts: [
-              {
-                type: "file",
-                mediaType: "application/pdf",
-                filename: "brief.pdf",
-                url: "anthropic-file://file_ant_123",
-                providerMetadata: {
-                  anthropic: {
-                    fileId: "file_ant_123",
-                  },
-                },
-              },
-            ],
-          }),
-          expect.objectContaining({
-            role: "assistant",
-          }),
-        ],
-      }),
-    );
+    expect(streamText).not.toHaveBeenCalled();
   });
 
   it("accepts uploaded Google file URLs and persists attachment parts", async () => {
@@ -1137,6 +1092,7 @@ describe("POST /api/ai/chat access and gating", () => {
 
     expect(response.status).toBe(200);
     await expect(response.text()).resolves.toBe("google-file-ok");
+    await expectLatestStreamTextMessagesToMatchModelSchema();
 
     const { streamText } = await import("ai");
     expect(streamText).toHaveBeenCalledWith(
@@ -1146,8 +1102,10 @@ describe("POST /api/ai/chat access and gating", () => {
             role: "user",
             content: [
               {
-                type: "file-url",
-                url: uploadedUrl,
+                type: "file",
+                data: uploadedUrl,
+                mediaType: "application/pdf",
+                filename: "deck.pdf",
               },
             ],
           },
