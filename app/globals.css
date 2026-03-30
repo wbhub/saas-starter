@@ -40,11 +40,11 @@
   --sidebar-border: oklch(0.905 0.01 260);
   --sidebar-ring: oklch(0.585 0.19 265);
 
-  /* Legacy app vars — kept for non-shadcn components that still reference them */
-  --surface: #ffffff;
-  --surface-subtle: #f3f4f8;
-  --surface-hover: #edf0f5;
-  --border-subtle: #dfe3ec;
+  /* Legacy app vars — align with shadcn tokens so .app-surface matches bg-card */
+  --surface: var(--card);
+  --surface-subtle: var(--muted);
+  --surface-hover: var(--accent);
+  --border-subtle: var(--border);
   --btn-primary: #6366f1;
   --btn-primary-hover: #818cf8;
   --btn-primary-text: #ffffff;
@@ -88,11 +88,11 @@
   --sidebar-border: oklch(1 0.005 265 / 12%);
   --sidebar-ring: oklch(0.65 0.18 265);
 
-  /* Legacy app vars */
-  --surface: #1a1a2e;
-  --surface-subtle: #1e1e34;
-  --surface-hover: #26263f;
-  --border-subtle: #2e2e4a;
+  /* Legacy app vars — same tokens as light mode; avoids purple-tinted hex vs bg-card */
+  --surface: var(--card);
+  --surface-subtle: var(--muted);
+  --surface-hover: var(--accent);
+  --border-subtle: var(--border);
   --btn-primary: #818cf8;
   --btn-primary-hover: #a5b4fc;
   --btn-primary-text: #0f0f1a;
