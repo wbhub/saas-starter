@@ -348,6 +348,7 @@ Most features are toggled via environment variables, not code flags:
 | AI tool: Tavily       | `TAVILY_API_KEY` set                                      | Conditional registration in `lib/ai/tools/index.ts`            |
 | AI tool: Firecrawl    | `FIRECRAWL_API_KEY` set                                   | Conditional registration in `lib/ai/tools/index.ts`            |
 | AI tool: Composio     | `COMPOSIO_API_KEY` set                                    | Conditional registration in `lib/ai/tools/index.ts`            |
+| AI tool: E2B          | `E2B_API_KEY` set                                         | Conditional registration in `lib/ai/tools/index.ts`            |
 | Resumable streams     | `AI_RESUMABLE_STREAMS_ENABLED=true` + Redis configured    | `isResumableStreamsEnabled()` in `lib/ai/stream-store.ts`      |
 | Social auth providers | `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true`, etc.              | `getEnabledSocialAuthProviders()` in `lib/auth/social-auth.ts` |
 
