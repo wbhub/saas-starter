@@ -365,10 +365,17 @@ export function AiChatCard({
         refreshSignal={threadRefreshSignal}
       />
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="border-b border-border/50 bg-gradient-to-r from-muted/30 to-transparent px-5 py-4 sm:px-6">
+        <header
+          className={cn(
+            "border-b border-border/50 bg-gradient-to-r from-muted/30 to-transparent",
+            "px-5 py-4 sm:px-6",
+          )}
+        >
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold tracking-tight text-foreground">{t("title")}</h2>
+              <h2 className="text-lg font-semibold tracking-tight text-foreground">
+                {t("title")}
+              </h2>
               <p className="mt-1 max-w-prose text-sm leading-relaxed text-muted-foreground">
                 {t("description")}
               </p>
@@ -376,11 +383,17 @@ export function AiChatCard({
             {isSending ? (
               <span
                 className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary",
+                  "inline-flex items-center gap-1.5 rounded-full border border-primary/25",
+                  "bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary",
                 )}
               >
                 <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60 opacity-75" />
+                  <span
+                    className={cn(
+                      "absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60",
+                      "opacity-75",
+                    )}
+                  />
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
                 </span>
                 {t("actions.sending")}
@@ -392,11 +405,23 @@ export function AiChatCard({
         <div className="flex min-h-0 flex-1 flex-col gap-0 px-5 py-4 sm:px-6">
           <Conversation>
             {messages.length === 0 ? (
-              <div className="flex min-h-[220px] flex-col items-center justify-center gap-4 px-4 py-12 text-center">
-                <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-inner ring-1 ring-primary/15">
+              <div
+                className={cn(
+                  "flex min-h-[220px] flex-col items-center justify-center gap-4 px-4 py-12",
+                  "text-center",
+                )}
+              >
+                <div
+                  className={cn(
+                    "flex size-14 items-center justify-center rounded-2xl",
+                    "bg-primary/10 text-primary shadow-inner ring-1 ring-primary/15",
+                  )}
+                >
                   <Sparkles className="size-7" aria-hidden />
                 </div>
-                <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">{t("emptyState")}</p>
+                <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
+                  {t("emptyState")}
+                </p>
               </div>
             ) : (
               messages.map((message, index) => (
@@ -412,7 +437,12 @@ export function AiChatCard({
           </Conversation>
 
           {error ? (
-            <p className="mt-3 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200">
+            <p
+              className={cn(
+                "mt-3 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700",
+                "dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200",
+              )}
+            >
               {resolveUserFacingErrorMessage(error, t("errors.requestFailed"), errorMessagesByCode)}
             </p>
           ) : null}

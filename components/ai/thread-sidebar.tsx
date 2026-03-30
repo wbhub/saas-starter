@@ -71,9 +71,19 @@ export function ThreadSidebar({
   }
 
   return (
-    <div className="flex h-full min-h-0 w-full shrink-0 flex-col border-b border-border/60 bg-muted/25 lg:w-[260px] lg:border-b-0 lg:border-r dark:bg-muted/15">
+    <div
+      className={cn(
+        "flex h-full min-h-0 w-full shrink-0 flex-col border-b border-border/60 bg-muted/25",
+        "lg:w-[260px] lg:border-b-0 lg:border-r dark:bg-muted/15",
+      )}
+    >
       <div className="flex items-center justify-between gap-2 border-b border-border/50 px-3 py-3">
-        <h3 className="truncate text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <h3
+          className={cn(
+            "truncate text-xs font-semibold uppercase tracking-wider",
+            "text-muted-foreground",
+          )}
+        >
           {t("title")}
         </h3>
         <button
@@ -82,7 +92,8 @@ export function ThreadSidebar({
           className={cn(
             "inline-flex size-8 shrink-0 items-center justify-center rounded-lg",
             "text-muted-foreground transition-colors hover:bg-background hover:text-foreground",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-muted/25",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            "focus-visible:ring-offset-2 focus-visible:ring-offset-muted/25",
           )}
           title={t("actions.newThread")}
           aria-label={t("actions.newThread")}
@@ -106,12 +117,20 @@ export function ThreadSidebar({
           <button
             type="button"
             onClick={() => void loadThreads()}
-            className="w-full rounded-lg border border-dashed border-destructive/40 bg-destructive/5 px-2 py-2 text-left text-xs text-destructive hover:bg-destructive/10"
+            className={cn(
+              "w-full rounded-lg border border-dashed border-destructive/40 bg-destructive/5",
+              "px-2 py-2 text-left text-xs text-destructive hover:bg-destructive/10",
+            )}
           >
             {t("loadError")}
           </button>
         ) : threads.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-border/80 bg-background/50 px-3 py-6 text-center text-xs leading-relaxed text-muted-foreground">
+          <p
+            className={cn(
+              "rounded-lg border border-dashed border-border/80 bg-background/50 px-3 py-6",
+              "text-center text-xs leading-relaxed text-muted-foreground",
+            )}
+          >
             {t("empty")}
           </p>
         ) : (
@@ -131,8 +150,11 @@ export function ThreadSidebar({
                   type="button"
                   onClick={() => onSelectThread(thread.id)}
                   className={cn(
-                    "min-w-0 flex-1 truncate rounded-l-lg px-2.5 py-2 text-left text-sm transition-colors",
-                    isActive ? "font-medium text-foreground" : "text-muted-foreground hover:text-foreground",
+                    "min-w-0 flex-1 truncate rounded-l-lg px-2.5 py-2 text-left text-sm",
+                    "transition-colors",
+                    isActive
+                      ? "font-medium text-foreground"
+                      : "text-muted-foreground hover:text-foreground",
                   )}
                 >
                   {thread.title ?? t("untitled")}
@@ -141,7 +163,8 @@ export function ThreadSidebar({
                   type="button"
                   onClick={() => void handleDelete(thread.id)}
                   className={cn(
-                    "flex shrink-0 items-center justify-center rounded-r-lg px-1.5 text-muted-foreground opacity-0 transition-opacity hover:text-destructive",
+                    "flex shrink-0 items-center justify-center rounded-r-lg px-1.5",
+                    "text-muted-foreground opacity-0 transition-opacity hover:text-destructive",
                     "group-hover:opacity-100",
                     isActive && "opacity-100",
                   )}
