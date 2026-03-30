@@ -185,6 +185,31 @@ function toAttachmentUrl(attachment: ChatAttachment) {
   return "attachment://file";
 }
 
+/**
+ * Inline bytes for streamText / the AI SDK. Must not pass full `data:...;base64,...` strings:
+ * the SDK's download pass parses strings with `new URL()` and tries to fetch `data:` URLs,
+ * which fails validateDownloadUrl (http/https only). Persistence still uses {@link toAttachmentUrl}.
+ */
+function toModelFileData(attachment: ChatAttachment): string {
+  if (attachment.fileId && supportsProviderFileIds) {
+    return attachment.fileId;
+  }
+  if (attachment.url) {
+    return attachment.url;
+  }
+  if (attachment.data) {
+    const d = attachment.data.trim();
+    if (d.startsWith("data:")) {
+      const comma = d.indexOf(",");
+      if (comma >= 0) {
+        return d.slice(comma + 1).replace(/\s/g, "");
+      }
+    }
+    return d;
+  }
+  return "";
+}
+
 function getUserMessageTitle(message: ChatMessage | undefined) {
   if (!message) {
     return undefined;
@@ -251,10 +276,7 @@ function toUserMessageContent(message: ChatMessage): UserContent {
   for (const attachment of attachments) {
     content.push({
       type: "file",
-      data:
-        attachment.fileId && supportsProviderFileIds
-          ? attachment.fileId
-          : toAttachmentUrl(attachment),
+      data: toModelFileData(attachment),
       mediaType: attachment.mimeType,
       filename: attachment.name ?? "attachment",
     });
