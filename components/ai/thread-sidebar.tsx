@@ -73,8 +73,8 @@ export function ThreadSidebar({
   return (
     <div
       className={cn(
-        "flex h-full min-h-0 w-full shrink-0 flex-col border-b border-border/60 bg-muted/25",
-        "lg:w-[260px] lg:border-b-0 lg:border-r dark:bg-muted/15",
+        "flex min-h-0 w-full shrink-0 flex-col border-b border-border/60 bg-muted/25",
+        "lg:w-[260px] lg:self-stretch lg:border-b-0 lg:border-r dark:bg-muted/15",
       )}
     >
       <div className="flex items-center justify-between gap-2 border-b border-border/50 px-3 py-3">
