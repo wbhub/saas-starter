@@ -478,14 +478,28 @@
     }
   },
   "TeamInviteCard": {
-    "title": "Membres de l'équipe",
-    "description": "Gérez qui peut accéder à {teamName}.",
+    "title": "Votre équipe",
+    "description": "Gérez {teamName} — membres, invitations et l’affichage de votre espace de travail.",
+    "teamName": {
+      "sectionTitle": "Nom de l'équipe",
+      "sectionDescription": "Ce nom apparaît dans l’app, les e-mails et les invitations. Vous pouvez le modifier à tout moment.",
+      "save": "Enregistrer le nom",
+      "saving": "Enregistrement..."
+    },
+    "members": {
+      "title": "Personnes",
+      "description": "Tous ceux qui ont accès à cet espace de travail.",
+      "emptyList": "Aucun membre à afficher.",
+      "noOtherMembers": "Pas d’autres membres pour l’instant — vous êtes seul dans cet espace.",
+      "unnamed": "Coéquipier"
+    },
     "roles": {
       "owner": "Propriétaire",
       "admin": "Administrateur",
       "member": "Membre"
     },
     "actions": {
+      "cancel": "Annuler",
       "saving": "Économie...",
       "makeMember": "Rendre membre",
       "makeAdmin": "Faire administrateur",
@@ -499,9 +513,11 @@
       "sendInvite": "Envoyer une invitation"
     },
     "inviteForm": {
+      "sectionTitle": "Inviter un coéquipier",
+      "sectionDescription": "Nous enverrons un lien sécurisé par e-mail pour rejoindre.",
       "teamNameLabel": "Nom de l'équipe",
       "teamNamePlaceholder": "Équipe Acme",
-      "teamNameHint": "Définissez le nom de votre équipe avant d'envoyer votre première invitation.",
+      "teamNameHint": "Choisissez un nom clair avant la première invitation — cela aide à reconnaître votre espace.",
       "emailLabel": "E-mail d'invitation",
       "emailPlaceholder": "coéquipier@exemple.com",
       "roleLabel": "Rôle"
@@ -518,10 +534,14 @@
       "onlyOwnersAdmins": "Seuls les propriétaires et les administrateurs peuvent inviter des coéquipiers."
     },
     "confirmations": {
+      "removeMemberTitle": "Retirer un membre",
       "removeMember": "Supprimer ce membre de l'équipe ? Ils perdront immédiatement l’accès.",
+      "revokeInviteTitle": "Révoquer l’invitation",
       "revokeInvite": "Révoquer cette invitation ?"
     },
     "feedback": {
+      "teamNameUpdated": "Nom de l’équipe enregistré.",
+      "teamNameUnchanged": "Aucune modification à enregistrer.",
       "inviteEmailSent": "E-mail d'invitation envoyé.",
       "inviteCreatedEmailFailed": "Invitation créée, mais l'envoi de l'e-mail a échoué. Utilisez renvoyer plus tard pour réessayer.",
       "memberRemoved": "Membre supprimé.",
@@ -534,6 +554,7 @@
     "errors": {
       "sendInvite": "Échec de l'envoi de l'invitation.",
       "teamNameRequired": "Saisissez un nom d'équipe avant d'envoyer votre première invitation.",
+      "teamNameTooShort": "Le nom d’équipe doit comporter au moins 2 caractères.",
       "updateTeamName": "Échec de l'enregistrement du nom d'équipe.",
       "removeMember": "Échec de la suppression du membre.",
       "updateRole": "Échec de la mise à jour du rôle de membre.",

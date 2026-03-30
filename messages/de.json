@@ -478,14 +478,28 @@
     }
   },
   "TeamInviteCard": {
-    "title": "Teammitglieder",
-    "description": "Verwalte, wer Zugriff auf {teamName} hat.",
+    "title": "Dein Team",
+    "description": "Verwalte {teamName} — Mitglieder, Einladungen und wie dein Workspace anderen angezeigt wird.",
+    "teamName": {
+      "sectionTitle": "Teamname",
+      "sectionDescription": "Dieser Name erscheint in der App, E-Mails und Einladungen. Du kannst ihn jederzeit ändern.",
+      "save": "Namen speichern",
+      "saving": "Wird gespeichert..."
+    },
+    "members": {
+      "title": "Personen",
+      "description": "Alle mit Zugriff auf diesen Workspace.",
+      "emptyList": "Keine Mitglieder anzuzeigen.",
+      "noOtherMembers": "Noch keine weiteren Mitglieder — vorerst bist nur du in diesem Workspace.",
+      "unnamed": "Teammitglied"
+    },
     "roles": {
       "owner": "Owner",
       "admin": "Admin",
       "member": "Mitglied"
     },
     "actions": {
+      "cancel": "Abbrechen",
       "saving": "Wird gespeichert...",
       "makeMember": "Zum Mitglied machen",
       "makeAdmin": "Zum Admin machen",
@@ -499,9 +513,11 @@
       "sendInvite": "Einladung senden"
     },
     "inviteForm": {
+      "sectionTitle": "Teammitglied einladen",
+      "sectionDescription": "Wir senden einen sicheren Link per E-Mail zum Beitreten.",
       "teamNameLabel": "Teamname",
       "teamNamePlaceholder": "Acme Team",
-      "teamNameHint": "Lege deinen Teamnamen fest, bevor du deine erste Einladung sendest.",
+      "teamNameHint": "Wähle einen klaren Namen vor der ersten Einladung — so erkennen Empfänger deinen Workspace.",
       "emailLabel": "Einladungs-E-Mail",
       "emailPlaceholder": "teammate@example.com",
       "roleLabel": "Rolle"
@@ -518,10 +534,14 @@
       "onlyOwnersAdmins": "Nur Owner und Admins können Teammitglieder einladen."
     },
     "confirmations": {
+      "removeMemberTitle": "Mitglied entfernen",
       "removeMember": "Dieses Mitglied aus dem Team entfernen? Es verliert sofort den Zugriff.",
+      "revokeInviteTitle": "Einladung widerrufen",
       "revokeInvite": "Diese Einladung widerrufen?"
     },
     "feedback": {
+      "teamNameUpdated": "Teamname gespeichert.",
+      "teamNameUnchanged": "Keine Änderungen zum Speichern.",
       "inviteEmailSent": "Einladungs-E-Mail gesendet.",
       "inviteCreatedEmailFailed": "Einladung erstellt, aber der E-Mail-Versand ist fehlgeschlagen. Verwende später Erneut senden, um es nochmals zu versuchen.",
       "memberRemoved": "Mitglied entfernt.",
@@ -534,6 +554,7 @@
     "errors": {
       "sendInvite": "Einladung konnte nicht gesendet werden.",
       "teamNameRequired": "Gib einen Teamnamen ein, bevor du deine erste Einladung sendest.",
+      "teamNameTooShort": "Der Teamname muss mindestens 2 Zeichen haben.",
       "updateTeamName": "Teamname konnte nicht gespeichert werden.",
       "removeMember": "Mitglied konnte nicht entfernt werden.",
       "updateRole": "Mitgliederrolle konnte nicht aktualisiert werden.",

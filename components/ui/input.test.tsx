@@ -27,10 +27,11 @@ describe("Input", () => {
     expect(input.className).toContain("app-surface-subtle");
   });
 
-  it("allows custom className override", () => {
+  it("merges custom className with default editable styles", () => {
     render(<Input className="custom-class" placeholder="custom" />);
     const input = screen.getByPlaceholderText("custom");
-    expect(input.className).toBe("custom-class");
+    expect(input.className).toContain("custom-class");
+    expect(input.className).toContain("rounded-lg");
   });
 
   it("forwards standard input attributes", () => {
