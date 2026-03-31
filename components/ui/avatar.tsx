@@ -25,6 +25,10 @@ function Avatar({
   );
 }
 
+/**
+ * Keep this mounted whenever you use a fallback. If there is no photo URL, pass `src=""` so
+ * internal loading state stays correct (omitting the image entirely can leave stale state).
+ */
 function AvatarImage({ className, ...props }: AvatarPrimitive.Image.Props) {
   return (
     <AvatarPrimitive.Image
@@ -40,7 +44,7 @@ function AvatarFallback({ className, ...props }: AvatarPrimitive.Fallback.Props)
     <AvatarPrimitive.Fallback
       data-slot="avatar-fallback"
       className={cn(
-        "flex size-full items-center justify-center rounded-full bg-muted text-sm text-muted-foreground group-data-[size=sm]/avatar:text-xs",
+        "flex size-full items-center justify-center rounded-full bg-muted text-xs leading-none tracking-tight text-muted-foreground group-data-[size=lg]/avatar:text-sm group-data-[size=lg]/avatar:tracking-normal",
         className,
       )}
       {...props}

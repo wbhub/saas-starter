@@ -3,14 +3,14 @@
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Camera, UserRound } from "lucide-react";
+import { Camera, Trash2, UserRound } from "lucide-react";
 import { DashboardPageSection } from "@/components/dashboard-page-section";
 import { createClient } from "@/lib/supabase/client";
 import { getCsrfHeaders } from "@/lib/http/csrf";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 type DashboardSettingsCardProps = {
   userId: string;
@@ -272,30 +272,58 @@ export function DashboardSettingsCard({
     .slice(0, 2)
     .toUpperCase();
 
+  function openAvatarFilePicker() {
+    if (!isUploading) {
+      fileInputRef.current?.click();
+    }
+  }
+
+  const avatarBusy = isUploading || avatarSaveStatus === "saving";
+
   return (
     <DashboardPageSection icon={UserRound} title={t("title")} description={t("description")}>
-      <div className="space-y-4">
-        <div className="rounded-lg border border-border bg-muted/30 p-4">
-          <p className="text-sm font-medium text-foreground">{t("upload.profilePhoto")}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{t("upload.autosaveHint")}</p>
-          <div className="mt-3 flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={() => !isUploading && fileInputRef.current?.click()}
-              disabled={isUploading}
-              className="group relative flex-shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-60"
-              aria-label={t("upload.changePhoto")}
-            >
-              <Avatar size="lg" className="h-14 w-14">
-                {avatarUrl ? (
+      <div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3 lg:gap-4">
+          <div className="flex shrink-0 justify-center sm:justify-start">
+            {avatarUrl ? (
+              <div className="group relative inline-block">
+                <Avatar className="size-16 shrink-0 rounded-full after:hidden">
                   <AvatarImage src={avatarUrl} alt={t("upload.profileAvatarAlt")} />
-                ) : null}
-                <AvatarFallback className="text-sm">{initials}</AvatarFallback>
-              </Avatar>
-              <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 transition-opacity group-hover:opacity-100 group-disabled:opacity-0">
-                <Camera className="h-5 w-5 text-white" />
+                  <AvatarFallback className="text-base">{initials}</AvatarFallback>
+                </Avatar>
+                <div
+                  className={cn(
+                    "absolute inset-0 z-[1] flex items-center justify-center rounded-full bg-black/55 p-2 opacity-0 transition-opacity duration-150",
+                    "pointer-events-none group-hover:pointer-events-auto group-hover:opacity-100",
+                    "group-focus-within:pointer-events-auto group-focus-within:opacity-100",
+                    avatarBusy && "pointer-events-none opacity-0 group-hover:opacity-0",
+                  )}
+                >
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      void handleRemovePhoto();
+                    }}
+                    disabled={avatarBusy}
+                    className="rounded-full p-1.5 text-white outline-none transition hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white"
+                    aria-label={t("upload.removePhotoAria")}
+                  >
+                    <Trash2 className="h-5 w-5" aria-hidden />
+                  </button>
+                </div>
               </div>
-            </button>
+            ) : (
+              <button
+                type="button"
+                onClick={openAvatarFilePicker}
+                disabled={avatarBusy}
+                className="flex size-16 shrink-0 items-center justify-center rounded-full border border-dashed border-border bg-muted/25 text-muted-foreground/90 transition hover:bg-muted/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+                aria-label={t("upload.uploadPhotoAria")}
+              >
+                <Camera className="size-4" aria-hidden />
+              </button>
+            )}
             <input
               ref={fileInputRef}
               type="file"
@@ -304,68 +332,68 @@ export function DashboardSettingsCard({
               disabled={isUploading}
               className="sr-only"
             />
-            {avatarUrl ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => void handleRemovePhoto()}
-                disabled={isUploading || avatarSaveStatus === "saving"}
-              >
-                {t("upload.removePhoto")}
-              </Button>
-            ) : null}
-            <p
-              className="min-h-[1.25rem] text-xs font-medium text-muted-foreground"
-              aria-live="polite"
-            >
-              {isUploading || avatarSaveStatus === "saving" ? t("actions.saving") : null}
-              {avatarSaveStatus === "saved" ? t("fields.nameSaved") : null}
-            </p>
           </div>
-          {uploadError ? <p className="mt-2 text-xs text-rose-600">{uploadError}</p> : null}
+
+          <div className="min-w-0 flex-1 space-y-3">
+            <div>
+              <Label className="mb-1 block" htmlFor="settings-display-name">
+                {t("fields.displayName")}
+              </Label>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                <Input
+                  id="settings-display-name"
+                  type="text"
+                  maxLength={80}
+                  value={displayNameInput}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    displayNameRef.current = value;
+                    nameDirtyRef.current = true;
+                    setDisplayNameInput(value);
+                    setNameError(null);
+                    if (nameSaveStatus === "saved") {
+                      setNameSaveStatus("idle");
+                    }
+                    scheduleDisplayNameAutosave();
+                  }}
+                  onBlur={handleDisplayNameBlur}
+                  placeholder={t("fields.displayNamePlaceholder")}
+                  aria-busy={nameSaveStatus === "saving"}
+                  autoComplete="name"
+                  className="h-10 min-h-10 w-full min-w-0 max-w-md py-2"
+                />
+                {nameSaveStatus === "saving" ||
+                nameSaveStatus === "saved" ||
+                avatarBusy ||
+                avatarSaveStatus === "saved" ? (
+                  <div className="flex shrink-0 flex-col justify-center gap-0.5 sm:min-h-10 sm:min-w-[5.5rem]">
+                    {nameSaveStatus === "saving" || nameSaveStatus === "saved" ? (
+                      <p
+                        className="text-xs font-medium leading-none text-muted-foreground"
+                        aria-live="polite"
+                      >
+                        {nameSaveStatus === "saving" ? t("actions.saving") : t("fields.nameSaved")}
+                      </p>
+                    ) : null}
+                    {avatarBusy || avatarSaveStatus === "saved" ? (
+                      <p
+                        className="text-xs font-medium leading-none text-muted-foreground"
+                        aria-live="polite"
+                      >
+                        {avatarBusy ? t("actions.saving") : t("fields.nameSaved")}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+              {nameError ? <p className="mt-2 text-xs text-rose-600">{nameError}</p> : null}
+            </div>
+          </div>
         </div>
 
-        <div>
-          <Label className="mb-1" htmlFor="settings-display-name">
-            {t("fields.displayName")}
-          </Label>
-          <p className="mb-2 text-xs leading-relaxed text-muted-foreground">
-            {t("fields.displayNameAutosave")}
-          </p>
-          <div className="flex max-w-md flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-            <Input
-              id="settings-display-name"
-              type="text"
-              maxLength={80}
-              value={displayNameInput}
-              onChange={(event) => {
-                const value = event.target.value;
-                displayNameRef.current = value;
-                nameDirtyRef.current = true;
-                setDisplayNameInput(value);
-                setNameError(null);
-                if (nameSaveStatus === "saved") {
-                  setNameSaveStatus("idle");
-                }
-                scheduleDisplayNameAutosave();
-              }}
-              onBlur={handleDisplayNameBlur}
-              placeholder={t("fields.displayNamePlaceholder")}
-              aria-busy={nameSaveStatus === "saving"}
-              autoComplete="name"
-              className="w-full min-w-0"
-            />
-            <p
-              className="min-h-[1.25rem] shrink-0 text-xs font-medium text-muted-foreground sm:min-w-[5.5rem]"
-              aria-live="polite"
-            >
-              {nameSaveStatus === "saving" ? t("actions.saving") : null}
-              {nameSaveStatus === "saved" ? t("fields.nameSaved") : null}
-            </p>
-          </div>
-          {nameError ? <p className="mt-2 text-xs text-rose-600">{nameError}</p> : null}
-        </div>
+        <p className="mt-5 text-xs leading-relaxed text-muted-foreground">{t("profileRowHint")}</p>
+
+        {uploadError ? <p className="mt-2 text-xs text-rose-600">{uploadError}</p> : null}
       </div>
     </DashboardPageSection>
   );

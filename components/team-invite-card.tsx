@@ -592,7 +592,7 @@ export function TeamInviteCard({
                 placeholder={t("inviteForm.teamNamePlaceholder")}
                 aria-label={t("inviteForm.teamNameLabel")}
                 aria-busy={teamNameSaveStatus === "saving"}
-                className="h-8 w-full py-1.5 text-sm"
+                className="h-10 min-w-0 w-full py-2 text-sm"
               />
             </div>
             <p
@@ -656,7 +656,7 @@ export function TeamInviteCard({
                 <SelectTrigger className="h-10 w-full min-w-0 py-0 data-[size=default]:h-10">
                   <SelectValue>{getRoleLabel(role)}</SelectValue>
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent sideOffset={2}>
                   <SelectItem value="member">{t("roles.member")}</SelectItem>
                   <SelectItem value="admin">{t("roles.admin")}</SelectItem>
                 </SelectContent>

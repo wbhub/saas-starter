@@ -216,7 +216,7 @@ export function BillingActions({
           {hasSubscription ? (
             <>
               <div className="rounded-lg border border-border bg-muted/40 p-4 sm:p-5 dark:bg-muted/25">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+                <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
                   <div className="min-w-0 space-y-1">
                     <h3 className="text-sm font-medium text-foreground">{t("portal.cardTitle")}</h3>
                     <p className="text-sm leading-relaxed text-muted-foreground">

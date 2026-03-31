@@ -16,6 +16,7 @@ import {
   Moon,
   Settings,
   SunMedium,
+  User,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -134,13 +135,6 @@ export function UserDropdown({
     };
   }, [open, teamOptionsState, teamSwitchingDisabled]);
 
-  const initials = displayName
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-
   const themeOrder: Array<"system" | "light" | "dark"> = ["system", "light", "dark"];
   const themeIndex = themeOrder.indexOf(theme);
   const nextTheme = themeOrder[(themeIndex + 1) % themeOrder.length];
@@ -163,8 +157,10 @@ export function UserDropdown({
         className="inline-flex items-center gap-2.5 rounded-full border app-border-subtle py-1.5 pl-1.5 pr-3 shadow-sm transition-colors hover:bg-[color:var(--surface-subtle)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <Avatar size="default">
-          {avatarUrl ? <AvatarImage src={avatarUrl} alt={displayName} /> : null}
-          <AvatarFallback>{initials}</AvatarFallback>
+          <AvatarImage src={avatarUrl ?? ""} alt={displayName} />
+          <AvatarFallback className="text-foreground">
+            <User className="size-3.5 shrink-0" aria-hidden />
+          </AvatarFallback>
         </Avatar>
         <span className="hidden text-sm font-medium sm:inline">{displayName}</span>
         <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />

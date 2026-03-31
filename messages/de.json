@@ -494,6 +494,7 @@
     "actions": {
       "saving": "Wird gespeichert..."
     },
+    "profileRowHint": "Foto und Anzeigename werden automatisch gespeichert.",
     "fields": {
       "displayName": "Anzeigename",
       "displayNamePlaceholder": "Dein Name",
@@ -506,6 +507,9 @@
       "profilePhoto": "Profilfoto",
       "profileAvatarAlt": "Profilavatar",
       "changePhoto": "Foto ändern",
+      "uploadPhotoAria": "Profilfoto hochladen",
+      "changePhotoAria": "Neues Profilfoto auswählen",
+      "removePhotoAria": "Profilfoto entfernen",
       "autosaveHint": "Wird automatisch gespeichert, wenn du ein Foto hochlädst oder entfernst.",
       "removePhoto": "Foto entfernen",
       "errors": {
