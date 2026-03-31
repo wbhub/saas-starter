@@ -49,7 +49,7 @@ Boot required:
 Resend (set these correctly; email flows still degrade gracefully if misconfigured):
 
 - `RESEND_API_KEY`
-- `RESEND_FROM_EMAIL` — must use a domain verified in your Resend dashboard ([resend.com/domains](https://resend.com/domains)); the default `onboarding@resend.dev` sandbox only allows sending to your own account email
+- `RESEND_FROM_EMAIL`
 - `RESEND_SUPPORT_EMAIL`
 
 Local fallbacks (still set these correctly in production):
