@@ -38,7 +38,26 @@ export function DashboardSettingsCard({
   const [avatarUrl, setAvatarUrl] = useState(initialAvatarUrl ?? "");
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  
+  // To avoid setting state synchronously in an effect (which causes cascading renders),
+  // we derive the showSaved state during render when the status changes to success.
   const [showSaved, setShowSaved] = useState(false);
+  const [prevStatus, setPrevStatus] = useState(state.status);
+
+  if (state.status !== prevStatus) {
+    setPrevStatus(state.status);
+    if (state.status === "success") {
+      setShowSaved(true);
+    }
+  }
+
+  useEffect(() => {
+    if (showSaved) {
+      const hideTimer = setTimeout(() => setShowSaved(false), 2000);
+      return () => clearTimeout(hideTimer);
+    }
+  }, [showSaved]);
+
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
 
@@ -48,14 +67,6 @@ export function DashboardSettingsCard({
     .join("")
     .slice(0, 2)
     .toUpperCase();
-
-  useEffect(() => {
-    if (state.status === "success") {
-      setShowSaved(true);
-      const timer = setTimeout(() => setShowSaved(false), 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [state.status]);
 
   const handleFileSelection = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;

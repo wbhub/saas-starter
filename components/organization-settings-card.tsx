@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState, useEffect, useRef } from "react";
+import { FormEvent, useMemo, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Loader2, Check } from "lucide-react";
@@ -44,22 +44,14 @@ export function OrganizationSettingsCard({
   const [showSaved, setShowSaved] = useState(false);
   const [transferring, setTransferring] = useState(false);
   const [nextOwnerUserId, setNextOwnerUserId] = useState("");
-  const [feedback, setFeedback] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const savedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const ownershipCandidates = useMemo(
     () => members.filter((member) => member.userId !== currentUserId && member.role !== "owner"),
     [members, currentUserId],
   );
-
-  useEffect(() => {
-    if (feedback) {
-      setShowSaved(true);
-      const timer = setTimeout(() => setShowSaved(false), 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [feedback]);
 
   async function saveTeamName(event?: FormEvent<HTMLFormElement>) {
     if (event) event.preventDefault();
@@ -68,7 +60,6 @@ export function OrganizationSettingsCard({
     if (nameValue === teamName || nameValue.trim().length < 2) return;
     
     setSavingName(true);
-    setFeedback(null);
     setError(null);
     try {
       const response = await fetch("/api/team/settings", {
@@ -86,7 +77,12 @@ export function OrganizationSettingsCard({
       if (!response.ok) {
         throw new Error(payload?.error ?? t("errors.updateName"));
       }
-      setFeedback(t("feedback.nameUpdated"));
+      
+      // Handle the saved indicator directly in the event handler
+      setShowSaved(true);
+      if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
+      savedTimeoutRef.current = setTimeout(() => setShowSaved(false), 2000);
+      
       router.refresh();
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : t("errors.updateName"));
@@ -102,7 +98,6 @@ export function OrganizationSettingsCard({
     }
 
     setTransferring(true);
-    setFeedback(null);
     setError(null);
     try {
       const response = await fetch("/api/team/ownership/transfer", {
@@ -120,7 +115,12 @@ export function OrganizationSettingsCard({
       if (!response.ok) {
         throw new Error(payload?.error ?? t("errors.transferOwnership"));
       }
-      setFeedback(t("feedback.ownershipTransferred"));
+      
+      // Handle the saved indicator directly in the event handler
+      setShowSaved(true);
+      if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
+      savedTimeoutRef.current = setTimeout(() => setShowSaved(false), 2000);
+      
       router.refresh();
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : t("errors.transferOwnership"));
