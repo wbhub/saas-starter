@@ -274,7 +274,9 @@ export async function getTeamMembersAndPendingInvites(supabase: SupabaseClient, 
     const [membershipResult, pendingInvitesResult] = await Promise.allSettled([
       supabase
         .from("team_memberships")
-        .select("user_id,role,created_at,profiles!team_memberships_user_id_profiles_fkey(id,full_name)")
+        .select(
+          "user_id,role,created_at,profiles!team_memberships_user_id_profiles_fkey(id,full_name)",
+        )
         .eq("team_id", teamId)
         .order("created_at", { ascending: true })
         .limit(queryLimit)
