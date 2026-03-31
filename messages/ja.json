@@ -561,7 +561,6 @@
       "sectionDescription": "参加用の安全なリンクをメールで送ります。",
       "teamNameLabel": "チーム名",
       "teamNamePlaceholder": "Acme Team",
-      "teamNameHint": "最初の招待の前に分かりやすい名前を付けると、受信者がワークスペースを識別しやすくなります。",
       "emailLabel": "招待メールアドレス",
       "emailPlaceholder": "teammate@example.com",
       "roleLabel": "ロール"
@@ -579,9 +578,7 @@
     },
     "confirmations": {
       "removeMemberTitle": "メンバーを削除",
-      "removeMember": "このメンバーをチームから削除しますか？ 直ちにアクセス権を失います。",
-      "revokeInviteTitle": "招待を取り消す",
-      "revokeInvite": "この招待を取り消しますか？"
+      "removeMember": "このメンバーをチームから削除しますか？ 直ちにアクセス権を失います。"
     },
     "feedback": {
       "teamNameUpdated": "チーム名を保存しました。",
@@ -676,6 +673,14 @@
   "DangerZoneCard": {
     "title": "危険ゾーン",
     "description": "無効化するとすべてのセッションからサインアウトします。削除するとアカウントは完全に消去されます。",
+    "deactivate": {
+      "title": "すべての端末からサインアウト",
+      "hint": "この端末や他の端末のアクティブなセッションをすべて終了します。いつでも再ログインできます。"
+    },
+    "delete": {
+      "title": "アカウントを削除",
+      "hint": "プロフィールとデータが削除されます。下で確認してください。元に戻せません。"
+    },
     "fields": {
       "confirmDelete": "確認のため DELETE と入力",
       "deleteToken": "DELETE",
@@ -732,8 +737,8 @@
     }
   },
   "SupportEmailCard": {
-    "title": "サポートにメールする (Resend)",
-    "description": "Resend を使ってサポート受信箱へ直接メッセージを送信します。",
+    "title": "サポートにメールする",
+    "description": "メールでサポートチームにお問い合わせください。できるだけ早く返信します。",
     "fields": {
       "subject": "件名（任意）",
       "subjectPlaceholder": "課金に関する質問",

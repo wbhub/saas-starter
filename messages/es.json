@@ -561,7 +561,6 @@
       "sectionDescription": "Enviaremos un enlace seguro por correo para unirse.",
       "teamNameLabel": "Nombre del equipo",
       "teamNamePlaceholder": "Equipo Acme",
-      "teamNameHint": "Elige un nombre claro antes de la primera invitación: ayuda a reconocer tu espacio de trabajo.",
       "emailLabel": "Email de invitación",
       "emailPlaceholder": "compañero@ejemplo.com",
       "roleLabel": "Rol"
@@ -579,9 +578,7 @@
     },
     "confirmations": {
       "removeMemberTitle": "Quitar miembro",
-      "removeMember": "¿Quitar a este miembro del equipo? Perderá acceso de inmediato.",
-      "revokeInviteTitle": "Revocar invitación",
-      "revokeInvite": "¿Revocar esta invitación?"
+      "removeMember": "¿Quitar a este miembro del equipo? Perderá acceso de inmediato."
     },
     "feedback": {
       "teamNameUpdated": "Nombre del equipo guardado.",
@@ -676,6 +673,14 @@
   "DangerZoneCard": {
     "title": "Zona de riesgo",
     "description": "La desactivación cierra tu sesión en todos los dispositivos. La eliminación borra tu cuenta permanentemente.",
+    "deactivate": {
+      "title": "Cerrar sesión en todas partes",
+      "hint": "Cierra todas las sesiones activas en este y otros dispositivos. Puedes volver a iniciar sesión cuando quieras."
+    },
+    "delete": {
+      "title": "Eliminar tu cuenta",
+      "hint": "Se eliminarán tu perfil y tus datos. Confirma abajo: esta acción no se puede deshacer."
+    },
     "fields": {
       "confirmDelete": "Escribe DELETE para confirmar",
       "deleteToken": "DELETE",
@@ -732,8 +737,8 @@
     }
   },
   "SupportEmailCard": {
-    "title": "Soporte por email (Resend)",
-    "description": "Envía un mensaje directamente a tu bandeja de soporte usando Resend.",
+    "title": "Soporte por email",
+    "description": "Contacta con el equipo de soporte por email. Te responderemos lo antes posible.",
     "fields": {
       "subject": "Asunto (opcional)",
       "subjectPlaceholder": "Pregunta de facturación",

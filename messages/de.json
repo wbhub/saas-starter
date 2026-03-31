@@ -561,7 +561,6 @@
       "sectionDescription": "Wir senden einen sicheren Link per E-Mail zum Beitreten.",
       "teamNameLabel": "Teamname",
       "teamNamePlaceholder": "Acme Team",
-      "teamNameHint": "Wähle einen klaren Namen vor der ersten Einladung — so erkennen Empfänger deinen Workspace.",
       "emailLabel": "Einladungs-E-Mail",
       "emailPlaceholder": "teammate@example.com",
       "roleLabel": "Rolle"
@@ -579,9 +578,7 @@
     },
     "confirmations": {
       "removeMemberTitle": "Mitglied entfernen",
-      "removeMember": "Dieses Mitglied aus dem Team entfernen? Es verliert sofort den Zugriff.",
-      "revokeInviteTitle": "Einladung widerrufen",
-      "revokeInvite": "Diese Einladung widerrufen?"
+      "removeMember": "Dieses Mitglied aus dem Team entfernen? Es verliert sofort den Zugriff."
     },
     "feedback": {
       "teamNameUpdated": "Teamname gespeichert.",
@@ -676,6 +673,14 @@
   "DangerZoneCard": {
     "title": "Gefahrenbereich",
     "description": "Die Deaktivierung meldet dich aus allen Sitzungen ab. Das Löschen entfernt dein Konto dauerhaft.",
+    "deactivate": {
+      "title": "Überall abmelden",
+      "hint": "Beendet alle aktiven Sitzungen auf diesem und anderen Geräten. Du kannst dich jederzeit wieder anmelden."
+    },
+    "delete": {
+      "title": "Konto löschen",
+      "hint": "Profil und Daten werden entfernt. Unten bestätigen—dieser Vorgang kann nicht rückgängig gemacht werden."
+    },
     "fields": {
       "confirmDelete": "Tippe DELETE zur Bestätigung",
       "deleteToken": "DELETE",
@@ -732,8 +737,8 @@
     }
   },
   "SupportEmailCard": {
-    "title": "Support per E-Mail (Resend)",
-    "description": "Sende mit Resend direkt eine Nachricht an dein Support-Postfach.",
+    "title": "Support per E-Mail",
+    "description": "Kontaktiere den Support per E-Mail. Wir melden uns so bald wie möglich.",
     "fields": {
       "subject": "Betreff (optional)",
       "subjectPlaceholder": "Frage zur Abrechnung",

@@ -561,7 +561,6 @@
       "sectionDescription": "Nous enverrons un lien sécurisé par e-mail pour rejoindre.",
       "teamNameLabel": "Nom de l'équipe",
       "teamNamePlaceholder": "Équipe Acme",
-      "teamNameHint": "Choisissez un nom clair avant la première invitation — cela aide à reconnaître votre espace.",
       "emailLabel": "E-mail d'invitation",
       "emailPlaceholder": "coéquipier@exemple.com",
       "roleLabel": "Rôle"
@@ -579,9 +578,7 @@
     },
     "confirmations": {
       "removeMemberTitle": "Retirer un membre",
-      "removeMember": "Supprimer ce membre de l'équipe ? Ils perdront immédiatement l’accès.",
-      "revokeInviteTitle": "Révoquer l’invitation",
-      "revokeInvite": "Révoquer cette invitation ?"
+      "removeMember": "Supprimer ce membre de l'équipe ? Ils perdront immédiatement l’accès."
     },
     "feedback": {
       "teamNameUpdated": "Nom de l’équipe enregistré.",
@@ -676,6 +673,14 @@
   "DangerZoneCard": {
     "title": "Zone dangereuse",
     "description": "La désactivation vous déconnecte de toutes les sessions. La suppression supprime définitivement votre compte.",
+    "deactivate": {
+      "title": "Se déconnecter partout",
+      "hint": "Met fin à toutes les sessions actives sur cet appareil et les autres. Vous pourrez vous reconnecter à tout moment."
+    },
+    "delete": {
+      "title": "Supprimer votre compte",
+      "hint": "Votre profil et vos données seront supprimés. Confirmez ci-dessous — cette action est irréversible."
+    },
     "fields": {
       "confirmDelete": "Tapez SUPPR pour confirmer",
       "deleteToken": "SUPPRIMER",
@@ -732,8 +737,8 @@
     }
   },
   "SupportEmailCard": {
-    "title": "Assistance par e-mail (Renvoyer)",
-    "description": "Envoyez un message directement dans votre boîte de réception d'assistance en utilisant Renvoyer.",
+    "title": "Assistance par e-mail",
+    "description": "Contactez l'équipe d'assistance par e-mail. Nous vous répondrons dès que possible.",
     "fields": {
       "subject": "Sujet (facultatif)",
       "subjectPlaceholder": "Question de facturation",

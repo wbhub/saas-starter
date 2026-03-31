@@ -31,9 +31,9 @@ import {
   AlertDialogMedia,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { FormMessage } from "@/components/ui/form-message";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 
 type TeamMember = {
   userId: string;
@@ -621,11 +621,6 @@ export function TeamInviteCard({
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
             {t("teamName.autosaveHint")}
           </p>
-          {requireTeamNameOnFirstInvite ? (
-            <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-              {t("inviteForm.teamNameHint")}
-            </p>
-          ) : null}
           <FormMessage status={teamNameBanner.variant} message={teamNameBanner.message} />
         </DashboardPageSection>
       ) : null}
@@ -828,9 +823,9 @@ export function TeamInviteCard({
                         </Select>
                       </div>
                     ) : (
-                      <span className="text-xs font-medium text-muted-foreground">
+                      <Badge variant="secondary" className="capitalize">
                         {getRoleLabel(member.role)}
-                      </span>
+                      </Badge>
                     )}
                   </div>
                 </li>
@@ -869,44 +864,42 @@ export function TeamInviteCard({
                   </div>
                 </div>
                 <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 pl-12 sm:pl-0">
-                  <span className="text-xs font-medium text-muted-foreground">
+                  <Badge variant="secondary" className="capitalize">
                     {getRoleLabel(invite.role)}
-                  </span>
+                  </Badge>
                   {canInvite ? (
-                    <>
+                    <div className="inline-flex items-center gap-0 text-xs">
                       <Button
                         type="button"
                         variant="ghost"
                         size="xs"
                         disabled={resendInviteId !== null || revokeInviteId !== null}
                         onClick={() => resendInvite(invite.id)}
-                        className="text-muted-foreground hover:text-foreground"
+                        className="cursor-pointer px-1.5 text-muted-foreground hover:bg-transparent hover:text-foreground dark:hover:bg-transparent disabled:cursor-not-allowed"
                       >
                         {resendInviteId === invite.id
                           ? t("actions.resending")
                           : t("actions.resend")}
                       </Button>
-                      <ConfirmDialog
-                        title={t("confirmations.revokeInviteTitle")}
-                        description={t("confirmations.revokeInvite")}
-                        confirmLabel={t("actions.revoke")}
-                        cancelLabel={t("actions.cancel")}
-                        variant="destructive"
-                        onConfirm={() => revokeInvite(invite.id)}
+                      <span
+                        className="select-none text-muted-foreground/50"
+                        aria-hidden
                       >
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="xs"
-                          disabled={revokeInviteId !== null || resendInviteId !== null}
-                          className="text-destructive hover:bg-destructive/10 hover:text-destructive dark:hover:bg-destructive/15"
-                        >
-                          {revokeInviteId === invite.id
-                            ? t("actions.revoking")
-                            : t("actions.revoke")}
-                        </Button>
-                      </ConfirmDialog>
-                    </>
+                        |
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="xs"
+                        disabled={revokeInviteId !== null || resendInviteId !== null}
+                        onClick={() => void revokeInvite(invite.id)}
+                        className="cursor-pointer px-1.5 text-destructive hover:bg-transparent hover:text-[color-mix(in_oklch,var(--destructive)_82%,black)] dark:hover:bg-transparent dark:hover:text-[color-mix(in_oklch,var(--destructive)_88%,black)] disabled:cursor-not-allowed"
+                      >
+                        {revokeInviteId === invite.id
+                          ? t("actions.revoking")
+                          : t("actions.revoke")}
+                      </Button>
+                    </div>
                   ) : null}
                 </div>
               </li>
