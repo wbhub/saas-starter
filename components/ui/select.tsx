@@ -70,12 +70,7 @@ function SelectContent({
 }: SelectPrimitive.Popup.Props &
   Pick<
     SelectPrimitive.Positioner.Props,
-    | "align"
-    | "alignOffset"
-    | "side"
-    | "sideOffset"
-    | "alignItemWithTrigger"
-    | "collisionPadding"
+    "align" | "alignOffset" | "side" | "sideOffset" | "alignItemWithTrigger" | "collisionPadding"
   >) {
   return (
     <SelectPrimitive.Portal>
