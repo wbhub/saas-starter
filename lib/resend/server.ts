@@ -78,11 +78,14 @@ export async function sendResendEmail(payload: ResendEmailPayload) {
     throw new Error("Resend is not configured.");
   }
 
-  await resendClient.emails.send({
+  const { error } = await resendClient.emails.send({
     from: payload.from,
     to: payload.to,
     subject: payload.subject,
     text: payload.text,
     replyTo: payload.replyTo,
   });
+  if (error) {
+    throw new Error(`Resend email delivery failed: ${error.message}`);
+  }
 }
