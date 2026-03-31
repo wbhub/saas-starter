@@ -2,7 +2,13 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import type { AcceptInviteErrorCode } from "@/lib/team-invites/accept-invite";
 
-const TRANSLATABLE_CODES = ["not_found", "expired", "email_mismatch", "team_full", "no_email"] as const;
+const TRANSLATABLE_CODES = [
+  "not_found",
+  "expired",
+  "email_mismatch",
+  "team_full",
+  "no_email",
+] as const;
 
 export async function InviteErrorCard({ errorCode }: { errorCode: AcceptInviteErrorCode }) {
   const t = await getTranslations("InviteErrorCard");
