@@ -526,14 +526,16 @@
       "sectionTitle": "团队名称",
       "sectionDescription": "该名称会显示在应用、邮件和邀请中。可随时修改。",
       "saving": "保存中...",
-      "saved": "已保存"
+      "saved": "已保存",
+      "autosaveHint": "输入时自动保存。"
     },
     "members": {
       "title": "成员",
       "description": "有权访问此工作区的所有人。",
       "emptyList": "暂无成员可显示。",
       "noOtherMembers": "还没有其他成员——目前此工作区只有你。",
-      "unnamed": "队友"
+      "unnamed": "队友",
+      "actionsSelectAriaLabel": "{name} 的操作"
     },
     "roles": {
       "owner": "所有者",
@@ -699,7 +701,9 @@
     "title": "组织设置",
     "description": "重命名您的工作区并在需要时转移所有权。",
     "fields": {
-      "teamName": "队名"
+      "teamName": "队名",
+      "nameSaved": "已保存",
+      "teamNameAutosave": "输入时自动保存。"
     },
     "ownership": {
       "title": "转让所有权",
@@ -709,6 +713,7 @@
     "actions": {
       "saving": "保存...",
       "saveOrganization": "保存组织",
+      "cancel": "取消",
       "transferring": "转移...",
       "transferOwnership": "转让所有权"
     },
@@ -721,6 +726,7 @@
     },
     "errors": {
       "updateName": "无法更新团队名称。",
+      "teamNameTooShort": "团队名称至少需要 2 个字符。",
       "selectTeammate": "选择一名队友来转让所有权。",
       "transferOwnership": "未能转移所有权。"
     }

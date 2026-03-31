@@ -1,11 +1,10 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { getCsrfHeaders } from "@/lib/http/csrf";
 import { Button } from "@/components/ui/button";
-import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -24,6 +23,8 @@ import { Separator } from "@/components/ui/separator";
 type TeamMember = {
   userId: string;
   fullName: string | null;
+  email: string | null;
+  avatarUrl: string | null;
   role: "owner" | "admin" | "member";
 };
 
@@ -34,6 +35,8 @@ type OrganizationSettingsCardProps = {
   currentUserRole: "owner" | "admin" | "member";
 };
 
+const TEAM_NAME_AUTOSAVE_MS = 600;
+
 export function OrganizationSettingsCard({
   teamName,
   members,
@@ -42,8 +45,16 @@ export function OrganizationSettingsCard({
 }: OrganizationSettingsCardProps) {
   const t = useTranslations("OrganizationSettingsCard");
   const router = useRouter();
-  const [nameValue, setNameValue] = useState(teamName);
-  const [savingName, setSavingName] = useState(false);
+
+  const [nameInput, setNameInput] = useState(teamName);
+  const nameRef = useRef(teamName);
+  const nameDirtyRef = useRef(false);
+  const nameDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const nameSavedIndicatorRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const namePersistRef = useRef(false);
+  const [nameSaveStatus, setNameSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const [nameError, setNameError] = useState<string | null>(null);
+
   const [transferring, setTransferring] = useState(false);
   const [nextOwnerUserId, setNextOwnerUserId] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -54,33 +65,131 @@ export function OrganizationSettingsCard({
     [members, currentUserId],
   );
 
-  async function saveTeamName(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setSavingName(true);
-    setFeedback(null);
-    setError(null);
-    try {
-      const response = await fetch("/api/team/settings", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          ...getCsrfHeaders(),
-        },
-        body: JSON.stringify({ teamName: nameValue }),
-      });
-      const payload = (await response.json().catch(() => null)) as {
-        error?: string;
-        ok?: boolean;
-      } | null;
-      if (!response.ok) {
-        throw new Error(payload?.error ?? t("errors.updateName"));
+  useEffect(() => {
+    nameRef.current = nameInput;
+  }, [nameInput]);
+
+  useEffect(() => {
+    if (nameDirtyRef.current) {
+      return;
+    }
+    setNameInput(teamName);
+    nameRef.current = teamName;
+  }, [teamName]);
+
+  useEffect(
+    () => () => {
+      if (nameDebounceRef.current) {
+        clearTimeout(nameDebounceRef.current);
       }
-      setFeedback(t("feedback.nameUpdated"));
-      router.refresh();
+      if (nameSavedIndicatorRef.current) {
+        clearTimeout(nameSavedIndicatorRef.current);
+      }
+    },
+    [],
+  );
+
+  function serverTeamNameNormalized() {
+    return teamName.trim();
+  }
+
+  function scheduleTeamNameAutosave() {
+    if (nameDebounceRef.current) {
+      clearTimeout(nameDebounceRef.current);
+    }
+    nameDebounceRef.current = setTimeout(() => {
+      nameDebounceRef.current = null;
+      void persistTeamName();
+    }, TEAM_NAME_AUTOSAVE_MS);
+  }
+
+  async function saveTeamNameOnce(): Promise<void> {
+    const normalized = nameRef.current.trim();
+    if (normalized.length < 2) {
+      return;
+    }
+    if (normalized === serverTeamNameNormalized()) {
+      nameDirtyRef.current = false;
+      setNameSaveStatus("idle");
+      return;
+    }
+
+    setNameSaveStatus("saving");
+    setNameError(null);
+
+    const response = await fetch("/api/team/settings", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        ...getCsrfHeaders(),
+      },
+      body: JSON.stringify({ teamName: normalized }),
+    });
+    const payload = (await response.json().catch(() => null)) as {
+      error?: string;
+      ok?: boolean;
+    } | null;
+    if (!response.ok) {
+      throw new Error(payload?.error ?? t("errors.updateName"));
+    }
+
+    const latest = nameRef.current.trim();
+    if (latest !== normalized) {
+      await saveTeamNameOnce();
+      return;
+    }
+
+    nameDirtyRef.current = false;
+    if (nameSavedIndicatorRef.current) {
+      clearTimeout(nameSavedIndicatorRef.current);
+    }
+    setNameSaveStatus("saved");
+    nameSavedIndicatorRef.current = setTimeout(() => {
+      nameSavedIndicatorRef.current = null;
+      setNameSaveStatus("idle");
+    }, 2000);
+    router.refresh();
+  }
+
+  async function persistTeamName() {
+    if (currentUserRole === "member" || namePersistRef.current) {
+      return;
+    }
+    const normalized = nameRef.current.trim();
+    if (normalized.length < 2) {
+      return;
+    }
+    if (normalized === serverTeamNameNormalized()) {
+      nameDirtyRef.current = false;
+      setNameSaveStatus("idle");
+      return;
+    }
+
+    namePersistRef.current = true;
+    try {
+      await saveTeamNameOnce();
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : t("errors.updateName"));
+      setNameSaveStatus("idle");
+      setNameError(submitError instanceof Error ? submitError.message : t("errors.updateName"));
     } finally {
-      setSavingName(false);
+      namePersistRef.current = false;
+    }
+  }
+
+  function handleTeamNameBlur() {
+    if (nameDebounceRef.current) {
+      clearTimeout(nameDebounceRef.current);
+      nameDebounceRef.current = null;
+    }
+    const normalized = nameRef.current.trim();
+    if (normalized.length > 0 && normalized.length < 2) {
+      setNameError(t("errors.teamNameTooShort"));
+      setNameSaveStatus("idle");
+      return;
+    }
+    setNameError(null);
+    if (normalized.length >= 2) {
+      void persistTeamName();
     }
   }
 
@@ -118,33 +227,58 @@ export function OrganizationSettingsCard({
     }
   }
 
+  const canEditTeamName = currentUserRole !== "member";
+
   return (
     <DashboardPageSection icon={Building2} title={t("title")} description={t("description")}>
       <div className="space-y-6">
-        <form className="space-y-4" onSubmit={saveTeamName}>
-          <div>
-            <Label className="mb-1">{t("fields.teamName")}</Label>
+        <div>
+          <Label className="mb-1 block" htmlFor="settings-team-name">
+            {t("fields.teamName")}
+          </Label>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
             <Input
+              id="settings-team-name"
               type="text"
-              value={nameValue}
-              onChange={(event) => setNameValue(event.target.value)}
+              value={nameInput}
+              onChange={(event) => {
+                const value = event.target.value;
+                nameRef.current = value;
+                nameDirtyRef.current = true;
+                setNameInput(value);
+                setNameError(null);
+                if (nameSaveStatus === "saved") {
+                  setNameSaveStatus("idle");
+                }
+                scheduleTeamNameAutosave();
+              }}
+              onBlur={handleTeamNameBlur}
               maxLength={80}
               minLength={2}
-              disabled={currentUserRole === "member" || savingName}
+              disabled={!canEditTeamName}
+              autoComplete="organization"
+              aria-busy={nameSaveStatus === "saving"}
+              className="h-10 min-h-10 w-full min-w-0 max-w-md py-2"
             />
+            {nameSaveStatus === "saving" || nameSaveStatus === "saved" ? (
+              <p
+                className="min-h-[1.25rem] text-xs font-medium leading-none text-muted-foreground sm:min-w-[5.5rem]"
+                aria-live="polite"
+              >
+                {nameSaveStatus === "saving" ? t("actions.saving") : t("fields.nameSaved")}
+              </p>
+            ) : null}
           </div>
-          <SubmitButton
-            loading={savingName}
-            disabled={currentUserRole === "member"}
-            pendingLabel={t("actions.saving")}
-            idleLabel={t("actions.saveOrganization")}
-          />
-        </form>
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+            {t("fields.teamNameAutosave")}
+          </p>
+          {nameError ? <p className="mt-2 text-xs text-rose-600">{nameError}</p> : null}
+        </div>
 
         {currentUserRole === "owner" ? (
           <>
-            <Separator className="mt-6" />
-            <div className="mt-6 space-y-4">
+            <Separator />
+            <div className="space-y-4">
               <h3 className="text-sm font-medium text-foreground">{t("ownership.title")}</h3>
               <div>
                 <Label className="mb-1 text-muted-foreground">{t("ownership.newOwner")}</Label>
@@ -153,13 +287,14 @@ export function OrganizationSettingsCard({
                   onValueChange={(value) => setNextOwnerUserId(value ?? "")}
                   disabled={transferring || ownershipCandidates.length === 0}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="h-10 w-full min-w-0 py-0 data-[size=default]:h-10">
                     <SelectValue placeholder={t("ownership.selectTeammate")} />
                   </SelectTrigger>
                   <SelectContent>
                     {ownershipCandidates.map((member) => (
                       <SelectItem key={member.userId} value={member.userId}>
-                        {(member.fullName?.trim() || member.userId) + ` (${member.role})`}
+                        {(member.fullName?.trim() || member.email || member.userId) +
+                          ` (${member.role})`}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -176,7 +311,7 @@ export function OrganizationSettingsCard({
                   type="button"
                   variant="outline"
                   disabled={transferring || !nextOwnerUserId}
-                  className="border-amber-300/60 text-amber-800 hover:bg-amber-50 dark:border-amber-700/60 dark:text-amber-200 dark:hover:bg-amber-950/30"
+                  className="h-10 min-h-10 border-amber-300/60 px-4 py-2 text-amber-800 hover:bg-amber-50 dark:border-amber-700/60 dark:text-amber-200 dark:hover:bg-amber-950/30"
                 >
                   {transferring ? t("actions.transferring") : t("actions.transferOwnership")}
                 </Button>

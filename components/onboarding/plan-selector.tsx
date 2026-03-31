@@ -267,7 +267,8 @@ export function OnboardingPlanSelector({
             </ul>
             <Button
               type="button"
-              variant="outline"
+              variant="secondary"
+              size="control"
               onClick={handleFreePlan}
               disabled={loadingAction !== null}
               className="mt-6 w-full"
@@ -327,6 +328,7 @@ export function OnboardingPlanSelector({
               <Button
                 type="button"
                 variant={plan.popular ? "default" : "outline"}
+                size="control"
                 onClick={() => handlePaidPlan(plan.key)}
                 disabled={loadingAction !== null || !canCheckout}
                 className="mt-6 w-full"

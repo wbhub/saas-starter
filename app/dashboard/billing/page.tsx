@@ -16,7 +16,6 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { AiUsageCard, AiUsageCardSkeleton } from "@/components/ai-usage-card";
 import { BillingActions } from "@/components/billing-actions";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { formatUtcDate } from "@/lib/date";
 import { formatStaticUsdMonthlyLabel } from "@/lib/stripe/plan-price-display";
 import { canManageTeamBilling } from "@/lib/team-context";
@@ -133,14 +132,8 @@ export default async function DashboardBillingPage({
     return null;
   }
 
-  const {
-    billingEnabled,
-    subscription,
-    effectivePlanKey,
-    billingInterval,
-    memberCount,
-    isPaidPlan,
-  } = billingContext;
+  const { billingEnabled, subscription, effectivePlanKey, billingInterval, isPaidPlan } =
+    billingContext;
   const currentPaidPlanKey: PlanKey | null =
     isPaidPlan && effectivePlanKey && effectivePlanKey !== "free" ? effectivePlanKey : null;
 
@@ -355,30 +348,6 @@ export default async function DashboardBillingPage({
                 {t("currentSubscription.noSubscription")}
               </div>
             )}
-            {teamUiMode === "paid_team" &&
-            subscription &&
-            perSeatAmount !== null &&
-            estimatedMonthlySeatTotal !== null ? (
-              <>
-                <Separator />
-                <div className="rounded-lg bg-muted/50 px-4 py-3">
-                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    {t("paidTeam.estimateLabel")}
-                  </p>
-                  <p className="mt-1 text-sm font-medium text-foreground">
-                    {t("paidTeam.breakdown", {
-                      seats: String(subscription.seat_quantity ?? memberCount),
-                      seatCost: catalogSeatPrice(perSeatAmount),
-                      monthlyTotal: new Intl.NumberFormat(locale, {
-                        style: "currency",
-                        currency: "USD",
-                        maximumFractionDigits: 0,
-                      }).format(estimatedMonthlySeatTotal),
-                    })}
-                  </p>
-                </div>
-              </>
-            ) : null}
           </div>
         </DashboardPageSection>
       )}

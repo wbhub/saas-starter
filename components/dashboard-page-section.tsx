@@ -14,7 +14,7 @@ type DashboardPageSectionProps = {
   /** When `variant` is `default`, controls icon tint. Ignored when `variant` is `destructive`. */
   iconTone?: "muted" | "primary" | "destructive";
   /**
-   * When true, title + description use a bottom border (e.g. billing subscription header with badge).
+   * When true, title + description align with `endSlot` in a row on larger screens (e.g. billing subscription header with badge).
    */
   borderedHeader?: boolean;
   /** Right side of a bordered header (e.g. status badge). */
@@ -44,7 +44,7 @@ export function DashboardPageSection({
   );
 
   const headerBlock = borderedHeader ? (
-    <div className="flex flex-col gap-3 border-b border-border pb-6 sm:flex-row sm:items-start sm:justify-between">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0 space-y-1">
         <h2 className="text-lg font-semibold tracking-tight text-foreground">{title}</h2>
         {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}

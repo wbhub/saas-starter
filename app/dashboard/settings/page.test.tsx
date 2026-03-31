@@ -12,6 +12,8 @@ describe("Dashboard settings page data loading", () => {
       {
         userId: "user_123",
         fullName: "Owner Example",
+        email: "owner@example.com",
+        avatarUrl: null,
         role: "owner",
       },
     ]);

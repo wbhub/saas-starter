@@ -526,14 +526,16 @@
       "sectionTitle": "Nome da equipe",
       "sectionDescription": "Este nome aparece no app, nos e-mails e nos convites. Você pode alterá-lo a qualquer momento.",
       "saving": "Salvando...",
-      "saved": "Salvo"
+      "saved": "Salvo",
+      "autosaveHint": "Salva automaticamente enquanto você digita."
     },
     "members": {
       "title": "Pessoas",
       "description": "Todos com acesso a este espaço de trabalho.",
       "emptyList": "Nenhum membro para exibir.",
       "noOtherMembers": "Ainda não há outros membros — por enquanto só você neste espaço de trabalho.",
-      "unnamed": "Colega"
+      "unnamed": "Colega",
+      "actionsSelectAriaLabel": "Ações para {name}"
     },
     "roles": {
       "owner": "Proprietário",
@@ -555,7 +557,7 @@
       "sendInvite": "Enviar convite"
     },
     "inviteForm": {
-      "sectionTitle": "Convidar um colega",
+      "sectionTitle": "Convidar colegas",
       "sectionDescription": "Enviaremos um link seguro por e-mail para entrar.",
       "teamNameLabel": "Nome da equipe",
       "teamNamePlaceholder": "Equipe Acme",
@@ -699,7 +701,9 @@
     "title": "Configurações da organização",
     "description": "Renomeie seu espaço de trabalho e transfira a propriedade quando necessário.",
     "fields": {
-      "teamName": "Nome da equipe"
+      "teamName": "Nome da equipe",
+      "nameSaved": "Salvo",
+      "teamNameAutosave": "Salva automaticamente enquanto você digita."
     },
     "ownership": {
       "title": "Transferir propriedade",
@@ -709,6 +713,7 @@
     "actions": {
       "saving": "Salvando...",
       "saveOrganization": "Salvar organização",
+      "cancel": "Cancelar",
       "transferring": "Transferindo...",
       "transferOwnership": "Transferir propriedade"
     },
@@ -721,6 +726,7 @@
     },
     "errors": {
       "updateName": "Falha ao atualizar o nome da equipe.",
+      "teamNameTooShort": "O nome da equipe deve ter pelo menos 2 caracteres.",
       "selectTeammate": "Selecione um colega de equipe para transferir a propriedade.",
       "transferOwnership": "Falha ao transferir a propriedade."
     }

@@ -27,7 +27,10 @@ export function PublicHeaderActions({
       <ThemeToggle />
       {!isLoggedIn ? (
         <>
-          <Link href="/login" className={cn(buttonVariants({ variant: "outline" }), "text-sm")}>
+          <Link
+            href="/login"
+            className={cn(buttonVariants({ variant: "outline", size: "control" }))}
+          >
             {loginLabel}
           </Link>
           <AuthAwareLink
@@ -35,7 +38,7 @@ export function PublicHeaderActions({
             loggedOutHref="/onboarding"
             loggedInLabel={openAppLabel}
             loggedOutLabel={signupLabel}
-            className={cn(buttonVariants({ variant: "default" }), "text-sm")}
+            className={cn(buttonVariants({ variant: "default", size: "control" }))}
           />
         </>
       ) : (
@@ -44,7 +47,7 @@ export function PublicHeaderActions({
           loggedOutHref="/onboarding"
           loggedInLabel={openAppLabel}
           loggedOutLabel={signupLabel}
-          className={cn(buttonVariants({ variant: "default" }), "text-sm")}
+          className={cn(buttonVariants({ variant: "default", size: "control" }))}
         />
       )}
     </>

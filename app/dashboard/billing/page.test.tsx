@@ -39,9 +39,6 @@ function mockBillingPageDependencies(options: {
       }
       if (namespace === "DashboardBillingPage") {
         return (key: string, values?: Record<string, string>) => {
-          if (key === "paidTeam.breakdown") {
-            return `${values?.seats ?? ""} seats × ${values?.seatCost ?? ""} = ${values?.monthlyTotal ?? ""}/mo`;
-          }
           if (key === "currentSubscription.totalMonthlyValue" && values?.amount) {
             return `${values.amount}/mo`;
           }
@@ -266,7 +263,7 @@ describe("Dashboard billing page free plan behavior", () => {
     expect(html).toContain("$50/mo");
   });
 
-  it("renders seat breakdown for paid teams with multiple members", async () => {
+  it("renders total cost for paid teams with multiple members", async () => {
     mockBillingPageDependencies({
       billingContext: {
         billingEnabled: true,
@@ -288,7 +285,6 @@ describe("Dashboard billing page free plan behavior", () => {
     const BillingPage = (await import("./page")).default;
     const html = renderToStaticMarkup(await BillingPage());
 
-    expect(html).toContain("3 seats × $50/mo = $150/mo");
     expect(html).toContain("Total cost");
     expect(html).toContain("$150/mo");
     expect(html).toContain('data-current-plan="growth"');

@@ -150,12 +150,14 @@ export function ResetPasswordForm({ hasRecoveryProof, recoveryUserId }: ResetPas
       <div className="w-full max-w-md rounded-2xl border app-border-subtle app-surface p-8 text-foreground shadow-sm">
         <h1 className="text-2xl font-semibold">{t("invalidTitle")}</h1>
         <p className="mt-2 text-sm text-muted-foreground">{t("invalidDescription")}</p>
-        <Link
-          href="/forgot-password"
-          className="mt-5 inline-flex rounded-lg bg-btn-accent px-4 py-2 text-sm font-medium text-white hover:bg-btn-accent-hover"
+        <Button
+          render={<Link href="/forgot-password" />}
+          variant="default"
+          size="control"
+          className="mt-5"
         >
           {t("requestNewLink")}
-        </Link>
+        </Button>
       </div>
     );
   }
@@ -201,8 +203,10 @@ export function ResetPasswordForm({ hasRecoveryProof, recoveryUserId }: ResetPas
         </p>
         <Button
           type="submit"
+          variant="default"
+          size="control"
           disabled={loading}
-          className="h-auto w-full bg-btn-accent px-4 py-2 font-medium text-white hover:bg-btn-accent-hover"
+          className="w-full hover:bg-primary/80"
         >
           {loading ? t("saving") : t("updatePassword")}
         </Button>

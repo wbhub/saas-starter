@@ -526,14 +526,16 @@
       "sectionTitle": "チーム名",
       "sectionDescription": "アプリ、メール、招待に表示されます。いつでも変更できます。",
       "saving": "保存中...",
-      "saved": "保存しました"
+      "saved": "保存しました",
+      "autosaveHint": "入力に合わせて自動保存されます。"
     },
     "members": {
       "title": "メンバー",
       "description": "このワークスペースにアクセスできる人。",
       "emptyList": "表示できるメンバーがいません。",
       "noOtherMembers": "まだ他のメンバーはいません。今はあなただけです。",
-      "unnamed": "チームメイト"
+      "unnamed": "チームメイト",
+      "actionsSelectAriaLabel": "{name}のアクション"
     },
     "roles": {
       "owner": "オーナー",
@@ -555,7 +557,7 @@
       "sendInvite": "招待を送信"
     },
     "inviteForm": {
-      "sectionTitle": "チームメイトを招待",
+      "sectionTitle": "メンバーを招待",
       "sectionDescription": "参加用の安全なリンクをメールで送ります。",
       "teamNameLabel": "チーム名",
       "teamNamePlaceholder": "Acme Team",
@@ -699,7 +701,9 @@
     "title": "組織設定",
     "description": "必要に応じてワークスペース名を変更し、所有権を移譲します。",
     "fields": {
-      "teamName": "チーム名"
+      "teamName": "チーム名",
+      "nameSaved": "保存しました",
+      "teamNameAutosave": "入力に合わせて自動保存されます。"
     },
     "ownership": {
       "title": "所有権を移譲",
@@ -709,6 +713,7 @@
     "actions": {
       "saving": "保存中...",
       "saveOrganization": "組織を保存",
+      "cancel": "キャンセル",
       "transferring": "移譲中...",
       "transferOwnership": "所有権を移譲"
     },
@@ -721,6 +726,7 @@
     },
     "errors": {
       "updateName": "チーム名の更新に失敗しました。",
+      "teamNameTooShort": "チーム名は2文字以上にしてください。",
       "selectTeammate": "所有権を移譲するチームメイトを選択してください。",
       "transferOwnership": "所有権の移譲に失敗しました。"
     }

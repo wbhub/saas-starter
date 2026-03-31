@@ -526,14 +526,16 @@
       "sectionTitle": "팀 이름",
       "sectionDescription": "앱, 이메일, 초대에 표시됩니다. 언제든지 바꿀 수 있습니다.",
       "saving": "저장 중...",
-      "saved": "저장됨"
+      "saved": "저장됨",
+      "autosaveHint": "입력하는 대로 자동으로 저장됩니다."
     },
     "members": {
       "title": "구성원",
       "description": "이 워크스페이스에 액세스할 수 있는 사람입니다.",
       "emptyList": "표시할 멤버가 없습니다.",
       "noOtherMembers": "아직 다른 멤버가 없습니다. 지금은 이 워크스페이스에 본인만 있습니다.",
-      "unnamed": "팀원"
+      "unnamed": "팀원",
+      "actionsSelectAriaLabel": "{name} 작업"
     },
     "roles": {
       "owner": "소유자",
@@ -699,7 +701,9 @@
     "title": "조직 설정",
     "description": "필요할 때 작업공간 이름을 변경하고 소유권을 이전하세요.",
     "fields": {
-      "teamName": "팀 이름"
+      "teamName": "팀 이름",
+      "nameSaved": "저장됨",
+      "teamNameAutosave": "입력하는 대로 자동으로 저장됩니다."
     },
     "ownership": {
       "title": "소유권 이전",
@@ -709,6 +713,7 @@
     "actions": {
       "saving": "저장 중...",
       "saveOrganization": "조직 저장",
+      "cancel": "취소",
       "transferring": "이전 중...",
       "transferOwnership": "소유권 이전"
     },
@@ -721,6 +726,7 @@
     },
     "errors": {
       "updateName": "팀 이름 업데이트에 실패했습니다.",
+      "teamNameTooShort": "팀 이름은 2자 이상이어야 합니다.",
       "selectTeammate": "소유권을 이전할 팀원을 선택하세요.",
       "transferOwnership": "소유권 이전에 실패했습니다."
     }
