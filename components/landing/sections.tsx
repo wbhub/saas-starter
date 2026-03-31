@@ -47,16 +47,13 @@ export function HeroSection() {
               loggedOutHref="/onboarding"
               loggedInLabel={t("goDashboard")}
               loggedOutLabel={t(env.APP_FREE_PLAN_ENABLED ? "startFreeNow" : "getStartedNow")}
-              className={cn(
-                buttonVariants({ variant: "default" }),
-                "inline-flex items-center gap-2 px-5 py-3 font-medium",
-              )}
+              className={cn(buttonVariants({ variant: "default", size: "control" }))}
             >
               <ArrowRight className="h-4 w-4" />
             </AuthAwareLink>
             <Link
               href="#pricing"
-              className={cn(buttonVariants({ variant: "outline" }), "px-5 py-3 font-medium")}
+              className={cn(buttonVariants({ variant: "outline", size: "control" }))}
             >
               {t("viewPricing")}
             </Link>
@@ -284,16 +281,13 @@ export function CtaFaqSection() {
               loggedOutHref="/onboarding"
               loggedInLabel={t("openDashboard")}
               loggedOutLabel={t("createAccount")}
-              className={cn(
-                buttonVariants({ variant: "default" }),
-                "inline-flex items-center gap-2 px-5 py-3 font-medium",
-              )}
+              className={cn(buttonVariants({ variant: "default", size: "control" }))}
             >
               <ArrowRight className="h-4 w-4" />
             </AuthAwareLink>
             <Link
               href="#pricing"
-              className={cn(buttonVariants({ variant: "outline" }), "px-5 py-3 font-medium")}
+              className={cn(buttonVariants({ variant: "outline", size: "control" }))}
             >
               {t("comparePlans")}
             </Link>

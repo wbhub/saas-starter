@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useReducer, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Building2, Clock, Mail, Users } from "lucide-react";
+import { Building2, Clock, Mail, UserMinus, Users } from "lucide-react";
 import { DashboardPageSection } from "@/components/dashboard-page-section";
 import { useLocale, useTranslations } from "next-intl";
 import { getCsrfHeaders } from "@/lib/http/csrf";
@@ -16,16 +16,30 @@ import {
   Select,
   SelectContent,
   SelectItem,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { FormMessage } from "@/components/ui/form-message";
-import { cn } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 type TeamMember = {
   userId: string;
   fullName: string | null;
+  email: string | null;
+  avatarUrl: string | null;
   role: "owner" | "admin" | "member";
 };
 
@@ -198,6 +212,7 @@ export function TeamInviteCard({
     message: null,
     variant: "success",
   });
+  const [removeDialogUserId, setRemoveDialogUserId] = useState<string | null>(null);
   const inviteTeamNameRef = useRef(teamName);
   const teamNameDirtyRef = useRef(false);
   const teamNameDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -603,6 +618,9 @@ export function TeamInviteCard({
               {teamNameSaveStatus === "saved" ? t("teamName.saved") : null}
             </p>
           </div>
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+            {t("teamName.autosaveHint")}
+          </p>
           {requireTeamNameOnFirstInvite ? (
             <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
               {t("inviteForm.teamNameHint")}
@@ -711,71 +729,118 @@ export function TeamInviteCard({
                   className="flex flex-col gap-2 rounded-md px-2 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
                 >
                   <div className="flex min-w-0 flex-1 items-center gap-2.5">
-                    <div
-                      className={cn(
-                        "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold",
-                        "bg-muted/80 text-foreground ring-1 ring-border",
-                      )}
-                      aria-hidden
-                    >
-                      {memberInitials(member.fullName, member.userId)}
-                    </div>
+                    <Avatar className="ring-1 ring-border" aria-hidden>
+                      <AvatarImage src={member.avatarUrl ?? ""} alt="" />
+                      <AvatarFallback className="bg-muted/80 text-[11px] font-semibold text-foreground">
+                        {memberInitials(member.fullName, member.userId)}
+                      </AvatarFallback>
+                    </Avatar>
                     <div className="min-w-0">
                       <p className="truncate font-medium text-foreground">
                         {member.fullName?.trim() || t("members.unnamed")}
                       </p>
-                      <p className="truncate font-mono text-xs text-muted-foreground">
-                        {member.userId}
-                      </p>
+                      {member.email ? (
+                        <p className="truncate text-xs text-muted-foreground">{member.email}</p>
+                      ) : null}
                     </div>
                   </div>
                   <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 pl-10 sm:pl-0">
-                    <span className="text-xs font-medium text-muted-foreground">
-                      {getRoleLabel(member.role)}
-                    </span>
-                    {canManageRole(member) ? (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="xs"
-                        disabled={updatingRoleUserId !== null}
-                        onClick={() =>
-                          updateMemberRole(
-                            member.userId,
-                            member.role === "admin" ? "member" : "admin",
-                          )
-                        }
-                        className="text-muted-foreground"
-                      >
-                        {updatingRoleUserId === member.userId
-                          ? t("actions.saving")
-                          : member.role === "admin"
-                            ? t("actions.makeMember")
-                            : t("actions.makeAdmin")}
-                      </Button>
-                    ) : null}
-                    {canRemoveMember(member) ? (
-                      <ConfirmDialog
-                        title={t("confirmations.removeMemberTitle")}
-                        description={t("confirmations.removeMember")}
-                        confirmLabel={t("actions.remove")}
-                        cancelLabel={t("actions.cancel")}
-                        variant="destructive"
-                        onConfirm={() => removeMember(member.userId)}
-                      >
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="xs"
-                          disabled={removingUserId !== null}
-                          className="border-rose-300/60 text-rose-700 hover:bg-rose-50 dark:border-rose-700/60 dark:text-rose-200 dark:hover:bg-rose-950/30"
+                    {canManageRole(member) || canRemoveMember(member) ? (
+                      <div className="w-fit min-w-0 max-w-full shrink-0">
+                        <Select
+                          value={
+                            member.role === "owner"
+                              ? "owner"
+                              : member.role === "admin"
+                                ? "admin"
+                                : "member"
+                          }
+                          aria-busy={updatingRoleUserId === member.userId}
+                          disabled={
+                            updatingRoleUserId !== null ||
+                            removingUserId !== null
+                          }
+                          onValueChange={(value) => {
+                            if (value === "remove") {
+                              setRemoveDialogUserId(member.userId);
+                              return;
+                            }
+                            if (!canManageRole(member)) {
+                              return;
+                            }
+                            const next = value as "member" | "admin";
+                            const current =
+                              member.role === "admin" ? "admin" : "member";
+                            if (next === current) {
+                              return;
+                            }
+                            void updateMemberRole(member.userId, next);
+                          }}
                         >
-                          {removingUserId === member.userId
-                            ? t("actions.removing")
-                            : t("actions.remove")}
-                        </Button>
-                      </ConfirmDialog>
-                    ) : null}
+                          <SelectTrigger
+                            size="sm"
+                            className="w-fit max-w-full min-w-0 justify-start gap-1.5 border-border/80 px-2.5 py-0 text-xs font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground data-[size=sm]:h-8 [&_[data-slot=select-value]]:gap-0 [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:text-muted-foreground"
+                            aria-label={t("members.actionsSelectAriaLabel", {
+                              name:
+                                member.fullName?.trim() ||
+                                member.email?.trim() ||
+                                t("members.unnamed"),
+                            })}
+                          >
+                            <SelectValue className="min-w-0 flex-none text-inherit">
+                              {updatingRoleUserId === member.userId
+                                ? t("actions.saving")
+                                : removingUserId === member.userId
+                                  ? t("actions.removing")
+                                  : getRoleLabel(
+                                      member.role === "owner"
+                                        ? "owner"
+                                        : member.role === "admin"
+                                          ? "admin"
+                                          : "member",
+                                    )}
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent sideOffset={2}>
+                            {canManageRole(member) ? (
+                              <>
+                                <SelectItem value="member">
+                                  {t("roles.member")}
+                                </SelectItem>
+                                <SelectItem value="admin">
+                                  {t("roles.admin")}
+                                </SelectItem>
+                              </>
+                            ) : null}
+                            {!canManageRole(member) &&
+                            member.role === "owner" &&
+                            canRemoveMember(member) ? (
+                              <SelectItem value="owner" disabled>
+                                {t("roles.owner")}
+                              </SelectItem>
+                            ) : null}
+                            {canRemoveMember(member) &&
+                            (canManageRole(member) ||
+                              member.role === "owner") ? (
+                              <SelectSeparator />
+                            ) : null}
+                            {canRemoveMember(member) ? (
+                              <SelectItem
+                                value="remove"
+                                data-variant="destructive"
+                                className="text-destructive data-[highlighted]:bg-destructive/10 data-[highlighted]:text-destructive focus:bg-destructive/10 focus:text-destructive"
+                              >
+                                {t("actions.remove")}
+                              </SelectItem>
+                            ) : null}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : (
+                      <span className="text-xs font-medium text-muted-foreground">
+                        {getRoleLabel(member.role)}
+                      </span>
+                    )}
                   </div>
                 </li>
               ))}
@@ -820,11 +885,11 @@ export function TeamInviteCard({
                     <>
                       <Button
                         type="button"
-                        variant="outline"
+                        variant="ghost"
                         size="xs"
                         disabled={resendInviteId !== null || revokeInviteId !== null}
                         onClick={() => resendInvite(invite.id)}
-                        className="text-muted-foreground"
+                        className="text-muted-foreground hover:text-foreground"
                       >
                         {resendInviteId === invite.id
                           ? t("actions.resending")
@@ -840,10 +905,10 @@ export function TeamInviteCard({
                       >
                         <Button
                           type="button"
-                          variant="outline"
+                          variant="ghost"
                           size="xs"
                           disabled={revokeInviteId !== null || resendInviteId !== null}
-                          className="border-rose-300/60 text-rose-700 hover:bg-rose-50 dark:border-rose-700/60 dark:text-rose-200 dark:hover:bg-rose-950/30"
+                          className="text-destructive hover:bg-destructive/10 hover:text-destructive dark:hover:bg-destructive/15"
                         >
                           {revokeInviteId === invite.id
                             ? t("actions.revoking")
@@ -858,6 +923,42 @@ export function TeamInviteCard({
           </ul>
         )}
       </DashboardPageSection>
+
+      <AlertDialog
+        open={removeDialogUserId !== null}
+        onOpenChange={(open) => {
+          if (!open) setRemoveDialogUserId(null);
+        }}
+      >
+        <AlertDialogContent size="lg">
+          <AlertDialogHeader className="gap-3">
+            <AlertDialogMedia className="mb-0 size-12 rounded-xl bg-destructive/10 text-destructive ring-1 ring-destructive/15 dark:ring-destructive/25">
+              <UserMinus className="size-7" strokeWidth={2} aria-hidden />
+            </AlertDialogMedia>
+            <AlertDialogTitle className="text-lg font-semibold tracking-tight text-foreground">
+              {t("confirmations.removeMemberTitle")}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base leading-relaxed text-muted-foreground">
+              {t("confirmations.removeMember")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel size="control">{t("actions.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              size="control"
+              onClick={() => {
+                if (!removeDialogUserId) return;
+                const id = removeDialogUserId;
+                setRemoveDialogUserId(null);
+                void removeMember(id);
+              }}
+            >
+              {t("actions.remove")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -552,14 +552,16 @@
       "sectionTitle": "Team name",
       "sectionDescription": "This name appears in the app, emails, and invites. You can change it anytime.",
       "saving": "Saving...",
-      "saved": "Saved"
+      "saved": "Saved",
+      "autosaveHint": "Saves automatically as you type."
     },
     "members": {
       "title": "People",
       "description": "Everyone with access to this workspace.",
       "emptyList": "No members to show.",
       "noOtherMembers": "No other members yet — it's just you in this workspace for now.",
-      "unnamed": "Teammate"
+      "unnamed": "Teammate",
+      "actionsSelectAriaLabel": "Actions for {name}"
     },
     "roles": {
       "owner": "Owner",
@@ -581,7 +583,7 @@
       "sendInvite": "Send invite"
     },
     "inviteForm": {
-      "sectionTitle": "Invite a teammate",
+      "sectionTitle": "Invite teammates",
       "sectionDescription": "We'll email a secure link they can use to join.",
       "teamNameLabel": "Team name",
       "teamNamePlaceholder": "Acme Team",
@@ -725,7 +727,9 @@
     "title": "Organization settings",
     "description": "Rename your workspace and transfer ownership when needed.",
     "fields": {
-      "teamName": "Team name"
+      "teamName": "Team name",
+      "nameSaved": "Saved",
+      "teamNameAutosave": "Saves automatically as you type."
     },
     "ownership": {
       "title": "Transfer ownership",
@@ -735,6 +739,7 @@
     "actions": {
       "saving": "Saving...",
       "saveOrganization": "Save organization",
+      "cancel": "Cancel",
       "transferring": "Transferring...",
       "transferOwnership": "Transfer ownership"
     },
@@ -747,6 +752,7 @@
     },
     "errors": {
       "updateName": "Failed to update team name.",
+      "teamNameTooShort": "Team name must be at least 2 characters.",
       "selectTeammate": "Select a teammate to transfer ownership.",
       "transferOwnership": "Failed to transfer ownership."
     }

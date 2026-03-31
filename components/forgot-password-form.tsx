@@ -67,8 +67,10 @@ export function ForgotPasswordForm() {
         </div>
         <Button
           type="submit"
+          variant="default"
+          size="control"
           disabled={loading}
-          className="h-auto w-full bg-btn-accent px-4 py-2 font-medium text-white hover:bg-btn-accent-hover"
+          className="w-full hover:bg-primary/80"
         >
           {loading ? t("sending") : t("sendResetLink")}
         </Button>

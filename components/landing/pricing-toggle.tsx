@@ -99,7 +99,10 @@ export function LandingPricingCards({ plans, showAnnualToggle }: Props) {
               loggedOutHref="/onboarding"
               loggedInLabel={t("managePlan")}
               loggedOutLabel={t("choosePlan", { name: t(`plans.${tier.key}.name`) })}
-              className={cn(buttonVariants({ variant: "default" }), "mt-6 inline-block text-sm")}
+              className={cn(
+                buttonVariants({ variant: "default", size: "control" }),
+                "mt-6 inline-flex w-full justify-center sm:w-auto",
+              )}
             />
           </article>
         ))}

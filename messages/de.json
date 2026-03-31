@@ -526,14 +526,16 @@
       "sectionTitle": "Teamname",
       "sectionDescription": "Dieser Name erscheint in der App, E-Mails und Einladungen. Du kannst ihn jederzeit ändern.",
       "saving": "Wird gespeichert...",
-      "saved": "Gespeichert"
+      "saved": "Gespeichert",
+      "autosaveHint": "Wird automatisch beim Tippen gespeichert."
     },
     "members": {
       "title": "Personen",
       "description": "Alle mit Zugriff auf diesen Workspace.",
       "emptyList": "Keine Mitglieder anzuzeigen.",
       "noOtherMembers": "Noch keine weiteren Mitglieder — vorerst bist nur du in diesem Workspace.",
-      "unnamed": "Teammitglied"
+      "unnamed": "Teammitglied",
+      "actionsSelectAriaLabel": "Aktionen für {name}"
     },
     "roles": {
       "owner": "Owner",
@@ -555,7 +557,7 @@
       "sendInvite": "Einladung senden"
     },
     "inviteForm": {
-      "sectionTitle": "Teammitglied einladen",
+      "sectionTitle": "Teammitglieder einladen",
       "sectionDescription": "Wir senden einen sicheren Link per E-Mail zum Beitreten.",
       "teamNameLabel": "Teamname",
       "teamNamePlaceholder": "Acme Team",
@@ -699,7 +701,9 @@
     "title": "Organisationseinstellungen",
     "description": "Benenne deinen Workspace um und übertrage bei Bedarf den Besitz.",
     "fields": {
-      "teamName": "Teamname"
+      "teamName": "Teamname",
+      "nameSaved": "Gespeichert",
+      "teamNameAutosave": "Wird automatisch beim Tippen gespeichert."
     },
     "ownership": {
       "title": "Besitz übertragen",
@@ -709,6 +713,7 @@
     "actions": {
       "saving": "Wird gespeichert...",
       "saveOrganization": "Organisation speichern",
+      "cancel": "Abbrechen",
       "transferring": "Wird übertragen...",
       "transferOwnership": "Besitz übertragen"
     },
@@ -721,6 +726,7 @@
     },
     "errors": {
       "updateName": "Teamname konnte nicht aktualisiert werden.",
+      "teamNameTooShort": "Der Teamname muss mindestens 2 Zeichen lang sein.",
       "selectTeammate": "Wähle ein Teammitglied aus, um den Besitz zu übertragen.",
       "transferOwnership": "Besitz konnte nicht übertragen werden."
     }

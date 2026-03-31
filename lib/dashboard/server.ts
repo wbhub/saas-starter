@@ -15,6 +15,7 @@ import { getCachedTeamContextForUser } from "@/lib/team-context-cache";
 import { getTeamMaxMembers } from "@/lib/team/limits";
 import { logger } from "@/lib/logger";
 import { CSRF_COOKIE_NAME } from "@/lib/security/csrf";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 type ProfileRow = {
@@ -32,10 +33,12 @@ type TeamMembershipRow = {
     | {
         id: string;
         full_name: string | null;
+        avatar_url: string | null;
       }
     | {
         id: string;
         full_name: string | null;
+        avatar_url: string | null;
       }[]
     | null;
 };
@@ -57,6 +60,8 @@ type TeamMember = {
   userId: string;
   fullName: string | null;
   role: "owner" | "admin" | "member";
+  email: string | null;
+  avatarUrl: string | null;
 };
 
 export type DashboardTeamOption = {
@@ -275,7 +280,7 @@ export async function getTeamMembersAndPendingInvites(supabase: SupabaseClient, 
       supabase
         .from("team_memberships")
         .select(
-          "user_id,role,created_at,profiles!team_memberships_user_id_profiles_fkey(id,full_name)",
+          "user_id,role,created_at,profiles!team_memberships_user_id_profiles_fkey(id,full_name,avatar_url)",
         )
         .eq("team_id", teamId)
         .order("created_at", { ascending: true })
@@ -322,7 +327,7 @@ export async function getTeamMembersAndPendingInvites(supabase: SupabaseClient, 
       });
     }
 
-    const teamMembers = mapMembershipsToTeamMembers(memberships);
+    const teamMembers = await enrichTeamMembersWithEmails(mapMembershipsToTeamMembers(memberships));
     const pendingInvites = pendingInvitesData.map((row) => ({
       id: row.id,
       email: row.email,
@@ -341,7 +346,9 @@ export async function getTeamMembers(
   const queryLimit = getTeamMaxMembers();
   const membershipResult = await supabase
     .from("team_memberships")
-    .select("user_id,role,created_at,profiles!team_memberships_user_id_profiles_fkey(id,full_name)")
+    .select(
+      "user_id,role,created_at,profiles!team_memberships_user_id_profiles_fkey(id,full_name,avatar_url)",
+    )
     .eq("team_id", teamId)
     .order("created_at", { ascending: true })
     .limit(queryLimit)
@@ -354,22 +361,63 @@ export async function getTeamMembers(
     return [];
   }
 
-  return mapMembershipsToTeamMembers(membershipResult.data ?? []);
+  return enrichTeamMembersWithEmails(mapMembershipsToTeamMembers(membershipResult.data ?? []));
 }
 
-function mapMembershipsToTeamMembers(memberships: TeamMembershipRow[]): TeamMember[] {
-  const profileNameMap = new Map(
-    memberships.map((row) => {
-      const joinedProfile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
-      return [row.user_id, joinedProfile?.full_name ?? null] as const;
+async function fetchAuthEmailsByUserIds(userIds: string[]): Promise<Map<string, string>> {
+  const unique = [...new Set(userIds)];
+  if (unique.length === 0) {
+    return new Map();
+  }
+
+  const admin = createAdminClient();
+  const settled = await Promise.allSettled(
+    unique.map(async (userId) => {
+      const { data, error } = await admin.auth.admin.getUserById(userId);
+      if (error) {
+        logger.warn("Failed to load auth user email for team member list.", { userId, error });
+        return [userId, null] as const;
+      }
+      const email = data.user?.email?.trim() || null;
+      return [userId, email] as const;
     }),
   );
 
-  return memberships.map((row) => ({
-    userId: row.user_id,
-    fullName: profileNameMap.get(row.user_id) ?? null,
-    role: row.role,
+  const map = new Map<string, string>();
+  for (const entry of settled) {
+    if (entry.status !== "fulfilled") {
+      logger.warn("Failed to load auth user email for team member list.", {
+        error: entry.reason,
+      });
+      continue;
+    }
+    const [userId, email] = entry.value;
+    if (email) {
+      map.set(userId, email);
+    }
+  }
+  return map;
+}
+
+async function enrichTeamMembersWithEmails(members: TeamMember[]): Promise<TeamMember[]> {
+  const emailMap = await fetchAuthEmailsByUserIds(members.map((m) => m.userId));
+  return members.map((m) => ({
+    ...m,
+    email: emailMap.get(m.userId) ?? null,
   }));
+}
+
+function mapMembershipsToTeamMembers(memberships: TeamMembershipRow[]): TeamMember[] {
+  return memberships.map((row) => {
+    const joinedProfile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
+    return {
+      userId: row.user_id,
+      fullName: joinedProfile?.full_name ?? null,
+      role: row.role,
+      email: null,
+      avatarUrl: joinedProfile?.avatar_url ?? null,
+    };
+  });
 }
 
 function getUsageMonthStart(value: string) {

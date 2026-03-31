@@ -298,8 +298,10 @@ export function AuthForm({
         ) : null}
         <Button
           type="submit"
+          variant="default"
+          size="control"
           disabled={loading}
-          className="h-auto w-full bg-btn-accent px-4 py-2 font-medium text-white hover:bg-btn-accent-hover"
+          className="w-full hover:bg-primary/80"
         >
           {loading ? t("pleaseWait") : isLogin ? t("submit.login") : t("submit.signup")}
         </Button>
@@ -320,18 +322,18 @@ export function AuthForm({
         <div className="mt-5 flex items-center justify-between gap-3 text-sm">
           <p className="text-muted-foreground">
             {t("needAccount")}{" "}
-            <Link href="/onboarding" className="font-medium text-btn-accent hover:opacity-90">
+            <Link href="/onboarding" className="font-medium text-primary hover:opacity-90">
               {t("signUp")}
             </Link>
           </p>
-          <Link href="/forgot-password" className="font-medium text-btn-accent hover:opacity-90">
+          <Link href="/forgot-password" className="font-medium text-primary hover:opacity-90">
             {t("forgotPassword")}
           </Link>
         </div>
       ) : (
         <p className="mt-5 text-sm text-muted-foreground">
           {t("alreadyHaveAccount")}{" "}
-          <Link href="/login" className="font-medium text-btn-accent hover:opacity-90">
+          <Link href="/login" className="font-medium text-primary hover:opacity-90">
             {t("logIn")}
           </Link>
         </p>

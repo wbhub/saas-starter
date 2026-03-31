@@ -526,14 +526,16 @@
       "sectionTitle": "Nombre del equipo",
       "sectionDescription": "Este nombre aparece en la app, los correos y las invitaciones. Puedes cambiarlo cuando quieras.",
       "saving": "Guardando...",
-      "saved": "Guardado"
+      "saved": "Guardado",
+      "autosaveHint": "Se guarda automáticamente mientras escribes."
     },
     "members": {
       "title": "Personas",
       "description": "Quienes tienen acceso a este espacio de trabajo.",
       "emptyList": "No hay miembros para mostrar.",
       "noOtherMembers": "Aún no hay más miembros — por ahora solo estás tú en este espacio.",
-      "unnamed": "Compañero"
+      "unnamed": "Compañero",
+      "actionsSelectAriaLabel": "Acciones para {name}"
     },
     "roles": {
       "owner": "Propietario",
@@ -555,7 +557,7 @@
       "sendInvite": "Enviar invitación"
     },
     "inviteForm": {
-      "sectionTitle": "Invitar a un compañero",
+      "sectionTitle": "Invitar compañeros",
       "sectionDescription": "Enviaremos un enlace seguro por correo para unirse.",
       "teamNameLabel": "Nombre del equipo",
       "teamNamePlaceholder": "Equipo Acme",
@@ -699,7 +701,9 @@
     "title": "Configuración de la organización",
     "description": "Renombra tu espacio de trabajo y transfiere la propiedad cuando lo necesites.",
     "fields": {
-      "teamName": "Nombre del equipo"
+      "teamName": "Nombre del equipo",
+      "nameSaved": "Guardado",
+      "teamNameAutosave": "Se guarda automáticamente mientras escribes."
     },
     "ownership": {
       "title": "Transferir propiedad",
@@ -709,6 +713,7 @@
     "actions": {
       "saving": "Guardando...",
       "saveOrganization": "Guardar organización",
+      "cancel": "Cancelar",
       "transferring": "Transfiriendo...",
       "transferOwnership": "Transferir propiedad"
     },
@@ -721,6 +726,7 @@
     },
     "errors": {
       "updateName": "No se pudo actualizar el nombre del equipo.",
+      "teamNameTooShort": "El nombre del equipo debe tener al menos 2 caracteres.",
       "selectTeammate": "Selecciona un compañero para transferir la propiedad.",
       "transferOwnership": "No se pudo transferir la propiedad."
     }
