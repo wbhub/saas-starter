@@ -1,28 +1,35 @@
-import { logAuditEvent } from "@/lib/audit";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { jsonError, jsonSuccess } from "@/lib/http/api-json";
 import { withAuthedRoute } from "@/lib/http/authed-route";
 import { getClientRateLimitIdentifier } from "@/lib/http/client-ip";
 import { z } from "@/lib/http/request-validation";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { hashInviteToken } from "@/lib/team-invites";
-import { syncTeamSeatQuantity } from "@/lib/stripe/seats";
-import { enqueueSeatSyncRetry } from "@/lib/stripe/seat-sync-retries";
-import { getTeamMaxMembers } from "@/lib/team/limits";
-import { logger } from "@/lib/logger";
 import { getRouteTranslator } from "@/lib/i18n/locale";
-import { invalidateCachedTeamContextForUser } from "@/lib/team-context-cache";
-import { invalidateCachedDashboardTeamSnapshot } from "@/lib/dashboard/team-snapshot-cache";
+import { acceptTeamInvite } from "@/lib/team-invites/accept-invite";
 
 const acceptInvitePayloadSchema = z.object({
   token: z.string().trim().min(10).max(256),
 });
 
-type AcceptInviteRpcResult = {
-  ok: boolean;
-  error_code: string | null;
-  team_id: string | null;
-  team_name: string | null;
+const ERROR_STATUS: Record<string, number> = {
+  no_email: 400,
+  not_found: 404,
+  already_accepted: 409,
+  expired: 410,
+  email_mismatch: 403,
+  team_full: 409,
+  rpc_error: 500,
+  unknown: 500,
+};
+
+const ERROR_MESSAGE_KEY: Record<string, string> = {
+  no_email: "errors.noEmailOnAccount",
+  not_found: "errors.inviteNotFound",
+  already_accepted: "errors.inviteAlreadyAccepted",
+  expired: "errors.inviteExpired",
+  email_mismatch: "errors.inviteEmailMismatch",
+  team_full: "errors.teamMemberLimitReached",
+  rpc_error: "errors.unableToAcceptInvite",
+  unknown: "errors.unableToAcceptInvite",
 };
 
 export async function POST(request: Request) {
@@ -50,126 +57,28 @@ export async function POST(request: Request) {
       ];
     },
     handler: async ({ user, requestId, body }) => {
-      const { token } = body;
-
-      const userEmail = user.email?.trim().toLowerCase();
-      if (!userEmail) {
-        return jsonError(t("errors.noEmailOnAccount"), 400);
-      }
-
-      const tokenHash = hashInviteToken(token);
-
-      const admin = createAdminClient();
-      const teamMaxMembers = getTeamMaxMembers();
-
-      const { data, error: rpcError } = await admin.rpc("accept_team_invite_atomic", {
-        p_token_hash: tokenHash,
-        p_user_id: user.id,
-        p_user_email: userEmail,
-        p_max_members: teamMaxMembers,
+      const result = await acceptTeamInvite({
+        token: body.token,
+        userId: user.id,
+        userEmail: user.email,
+        requestId,
       });
 
-      if (rpcError) {
-        logger.error("Failed to accept invite atomically", rpcError, {
-          requestId,
-          userId: user.id,
-        });
-        logAuditEvent({
-          action: "team.invite.accept",
-          outcome: "failure",
-          actorUserId: user.id,
-          metadata: { reason: "rpc_error" },
-        });
-        return jsonError(t("errors.unableToAcceptInvite"), 500);
+      if (!result.ok) {
+        const status = ERROR_STATUS[result.errorCode] ?? 500;
+        const messageKey = ERROR_MESSAGE_KEY[result.errorCode] ?? "errors.unableToAcceptInvite";
+        return jsonError(t(messageKey), status);
       }
 
-      const rpcRow = (Array.isArray(data) ? data[0] : data) as AcceptInviteRpcResult | null;
-      if (!rpcRow || !rpcRow.ok) {
-        const code = rpcRow?.error_code;
-        if (code === "not_found") {
-          logAuditEvent({
-            action: "team.invite.accept",
-            outcome: "denied",
-            actorUserId: user.id,
-            metadata: { reason: code },
-          });
-          return jsonError(t("errors.inviteNotFound"), 404);
-        }
-        if (code === "already_accepted") {
-          return jsonError(t("errors.inviteAlreadyAccepted"), 409);
-        }
-        if (code === "expired") {
-          return jsonError(t("errors.inviteExpired"), 410);
-        }
-        if (code === "email_mismatch") {
-          return jsonError(t("errors.inviteEmailMismatch"), 403);
-        }
-        if (code === "team_full") {
-          return jsonError(t("errors.teamMemberLimitReached"), 409);
-        }
-        return jsonError(t("errors.unableToAcceptInvite"), 500);
-      }
-
-      await Promise.all([
-        invalidateCachedTeamContextForUser(user.id),
-        rpcRow.team_id ? invalidateCachedDashboardTeamSnapshot(rpcRow.team_id) : Promise.resolve(),
-      ]);
-
-      let seatSynced = true;
-      if (rpcRow.team_id) {
-        try {
-          await syncTeamSeatQuantity(rpcRow.team_id, {
-            idempotencyKey: `seat-sync:accept-invite:${rpcRow.team_id}:${user.id}`,
-          });
-        } catch (error) {
-          seatSynced = false;
-          logger.error("Accepted invite but failed to sync Stripe seat quantity", error, {
-            requestId,
-            teamId: rpcRow.team_id,
-            userId: user.id,
-          });
-          try {
-            await enqueueSeatSyncRetry({
-              teamId: rpcRow.team_id,
-              source: "team.invite.accept",
-              error,
-            });
-          } catch (retryError) {
-            logger.error("Failed to enqueue seat sync retry after invite acceptance", retryError, {
-              requestId,
-              teamId: rpcRow.team_id,
-              userId: user.id,
-            });
-          }
-        }
-      }
-
-      if (!seatSynced) {
-        logAuditEvent({
-          action: "team.invite.accept",
-          outcome: "failure",
-          actorUserId: user.id,
-          teamId: rpcRow.team_id,
-          metadata: { reason: "seat_sync_failed" },
-        });
+      if (result.warning === "seat_sync_failed") {
         return jsonSuccess({
           warning: t("errors.billingSyncFailedAfterAccept"),
           inviteAccepted: true,
-          teamName: rpcRow.team_name ?? t("defaults.teamName"),
+          teamName: result.teamName,
         });
       }
 
-      logAuditEvent({
-        action: "team.invite.accept",
-        outcome: "success",
-        actorUserId: user.id,
-        teamId: rpcRow.team_id,
-        metadata: { seatSynced: true },
-      });
-
-      return jsonSuccess({
-        teamName: rpcRow.team_name ?? t("defaults.teamName"),
-      });
+      return jsonSuccess({ teamName: result.teamName });
     },
   });
 }

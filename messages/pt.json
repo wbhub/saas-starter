@@ -751,20 +751,16 @@
       "sendFailed": "Falha ao enviar e-mail de suporte."
     }
   },
-  "InviteAcceptCard": {
-    "title": "Convite da equipe",
-    "description": "Aceite este convite para ingressar no espaço de trabalho compartilhado.",
-    "loginFirst": "Faça login primeiro e depois retorne a esta página para aceitar o convite.",
-    "actions": {
-      "accepting": "Aceitando...",
-      "acceptInvite": "Aceitar convite"
-    },
-    "messages": {
-      "joined": "Inscreveu-se em {teamName} com sucesso.",
-      "defaultTeamName": "equipe"
-    },
+  "InviteErrorCard": {
+    "title": "Erro no convite",
+    "goDashboard": "Ir para o painel",
     "errors": {
-      "unableToAccept": "Não foi possível aceitar o convite."
+      "not_found": "Este link de convite não foi encontrado.",
+      "expired": "Este link de convite expirou.",
+      "email_mismatch": "Este convite foi enviado para um endereço de e-mail diferente.",
+      "team_full": "Esta equipe atingiu o limite de membros.",
+      "no_email": "Nenhum e-mail encontrado para esta conta.",
+      "default": "Não foi possível aceitar este convite."
     }
   },
   "ApiTeamInvites": {
