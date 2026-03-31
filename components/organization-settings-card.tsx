@@ -1,11 +1,11 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { Loader2, Check } from "lucide-react";
 import { getCsrfHeaders } from "@/lib/http/csrf";
 import { Button } from "@/components/ui/button";
-import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -41,18 +41,32 @@ export function OrganizationSettingsCard({
   const router = useRouter();
   const [nameValue, setNameValue] = useState(teamName);
   const [savingName, setSavingName] = useState(false);
+  const [showSaved, setShowSaved] = useState(false);
   const [transferring, setTransferring] = useState(false);
   const [nextOwnerUserId, setNextOwnerUserId] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const ownershipCandidates = useMemo(
     () => members.filter((member) => member.userId !== currentUserId && member.role !== "owner"),
     [members, currentUserId],
   );
 
-  async function saveTeamName(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  useEffect(() => {
+    if (feedback) {
+      setShowSaved(true);
+      const timer = setTimeout(() => setShowSaved(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [feedback]);
+
+  async function saveTeamName(event?: FormEvent<HTMLFormElement>) {
+    if (event) event.preventDefault();
+    
+    // Don't save if the name hasn't changed or is invalid
+    if (nameValue === teamName || nameValue.trim().length < 2) return;
+    
     setSavingName(true);
     setFeedback(null);
     setError(null);
@@ -116,28 +130,40 @@ export function OrganizationSettingsCard({
   }
 
   return (
-    <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
+    <section className="rounded-xl border app-border-subtle app-surface p-6 sm:p-8 shadow-sm">
       <h2 className="text-lg font-semibold text-foreground">{t("title")}</h2>
       <p className="mt-2 text-muted-foreground">{t("description")}</p>
 
-      <form className="mt-4 space-y-3" onSubmit={saveTeamName}>
+      <form ref={formRef} className="mt-6 space-y-6" onSubmit={saveTeamName}>
         <div>
-          <Label className="mb-1">{t("fields.teamName")}</Label>
+          <div className="flex items-center justify-between mb-1">
+            <Label>{t("fields.teamName")}</Label>
+            <div className="flex items-center h-5">
+              {savingName && (
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  <span>{t("actions.saving")}</span>
+                </div>
+              )}
+              {showSaved && !savingName && (
+                <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+                  <Check className="h-3 w-3" />
+                  <span>Saved</span>
+                </div>
+              )}
+            </div>
+          </div>
           <Input
             type="text"
             value={nameValue}
             onChange={(event) => setNameValue(event.target.value)}
+            onBlur={() => saveTeamName()}
             maxLength={80}
             minLength={2}
             disabled={currentUserRole === "member" || savingName}
+            className="max-w-md"
           />
         </div>
-        <SubmitButton
-          loading={savingName}
-          disabled={currentUserRole === "member"}
-          pendingLabel={t("actions.saving")}
-          idleLabel={t("actions.saveOrganization")}
-        />
       </form>
 
       {currentUserRole === "owner" ? (
@@ -150,7 +176,7 @@ export function OrganizationSettingsCard({
               onValueChange={(value) => setNextOwnerUserId(value ?? "")}
               disabled={transferring || ownershipCandidates.length === 0}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="max-w-md">
                 <SelectValue placeholder={t("ownership.selectTeammate")} />
               </SelectTrigger>
               <SelectContent>
@@ -181,8 +207,11 @@ export function OrganizationSettingsCard({
         </div>
       ) : null}
 
-      <FormMessage status="success" message={feedback} />
-      <FormMessage status="error" message={error} />
+      {error && (
+        <div className="mt-4">
+          <FormMessage status="error" message={error} />
+        </div>
+      )}
     </section>
   );
 }

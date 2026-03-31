@@ -3,11 +3,9 @@ import Link from "next/link";
 import { DashboardSettingsCard } from "@/components/dashboard-settings-card";
 import { DangerZoneCard } from "@/components/danger-zone-card";
 import { EmailSettingsCard } from "@/components/email-settings-card";
-import { NotificationPreferencesCard } from "@/components/notification-preferences-card";
 import { OrganizationSettingsCard } from "@/components/organization-settings-card";
 import { SecuritySettingsCard } from "@/components/security-settings-card";
 import {
-  getDashboardNotificationPreferences,
   getDashboardShellData,
   getTeamMembers,
 } from "@/lib/dashboard/server";
@@ -22,12 +20,11 @@ export default async function DashboardSettingsPage() {
     return null;
   }
 
-  const notificationPreferences = await getDashboardNotificationPreferences(supabase, user.id);
   const teamMembers =
     teamUiMode === "paid_team" ? await getTeamMembers(supabase, teamContext.teamId) : [];
 
   return (
-    <>
+    <div className="space-y-8">
       <div>
         <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
           {t("header.eyebrow")}
@@ -50,15 +47,6 @@ export default async function DashboardSettingsPage() {
         <EmailSettingsCard email={user.email ?? null} csrfToken={csrfToken} />
       </section>
 
-      <section>
-        <NotificationPreferencesCard
-          marketingEmails={notificationPreferences.marketing_emails}
-          productUpdates={notificationPreferences.product_updates}
-          securityAlerts={notificationPreferences.security_alerts}
-          csrfToken={csrfToken}
-        />
-      </section>
-
       {teamUiMode === "paid_team" ? (
         <section>
           <OrganizationSettingsCard
@@ -71,7 +59,7 @@ export default async function DashboardSettingsPage() {
       ) : null}
 
       {teamUiMode === "paid_solo" ? (
-        <section className="rounded-xl bg-card ring-1 ring-border p-6">
+        <section className="rounded-xl border app-border-subtle app-surface p-6 sm:p-8 shadow-sm">
           <h2 className="text-lg font-semibold text-foreground">{t("inviteTeammates.title")}</h2>
           <p className="mt-2 text-muted-foreground">{t("inviteTeammates.description")}</p>
           <Link
@@ -90,6 +78,6 @@ export default async function DashboardSettingsPage() {
       <section>
         <DangerZoneCard email={user.email ?? null} csrfToken={csrfToken} />
       </section>
-    </>
+    </div>
   );
 }

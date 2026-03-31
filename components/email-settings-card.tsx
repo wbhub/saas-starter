@@ -23,14 +23,14 @@ export function EmailSettingsCard({ email, csrfToken }: EmailSettingsCardProps) 
   const [state, formAction] = useActionState(requestEmailChange, initialState);
 
   return (
-    <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
+    <section className="rounded-xl border app-border-subtle app-surface p-6 sm:p-8 shadow-sm">
       <h2 className="text-lg font-semibold text-foreground">{t("title")}</h2>
       <p className="mt-2 text-muted-foreground">{t("description")}</p>
-      <form action={formAction} className="mt-4 space-y-3">
+      <form action={formAction} className="mt-6 space-y-6">
         <input type="hidden" name="csrf_token" value={csrfToken} />
         <div>
           <Label className="mb-1">{t("fields.currentEmail")}</Label>
-          <Input type="email" variant="readonly" value={email ?? ""} />
+          <Input type="email" variant="readonly" value={email ?? ""} className="max-w-md" />
         </div>
         <div>
           <Label className="mb-1">{t("fields.newEmail")}</Label>
@@ -40,6 +40,7 @@ export function EmailSettingsCard({ email, csrfToken }: EmailSettingsCardProps) 
             required
             autoComplete="email"
             placeholder={t("fields.newEmailPlaceholder")}
+            className="max-w-md"
           />
         </div>
         <SubmitButton

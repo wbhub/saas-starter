@@ -265,6 +265,11 @@ export async function updateDashboardSettings(
 
   const fullNameInput = formData.get("fullName");
   const avatarUrlInput = formData.get("avatarUrl");
+  
+  // #region agent log
+  fetch('http://127.0.0.1:7682/ingest/9890b261-4ef1-42f4-9a39-56fb9758768c',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'a55fd0'},body:JSON.stringify({sessionId:'a55fd0',location:'app/dashboard/actions.ts:269',message:'Incoming form data',data:{fullNameInput, avatarUrlInput},timestamp:Date.now(),runId:'run1',hypothesisId:'2'})}).catch(()=>{});
+  // #endregion
+
   const fullName =
     typeof fullNameInput === "string" && fullNameInput.trim().length > 0
       ? fullNameInput.trim()
@@ -313,6 +318,12 @@ export async function updateDashboardSettings(
 
   if (previousAvatarUrl && previousAvatarUrl !== sanitizedAvatarUrl) {
     const previousPhotoPath = extractProfilePhotoPath(previousAvatarUrl, storageOrigin);
+    const newPhotoPath = sanitizedAvatarUrl ? extractProfilePhotoPath(sanitizedAvatarUrl, storageOrigin) : null;
+    
+    // #region agent log
+    fetch('http://127.0.0.1:7682/ingest/9890b261-4ef1-42f4-9a39-56fb9758768c',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'a55fd0'},body:JSON.stringify({sessionId:'a55fd0',location:'app/dashboard/actions.ts:318',message:'Avatar cleanup check',data:{previousAvatarUrl, sanitizedAvatarUrl, previousPhotoPath, newPhotoPath},timestamp:Date.now(),runId:'run1',hypothesisId:'1'})}).catch(()=>{});
+    // #endregion
+
     if (previousPhotoPath && isOwnedProfilePhotoPath(previousPhotoPath, user.id)) {
       const adminClient = createAdminClient();
       const { error: removeError } = await adminClient.storage
@@ -332,7 +343,7 @@ export async function updateDashboardSettings(
     }
   }
 
-  revalidatePath("/dashboard");
+  revalidatePath("/", "layout");
   return {
     status: "success",
     message: "Settings saved.",
@@ -452,7 +463,7 @@ export async function updateNotificationPreferences(
     };
   }
 
-  revalidatePath("/dashboard/settings");
+  revalidatePath("/", "layout");
   return {
     status: "success",
     message: "Notification preferences saved.",

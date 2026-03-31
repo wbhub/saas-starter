@@ -24,11 +24,11 @@ export function DangerZoneCard({ email, csrfToken }: DangerZoneCardProps) {
   const [state, formAction] = useActionState(deleteAccount, initialState);
 
   return (
-    <section className="rounded-xl border border-rose-300/60 bg-rose-50/60 p-5 shadow-sm dark:border-rose-900/70 dark:bg-rose-950/20">
+    <section className="rounded-xl border border-rose-300/60 bg-rose-50/60 p-6 sm:p-8 shadow-sm dark:border-rose-900/70 dark:bg-rose-950/20">
       <h2 className="text-lg font-semibold text-rose-800 dark:text-rose-200">{t("title")}</h2>
       <p className="mt-2 text-sm text-rose-700/90 dark:text-rose-200/80">{t("description")}</p>
 
-      <div className="mt-4">
+      <div className="mt-6">
         <form action={logoutAllSessions}>
           <input type="hidden" name="csrf_token" value={csrfToken} />
           <Button
@@ -41,7 +41,7 @@ export function DangerZoneCard({ email, csrfToken }: DangerZoneCardProps) {
         </form>
       </div>
 
-      <form action={formAction} className="mt-4 space-y-3">
+      <form action={formAction} className="mt-6 space-y-4">
         <input type="hidden" name="csrf_token" value={csrfToken} />
         <div>
           <Label className="mb-1 text-rose-800 dark:text-rose-100">
@@ -51,7 +51,7 @@ export function DangerZoneCard({ email, csrfToken }: DangerZoneCardProps) {
             name="confirmDelete"
             required
             autoComplete="off"
-            className="border-rose-300/80 bg-white ring-rose-400/50 dark:border-rose-800 dark:bg-rose-950/30"
+            className="max-w-md border-rose-300/80 bg-white ring-rose-400/50 dark:border-rose-800 dark:bg-rose-950/30"
             placeholder={t("fields.deleteToken")}
           />
         </div>
@@ -65,10 +65,10 @@ export function DangerZoneCard({ email, csrfToken }: DangerZoneCardProps) {
             required
             autoComplete="off"
             placeholder={email ?? t("fields.confirmEmailPlaceholder")}
-            className="border-rose-300/80 bg-white ring-rose-400/50 dark:border-rose-800 dark:bg-rose-950/30"
+            className="max-w-md border-rose-300/80 bg-white ring-rose-400/50 dark:border-rose-800 dark:bg-rose-950/30"
           />
         </div>
-        <Label className="flex items-start gap-2 rounded-lg border border-rose-300/80 p-3 text-sm font-normal text-rose-800 dark:border-rose-800 dark:text-rose-100">
+        <Label className="flex items-start gap-2 rounded-lg border border-rose-300/80 p-3 text-sm font-normal text-rose-800 dark:border-rose-800 dark:text-rose-100 max-w-md">
           <Checkbox name="confirmUnderstood" required className="mt-0.5" />
           <span>{t("fields.confirmPermanent")}</span>
         </Label>
