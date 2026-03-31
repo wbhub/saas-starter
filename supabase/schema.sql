@@ -941,6 +941,7 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+#variable_conflict use_column
 declare
   v_invite public.team_invites%rowtype;
   v_team_name text;
