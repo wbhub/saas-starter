@@ -494,6 +494,7 @@
     "actions": {
       "saving": "Économie..."
     },
+    "profileRowHint": "Votre photo et votre nom d'affichage sont enregistrés automatiquement.",
     "fields": {
       "displayName": "Nom d'affichage",
       "displayNamePlaceholder": "Votre nom",
@@ -506,6 +507,9 @@
       "profilePhoto": "Photo de profil",
       "profileAvatarAlt": "Avatar du profil",
       "changePhoto": "Changer la photo",
+      "uploadPhotoAria": "Télécharger une photo de profil",
+      "changePhotoAria": "Choisir une nouvelle photo de profil",
+      "removePhotoAria": "Supprimer la photo de profil",
       "autosaveHint": "Enregistrement automatique lorsque vous ajoutez ou supprimez une photo.",
       "removePhoto": "Supprimer la photo",
       "errors": {

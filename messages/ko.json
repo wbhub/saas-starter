@@ -494,6 +494,7 @@
     "actions": {
       "saving": "저장 중..."
     },
+    "profileRowHint": "사진과 표시 이름은 자동으로 저장됩니다.",
     "fields": {
       "displayName": "표시 이름",
       "displayNamePlaceholder": "이름",
@@ -506,6 +507,9 @@
       "profilePhoto": "프로필 사진",
       "profileAvatarAlt": "프로필 아바타",
       "changePhoto": "사진 변경",
+      "uploadPhotoAria": "프로필 사진 업로드",
+      "changePhotoAria": "새 프로필 사진 선택",
+      "removePhotoAria": "프로필 사진 제거",
       "autosaveHint": "사진을 업로드하거나 제거하면 자동으로 저장됩니다.",
       "removePhoto": "사진 제거",
       "errors": {

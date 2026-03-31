@@ -494,6 +494,7 @@
     "actions": {
       "saving": "保存..."
     },
+    "profileRowHint": "照片和显示名称会自动保存。",
     "fields": {
       "displayName": "显示名称",
       "displayNamePlaceholder": "你的名字",
@@ -506,6 +507,9 @@
       "profilePhoto": "个人资料照片",
       "profileAvatarAlt": "个人资料头像",
       "changePhoto": "更换照片",
+      "uploadPhotoAria": "上传个人资料照片",
+      "changePhotoAria": "选择新的个人资料照片",
+      "removePhotoAria": "删除个人资料照片",
       "autosaveHint": "上传或删除照片后会自动保存。",
       "removePhoto": "删除照片",
       "errors": {

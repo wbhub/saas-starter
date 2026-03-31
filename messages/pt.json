@@ -494,6 +494,7 @@
     "actions": {
       "saving": "Salvando..."
     },
+    "profileRowHint": "Sua foto e nome de exibição são salvos automaticamente.",
     "fields": {
       "displayName": "Nome de exibição",
       "displayNamePlaceholder": "Seu nome",
@@ -506,6 +507,9 @@
       "profilePhoto": "Foto do perfil",
       "profileAvatarAlt": "Avatar do perfil",
       "changePhoto": "Alterar foto",
+      "uploadPhotoAria": "Enviar foto do perfil",
+      "changePhotoAria": "Escolher nova foto do perfil",
+      "removePhotoAria": "Remover foto do perfil",
       "autosaveHint": "Salva automaticamente ao enviar ou remover uma foto.",
       "removePhoto": "Remover foto",
       "errors": {

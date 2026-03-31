@@ -494,6 +494,7 @@
     "actions": {
       "saving": "Guardando..."
     },
+    "profileRowHint": "Tu foto y nombre para mostrar se guardan automáticamente.",
     "fields": {
       "displayName": "Nombre para mostrar",
       "displayNamePlaceholder": "Tu nombre",
@@ -506,6 +507,9 @@
       "profilePhoto": "Foto de perfil",
       "profileAvatarAlt": "Avatar de perfil",
       "changePhoto": "Cambiar foto",
+      "uploadPhotoAria": "Subir foto de perfil",
+      "changePhotoAria": "Elegir una nueva foto de perfil",
+      "removePhotoAria": "Quitar foto de perfil",
       "autosaveHint": "Se guarda automáticamente al subir o quitar una foto.",
       "removePhoto": "Quitar foto",
       "errors": {

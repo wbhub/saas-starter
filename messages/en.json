@@ -520,6 +520,7 @@
     "actions": {
       "saving": "Saving..."
     },
+    "profileRowHint": "Your photo and display name save automatically.",
     "fields": {
       "displayName": "Display name",
       "displayNamePlaceholder": "Your name",
@@ -532,6 +533,9 @@
       "profilePhoto": "Profile photo",
       "profileAvatarAlt": "Profile avatar",
       "changePhoto": "Change photo",
+      "uploadPhotoAria": "Upload a profile photo",
+      "changePhotoAria": "Choose a new profile photo",
+      "removePhotoAria": "Remove profile photo",
       "autosaveHint": "Saves automatically when you upload or remove a photo.",
       "removePhoto": "Remove photo",
       "errors": {
