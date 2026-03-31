@@ -42,6 +42,12 @@ function mockBillingPageDependencies(options: {
           if (key === "paidTeam.breakdown") {
             return `${values?.seats ?? ""} seats × ${values?.seatCost ?? ""} = ${values?.monthlyTotal ?? ""}/mo`;
           }
+          if (key === "currentSubscription.totalMonthlyValue" && values?.amount) {
+            return `${values.amount}/mo`;
+          }
+          if (key === "currentSubscription.totalYearlyValue" && values?.amount) {
+            return `${values.amount}/yr`;
+          }
           const dictionary: Record<string, string> = {
             "header.eyebrow": "Billing",
             "header.title": "Manage your subscription",
@@ -55,6 +61,11 @@ function mockBillingPageDependencies(options: {
             "currentSubscription.statusLabels.active": "ACTIVE",
             "currentSubscription.seats": "Seats",
             "currentSubscription.perSeatCost": "Per-seat cost",
+            "currentSubscription.totalCost": "Total cost",
+            "currentSubscription.billingInterval": "Billing interval",
+            "currentSubscription.monthly": "Monthly",
+            "currentSubscription.annual": "Annual",
+            "currentSubscription.billedAnnually": "billed annually",
             "currentSubscription.periodEnd": "Period end",
             "currentSubscription.notAvailable": "N/A",
             "currentSubscription.noSubscription": "No subscription yet.",
@@ -251,6 +262,8 @@ describe("Dashboard billing page free plan behavior", () => {
     expect(html).not.toContain("Invite teammates when you are ready");
     expect(html).toContain('data-current-plan="growth"');
     expect(html).toContain('data-has-subscription="true"');
+    expect(html).toContain("Total cost");
+    expect(html).toContain("$50/mo");
   });
 
   it("renders seat breakdown for paid teams with multiple members", async () => {
@@ -276,6 +289,8 @@ describe("Dashboard billing page free plan behavior", () => {
     const html = renderToStaticMarkup(await BillingPage());
 
     expect(html).toContain("3 seats × $50/mo = $150/mo");
+    expect(html).toContain("Total cost");
+    expect(html).toContain("$150/mo");
     expect(html).toContain('data-current-plan="growth"');
     expect(html).toContain('data-has-subscription="true"');
   });

@@ -11,12 +11,12 @@ export default async function DashboardSupportPage() {
           {t("header.eyebrow")}
         </p>
         <h1 className="mt-1.5 text-3xl font-semibold tracking-tight">{t("header.title")}</h1>
-        <p className="mt-2 text-base text-muted-foreground">{t("header.description")}</p>
+        <p className="mt-2 max-w-2xl text-base text-muted-foreground">{t("header.description")}</p>
       </div>
 
-      <section>
+      <div className="space-y-6">
         <SupportEmailCard />
-      </section>
+      </div>
     </>
   );
 }

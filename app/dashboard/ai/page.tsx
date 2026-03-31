@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { AiChatCard } from "@/components/ai-chat-card";
 import { AiObjectCard } from "@/components/ai-object-card";
 import { AiPageTabs } from "@/components/ai/page-tabs";
@@ -8,6 +9,7 @@ import { getAiToolsEnabled } from "@/lib/ai/config";
 import { AI_TOOL_MAP } from "@/lib/ai/tools";
 import { parseAiProviderName } from "@/lib/ai/provider-name";
 import { getDashboardShellData } from "@/lib/dashboard/server";
+import { cn } from "@/lib/utils";
 
 export default async function DashboardAiPage() {
   const aiProviderName = parseAiProviderName(env.AI_PROVIDER);
@@ -47,7 +49,7 @@ export default async function DashboardAiPage() {
             <div className="mt-4">
               <Link
                 href="/dashboard/billing"
-                className="inline-flex rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400"
+                className={cn(buttonVariants({ variant: "default" }), "inline-flex text-sm")}
               >
                 {t("unavailable.actions.goToBilling")}
               </Link>

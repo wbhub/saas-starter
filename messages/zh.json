@@ -232,17 +232,26 @@
   "DashboardPage": {
     "overview": "概述",
     "welcome": "欢迎，{name}",
-    "subtitle": "以下是您的账户和订阅概览。",
+    "subtitle": "工作区身份与账单信息的快照。",
     "account": "帐户",
+    "accountDescription": "认证用户 ID 与团队 ID 对应 `profiles`、`team_memberships` 以及 `supabase/schema.sql` 中的 RLS。",
     "userId": "用户身份",
+    "email": "邮箱",
+    "teamId": "团队 ID",
     "team": "团队",
     "role": "角色",
     "memberSince": "会员自",
+    "profileDevHint": "调试时可将 ID 复制到日志或 SQL。所需环境变量见 `.env.example`；在 Supabase SQL 编辑器中应用架构，并将 Auth 重定向 URL 与 `NEXT_PUBLIC_APP_URL` 对齐。",
     "subscriptionSnapshot": "订阅快照",
+    "subscriptionDescription": "该团队的 Stripe 字段——与 `lib/stripe/plans` 中的价格 ID 及控制台对应。",
     "currentPlan": "目前计划",
     "unknown": "未知",
     "status": "地位",
     "seats": "座位数",
+    "teamMembers": "团队成员数",
+    "stripePriceId": "Stripe 价格 ID",
+    "subscriptionDevHint": "本地请使用 Stripe CLI 与 webhook 签名密钥；Checkout 与客户门户见 README 计费章节。",
+    "subscriptionFreeDevHint": "若要在本地试用付费流程，请设置 `BILLING_PROVIDER=stripe` 并从 `.env.example` 复制 Stripe 密钥。",
     "currentPlanFree": "当前计划：免费",
     "visitBillingUpgrade": "随时访问账单进行升级。",
     "noActiveSubscription": "没有活跃的订阅。访问账单以开始计划。",
@@ -403,6 +412,9 @@
       "cancelScheduled": "已安排在当前计费周期结束时取消。在此之前你仍可访问。",
       "seats": "座位数",
       "perSeatCost": "每席位成本",
+      "totalCost": "总费用",
+      "totalMonthlyValue": "{amount}/月",
+      "totalYearlyValue": "{amount}/年",
       "billingInterval": "计费周期",
       "monthly": "月付",
       "annual": "年付",
@@ -441,11 +453,6 @@
       "eyebrow": "设置",
       "title": "账户偏好",
       "description": "更新您的个人资料基础知识并查看帐户级别的首选项。"
-    },
-    "inviteTeammates": {
-      "title": "协作",
-      "description": "准备好后可邀请队友。每个席位都会增加每月费用。",
-      "action": "邀请队友"
     }
   },
   "DashboardTeamPage": {
@@ -480,13 +487,18 @@
   "DashboardSettingsCard": {
     "title": "设置",
     "description": "更新您的基本帐户设置。",
+    "errors": {
+      "nameSaveFailed": "无法保存显示名称。",
+      "photoSaveFailed": "无法保存个人资料照片。"
+    },
     "actions": {
-      "saving": "保存...",
-      "saveSettings": "保存设置"
+      "saving": "保存..."
     },
     "fields": {
       "displayName": "显示名称",
       "displayNamePlaceholder": "你的名字",
+      "displayNameAutosave": "输入时自动保存。",
+      "nameSaved": "已保存",
       "email": "电子邮件",
       "emailHint": "电子邮件由您的身份验证提供商管理。"
     },
@@ -494,14 +506,9 @@
       "profilePhoto": "个人资料照片",
       "profileAvatarAlt": "个人资料头像",
       "changePhoto": "更换照片",
-      "noPhoto": "没有照片",
-      "uploading": "正在上传...",
-      "uploadPhoto": "上传照片",
+      "autosaveHint": "上传或删除照片后会自动保存。",
       "removePhoto": "删除照片",
-      "ready": "准备上传 {name}",
-      "success": "照片已上传。单击保存设置以保留。",
       "errors": {
-        "selectImage": "上传前选择图像。",
         "imageOnly": "仅支持图像文件。",
         "maxSize": "图片必须为 2MB 或更小。",
         "failed": "无法上传图像。请再试一次。"
@@ -514,8 +521,8 @@
     "teamName": {
       "sectionTitle": "团队名称",
       "sectionDescription": "该名称会显示在应用、邮件和邀请中。可随时修改。",
-      "save": "保存名称",
-      "saving": "保存中..."
+      "saving": "保存中...",
+      "saved": "已保存"
     },
     "members": {
       "title": "成员",
@@ -647,28 +654,6 @@
     "title": "无法加载团队访问权限",
     "description": "我们在加载您的团队上下文时遇到了临时问题。请刷新并重试。"
   },
-  "NotificationPreferencesCard": {
-    "title": "通知首选项",
-    "description": "选择您想要接收的帐户电子邮件。",
-    "actions": {
-      "saving": "保存...",
-      "savePreferences": "保存首选项"
-    },
-    "items": {
-      "securityAlerts": {
-        "label": "安全警报",
-        "description": "登录、密码重置和重要的帐户活动。"
-      },
-      "productUpdates": {
-        "label": "产品更新",
-        "description": "功能公告和发行说明。"
-      },
-      "marketingEmails": {
-        "label": "营销电子邮件",
-        "description": "提示、优惠和偶尔的产品亮点。"
-      }
-    }
-  },
   "EmailSettingsCard": {
     "title": "电子邮件",
     "description": "请求电子邮件更新。我们将根据您的身份验证安全设置发送确认说明。",
@@ -693,7 +678,7 @@
       "confirmPermanent": "我了解此操作是永久性的且无法撤消。"
     },
     "actions": {
-      "deactivate": "暂时停用（到处注销）",
+      "deactivate": "暂时停用",
       "deleting": "正在删除...",
       "deletePermanently": "永久删除帐户"
     }
@@ -928,6 +913,34 @@
       "payloadTooLarge": "请求负载太大。",
       "invalidPayload": "组织设置有效负载无效。",
       "unableToUpdate": "无法更新组织设置。"
+    }
+  },
+  "ApiProfileFullName": {
+    "errors": {
+      "unauthorized": "未经授权",
+      "invalidOrigin": "请求来源无效。",
+      "missingCsrfToken": "缺少 CSRF 令牌。",
+      "invalidCsrfToken": "CSRF 令牌无效。",
+      "invalidContentType": "Content-Type 必须为 application/json。",
+      "rateLimited": "设置更新太多。请稍后重试。",
+      "payloadTooLarge": "请求负载太大。",
+      "invalidPayload": "显示名称负载无效。",
+      "unableToUpdate": "无法保存显示名称。"
+    }
+  },
+  "ApiProfileAvatar": {
+    "errors": {
+      "unauthorized": "未经授权",
+      "invalidOrigin": "请求来源无效。",
+      "missingCsrfToken": "缺少 CSRF 令牌。",
+      "invalidCsrfToken": "CSRF 令牌无效。",
+      "invalidContentType": "Content-Type 必须为 application/json。",
+      "rateLimited": "设置更新太多。请稍后重试。",
+      "payloadTooLarge": "请求负载太大。",
+      "invalidPayload": "个人资料照片负载无效。",
+      "unableToUpdate": "无法保存个人资料照片。",
+      "unableToValidate": "无法验证个人资料照片 URL。",
+      "invalidAvatarUrl": "不允许使用该个人资料照片 URL。"
     }
   },
   "ApiTeamRecoverPersonal": {

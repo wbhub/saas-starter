@@ -1,6 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { Shield } from "lucide-react";
 import { logoutAllSessions } from "@/app/dashboard/actions";
+import { DashboardPageSection } from "@/components/dashboard-page-section";
 import { Button } from "@/components/ui/button";
 
 type SecuritySettingsCardProps = {
@@ -11,24 +15,18 @@ export function SecuritySettingsCard({ csrfToken }: SecuritySettingsCardProps) {
   const t = useTranslations("SecuritySettingsCard");
 
   return (
-    <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
-      <h2 className="text-lg font-semibold text-foreground">{t("title")}</h2>
-      <p className="mt-2 text-muted-foreground">{t("description")}</p>
-
-      <div className="mt-4 flex flex-wrap gap-2">
+    <DashboardPageSection icon={Shield} title={t("title")} description={t("description")}>
+      <div className="flex flex-wrap gap-2">
         <form action={logoutAllSessions}>
           <input type="hidden" name="csrf_token" value={csrfToken} />
-          <Button type="submit" variant="outline" className="text-muted-foreground">
+          <Button type="submit" variant="outline" className="h-10 min-h-10 px-4 py-2">
             {t("actions.signOutAll")}
           </Button>
         </form>
-        <Button
-          render={<Link href="/forgot-password" />}
-          className="bg-indigo-500 text-white hover:bg-indigo-400"
-        >
+        <Button render={<Link href="/forgot-password" />} className="h-10 min-h-10 px-4 py-2">
           {t("actions.resetPassword")}
         </Button>
       </div>
-    </section>
+    </DashboardPageSection>
   );
 }

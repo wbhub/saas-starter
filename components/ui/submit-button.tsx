@@ -7,11 +7,6 @@ import { cn } from "@/lib/utils";
 
 type SubmitButtonVariant = "primary" | "danger";
 
-const variantClasses: Record<SubmitButtonVariant, string> = {
-  primary: "bg-indigo-500 text-white hover:bg-indigo-400",
-  danger: "bg-rose-600 text-white hover:bg-rose-500",
-};
-
 type SubmitButtonProps = {
   pendingLabel: string;
   idleLabel: string;
@@ -35,8 +30,9 @@ export function SubmitButton({
   return (
     <Button
       type="submit"
+      variant={variant === "danger" ? "destructive" : "default"}
       disabled={isPending || disabled}
-      className={cn("h-auto px-4 py-2", variantClasses[variant], className)}
+      className={cn("h-auto px-4 py-2", className)}
       {...rest}
     >
       {isPending ? pendingLabel : idleLabel}

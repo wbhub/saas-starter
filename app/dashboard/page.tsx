@@ -1,15 +1,35 @@
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
-import { ArrowRight } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getLocale, getTranslations } from "next-intl/server";
+import { ArrowRight, CreditCard, User } from "lucide-react";
+import { DashboardPageSection } from "@/components/dashboard-page-section";
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { formatUtcDate } from "@/lib/date";
-import { type PlanKey } from "@/lib/stripe/plans";
+import { type PlanKey, type SubscriptionStatus } from "@/lib/stripe/plans";
 import { getDashboardShellData } from "@/lib/dashboard/server";
+import { cn } from "@/lib/utils";
+
+function subscriptionStatusLabel(translate: (key: string) => string, status: SubscriptionStatus) {
+  return translate(`currentSubscription.statusLabels.${status}`);
+}
+
+function subscriptionStatusBadgeVariant(
+  status: SubscriptionStatus,
+): "success" | "destructive" | "secondary" {
+  if (status === "active" || status === "trialing") {
+    return "success";
+  }
+  if (status === "past_due" || status === "unpaid") {
+    return "destructive";
+  }
+  return "secondary";
+}
 
 export default async function DashboardPage() {
   const t = await getTranslations();
   const tPlans = await getTranslations("Landing.pricing");
+  const tBilling = await getTranslations("DashboardBillingPage");
+  const locale = await getLocale();
   const { user, profile, teamContext, displayName, billingContext, teamUiMode } =
     await getDashboardShellData();
 
@@ -17,64 +37,98 @@ export default async function DashboardPage() {
     return null;
   }
 
-  const { subscription, effectivePlanKey, isPaidPlan } = billingContext;
+  const {
+    subscription,
+    effectivePlanKey,
+    isPaidPlan,
+    billingInterval,
+    memberCount,
+    billingEnabled,
+  } = billingContext;
   const currentPaidPlanKey: PlanKey | null =
     isPaidPlan && effectivePlanKey && effectivePlanKey !== "free" ? effectivePlanKey : null;
 
   return (
     <>
-      {/* Page header */}
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight">
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          {t("DashboardPage.overview")}
+        </p>
+        <h1 className="mt-1.5 text-3xl font-semibold tracking-tight">
           {t("DashboardPage.welcome", { name: displayName })}
         </h1>
-        <p className="mt-2 text-base text-muted-foreground">{t("DashboardPage.subtitle")}</p>
+        <p className="mt-2 max-w-2xl text-base text-muted-foreground">
+          {t("DashboardPage.subtitle")}
+        </p>
       </div>
 
-      {/* Account & Subscription */}
-      <div className="grid gap-5 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("DashboardPage.account")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <dl className="space-y-4">
-              <div className="flex items-center justify-between">
-                <dt className="text-muted-foreground">{t("DashboardPage.userId")}</dt>
-                <dd className="max-w-[180px] truncate font-mono text-xs">{user.id}</dd>
+      <div className="space-y-6">
+        <DashboardPageSection
+          icon={User}
+          title={t("DashboardPage.account")}
+          description={t("DashboardPage.accountDescription")}
+        >
+          <dl className="space-y-4">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+              <dt className="text-muted-foreground">{t("DashboardPage.userId")}</dt>
+              <dd className="break-all font-mono text-xs sm:max-w-[min(100%,28rem)] sm:text-right">
+                {user.id}
+              </dd>
+            </div>
+            {user.email ? (
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <dt className="text-muted-foreground">{t("DashboardPage.email")}</dt>
+                <dd className="break-all text-sm font-medium sm:text-right">{user.email}</dd>
               </div>
-              {teamUiMode !== "free" ? (
-                <>
-                  <div className="flex items-center justify-between">
-                    <dt className="text-muted-foreground">{t("DashboardPage.team")}</dt>
-                    <dd className="truncate font-medium">
-                      {teamContext.teamName ?? t("Common.myTeam")}
-                    </dd>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <dt className="text-muted-foreground">{t("DashboardPage.role")}</dt>
-                    <dd>
-                      <Badge variant="secondary" className="capitalize">
-                        {teamContext.role}
-                      </Badge>
-                    </dd>
-                  </div>
-                </>
-              ) : null}
-              <div className="flex items-center justify-between">
-                <dt className="text-muted-foreground">{t("DashboardPage.memberSince")}</dt>
-                <dd>{formatUtcDate(profile?.created_at ?? user.created_at)}</dd>
-              </div>
-            </dl>
-          </CardContent>
-        </Card>
+            ) : null}
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+              <dt className="text-muted-foreground">{t("DashboardPage.teamId")}</dt>
+              <dd className="break-all font-mono text-xs sm:max-w-[min(100%,28rem)] sm:text-right">
+                {teamContext.teamId}
+              </dd>
+            </div>
+            {teamUiMode !== "free" ? (
+              <>
+                <div className="flex items-center justify-between">
+                  <dt className="text-muted-foreground">{t("DashboardPage.team")}</dt>
+                  <dd className="truncate font-medium">
+                    {teamContext.teamName ?? t("Common.myTeam")}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between">
+                  <dt className="text-muted-foreground">{t("DashboardPage.role")}</dt>
+                  <dd>
+                    <Badge variant="secondary" className="capitalize">
+                      {teamContext.role}
+                    </Badge>
+                  </dd>
+                </div>
+              </>
+            ) : null}
+            <div className="flex items-center justify-between">
+              <dt className="text-muted-foreground">{t("DashboardPage.memberSince")}</dt>
+              <dd>{formatUtcDate(profile?.created_at ?? user.created_at)}</dd>
+            </div>
+          </dl>
+          <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
+            {t("DashboardPage.profileDevHint")}
+          </p>
+        </DashboardPageSection>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("DashboardPage.subscriptionSnapshot")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {subscription ? (
+        <DashboardPageSection
+          icon={CreditCard}
+          title={t("DashboardPage.subscriptionSnapshot")}
+          description={t("DashboardPage.subscriptionDescription")}
+        >
+          {!billingEnabled && !subscription ? (
+            <div className="space-y-2">
+              <p className="font-medium">{tBilling("billingDisabled.title")}</p>
+              <p className="text-sm text-muted-foreground">
+                {tBilling("billingDisabled.description")}
+              </p>
+            </div>
+          ) : subscription ? (
+            <>
               <dl className="space-y-4">
                 <div className="flex items-center justify-between">
                   <dt className="text-muted-foreground">{t("DashboardPage.currentPlan")}</dt>
@@ -87,8 +141,8 @@ export default async function DashboardPage() {
                 <div className="flex items-center justify-between">
                   <dt className="text-muted-foreground">{t("DashboardPage.status")}</dt>
                   <dd>
-                    <Badge variant="secondary" className="uppercase">
-                      {subscription.status}
+                    <Badge variant={subscriptionStatusBadgeVariant(subscription.status)}>
+                      {subscriptionStatusLabel(tBilling, subscription.status)}
                     </Badge>
                   </dd>
                 </div>
@@ -96,30 +150,81 @@ export default async function DashboardPage() {
                   <dt className="text-muted-foreground">{t("DashboardPage.seats")}</dt>
                   <dd className="font-medium">{subscription.seat_quantity}</dd>
                 </div>
-              </dl>
-            ) : effectivePlanKey === "free" ? (
-              <div className="space-y-3">
-                <div>
-                  <p className="font-medium">{t("DashboardPage.currentPlanFree")}</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {t("DashboardPage.visitBillingUpgrade")}
-                  </p>
+                <div className="flex items-center justify-between">
+                  <dt className="text-muted-foreground">{t("DashboardPage.teamMembers")}</dt>
+                  <dd className="font-medium">{memberCount}</dd>
                 </div>
-                <Link
-                  href="/dashboard/billing"
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-400"
-                >
-                  Upgrade
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                  <dt className="text-muted-foreground">
+                    {tBilling("currentSubscription.billingInterval")}
+                  </dt>
+                  <dd className="font-medium sm:text-right">
+                    {billingInterval === "year"
+                      ? tBilling("currentSubscription.annual")
+                      : billingInterval === "month"
+                        ? tBilling("currentSubscription.monthly")
+                        : tBilling("currentSubscription.notAvailable")}
+                  </dd>
+                </div>
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                  <dt className="text-muted-foreground">
+                    {tBilling("currentSubscription.periodEnd")}
+                  </dt>
+                  <dd className="font-medium sm:text-right">
+                    {subscription.current_period_end
+                      ? formatUtcDate(subscription.current_period_end, undefined, locale)
+                      : tBilling("currentSubscription.notAvailable")}
+                  </dd>
+                </div>
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                  <dt className="text-muted-foreground">{t("DashboardPage.stripePriceId")}</dt>
+                  <dd className="break-all font-mono text-xs sm:max-w-[min(100%,28rem)] sm:text-right">
+                    {subscription.stripe_price_id}
+                  </dd>
+                </div>
+              </dl>
+              {subscription.cancel_at_period_end ? (
+                <p className="mt-4 text-sm text-muted-foreground">
+                  {tBilling("currentSubscription.cancelScheduled")}
+                </p>
+              ) : null}
+              <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
+                {t("DashboardPage.subscriptionDevHint")}
+              </p>
+            </>
+          ) : effectivePlanKey === "free" ? (
+            <div className="space-y-4">
+              <div>
+                <p className="font-medium">{t("DashboardPage.currentPlanFree")}</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {t("DashboardPage.visitBillingUpgrade")}
+                </p>
               </div>
-            ) : (
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                {t("DashboardPage.subscriptionFreeDevHint")}
+              </p>
+              <Link
+                href="/dashboard/billing"
+                className={cn(
+                  buttonVariants({ variant: "default" }),
+                  "inline-flex items-center gap-1.5 text-sm transition-colors",
+                )}
+              >
+                Upgrade
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-3">
               <p className="text-sm text-muted-foreground">
                 {t("DashboardPage.noActiveSubscription")}
               </p>
-            )}
-          </CardContent>
-        </Card>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                {t("DashboardPage.subscriptionFreeDevHint")}
+              </p>
+            </div>
+          )}
+        </DashboardPageSection>
       </div>
     </>
   );

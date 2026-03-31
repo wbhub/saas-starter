@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { CheckCircle2 } from "lucide-react";
 import { getCsrfHeaders } from "@/lib/http/csrf";
+import { Button } from "@/components/ui/button";
 import type { PlanInterval, PlanKey } from "@/lib/stripe/plans";
 
 type PlanData = {
@@ -264,14 +265,15 @@ export function OnboardingPlanSelector({
                 </li>
               ))}
             </ul>
-            <button
+            <Button
               type="button"
+              variant="outline"
               onClick={handleFreePlan}
               disabled={loadingAction !== null}
-              className="mt-6 w-full rounded-lg border app-border-subtle px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/50 disabled:opacity-60"
+              className="mt-6 w-full"
             >
               {loadingAction === "free" ? t("loading") : t("freePlan.cta")}
-            </button>
+            </Button>
           </div>
         ) : null}
 
@@ -289,11 +291,11 @@ export function OnboardingPlanSelector({
             <div
               key={plan.key}
               className={`relative flex flex-col rounded-xl bg-card p-6 ${
-                plan.popular ? "ring-2 ring-indigo-500" : "ring-1 ring-border"
+                plan.popular ? "ring-2 ring-primary" : "ring-1 ring-border"
               }`}
             >
               {plan.popular ? (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-indigo-500 px-3 py-0.5 text-xs font-medium text-white">
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-0.5 text-xs font-medium text-primary-foreground">
                   Most popular
                 </span>
               ) : null}
@@ -322,18 +324,15 @@ export function OnboardingPlanSelector({
                   </li>
                 ))}
               </ul>
-              <button
+              <Button
                 type="button"
+                variant={plan.popular ? "default" : "outline"}
                 onClick={() => handlePaidPlan(plan.key)}
                 disabled={loadingAction !== null || !canCheckout}
-                className={`mt-6 w-full rounded-lg px-4 py-2.5 text-sm font-medium disabled:opacity-60 ${
-                  plan.popular
-                    ? "bg-indigo-500 text-white hover:bg-indigo-400"
-                    : "border app-border-subtle text-foreground hover:bg-muted/50"
-                }`}
+                className="mt-6 w-full"
               >
                 {loadingAction === plan.key ? t("loading") : t("paidPlan.cta", { name: plan.name })}
-              </button>
+              </Button>
             </div>
           );
         })}

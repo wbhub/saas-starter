@@ -27,13 +27,13 @@ describe("SubmitButton", () => {
   it("applies primary variant classes by default", () => {
     render(<SubmitButton idleLabel="Save" pendingLabel="Saving..." />);
     const button = screen.getByRole("button");
-    expect(button.className).toContain("bg-indigo-500");
+    expect(button.className).toContain("bg-primary");
   });
 
   it("applies danger variant classes", () => {
     render(<SubmitButton variant="danger" idleLabel="Delete" pendingLabel="Deleting..." />);
     const button = screen.getByRole("button");
-    expect(button.className).toContain("bg-rose-600");
+    expect(button.className).toContain("bg-destructive");
   });
 
   it("respects disabled prop independently of loading", () => {

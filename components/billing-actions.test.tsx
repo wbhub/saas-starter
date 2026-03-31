@@ -12,7 +12,7 @@ vi.mock("next-intl", () => ({
       };
       return names[key] ?? key;
     }
-    if (key === "portal.cta") return "Open billing portal";
+    if (key === "portal.cta") return "Open Billing Portal";
     if (key === "actions.switchTo") return `Switch to ${values?.name ?? ""}`.trim();
     return key;
   },
@@ -33,7 +33,7 @@ describe("BillingActions", () => {
       />,
     );
 
-    expect(html).not.toContain("Open billing portal");
+    expect(html).not.toContain("Open Billing Portal");
   });
 
   it("shows billing portal CTA when role can manage and subscription exists", () => {
@@ -46,7 +46,7 @@ describe("BillingActions", () => {
       />,
     );
 
-    expect(html).toContain("Open billing portal");
+    expect(html).toContain("Open Billing Portal");
   });
 
   it("shows plan switch buttons for other tiers when subscribed", () => {
@@ -73,7 +73,7 @@ describe("BillingActions", () => {
       />,
     );
 
-    expect(html).not.toContain("Open billing portal");
+    expect(html).not.toContain("Open Billing Portal");
   });
 
   it("hides billing actions when billing is disabled", () => {
@@ -86,7 +86,7 @@ describe("BillingActions", () => {
       />,
     );
 
-    expect(html).not.toContain("Open billing portal");
+    expect(html).not.toContain("Open Billing Portal");
     expect(html).toContain("description.billingDisabled");
   });
 });

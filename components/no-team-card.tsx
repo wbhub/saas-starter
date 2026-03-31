@@ -46,9 +46,10 @@ export function NoTeamCard() {
       <p className="mt-2 text-sm text-muted-foreground">{t("description")}</p>
       <Button
         type="button"
+        variant="default"
         onClick={recoverTeam}
         disabled={recovering}
-        className="mt-4 bg-indigo-500 text-white hover:bg-indigo-400"
+        className="mt-4"
       >
         {recovering ? t("actions.recovering") : t("actions.recover")}
       </Button>

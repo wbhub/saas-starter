@@ -232,17 +232,26 @@
   "DashboardPage": {
     "overview": "Aperçu",
     "welcome": "Bienvenue, {name}",
-    "subtitle": "Voici un aperçu de votre compte et de votre abonnement.",
+    "subtitle": "Un aperçu de l’identité de votre espace de travail et des informations de facturation.",
     "account": "Compte",
+    "accountDescription": "Les identifiants utilisateur d’auth et d’équipe correspondent à `profiles`, `team_memberships` et les RLS dans `supabase/schema.sql`.",
     "userId": "ID de l'utilisateur",
+    "email": "E-mail",
+    "teamId": "ID d’équipe",
     "team": "Équipe",
     "role": "Rôle",
     "memberSince": "Membre depuis",
+    "profileDevHint": "Copiez les IDs dans les journaux ou le SQL pour déboguer. Les variables d’environnement requises sont dans `.env.example` ; appliquez le schéma dans l’éditeur SQL Supabase et alignez les URL de redirection Auth sur `NEXT_PUBLIC_APP_URL`.",
     "subscriptionSnapshot": "Instantané d'abonnement",
+    "subscriptionDescription": "Champs Stripe en direct pour cette équipe—mappés aux IDs de prix dans `lib/stripe/plans` et le tableau de bord.",
     "currentPlan": "Forfait actuel",
     "unknown": "Inconnu",
     "status": "Statut",
     "seats": "Sièges",
+    "teamMembers": "Membres de l’équipe",
+    "stripePriceId": "ID de prix Stripe",
+    "subscriptionDevHint": "Utilisez Stripe CLI et le secret de signature des webhooks en local ; voir la section facturation du README pour Checkout et le portail client.",
+    "subscriptionFreeDevHint": "Pour tester les flux payants en local, définissez `BILLING_PROVIDER=stripe` et copiez les clés Stripe depuis `.env.example`.",
     "currentPlanFree": "Forfait actuel : Gratuit",
     "visitBillingUpgrade": "Visitez la facturation pour effectuer une mise à niveau à tout moment.",
     "noActiveSubscription": "Aucun abonnement actif. Visitez la facturation pour démarrer un forfait.",
@@ -403,6 +412,9 @@
       "cancelScheduled": "Une résiliation est planifiée pour la fin de la période de facturation en cours. Vous gardez l’accès jusqu’à cette date.",
       "seats": "Sièges",
       "perSeatCost": "Coût par siège",
+      "totalCost": "Coût total",
+      "totalMonthlyValue": "{amount}/mois",
+      "totalYearlyValue": "{amount}/an",
       "billingInterval": "Intervalle de facturation",
       "monthly": "Mensuel",
       "annual": "Annuel",
@@ -441,11 +453,6 @@
       "eyebrow": "Paramètres",
       "title": "Préférences de compte",
       "description": "Mettez à jour les bases de votre profil et examinez les préférences au niveau du compte."
-    },
-    "inviteTeammates": {
-      "title": "Collaboration",
-      "description": "Invitez des coéquipiers quand vous êtes prêt. Chaque siège ajoute un coût mensuel.",
-      "action": "Inviter des coéquipiers"
     }
   },
   "DashboardTeamPage": {
@@ -480,13 +487,18 @@
   "DashboardSettingsCard": {
     "title": "Paramètres",
     "description": "Mettez à jour les paramètres de base de votre compte.",
+    "errors": {
+      "nameSaveFailed": "Impossible d’enregistrer le nom d’affichage.",
+      "photoSaveFailed": "Impossible d’enregistrer la photo de profil."
+    },
     "actions": {
-      "saving": "Économie...",
-      "saveSettings": "Enregistrer les paramètres"
+      "saving": "Économie..."
     },
     "fields": {
       "displayName": "Nom d'affichage",
       "displayNamePlaceholder": "Votre nom",
+      "displayNameAutosave": "Enregistrement automatique pendant la saisie.",
+      "nameSaved": "Enregistré",
       "email": "E-mail",
       "emailHint": "Le courrier électronique est géré dans votre fournisseur d'authentification."
     },
@@ -494,14 +506,9 @@
       "profilePhoto": "Photo de profil",
       "profileAvatarAlt": "Avatar du profil",
       "changePhoto": "Changer la photo",
-      "noPhoto": "Aucune photo",
-      "uploading": "Téléchargement...",
-      "uploadPhoto": "Télécharger une photo",
+      "autosaveHint": "Enregistrement automatique lorsque vous ajoutez ou supprimez une photo.",
       "removePhoto": "Supprimer la photo",
-      "ready": "Prêt à télécharger {name}",
-      "success": "Photo téléchargée. Cliquez sur Enregistrer les paramètres pour conserver.",
       "errors": {
-        "selectImage": "Sélectionnez une image avant de la télécharger.",
         "imageOnly": "Seuls les fichiers image sont pris en charge.",
         "maxSize": "L'image doit faire 2 Mo ou moins.",
         "failed": "Impossible de télécharger l'image. Veuillez réessayer."
@@ -514,8 +521,8 @@
     "teamName": {
       "sectionTitle": "Nom de l'équipe",
       "sectionDescription": "Ce nom apparaît dans l’app, les e-mails et les invitations. Vous pouvez le modifier à tout moment.",
-      "save": "Enregistrer le nom",
-      "saving": "Enregistrement..."
+      "saving": "Enregistrement...",
+      "saved": "Enregistré"
     },
     "members": {
       "title": "Personnes",
@@ -647,28 +654,6 @@
     "title": "Impossible de charger l'accès de l'équipe",
     "description": "Nous avons rencontré un problème temporaire lors du chargement du contexte de votre équipe. Veuillez actualiser et réessayer."
   },
-  "NotificationPreferencesCard": {
-    "title": "Préférences de notification",
-    "description": "Choisissez les e-mails de compte que vous souhaitez recevoir.",
-    "actions": {
-      "saving": "Économie...",
-      "savePreferences": "Enregistrer les préférences"
-    },
-    "items": {
-      "securityAlerts": {
-        "label": "Alertes de sécurité",
-        "description": "Connexions, réinitialisations de mot de passe et activité importante du compte."
-      },
-      "productUpdates": {
-        "label": "Mises à jour du produit",
-        "description": "Annonces de fonctionnalités et notes de version."
-      },
-      "marketingEmails": {
-        "label": "E-mails marketing",
-        "description": "Conseils, offres et produits phares occasionnels."
-      }
-    }
-  },
   "EmailSettingsCard": {
     "title": "Adresse email",
     "description": "Demandez une mise à jour par e-mail. Nous vous enverrons des instructions de confirmation en fonction de vos paramètres de sécurité d'authentification.",
@@ -693,7 +678,7 @@
       "confirmPermanent": "Je comprends que cette action est permanente et irréversible."
     },
     "actions": {
-      "deactivate": "Désactiver pour l'instant (déconnectez-vous partout)",
+      "deactivate": "Désactiver pour l'instant",
       "deleting": "Suppression...",
       "deletePermanently": "Supprimer définitivement le compte"
     }
@@ -928,6 +913,34 @@
       "payloadTooLarge": "La charge utile de la demande est trop importante.",
       "invalidPayload": "Charge utile des paramètres d’organisation non valide.",
       "unableToUpdate": "Impossible de mettre à jour les paramètres de l'organisation."
+    }
+  },
+  "ApiProfileFullName": {
+    "errors": {
+      "unauthorized": "Non autorisé",
+      "invalidOrigin": "Origine de la requête non valide.",
+      "missingCsrfToken": "Jeton CSRF manquant.",
+      "invalidCsrfToken": "Jeton CSRF non valide.",
+      "invalidContentType": "Le Content-Type doit être application/json.",
+      "rateLimited": "Trop de mises à jour des paramètres. Veuillez réessayer sous peu.",
+      "payloadTooLarge": "La charge utile de la demande est trop importante.",
+      "invalidPayload": "Charge utile du nom d’affichage non valide.",
+      "unableToUpdate": "Impossible d’enregistrer le nom d’affichage."
+    }
+  },
+  "ApiProfileAvatar": {
+    "errors": {
+      "unauthorized": "Non autorisé",
+      "invalidOrigin": "Origine de la requête non valide.",
+      "missingCsrfToken": "Jeton CSRF manquant.",
+      "invalidCsrfToken": "Jeton CSRF non valide.",
+      "invalidContentType": "Le Content-Type doit être application/json.",
+      "rateLimited": "Trop de mises à jour des paramètres. Veuillez réessayer sous peu.",
+      "payloadTooLarge": "La charge utile de la demande est trop importante.",
+      "invalidPayload": "Charge utile de la photo de profil non valide.",
+      "unableToUpdate": "Impossible d’enregistrer la photo de profil.",
+      "unableToValidate": "Impossible de valider l’URL de la photo de profil.",
+      "invalidAvatarUrl": "Cette URL de photo de profil n’est pas autorisée."
     }
   },
   "ApiTeamRecoverPersonal": {

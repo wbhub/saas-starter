@@ -3,6 +3,8 @@
 import { useState, type CSSProperties } from "react";
 import { useTranslations } from "next-intl";
 import { AuthAwareLink } from "@/components/auth-aware-link";
+import { buttonVariants } from "@/components/ui/button-variants";
+import { cn } from "@/lib/utils";
 
 type PricingPlan = {
   key: string;
@@ -69,14 +71,12 @@ export function LandingPricingCards({ plans, showAnnualToggle }: Props) {
           <article
             key={tier.key}
             className={`rounded-2xl border app-surface p-6 ${
-              tier.popular
-                ? "border-indigo-400/70 shadow-lg shadow-indigo-500/10"
-                : "app-border-subtle"
+              tier.popular ? "border-primary/50 shadow-lg shadow-primary/10" : "app-border-subtle"
             }`}
           >
             <p
               aria-hidden={!tier.popular}
-              className={`mb-3 inline-flex items-center rounded-full bg-indigo-500/10 px-3 py-1 text-xs font-medium text-indigo-600 dark:text-indigo-300 ${
+              className={`mb-3 inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary ${
                 tier.popular ? "" : "invisible"
               }`}
             >
@@ -84,7 +84,7 @@ export function LandingPricingCards({ plans, showAnnualToggle }: Props) {
             </p>
             <h3 className="text-lg font-semibold">{t(`plans.${tier.key}.name`)}</h3>
             <div className="mt-2 flex items-baseline gap-1.5">
-              <p className="text-3xl font-semibold text-indigo-600 dark:text-indigo-300">
+              <p className="text-3xl font-semibold text-primary">
                 {isAnnual && tier.annualPriceLabel ? tier.annualPriceLabel : tier.priceLabel}
               </p>
               {isAnnual && tier.annualPriceLabel ? (
@@ -99,7 +99,7 @@ export function LandingPricingCards({ plans, showAnnualToggle }: Props) {
               loggedOutHref="/onboarding"
               loggedInLabel={t("managePlan")}
               loggedOutLabel={t("choosePlan", { name: t(`plans.${tier.key}.name`) })}
-              className="mt-6 inline-block rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400"
+              className={cn(buttonVariants({ variant: "default" }), "mt-6 inline-block text-sm")}
             />
           </article>
         ))}

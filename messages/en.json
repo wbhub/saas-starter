@@ -232,17 +232,26 @@
   "DashboardPage": {
     "overview": "Overview",
     "welcome": "Welcome, {name}",
-    "subtitle": "Here is an overview of your account and subscription.",
+    "subtitle": "A snapshot of your workspace identity and billing information.",
     "account": "Account",
+    "accountDescription": "Auth user and team identifiers line up with `profiles`, `team_memberships`, and RLS in `supabase/schema.sql`.",
     "userId": "User ID",
+    "email": "Email",
+    "teamId": "Team ID",
     "team": "Team",
     "role": "Role",
     "memberSince": "Member since",
+    "profileDevHint": "Copy IDs into logs or SQL when debugging. Required env vars are listed in `.env.example`; apply the schema in the Supabase SQL editor and match Auth redirect URLs to `NEXT_PUBLIC_APP_URL`.",
     "subscriptionSnapshot": "Subscription snapshot",
+    "subscriptionDescription": "Live Stripe fields for this team—maps to price IDs in `lib/stripe/plans` and the Dashboard.",
     "currentPlan": "Current plan",
     "unknown": "Unknown",
     "status": "Status",
     "seats": "Seats",
+    "teamMembers": "Team members",
+    "stripePriceId": "Stripe price ID",
+    "subscriptionDevHint": "Use the Stripe CLI and webhook signing secret locally; see the README billing section for Checkout and Customer Portal.",
+    "subscriptionFreeDevHint": "To try paid flows locally, set `BILLING_PROVIDER=stripe` and copy Stripe keys from `.env.example`.",
     "currentPlanFree": "Current plan: Free",
     "visitBillingUpgrade": "Visit billing to upgrade anytime.",
     "noActiveSubscription": "No active subscription. Visit billing to start a plan.",
@@ -371,8 +380,8 @@
     "portal": {
       "cardTitle": "Payment method & invoices",
       "cardSubtitle": "Update your card, download receipts, and manage cancellation. Plan upgrades and downgrades are handled below.",
-      "cta": "Open billing portal",
-      "ctaAria": "Open the billing portal in a new tab"
+      "cta": "Open Billing Portal",
+      "ctaAria": "Open the Billing Portal in a new tab"
     },
     "changePlan": {
       "title": "Upgrade or change plan",
@@ -429,6 +438,9 @@
       "cancelScheduled": "Cancellation is scheduled for the end of the current billing period. You keep access until then.",
       "seats": "Seats",
       "perSeatCost": "Per-seat cost",
+      "totalCost": "Total cost",
+      "totalMonthlyValue": "{amount}/mo",
+      "totalYearlyValue": "{amount}/yr",
       "billingInterval": "Billing interval",
       "monthly": "Monthly",
       "annual": "Annual",
@@ -467,11 +479,6 @@
       "eyebrow": "Settings",
       "title": "Account preferences",
       "description": "Update your profile basics and review account-level preferences."
-    },
-    "inviteTeammates": {
-      "title": "Collaboration",
-      "description": "Invite teammates when you are ready. Each seat adds to your monthly bill.",
-      "action": "Invite teammates"
     }
   },
   "DashboardTeamPage": {
@@ -506,13 +513,18 @@
   "DashboardSettingsCard": {
     "title": "Settings",
     "description": "Update your basic account settings.",
+    "errors": {
+      "nameSaveFailed": "Could not save display name.",
+      "photoSaveFailed": "Could not save profile photo."
+    },
     "actions": {
-      "saving": "Saving...",
-      "saveSettings": "Save settings"
+      "saving": "Saving..."
     },
     "fields": {
       "displayName": "Display name",
       "displayNamePlaceholder": "Your name",
+      "displayNameAutosave": "Saves automatically as you type.",
+      "nameSaved": "Saved",
       "email": "Email",
       "emailHint": "Email is managed in your authentication provider."
     },
@@ -520,14 +532,9 @@
       "profilePhoto": "Profile photo",
       "profileAvatarAlt": "Profile avatar",
       "changePhoto": "Change photo",
-      "noPhoto": "No photo",
-      "uploading": "Uploading...",
-      "uploadPhoto": "Upload photo",
+      "autosaveHint": "Saves automatically when you upload or remove a photo.",
       "removePhoto": "Remove photo",
-      "ready": "Ready to upload {name}",
-      "success": "Photo uploaded. Click Save settings to persist.",
       "errors": {
-        "selectImage": "Select an image before uploading.",
         "imageOnly": "Only image files are supported.",
         "maxSize": "Image must be 2MB or smaller.",
         "failed": "Could not upload image. Please try again."
@@ -540,8 +547,8 @@
     "teamName": {
       "sectionTitle": "Team name",
       "sectionDescription": "This name appears in the app, emails, and invites. You can change it anytime.",
-      "save": "Save name",
-      "saving": "Saving..."
+      "saving": "Saving...",
+      "saved": "Saved"
     },
     "members": {
       "title": "People",
@@ -673,28 +680,6 @@
     "title": "Could not load team access",
     "description": "We hit a temporary issue loading your team context. Please refresh and try again."
   },
-  "NotificationPreferencesCard": {
-    "title": "Notification preferences",
-    "description": "Choose which account emails you want to receive.",
-    "actions": {
-      "saving": "Saving...",
-      "savePreferences": "Save preferences"
-    },
-    "items": {
-      "securityAlerts": {
-        "label": "Security alerts",
-        "description": "Sign-ins, password resets, and important account activity."
-      },
-      "productUpdates": {
-        "label": "Product updates",
-        "description": "Feature announcements and release notes."
-      },
-      "marketingEmails": {
-        "label": "Marketing emails",
-        "description": "Tips, offers, and occasional product highlights."
-      }
-    }
-  },
   "EmailSettingsCard": {
     "title": "Email address",
     "description": "Request an email update. We will send confirmation instructions based on your auth security settings.",
@@ -719,7 +704,7 @@
       "confirmPermanent": "I understand this action is permanent and cannot be undone."
     },
     "actions": {
-      "deactivate": "Deactivate for now (sign out everywhere)",
+      "deactivate": "Deactivate for now",
       "deleting": "Deleting...",
       "deletePermanently": "Delete account permanently"
     }
@@ -954,6 +939,34 @@
       "payloadTooLarge": "Request payload is too large.",
       "invalidPayload": "Invalid organization settings payload.",
       "unableToUpdate": "Unable to update organization settings."
+    }
+  },
+  "ApiProfileFullName": {
+    "errors": {
+      "unauthorized": "Unauthorized",
+      "invalidOrigin": "Invalid request origin.",
+      "missingCsrfToken": "Missing CSRF token.",
+      "invalidCsrfToken": "Invalid CSRF token.",
+      "invalidContentType": "Content-Type must be application/json.",
+      "rateLimited": "Too many settings updates. Please try again shortly.",
+      "payloadTooLarge": "Request payload is too large.",
+      "invalidPayload": "Invalid display name payload.",
+      "unableToUpdate": "Could not save display name."
+    }
+  },
+  "ApiProfileAvatar": {
+    "errors": {
+      "unauthorized": "Unauthorized",
+      "invalidOrigin": "Invalid request origin.",
+      "missingCsrfToken": "Missing CSRF token.",
+      "invalidCsrfToken": "Invalid CSRF token.",
+      "invalidContentType": "Content-Type must be application/json.",
+      "rateLimited": "Too many settings updates. Please try again shortly.",
+      "payloadTooLarge": "Request payload is too large.",
+      "invalidPayload": "Invalid profile photo payload.",
+      "unableToUpdate": "Could not save profile photo.",
+      "unableToValidate": "Could not validate profile photo URL.",
+      "invalidAvatarUrl": "That profile photo URL is not allowed."
     }
   },
   "ApiTeamRecoverPersonal": {
