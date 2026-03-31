@@ -751,20 +751,16 @@
       "sendFailed": "No se pudo enviar el email de soporte."
     }
   },
-  "InviteAcceptCard": {
-    "title": "Invitación al equipo",
-    "description": "Acepta esta invitación para unirte al espacio de trabajo compartido.",
-    "loginFirst": "Inicia sesión primero y luego vuelve a esta página para aceptar la invitación.",
-    "actions": {
-      "accepting": "Aceptando...",
-      "acceptInvite": "Aceptar invitación"
-    },
-    "messages": {
-      "joined": "Te uniste a {teamName} correctamente.",
-      "defaultTeamName": "equipo"
-    },
+  "InviteErrorCard": {
+    "title": "Error de invitación",
+    "goDashboard": "Ir al panel",
     "errors": {
-      "unableToAccept": "No se pudo aceptar la invitación."
+      "not_found": "Este enlace de invitación no fue encontrado.",
+      "expired": "Este enlace de invitación ha expirado.",
+      "email_mismatch": "Esta invitación fue enviada a una dirección de correo diferente.",
+      "team_full": "Este equipo ha alcanzado su límite de miembros.",
+      "no_email": "No se encontró un correo electrónico para esta cuenta.",
+      "default": "No se pudo aceptar esta invitación."
     }
   },
   "ApiTeamInvites": {

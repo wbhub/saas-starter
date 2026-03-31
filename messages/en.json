@@ -777,20 +777,16 @@
       "sendFailed": "Failed to send support email."
     }
   },
-  "InviteAcceptCard": {
-    "title": "Team invite",
-    "description": "Accept this invite to join the shared workspace.",
-    "loginFirst": "Log in first, then return to this page to accept the invite.",
-    "actions": {
-      "accepting": "Accepting...",
-      "acceptInvite": "Accept invite"
-    },
-    "messages": {
-      "joined": "Joined {teamName} successfully.",
-      "defaultTeamName": "team"
-    },
+  "InviteErrorCard": {
+    "title": "Invite error",
+    "goDashboard": "Go to dashboard",
     "errors": {
-      "unableToAccept": "Unable to accept invite."
+      "not_found": "This invite link was not found.",
+      "expired": "This invite link has expired.",
+      "email_mismatch": "This invite was sent to a different email address.",
+      "team_full": "This team has reached its member limit.",
+      "no_email": "No email found on this account.",
+      "default": "Unable to accept this invite."
     }
   },
   "ApiTeamInvites": {

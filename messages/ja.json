@@ -751,20 +751,16 @@
       "sendFailed": "サポートメールの送信に失敗しました。"
     }
   },
-  "InviteAcceptCard": {
-    "title": "チーム招待",
-    "description": "この招待を承認して共有ワークスペースに参加します。",
-    "loginFirst": "まずログインしてから、このページに戻って招待を承認してください。",
-    "actions": {
-      "accepting": "承認中...",
-      "acceptInvite": "招待を承認"
-    },
-    "messages": {
-      "joined": "{teamName} への参加が完了しました。",
-      "defaultTeamName": "チーム"
-    },
+  "InviteErrorCard": {
+    "title": "招待エラー",
+    "goDashboard": "ダッシュボードへ",
     "errors": {
-      "unableToAccept": "招待を承認できません。"
+      "not_found": "この招待リンクは見つかりませんでした。",
+      "expired": "この招待リンクは期限切れです。",
+      "email_mismatch": "この招待は別のメールアドレスに送信されました。",
+      "team_full": "このチームはメンバー上限に達しています。",
+      "no_email": "このアカウントにメールアドレスが見つかりません。",
+      "default": "この招待を承認できません。"
     }
   },
   "ApiTeamInvites": {

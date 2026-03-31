@@ -751,20 +751,16 @@
       "sendFailed": "无法发送支持电子邮件。"
     }
   },
-  "InviteAcceptCard": {
-    "title": "团队邀请",
-    "description": "接受此邀请加入共享工作区。",
-    "loginFirst": "首先登录，然后返回此页面接受邀请。",
-    "actions": {
-      "accepting": "接受...",
-      "acceptInvite": "接受邀请"
-    },
-    "messages": {
-      "joined": "成功加入 {teamName}。",
-      "defaultTeamName": "团队"
-    },
+  "InviteErrorCard": {
+    "title": "邀请错误",
+    "goDashboard": "前往仪表盘",
     "errors": {
-      "unableToAccept": "无法接受邀请。"
+      "not_found": "未找到此邀请链接。",
+      "expired": "此邀请链接已过期。",
+      "email_mismatch": "此邀请发送到了其他电子邮件地址。",
+      "team_full": "此团队已达到成员上限。",
+      "no_email": "此账户未找到电子邮件。",
+      "default": "无法接受此邀请。"
     }
   },
   "ApiTeamInvites": {

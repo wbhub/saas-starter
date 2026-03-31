@@ -7,34 +7,6 @@ describe("POST /api/team/invites/accept", () => {
     vi.doMock("@/lib/security/csrf", () => ({
       verifyCsrfProtection: vi.fn().mockReturnValue(null),
     }));
-  });
-
-  it("accepts invite for matching email", async () => {
-    const rpc = vi.fn().mockResolvedValue({
-      data: [{ ok: true, error_code: null, team_id: "team_123", team_name: "Acme Team" }],
-      error: null,
-    });
-    const syncTeamSeatQuantity = vi.fn().mockResolvedValue({
-      updated: true,
-      previousQuantity: 1,
-      seatCount: 2,
-    });
-
-    vi.doMock("@/lib/supabase/server", () => ({
-      createClient: async () => ({
-        auth: {
-          getUser: async () => ({
-            data: { user: { id: "user_123", email: "member@example.com" } },
-          }),
-        },
-      }),
-    }));
-    vi.doMock("@/lib/supabase/admin", () => ({
-      createAdminClient: () => ({ rpc }),
-    }));
-    vi.doMock("@/lib/team-invites", () => ({
-      hashInviteToken: vi.fn().mockReturnValue("hash_123"),
-    }));
     vi.doMock("@/lib/http/client-ip", () => ({
       getClientRateLimitIdentifier: vi.fn().mockReturnValue({
         keyType: "ip",
@@ -44,11 +16,23 @@ describe("POST /api/team/invites/accept", () => {
     vi.doMock("@/lib/security/rate-limit", () => ({
       checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),
     }));
-    vi.doMock("@/lib/stripe/seats", () => ({
-      syncTeamSeatQuantity,
+  });
+
+  it("accepts invite for matching email", async () => {
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          getUser: async () => ({
+            data: { user: { id: "user_123", email: "member@example.com" } },
+          }),
+        },
+      }),
     }));
-    vi.doMock("@/lib/stripe/seat-sync-retries", () => ({
-      enqueueSeatSyncRetry: vi.fn().mockResolvedValue(undefined),
+    vi.doMock("@/lib/team-invites/accept-invite", () => ({
+      acceptTeamInvite: vi.fn().mockResolvedValue({
+        ok: true,
+        teamName: "Acme Team",
+      }),
     }));
 
     const { POST } = await import("./route");
@@ -65,24 +49,9 @@ describe("POST /api/team/invites/accept", () => {
       ok: true,
       teamName: "Acme Team",
     });
-    expect(rpc).toHaveBeenCalledWith("accept_team_invite_atomic", {
-      p_token_hash: "hash_123",
-      p_user_id: "user_123",
-      p_user_email: "member@example.com",
-      p_max_members: 100,
-    });
-    expect(syncTeamSeatQuantity).toHaveBeenCalledWith("team_123", {
-      idempotencyKey: "seat-sync:accept-invite:team_123:user_123",
-    });
   });
 
   it("returns 200 when invite is accepted but seat sync fails", async () => {
-    const rpc = vi.fn().mockResolvedValue({
-      data: [{ ok: true, error_code: null, team_id: "team_123", team_name: "Acme Team" }],
-      error: null,
-    });
-    const syncTeamSeatQuantity = vi.fn().mockRejectedValue(new Error("stripe seat update failed"));
-
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: async () => ({
         auth: {
@@ -92,26 +61,12 @@ describe("POST /api/team/invites/accept", () => {
         },
       }),
     }));
-    vi.doMock("@/lib/supabase/admin", () => ({
-      createAdminClient: () => ({ rpc }),
-    }));
-    vi.doMock("@/lib/team-invites", () => ({
-      hashInviteToken: vi.fn().mockReturnValue("hash_123"),
-    }));
-    vi.doMock("@/lib/http/client-ip", () => ({
-      getClientRateLimitIdentifier: vi.fn().mockReturnValue({
-        keyType: "ip",
-        value: "127.0.0.1",
+    vi.doMock("@/lib/team-invites/accept-invite", () => ({
+      acceptTeamInvite: vi.fn().mockResolvedValue({
+        ok: true,
+        teamName: "Acme Team",
+        warning: "seat_sync_failed",
       }),
-    }));
-    vi.doMock("@/lib/security/rate-limit", () => ({
-      checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),
-    }));
-    vi.doMock("@/lib/stripe/seats", () => ({
-      syncTeamSeatQuantity,
-    }));
-    vi.doMock("@/lib/stripe/seat-sync-retries", () => ({
-      enqueueSeatSyncRetry: vi.fn().mockResolvedValue(undefined),
     }));
 
     const { POST } = await import("./route");
@@ -133,11 +88,6 @@ describe("POST /api/team/invites/accept", () => {
   });
 
   it("returns 409 when team member cap is reached (team_full from RPC)", async () => {
-    const rpc = vi.fn().mockResolvedValue({
-      data: [{ ok: false, error_code: "team_full", team_id: "team_123", team_name: null }],
-      error: null,
-    });
-
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: async () => ({
         auth: {
@@ -147,26 +97,11 @@ describe("POST /api/team/invites/accept", () => {
         },
       }),
     }));
-    vi.doMock("@/lib/supabase/admin", () => ({
-      createAdminClient: () => ({ rpc }),
-    }));
-    vi.doMock("@/lib/team-invites", () => ({
-      hashInviteToken: vi.fn().mockReturnValue("hash_123"),
-    }));
-    vi.doMock("@/lib/http/client-ip", () => ({
-      getClientRateLimitIdentifier: vi.fn().mockReturnValue({
-        keyType: "ip",
-        value: "127.0.0.1",
+    vi.doMock("@/lib/team-invites/accept-invite", () => ({
+      acceptTeamInvite: vi.fn().mockResolvedValue({
+        ok: false,
+        errorCode: "team_full",
       }),
-    }));
-    vi.doMock("@/lib/security/rate-limit", () => ({
-      checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),
-    }));
-    vi.doMock("@/lib/stripe/seats", () => ({
-      syncTeamSeatQuantity: vi.fn(),
-    }));
-    vi.doMock("@/lib/stripe/seat-sync-retries", () => ({
-      enqueueSeatSyncRetry: vi.fn().mockResolvedValue(undefined),
     }));
 
     const { POST } = await import("./route");
@@ -182,12 +117,6 @@ describe("POST /api/team/invites/accept", () => {
     await expect(response.json()).resolves.toEqual({
       ok: false,
       error: "Team member limit reached. Ask an owner/admin to increase capacity first.",
-    });
-    expect(rpc).toHaveBeenCalledWith("accept_team_invite_atomic", {
-      p_token_hash: "hash_123",
-      p_user_id: "user_123",
-      p_user_email: "member@example.com",
-      p_max_members: 100,
     });
   });
 });

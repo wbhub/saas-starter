@@ -751,20 +751,16 @@
       "sendFailed": "Support-E-Mail konnte nicht gesendet werden."
     }
   },
-  "InviteAcceptCard": {
-    "title": "Teameinladung",
-    "description": "Akzeptiere diese Einladung, um dem gemeinsamen Workspace beizutreten.",
-    "loginFirst": "Melde dich zuerst an und kehre dann zu dieser Seite zurück, um die Einladung anzunehmen.",
-    "actions": {
-      "accepting": "Wird angenommen...",
-      "acceptInvite": "Einladung annehmen"
-    },
-    "messages": {
-      "joined": "{teamName} erfolgreich beigetreten.",
-      "defaultTeamName": "Team"
-    },
+  "InviteErrorCard": {
+    "title": "Einladungsfehler",
+    "goDashboard": "Zum Dashboard",
     "errors": {
-      "unableToAccept": "Einladung konnte nicht angenommen werden."
+      "not_found": "Dieser Einladungslink wurde nicht gefunden.",
+      "expired": "Dieser Einladungslink ist abgelaufen.",
+      "email_mismatch": "Diese Einladung wurde an eine andere E-Mail-Adresse gesendet.",
+      "team_full": "Dieses Team hat seine Mitgliedergrenze erreicht.",
+      "no_email": "Kein E-Mail für dieses Konto gefunden.",
+      "default": "Diese Einladung kann nicht angenommen werden."
     }
   },
   "ApiTeamInvites": {
