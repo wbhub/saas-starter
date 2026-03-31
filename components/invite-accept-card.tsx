@@ -14,18 +14,13 @@ type AcceptInviteResponse = {
   warning?: string;
 };
 
-export function InviteAcceptCard({
-  token,
-  isAuthenticated,
-}: {
-  token: string;
-  isAuthenticated: boolean;
-}) {
+export function InviteAcceptCard({ token }: { token: string }) {
   const t = useTranslations("InviteAcceptCard");
   const tNotFound = useTranslations("NotFound");
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [variant, setVariant] = useState<"success" | "error">("error");
   const [inviteAccepted, setInviteAccepted] = useState(false);
 
   async function acceptInvite() {
@@ -46,16 +41,16 @@ export function InviteAcceptCard({
       const joinedMessage = t("messages.joined", {
         teamName: payload?.teamName ?? t("messages.defaultTeamName"),
       });
-      if (payload?.warning) {
-        setInviteAccepted(true);
-        setMessage([joinedMessage, payload.warning].join(" "));
-        return;
-      }
 
-      setMessage(joinedMessage);
-      router.push("/dashboard");
-      router.refresh();
+      setInviteAccepted(true);
+      setVariant("success");
+      setMessage(payload?.warning ? [joinedMessage, payload.warning].join(" ") : joinedMessage);
+      setTimeout(() => {
+        router.push("/dashboard");
+        router.refresh();
+      }, 1500);
     } catch (error) {
+      setVariant("error");
       setMessage(error instanceof Error ? error.message : t("errors.unableToAccept"));
     } finally {
       setSubmitting(false);
@@ -67,11 +62,7 @@ export function InviteAcceptCard({
       <h1 className="text-2xl font-semibold text-foreground">{t("title")}</h1>
       <p className="mt-2 text-sm text-muted-foreground">{t("description")}</p>
 
-      {!isAuthenticated ? (
-        <p className="mt-4 rounded-lg app-surface-subtle px-3 py-2 text-sm text-muted-foreground">
-          {t("loginFirst")}
-        </p>
-      ) : inviteAccepted ? (
+      {inviteAccepted ? (
         <Button render={<Link href="/dashboard" />} variant="default" className="mt-5">
           {tNotFound("goDashboard")}
         </Button>
@@ -88,7 +79,13 @@ export function InviteAcceptCard({
       )}
 
       {message ? (
-        <p className="mt-4 rounded-lg app-surface-subtle px-3 py-2 text-sm text-muted-foreground">
+        <p
+          className={`mt-4 rounded-lg px-3 py-2 text-sm ${
+            variant === "success"
+              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
+              : "app-surface-subtle text-muted-foreground"
+          }`}
+        >
           {message}
         </p>
       ) : null}
