@@ -132,13 +132,8 @@ export default async function DashboardBillingPage({
     return null;
   }
 
-  const {
-    billingEnabled,
-    subscription,
-    effectivePlanKey,
-    billingInterval,
-    isPaidPlan,
-  } = billingContext;
+  const { billingEnabled, subscription, effectivePlanKey, billingInterval, isPaidPlan } =
+    billingContext;
   const currentPaidPlanKey: PlanKey | null =
     isPaidPlan && effectivePlanKey && effectivePlanKey !== "free" ? effectivePlanKey : null;
 

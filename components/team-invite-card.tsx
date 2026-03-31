@@ -756,10 +756,7 @@ export function TeamInviteCard({
                                 : "member"
                           }
                           aria-busy={updatingRoleUserId === member.userId}
-                          disabled={
-                            updatingRoleUserId !== null ||
-                            removingUserId !== null
-                          }
+                          disabled={updatingRoleUserId !== null || removingUserId !== null}
                           onValueChange={(value) => {
                             if (value === "remove") {
                               setRemoveDialogUserId(member.userId);
@@ -769,8 +766,7 @@ export function TeamInviteCard({
                               return;
                             }
                             const next = value as "member" | "admin";
-                            const current =
-                              member.role === "admin" ? "admin" : "member";
+                            const current = member.role === "admin" ? "admin" : "member";
                             if (next === current) {
                               return;
                             }
@@ -804,12 +800,8 @@ export function TeamInviteCard({
                           <SelectContent sideOffset={2}>
                             {canManageRole(member) ? (
                               <>
-                                <SelectItem value="member">
-                                  {t("roles.member")}
-                                </SelectItem>
-                                <SelectItem value="admin">
-                                  {t("roles.admin")}
-                                </SelectItem>
+                                <SelectItem value="member">{t("roles.member")}</SelectItem>
+                                <SelectItem value="admin">{t("roles.admin")}</SelectItem>
                               </>
                             ) : null}
                             {!canManageRole(member) &&
@@ -820,8 +812,7 @@ export function TeamInviteCard({
                               </SelectItem>
                             ) : null}
                             {canRemoveMember(member) &&
-                            (canManageRole(member) ||
-                              member.role === "owner") ? (
+                            (canManageRole(member) || member.role === "owner") ? (
                               <SelectSeparator />
                             ) : null}
                             {canRemoveMember(member) ? (
