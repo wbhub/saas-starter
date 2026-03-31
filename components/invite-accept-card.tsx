@@ -44,9 +44,7 @@ export function InviteAcceptCard({ token }: { token: string }) {
 
       setInviteAccepted(true);
       setVariant("success");
-      setMessage(
-        payload?.warning ? [joinedMessage, payload.warning].join(" ") : joinedMessage,
-      );
+      setMessage(payload?.warning ? [joinedMessage, payload.warning].join(" ") : joinedMessage);
       setTimeout(() => {
         router.push("/dashboard");
         router.refresh();
