@@ -27,34 +27,29 @@ export function EmailSettingsCard({ email, csrfToken }: EmailSettingsCardProps) 
   return (
     <DashboardPageSection icon={Mail} title={t("title")} description={t("description")}>
       <div className="space-y-4">
-      <form action={formAction} className="space-y-4">
-        <input type="hidden" name="csrf_token" value={csrfToken} />
-        <div>
-          <Label className="mb-1">{t("fields.currentEmail")}</Label>
-          <Input
-            type="email"
-            variant="readonly"
-            value={email ?? ""}
-            className="max-w-md"
+        <form action={formAction} className="space-y-4">
+          <input type="hidden" name="csrf_token" value={csrfToken} />
+          <div>
+            <Label className="mb-1">{t("fields.currentEmail")}</Label>
+            <Input type="email" variant="readonly" value={email ?? ""} className="max-w-md" />
+          </div>
+          <div>
+            <Label className="mb-1">{t("fields.newEmail")}</Label>
+            <Input
+              type="email"
+              name="newEmail"
+              required
+              autoComplete="email"
+              placeholder={t("fields.newEmailPlaceholder")}
+              className="max-w-md"
+            />
+          </div>
+          <SubmitButton
+            pendingLabel={t("actions.sending")}
+            idleLabel={t("actions.requestEmailChange")}
           />
-        </div>
-        <div>
-          <Label className="mb-1">{t("fields.newEmail")}</Label>
-          <Input
-            type="email"
-            name="newEmail"
-            required
-            autoComplete="email"
-            placeholder={t("fields.newEmailPlaceholder")}
-            className="max-w-md"
-          />
-        </div>
-        <SubmitButton
-          pendingLabel={t("actions.sending")}
-          idleLabel={t("actions.requestEmailChange")}
-        />
-      </form>
-      <FormMessage status={state.status} message={state.message} />
+        </form>
+        <FormMessage status={state.status} message={state.message} />
       </div>
     </DashboardPageSection>
   );

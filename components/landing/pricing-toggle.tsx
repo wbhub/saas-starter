@@ -71,9 +71,7 @@ export function LandingPricingCards({ plans, showAnnualToggle }: Props) {
           <article
             key={tier.key}
             className={`rounded-2xl border app-surface p-6 ${
-              tier.popular
-                ? "border-primary/50 shadow-lg shadow-primary/10"
-                : "app-border-subtle"
+              tier.popular ? "border-primary/50 shadow-lg shadow-primary/10" : "app-border-subtle"
             }`}
           >
             <p

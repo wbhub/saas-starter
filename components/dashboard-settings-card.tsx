@@ -109,7 +109,10 @@ export function DashboardSettingsCard({
       },
       body: JSON.stringify({ fullName: displayNameRef.current }),
     });
-    const payload = (await response.json().catch(() => null)) as { ok?: boolean; error?: string } | null;
+    const payload = (await response.json().catch(() => null)) as {
+      ok?: boolean;
+      error?: string;
+    } | null;
     if (!response.ok) {
       throw new Error(payload?.error ?? t("errors.nameSaveFailed"));
     }
@@ -171,7 +174,10 @@ export function DashboardSettingsCard({
       },
       body: JSON.stringify({ avatarUrl: nextUrl }),
     });
-    const payload = (await response.json().catch(() => null)) as { ok?: boolean; error?: string } | null;
+    const payload = (await response.json().catch(() => null)) as {
+      ok?: boolean;
+      error?: string;
+    } | null;
     if (!response.ok) {
       throw new Error(payload?.error ?? t("errors.photoSaveFailed"));
     }

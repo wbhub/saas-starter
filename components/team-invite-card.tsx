@@ -595,7 +595,10 @@ export function TeamInviteCard({
                 className="h-8 w-full py-1.5 text-sm"
               />
             </div>
-            <p className="min-h-[1.25rem] text-xs text-muted-foreground sm:min-w-[5.5rem]" aria-live="polite">
+            <p
+              className="min-h-[1.25rem] text-xs text-muted-foreground sm:min-w-[5.5rem]"
+              aria-live="polite"
+            >
               {teamNameSaveStatus === "saving" ? t("teamName.saving") : null}
               {teamNameSaveStatus === "saved" ? t("teamName.saved") : null}
             </p>

@@ -41,7 +41,11 @@ export function isOwnedProfilePhotoPath(profilePhotoPath: string, userId: string
   return pathSegments[0] === userId;
 }
 
-export function isAllowedAvatarUrl(url: string, expectedStorageOrigin: string, userId: string): boolean {
+export function isAllowedAvatarUrl(
+  url: string,
+  expectedStorageOrigin: string,
+  userId: string,
+): boolean {
   const profilePhotoPath = extractProfilePhotoPath(url, expectedStorageOrigin);
   if (!profilePhotoPath) {
     return false;

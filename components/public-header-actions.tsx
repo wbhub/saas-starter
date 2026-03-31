@@ -27,10 +27,7 @@ export function PublicHeaderActions({
       <ThemeToggle />
       {!isLoggedIn ? (
         <>
-          <Link
-            href="/login"
-            className={cn(buttonVariants({ variant: "outline" }), "text-sm")}
-          >
+          <Link href="/login" className={cn(buttonVariants({ variant: "outline" }), "text-sm")}>
             {loginLabel}
           </Link>
           <AuthAwareLink

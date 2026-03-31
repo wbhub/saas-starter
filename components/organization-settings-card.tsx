@@ -121,72 +121,72 @@ export function OrganizationSettingsCard({
   return (
     <DashboardPageSection icon={Building2} title={t("title")} description={t("description")}>
       <div className="space-y-6">
-      <form className="space-y-4" onSubmit={saveTeamName}>
-        <div>
-          <Label className="mb-1">{t("fields.teamName")}</Label>
-          <Input
-            type="text"
-            value={nameValue}
-            onChange={(event) => setNameValue(event.target.value)}
-            maxLength={80}
-            minLength={2}
-            disabled={currentUserRole === "member" || savingName}
-          />
-        </div>
-        <SubmitButton
-          loading={savingName}
-          disabled={currentUserRole === "member"}
-          pendingLabel={t("actions.saving")}
-          idleLabel={t("actions.saveOrganization")}
-        />
-      </form>
-
-      {currentUserRole === "owner" ? (
-        <>
-          <Separator className="mt-6" />
-          <div className="mt-6 space-y-4">
-            <h3 className="text-sm font-medium text-foreground">{t("ownership.title")}</h3>
-            <div>
-              <Label className="mb-1 text-muted-foreground">{t("ownership.newOwner")}</Label>
-              <Select
-                value={nextOwnerUserId}
-                onValueChange={(value) => setNextOwnerUserId(value ?? "")}
-                disabled={transferring || ownershipCandidates.length === 0}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder={t("ownership.selectTeammate")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {ownershipCandidates.map((member) => (
-                    <SelectItem key={member.userId} value={member.userId}>
-                      {(member.fullName?.trim() || member.userId) + ` (${member.role})`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <ConfirmDialog
-            title={t("ownership.title")}
-            description={t("confirm.transferOwnership")}
-            confirmLabel={t("actions.transferOwnership")}
-            cancelLabel={t("actions.cancel")}
-            onConfirm={() => transferOwnership()}
-          >
-              <Button
-                type="button"
-                variant="outline"
-                disabled={transferring || !nextOwnerUserId}
-                className="border-amber-300/60 text-amber-800 hover:bg-amber-50 dark:border-amber-700/60 dark:text-amber-200 dark:hover:bg-amber-950/30"
-              >
-                {transferring ? t("actions.transferring") : t("actions.transferOwnership")}
-              </Button>
-            </ConfirmDialog>
+        <form className="space-y-4" onSubmit={saveTeamName}>
+          <div>
+            <Label className="mb-1">{t("fields.teamName")}</Label>
+            <Input
+              type="text"
+              value={nameValue}
+              onChange={(event) => setNameValue(event.target.value)}
+              maxLength={80}
+              minLength={2}
+              disabled={currentUserRole === "member" || savingName}
+            />
           </div>
-        </>
-      ) : null}
+          <SubmitButton
+            loading={savingName}
+            disabled={currentUserRole === "member"}
+            pendingLabel={t("actions.saving")}
+            idleLabel={t("actions.saveOrganization")}
+          />
+        </form>
 
-      <FormMessage status="success" message={feedback} />
-      <FormMessage status="error" message={error} />
+        {currentUserRole === "owner" ? (
+          <>
+            <Separator className="mt-6" />
+            <div className="mt-6 space-y-4">
+              <h3 className="text-sm font-medium text-foreground">{t("ownership.title")}</h3>
+              <div>
+                <Label className="mb-1 text-muted-foreground">{t("ownership.newOwner")}</Label>
+                <Select
+                  value={nextOwnerUserId}
+                  onValueChange={(value) => setNextOwnerUserId(value ?? "")}
+                  disabled={transferring || ownershipCandidates.length === 0}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder={t("ownership.selectTeammate")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ownershipCandidates.map((member) => (
+                      <SelectItem key={member.userId} value={member.userId}>
+                        {(member.fullName?.trim() || member.userId) + ` (${member.role})`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <ConfirmDialog
+                title={t("ownership.title")}
+                description={t("confirm.transferOwnership")}
+                confirmLabel={t("actions.transferOwnership")}
+                cancelLabel={t("actions.cancel")}
+                onConfirm={() => transferOwnership()}
+              >
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={transferring || !nextOwnerUserId}
+                  className="border-amber-300/60 text-amber-800 hover:bg-amber-50 dark:border-amber-700/60 dark:text-amber-200 dark:hover:bg-amber-950/30"
+                >
+                  {transferring ? t("actions.transferring") : t("actions.transferOwnership")}
+                </Button>
+              </ConfirmDialog>
+            </div>
+          </>
+        ) : null}
+
+        <FormMessage status="success" message={feedback} />
+        <FormMessage status="error" message={error} />
       </div>
     </DashboardPageSection>
   );

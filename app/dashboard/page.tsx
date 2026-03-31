@@ -37,8 +37,14 @@ export default async function DashboardPage() {
     return null;
   }
 
-  const { subscription, effectivePlanKey, isPaidPlan, billingInterval, memberCount, billingEnabled } =
-    billingContext;
+  const {
+    subscription,
+    effectivePlanKey,
+    isPaidPlan,
+    billingInterval,
+    memberCount,
+    billingEnabled,
+  } = billingContext;
   const currentPaidPlanKey: PlanKey | null =
     isPaidPlan && effectivePlanKey && effectivePlanKey !== "free" ? effectivePlanKey : null;
 
@@ -51,7 +57,9 @@ export default async function DashboardPage() {
         <h1 className="mt-1.5 text-3xl font-semibold tracking-tight">
           {t("DashboardPage.welcome", { name: displayName })}
         </h1>
-        <p className="mt-2 max-w-2xl text-base text-muted-foreground">{t("DashboardPage.subtitle")}</p>
+        <p className="mt-2 max-w-2xl text-base text-muted-foreground">
+          {t("DashboardPage.subtitle")}
+        </p>
       </div>
 
       <div className="space-y-6">
@@ -115,7 +123,9 @@ export default async function DashboardPage() {
           {!billingEnabled && !subscription ? (
             <div className="space-y-2">
               <p className="font-medium">{tBilling("billingDisabled.title")}</p>
-              <p className="text-sm text-muted-foreground">{tBilling("billingDisabled.description")}</p>
+              <p className="text-sm text-muted-foreground">
+                {tBilling("billingDisabled.description")}
+              </p>
             </div>
           ) : subscription ? (
             <>
@@ -145,7 +155,9 @@ export default async function DashboardPage() {
                   <dd className="font-medium">{memberCount}</dd>
                 </div>
                 <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
-                  <dt className="text-muted-foreground">{tBilling("currentSubscription.billingInterval")}</dt>
+                  <dt className="text-muted-foreground">
+                    {tBilling("currentSubscription.billingInterval")}
+                  </dt>
                   <dd className="font-medium sm:text-right">
                     {billingInterval === "year"
                       ? tBilling("currentSubscription.annual")
@@ -155,7 +167,9 @@ export default async function DashboardPage() {
                   </dd>
                 </div>
                 <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
-                  <dt className="text-muted-foreground">{tBilling("currentSubscription.periodEnd")}</dt>
+                  <dt className="text-muted-foreground">
+                    {tBilling("currentSubscription.periodEnd")}
+                  </dt>
                   <dd className="font-medium sm:text-right">
                     {subscription.current_period_end
                       ? formatUtcDate(subscription.current_period_end, undefined, locale)

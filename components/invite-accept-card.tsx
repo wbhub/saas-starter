@@ -76,7 +76,13 @@ export function InviteAcceptCard({
           {tNotFound("goDashboard")}
         </Button>
       ) : (
-        <Button type="button" variant="default" onClick={acceptInvite} disabled={submitting} className="mt-5">
+        <Button
+          type="button"
+          variant="default"
+          onClick={acceptInvite}
+          disabled={submitting}
+          className="mt-5"
+        >
           {submitting ? t("actions.accepting") : t("actions.acceptInvite")}
         </Button>
       )}
