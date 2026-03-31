@@ -9,9 +9,14 @@ import { PLAN_CATALOG } from "@/lib/stripe/plans";
 function TeamInviteSectionSkeleton() {
   return (
     <section className="rounded-xl bg-card ring-1 ring-border p-6">
-      <div className="h-6 w-48 animate-pulse rounded bg-muted" />
-      <div className="mt-3 h-4 w-72 animate-pulse rounded bg-muted" />
-      <div className="mt-6 h-40 animate-pulse rounded-xl bg-muted" />
+      <div className="flex items-start gap-3 sm:gap-4">
+        <div className="h-10 w-10 shrink-0 animate-pulse rounded-lg bg-muted" />
+        <div className="min-w-0 flex-1 space-y-2">
+          <div className="h-6 w-48 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-full max-w-xl animate-pulse rounded bg-muted" />
+          <div className="mt-6 h-32 animate-pulse rounded-xl bg-muted" />
+        </div>
+      </div>
     </section>
   );
 }
@@ -39,19 +44,17 @@ async function TeamInviteSection({
   const { teamMembers, pendingInvites } = await getTeamMembersAndPendingInvites(supabase, teamId);
 
   return (
-    <section>
-      <TeamInviteCard
-        canInvite={canInvite}
-        canEditTeamName={canEditTeamName}
-        teamName={teamName}
-        members={teamMembers}
-        pendingInvites={pendingInvites}
-        currentUserId={currentUserId}
-        currentUserRole={currentUserRole}
-        requireTeamNameOnFirstInvite={requireTeamNameOnFirstInvite}
-        seatPriceLabel={seatPriceLabel}
-      />
-    </section>
+    <TeamInviteCard
+      canInvite={canInvite}
+      canEditTeamName={canEditTeamName}
+      teamName={teamName}
+      members={teamMembers}
+      pendingInvites={pendingInvites}
+      currentUserId={currentUserId}
+      currentUserRole={currentUserRole}
+      requireTeamNameOnFirstInvite={requireTeamNameOnFirstInvite}
+      seatPriceLabel={seatPriceLabel}
+    />
   );
 }
 
@@ -89,21 +92,23 @@ export default async function DashboardTeamPage() {
           {t("header.eyebrow")}
         </p>
         <h1 className="mt-1.5 text-3xl font-semibold tracking-tight">{t("header.title")}</h1>
-        <p className="mt-2 text-base text-muted-foreground">{t("header.description")}</p>
+        <p className="mt-2 max-w-2xl text-base text-muted-foreground">{t("header.description")}</p>
       </div>
 
-      <Suspense fallback={<TeamInviteSectionSkeleton />}>
-        <TeamInviteSection
-          teamId={teamContext.teamId}
-          canInvite={canInvite}
-          canEditTeamName={canEditTeamName}
-          teamName={teamName}
-          currentUserId={user.id}
-          currentUserRole={teamContext.role}
-          requireTeamNameOnFirstInvite={teamUiMode === "paid_solo"}
-          seatPriceLabel={seatPriceLabel}
-        />
-      </Suspense>
+      <div className="space-y-6">
+        <Suspense fallback={<TeamInviteSectionSkeleton />}>
+          <TeamInviteSection
+            teamId={teamContext.teamId}
+            canInvite={canInvite}
+            canEditTeamName={canEditTeamName}
+            teamName={teamName}
+            currentUserId={user.id}
+            currentUserRole={teamContext.role}
+            requireTeamNameOnFirstInvite={teamUiMode === "paid_solo"}
+            seatPriceLabel={seatPriceLabel}
+          />
+        </Suspense>
+      </div>
     </>
   );
 }

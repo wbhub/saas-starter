@@ -2,7 +2,9 @@
 
 import { FormEvent, useState } from "react";
 import { useTranslations } from "next-intl";
+import { Mail } from "lucide-react";
 import { getCsrfHeaders } from "@/lib/http/csrf";
+import { DashboardPageSection } from "@/components/dashboard-page-section";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +21,7 @@ export function SupportEmailCard() {
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [feedbackStatus, setFeedbackStatus] = useState<"success" | "error">("success");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -40,51 +43,52 @@ export function SupportEmailCard() {
       setMessage("");
       setSubject("");
       setFeedback(t("feedback.sent"));
+      setFeedbackStatus("success");
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : t("errors.sendFailed"));
+      setFeedbackStatus("error");
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
-      <h2 className="text-lg font-semibold text-foreground">{t("title")}</h2>
-      <p className="mt-2 text-muted-foreground">{t("description")}</p>
+    <DashboardPageSection icon={Mail} title={t("title")} description={t("description")}>
+      <div className="space-y-4">
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <div>
+            <Label className="mb-1">{t("fields.subject")}</Label>
+            <Input
+              type="text"
+              maxLength={120}
+              value={subject}
+              onChange={(event) => setSubject(event.target.value)}
+              placeholder={t("fields.subjectPlaceholder")}
+            />
+          </div>
 
-      <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
-        <div>
-          <Label className="mb-1">{t("fields.subject")}</Label>
-          <Input
-            type="text"
-            maxLength={120}
-            value={subject}
-            onChange={(event) => setSubject(event.target.value)}
-            placeholder={t("fields.subjectPlaceholder")}
+          <div>
+            <Label className="mb-1">{t("fields.message")}</Label>
+            <Textarea
+              required
+              minLength={10}
+              maxLength={2000}
+              rows={5}
+              value={message}
+              onChange={(event) => setMessage(event.target.value)}
+              placeholder={t("fields.messagePlaceholder")}
+            />
+          </div>
+
+          <SubmitButton
+            loading={submitting}
+            pendingLabel={t("actions.sending")}
+            idleLabel={t("actions.sendSupportEmail")}
           />
-        </div>
+        </form>
 
-        <div>
-          <Label className="mb-1">{t("fields.message")}</Label>
-          <Textarea
-            required
-            minLength={10}
-            maxLength={2000}
-            rows={5}
-            value={message}
-            onChange={(event) => setMessage(event.target.value)}
-            placeholder={t("fields.messagePlaceholder")}
-          />
-        </div>
-
-        <SubmitButton
-          loading={submitting}
-          pendingLabel={t("actions.sending")}
-          idleLabel={t("actions.sendSupportEmail")}
-        />
-      </form>
-
-      <FormMessage status="success" message={feedback} />
-    </section>
+        <FormMessage status={feedbackStatus} message={feedback} />
+      </div>
+    </DashboardPageSection>
   );
 }

@@ -102,9 +102,8 @@ export function PromptInput({
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
                 disabled={isSending}
-                className="shrink-0 gap-1.5 border-dashed border-border/90 bg-background/80 text-muted-foreground hover:border-solid hover:border-border hover:bg-muted/50 hover:text-foreground"
+                className="h-10 min-h-10 shrink-0 gap-1.5 border-dashed border-border/90 bg-background/80 px-3 text-muted-foreground hover:border-solid hover:border-border hover:bg-muted/50 hover:text-foreground"
                 onClick={() => fileInputRef.current?.click()}
                 aria-label={t("attachments.label")}
               >
@@ -119,9 +118,9 @@ export function PromptInput({
             </div>
             <Button
               type="submit"
-              size="lg"
+              variant="default"
               disabled={isSending || (input.trim().length === 0 && pendingFiles.length === 0)}
-              className="shrink-0 min-w-[7.5rem] gap-2 bg-primary px-5 text-primary-foreground shadow-sm hover:bg-primary/90"
+              className="h-10 min-h-10 min-w-[7.5rem] shrink-0 gap-2 px-5 shadow-sm hover:bg-primary/90"
             >
               {isSending ? (
                 <>

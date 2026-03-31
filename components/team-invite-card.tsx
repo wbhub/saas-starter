@@ -1,8 +1,9 @@
 "use client";
 
-import { FormEvent, useEffect, useReducer, useState } from "react";
+import { FormEvent, useEffect, useReducer, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Building2, Clock, Mail, Users } from "lucide-react";
+import { DashboardPageSection } from "@/components/dashboard-page-section";
 import { useLocale, useTranslations } from "next-intl";
 import { getCsrfHeaders } from "@/lib/http/csrf";
 import { formatUtcDate } from "@/lib/date";
@@ -20,8 +21,6 @@ import {
 } from "@/components/ui/select";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { FormMessage } from "@/components/ui/form-message";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
 type TeamMember = {
@@ -194,11 +193,16 @@ export function TeamInviteCard({
     resendInviteId: null,
     banner: { message: null, variant: "success" as const },
   });
-  const [savingTeamName, setSavingTeamName] = useState(false);
+  const [teamNameSaveStatus, setTeamNameSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [teamNameBanner, setTeamNameBanner] = useState<BannerState>({
     message: null,
     variant: "success",
   });
+  const inviteTeamNameRef = useRef(teamName);
+  const teamNameDirtyRef = useRef(false);
+  const teamNameDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const teamNameSavedIndicatorRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const teamNamePersistRef = useRef(false);
 
   const {
     email,
@@ -213,8 +217,24 @@ export function TeamInviteCard({
   } = state;
 
   useEffect(() => {
+    if (teamNameDirtyRef.current) {
+      return;
+    }
     dispatch({ type: "SYNC_TEAM_NAME", teamName });
+    inviteTeamNameRef.current = teamName;
   }, [teamName]);
+
+  useEffect(
+    () => () => {
+      if (teamNameDebounceRef.current) {
+        clearTimeout(teamNameDebounceRef.current);
+      }
+      if (teamNameSavedIndicatorRef.current) {
+        clearTimeout(teamNameSavedIndicatorRef.current);
+      }
+    },
+    [],
+  );
 
   function getRoleLabel(value: "owner" | "admin" | "member") {
     if (value === "owner") return t("roles.owner");
@@ -222,48 +242,107 @@ export function TeamInviteCard({
     return t("roles.member");
   }
 
-  async function handleSaveTeamName(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!canEditTeamName) {
-      return;
-    }
+  const TEAM_NAME_AUTOSAVE_MS = 600;
 
-    const normalized = inviteTeamName.trim();
+  function scheduleTeamNameAutosave() {
+    if (teamNameDebounceRef.current) {
+      clearTimeout(teamNameDebounceRef.current);
+    }
+    teamNameDebounceRef.current = setTimeout(() => {
+      teamNameDebounceRef.current = null;
+      void persistTeamName();
+    }, TEAM_NAME_AUTOSAVE_MS);
+  }
+
+  /** One PATCH; may recurse if the user kept typing while the request was in flight. */
+  async function saveTeamNameOnce(): Promise<void> {
+    const normalized = inviteTeamNameRef.current.trim();
     if (normalized.length < 2) {
-      setTeamNameBanner({ message: t("errors.teamNameTooShort"), variant: "error" });
       return;
     }
     if (normalized === teamName.trim()) {
-      setTeamNameBanner({ message: t("feedback.teamNameUnchanged"), variant: "success" });
+      teamNameDirtyRef.current = false;
+      setTeamNameSaveStatus("idle");
       return;
     }
 
-    setSavingTeamName(true);
+    setTeamNameSaveStatus("saving");
     setTeamNameBanner({ message: null, variant: "success" });
     dispatch({ type: "CLEAR_BANNER" });
 
+    const response = await fetch("/api/team/settings", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        ...getCsrfHeaders(),
+      },
+      body: JSON.stringify({ teamName: normalized }),
+    });
+    const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+    if (!response.ok) {
+      throw new Error(payload?.error ?? t("errors.updateTeamName"));
+    }
+
+    const latest = inviteTeamNameRef.current.trim();
+    if (latest !== normalized) {
+      await saveTeamNameOnce();
+      return;
+    }
+
+    teamNameDirtyRef.current = false;
+    if (teamNameSavedIndicatorRef.current) {
+      clearTimeout(teamNameSavedIndicatorRef.current);
+    }
+    setTeamNameSaveStatus("saved");
+    teamNameSavedIndicatorRef.current = setTimeout(() => {
+      teamNameSavedIndicatorRef.current = null;
+      setTeamNameSaveStatus("idle");
+    }, 2000);
+    router.refresh();
+  }
+
+  async function persistTeamName() {
+    if (!canEditTeamName || teamNamePersistRef.current) {
+      return;
+    }
+
+    const normalized = inviteTeamNameRef.current.trim();
+    if (normalized.length < 2) {
+      return;
+    }
+    if (normalized === teamName.trim()) {
+      teamNameDirtyRef.current = false;
+      setTeamNameSaveStatus("idle");
+      return;
+    }
+
+    teamNamePersistRef.current = true;
     try {
-      const response = await fetch("/api/team/settings", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          ...getCsrfHeaders(),
-        },
-        body: JSON.stringify({ teamName: normalized }),
-      });
-      const payload = (await response.json().catch(() => null)) as { error?: string } | null;
-      if (!response.ok) {
-        throw new Error(payload?.error ?? t("errors.updateTeamName"));
-      }
-      setTeamNameBanner({ message: t("feedback.teamNameUpdated"), variant: "success" });
-      router.refresh();
+      await saveTeamNameOnce();
     } catch (error) {
+      setTeamNameSaveStatus("idle");
       setTeamNameBanner({
         message: error instanceof Error ? error.message : t("errors.updateTeamName"),
         variant: "error",
       });
     } finally {
-      setSavingTeamName(false);
+      teamNamePersistRef.current = false;
+    }
+  }
+
+  function handleTeamNameBlur() {
+    if (teamNameDebounceRef.current) {
+      clearTimeout(teamNameDebounceRef.current);
+      teamNameDebounceRef.current = null;
+    }
+    const normalized = inviteTeamNameRef.current.trim();
+    if (normalized.length > 0 && normalized.length < 2) {
+      setTeamNameBanner({ message: t("errors.teamNameTooShort"), variant: "error" });
+      setTeamNameSaveStatus("idle");
+      return;
+    }
+    if (normalized.length >= 2) {
+      void persistTeamName();
     }
   }
 
@@ -478,335 +557,304 @@ export function TeamInviteCard({
   const showPeopleEmptyState = members.length <= 1;
 
   return (
-    <Card className="overflow-hidden border app-border-subtle bg-card text-card-foreground shadow-sm ring-1 ring-border/40">
-      <CardHeader className="border-b border-border/60 px-5 py-4 sm:px-6">
-        <CardTitle className="font-heading text-lg font-semibold tracking-tight">
-          {t("title")}
-        </CardTitle>
-        <CardDescription className="mt-1.5 text-sm leading-snug">
-          {t("description", { teamName })}
-        </CardDescription>
-      </CardHeader>
-
-      <CardContent className="space-y-0 px-0 pb-6 pt-0">
-        {canEditTeamName ? (
-          <>
-            <div className="px-5 pt-5 sm:px-6">
-              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                <Building2
-                  className="h-4 w-4 shrink-0 text-muted-foreground"
-                  strokeWidth={2}
-                  aria-hidden
-                />
-                {t("teamName.sectionTitle")}
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {t("teamName.sectionDescription")}
-              </p>
-              <form
-                className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end"
-                onSubmit={handleSaveTeamName}
-              >
-                <div className="w-full max-w-sm">
-                  <Input
-                    id="team-name-input"
-                    type="text"
-                    autoComplete="organization"
-                    minLength={2}
-                    maxLength={80}
-                    disabled={savingTeamName}
-                    value={inviteTeamName}
-                    onChange={(event) =>
-                      dispatch({
-                        type: "SET_FIELD",
-                        field: "inviteTeamName",
-                        value: event.target.value,
-                      })
-                    }
-                    placeholder={t("inviteForm.teamNamePlaceholder")}
-                    aria-label={t("inviteForm.teamNameLabel")}
-                    className="h-8 w-full py-1.5 text-sm"
-                  />
-                </div>
-                <SubmitButton
-                  className="h-8 w-full shrink-0 py-1.5 text-sm sm:w-auto"
-                  loading={savingTeamName}
-                  pendingLabel={t("teamName.saving")}
-                  idleLabel={t("teamName.save")}
-                />
-              </form>
-              {requireTeamNameOnFirstInvite ? (
-                <p className="mt-2 text-xs text-muted-foreground">{t("inviteForm.teamNameHint")}</p>
-              ) : null}
-              <FormMessage status={teamNameBanner.variant} message={teamNameBanner.message} />
+    <div className="space-y-6">
+      {canEditTeamName ? (
+        <DashboardPageSection
+          icon={Building2}
+          title={t("teamName.sectionTitle")}
+          description={t("teamName.sectionDescription")}
+        >
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+            <div className="w-full max-w-sm">
+              <Input
+                id="team-name-input"
+                type="text"
+                autoComplete="organization"
+                minLength={2}
+                maxLength={80}
+                value={inviteTeamName}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  inviteTeamNameRef.current = value;
+                  teamNameDirtyRef.current = true;
+                  dispatch({
+                    type: "SET_FIELD",
+                    field: "inviteTeamName",
+                    value,
+                  });
+                  setTeamNameBanner({ message: null, variant: "success" });
+                  if (teamNameSaveStatus === "saved") {
+                    setTeamNameSaveStatus("idle");
+                  }
+                  scheduleTeamNameAutosave();
+                }}
+                onBlur={handleTeamNameBlur}
+                placeholder={t("inviteForm.teamNamePlaceholder")}
+                aria-label={t("inviteForm.teamNameLabel")}
+                aria-busy={teamNameSaveStatus === "saving"}
+                className="h-8 w-full py-1.5 text-sm"
+              />
             </div>
-            <Separator className="my-6" />
-          </>
+            <p className="min-h-[1.25rem] text-xs text-muted-foreground sm:min-w-[5.5rem]" aria-live="polite">
+              {teamNameSaveStatus === "saving" ? t("teamName.saving") : null}
+              {teamNameSaveStatus === "saved" ? t("teamName.saved") : null}
+            </p>
+          </div>
+          {requireTeamNameOnFirstInvite ? (
+            <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+              {t("inviteForm.teamNameHint")}
+            </p>
+          ) : null}
+          <FormMessage status={teamNameBanner.variant} message={teamNameBanner.message} />
+        </DashboardPageSection>
+      ) : null}
+
+      <DashboardPageSection
+        icon={Mail}
+        title={t("inviteForm.sectionTitle")}
+        description={t("inviteForm.sectionDescription")}
+      >
+        <form className="space-y-3" onSubmit={handleSubmit}>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_8.5rem_auto] sm:gap-x-3 sm:gap-y-1">
+            <Label
+              htmlFor="invite-email"
+              className="text-xs sm:col-start-1 sm:row-start-1 sm:self-end"
+            >
+              {t("inviteForm.emailLabel")}
+            </Label>
+            <Input
+              id="invite-email"
+              type="email"
+              required
+              disabled={!canInvite || submitting}
+              value={email}
+              onChange={(event) =>
+                dispatch({ type: "SET_FIELD", field: "email", value: event.target.value })
+              }
+              placeholder={t("inviteForm.emailPlaceholder")}
+              autoComplete="off"
+              className="h-10 min-w-0 py-2 text-sm sm:col-start-1 sm:row-start-2 sm:w-full"
+            />
+            <Label className="text-xs sm:col-start-2 sm:row-start-1 sm:self-end">
+              {t("inviteForm.roleLabel")}
+            </Label>
+            <div className="min-w-0 sm:col-start-2 sm:row-start-2 sm:w-[8.5rem] sm:justify-self-stretch">
+              <Select
+                disabled={!canInvite || submitting}
+                value={role}
+                onValueChange={(value) =>
+                  dispatch({
+                    type: "SET_FIELD",
+                    field: "role",
+                    value: value as "member" | "admin",
+                  })
+                }
+              >
+                <SelectTrigger className="h-10 w-full min-w-0 py-0 data-[size=default]:h-10">
+                  <SelectValue>{getRoleLabel(role)}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="member">{t("roles.member")}</SelectItem>
+                  <SelectItem value="admin">{t("roles.admin")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="sm:col-start-3 sm:row-start-2 sm:self-end sm:justify-self-end">
+              <SubmitButton
+                className="h-10 w-full min-w-0 px-4 py-2 text-sm sm:min-w-[7.5rem]"
+                loading={submitting}
+                disabled={!canInvite}
+                pendingLabel={t("actions.sending")}
+                idleLabel={t("actions.sendInvite")}
+              />
+            </div>
+          </div>
+        </form>
+
+        {seatPriceLabel && canInvite ? (
+          <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+            {t("pricing.perSeat", { amount: seatPriceLabel })}
+          </p>
         ) : null}
 
-        <div className={cn("px-5 sm:px-6", !canEditTeamName && "pt-5")}>
-          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-            <Mail className="h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={2} aria-hidden />
-            {t("inviteForm.sectionTitle")}
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">{t("inviteForm.sectionDescription")}</p>
+        {!canInvite ? (
+          <p className="mt-4 text-sm text-muted-foreground">{t("permissions.onlyOwnersAdmins")}</p>
+        ) : null}
 
-          <form className="mt-3" onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_8.5rem_auto] sm:gap-x-3 sm:gap-y-1">
-              <Label
-                htmlFor="invite-email"
-                className="text-xs sm:col-start-1 sm:row-start-1 sm:self-end"
-              >
-                {t("inviteForm.emailLabel")}
-              </Label>
-              <Input
-                id="invite-email"
-                type="email"
-                required
-                disabled={!canInvite || submitting}
-                value={email}
-                onChange={(event) =>
-                  dispatch({ type: "SET_FIELD", field: "email", value: event.target.value })
-                }
-                placeholder={t("inviteForm.emailPlaceholder")}
-                autoComplete="off"
-                className="h-8 min-w-0 py-1.5 text-sm sm:col-start-1 sm:row-start-2 sm:w-full"
-              />
-              <Label className="text-xs sm:col-start-2 sm:row-start-1 sm:self-end">
-                {t("inviteForm.roleLabel")}
-              </Label>
-              <div className="min-w-0 sm:col-start-2 sm:row-start-2 sm:w-[8.5rem] sm:justify-self-stretch">
-                <Select
-                  disabled={!canInvite || submitting}
-                  value={role}
-                  onValueChange={(value) =>
-                    dispatch({
-                      type: "SET_FIELD",
-                      field: "role",
-                      value: value as "member" | "admin",
-                    })
-                  }
-                >
-                  <SelectTrigger className="w-full min-w-0">
-                    <SelectValue>{getRoleLabel(role)}</SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="member">{t("roles.member")}</SelectItem>
-                    <SelectItem value="admin">{t("roles.admin")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="sm:col-start-3 sm:row-start-2 sm:self-end sm:justify-self-end">
-                <SubmitButton
-                  className="h-8 w-full min-w-0 px-4 py-1.5 text-sm sm:min-w-[7.5rem]"
-                  loading={submitting}
-                  disabled={!canInvite}
-                  pendingLabel={t("actions.sending")}
-                  idleLabel={t("actions.sendInvite")}
-                />
-              </div>
-            </div>
-          </form>
+        <FormMessage status={banner.variant} message={banner.message} />
+      </DashboardPageSection>
 
-          {seatPriceLabel && canInvite ? (
-            <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground/90">
-              {t("pricing.perSeat", { amount: seatPriceLabel })}
-            </p>
-          ) : null}
-
-          {!canInvite ? (
-            <p className="mt-4 text-sm text-muted-foreground">
-              {t("permissions.onlyOwnersAdmins")}
-            </p>
-          ) : null}
-
-          <FormMessage status={banner.variant} message={banner.message} />
-        </div>
-
-        <Separator className="my-6" />
-
-        <div className="px-5 sm:px-6">
-          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-            <Users className="h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={2} aria-hidden />
-            {t("members.title")}
-          </div>
-          {members.length > 1 ? (
-            <p className="mt-1 text-xs text-muted-foreground">{t("members.description")}</p>
-          ) : null}
-
-          {showPeopleEmptyState ? (
-            <p
-              className="mt-2 rounded-md border border-dashed border-border/50 bg-transparent px-3 py-4 text-center text-xs text-muted-foreground"
-              role="status"
-            >
-              {members.length === 0 ? t("members.emptyList") : t("members.noOtherMembers")}
-            </p>
-          ) : (
-            <div
-              className="mt-2 rounded-md border border-dashed border-border/50 bg-transparent p-2"
-              aria-label={t("members.title")}
-            >
-              <ul className="space-y-1.5">
-                {members.map((member) => (
-                  <li
-                    key={member.userId}
-                    className="flex flex-col gap-2 rounded-md px-2 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
-                  >
-                    <div className="flex min-w-0 flex-1 items-center gap-2.5">
-                      <div
-                        className={cn(
-                          "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold",
-                          "bg-muted/80 text-foreground ring-1 ring-border/50",
-                        )}
-                        aria-hidden
-                      >
-                        {memberInitials(member.fullName, member.userId)}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="truncate font-medium text-foreground">
-                          {member.fullName?.trim() || t("members.unnamed")}
-                        </p>
-                        <p className="truncate font-mono text-xs text-muted-foreground">
-                          {member.userId}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 pl-10 sm:pl-0">
-                      <span className="text-xs font-medium text-muted-foreground">
-                        {getRoleLabel(member.role)}
-                      </span>
-                      {canManageRole(member) ? (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="xs"
-                          disabled={updatingRoleUserId !== null}
-                          onClick={() =>
-                            updateMemberRole(
-                              member.userId,
-                              member.role === "admin" ? "member" : "admin",
-                            )
-                          }
-                          className="text-muted-foreground"
-                        >
-                          {updatingRoleUserId === member.userId
-                            ? t("actions.saving")
-                            : member.role === "admin"
-                              ? t("actions.makeMember")
-                              : t("actions.makeAdmin")}
-                        </Button>
-                      ) : null}
-                      {canRemoveMember(member) ? (
-                        <ConfirmDialog
-                          title={t("confirmations.removeMemberTitle")}
-                          description={t("confirmations.removeMember")}
-                          confirmLabel={t("actions.remove")}
-                          cancelLabel={t("actions.cancel")}
-                          variant="destructive"
-                          onConfirm={() => removeMember(member.userId)}
-                        >
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="xs"
-                            disabled={removingUserId !== null}
-                            className="border-rose-300/60 text-rose-700 hover:bg-rose-50 dark:border-rose-700/60 dark:text-rose-200 dark:hover:bg-rose-950/30"
-                          >
-                            {removingUserId === member.userId
-                              ? t("actions.removing")
-                              : t("actions.remove")}
-                          </Button>
-                        </ConfirmDialog>
-                      ) : null}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-
-        <Separator className="my-6" />
-
-        <div className="px-5 pb-5 sm:px-6">
-          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-            <Clock className="h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={2} aria-hidden />
-            {t("pending.title")}
-          </div>
-          {pendingInvites.length === 0 ? (
-            <p className="mt-2 rounded-md border border-dashed border-border/50 bg-transparent px-3 py-4 text-center text-xs text-muted-foreground">
-              {t("pending.none")}
-            </p>
-          ) : (
-            <ul className="mt-4 space-y-2" aria-label={t("pending.title")}>
-              {pendingInvites.map((invite) => (
+      <DashboardPageSection
+        icon={Users}
+        title={t("members.title")}
+        description={t("members.description")}
+      >
+        {showPeopleEmptyState ? (
+          <p
+            className="flex min-h-[5.5rem] items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 px-4 py-8 text-center text-xs text-muted-foreground"
+            role="status"
+          >
+            {members.length === 0 ? t("members.emptyList") : t("members.noOtherMembers")}
+          </p>
+        ) : (
+          <div
+            className="rounded-lg border border-border bg-muted/30 p-2"
+            aria-label={t("members.title")}
+          >
+            <ul className="space-y-1.5">
+              {members.map((member) => (
                 <li
-                  key={invite.id}
-                  className="flex flex-col gap-3 rounded-xl border border-border/50 bg-muted/20 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+                  key={member.userId}
+                  className="flex flex-col gap-2 rounded-md px-2 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
                 >
-                  <div className="flex min-w-0 flex-1 items-start gap-3 sm:items-center">
+                  <div className="flex min-w-0 flex-1 items-center gap-2.5">
                     <div
-                      className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted/80 text-muted-foreground sm:mt-0"
+                      className={cn(
+                        "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold",
+                        "bg-muted/80 text-foreground ring-1 ring-border",
+                      )}
                       aria-hidden
                     >
-                      <Mail className="h-4 w-4" strokeWidth={2} />
+                      {memberInitials(member.fullName, member.userId)}
                     </div>
                     <div className="min-w-0">
-                      <p className="truncate font-medium text-foreground">{invite.email}</p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {t("pending.expires", {
-                          date: formatUtcDate(invite.expiresAt, undefined, locale),
-                        })}
+                      <p className="truncate font-medium text-foreground">
+                        {member.fullName?.trim() || t("members.unnamed")}
+                      </p>
+                      <p className="truncate font-mono text-xs text-muted-foreground">
+                        {member.userId}
                       </p>
                     </div>
                   </div>
-                  <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 pl-12 sm:pl-0">
+                  <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 pl-10 sm:pl-0">
                     <span className="text-xs font-medium text-muted-foreground">
-                      {getRoleLabel(invite.role)}
+                      {getRoleLabel(member.role)}
                     </span>
-                    {canInvite ? (
-                      <>
+                    {canManageRole(member) ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="xs"
+                        disabled={updatingRoleUserId !== null}
+                        onClick={() =>
+                          updateMemberRole(
+                            member.userId,
+                            member.role === "admin" ? "member" : "admin",
+                          )
+                        }
+                        className="text-muted-foreground"
+                      >
+                        {updatingRoleUserId === member.userId
+                          ? t("actions.saving")
+                          : member.role === "admin"
+                            ? t("actions.makeMember")
+                            : t("actions.makeAdmin")}
+                      </Button>
+                    ) : null}
+                    {canRemoveMember(member) ? (
+                      <ConfirmDialog
+                        title={t("confirmations.removeMemberTitle")}
+                        description={t("confirmations.removeMember")}
+                        confirmLabel={t("actions.remove")}
+                        cancelLabel={t("actions.cancel")}
+                        variant="destructive"
+                        onConfirm={() => removeMember(member.userId)}
+                      >
                         <Button
                           type="button"
                           variant="outline"
                           size="xs"
-                          disabled={resendInviteId !== null || revokeInviteId !== null}
-                          onClick={() => resendInvite(invite.id)}
-                          className="text-muted-foreground"
+                          disabled={removingUserId !== null}
+                          className="border-rose-300/60 text-rose-700 hover:bg-rose-50 dark:border-rose-700/60 dark:text-rose-200 dark:hover:bg-rose-950/30"
                         >
-                          {resendInviteId === invite.id
-                            ? t("actions.resending")
-                            : t("actions.resend")}
+                          {removingUserId === member.userId
+                            ? t("actions.removing")
+                            : t("actions.remove")}
                         </Button>
-                        <ConfirmDialog
-                          title={t("confirmations.revokeInviteTitle")}
-                          description={t("confirmations.revokeInvite")}
-                          confirmLabel={t("actions.revoke")}
-                          cancelLabel={t("actions.cancel")}
-                          variant="destructive"
-                          onConfirm={() => revokeInvite(invite.id)}
-                        >
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="xs"
-                            disabled={revokeInviteId !== null || resendInviteId !== null}
-                            className="border-rose-300/60 text-rose-700 hover:bg-rose-50 dark:border-rose-700/60 dark:text-rose-200 dark:hover:bg-rose-950/30"
-                          >
-                            {revokeInviteId === invite.id
-                              ? t("actions.revoking")
-                              : t("actions.revoke")}
-                          </Button>
-                        </ConfirmDialog>
-                      </>
+                      </ConfirmDialog>
                     ) : null}
                   </div>
                 </li>
               ))}
             </ul>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+          </div>
+        )}
+      </DashboardPageSection>
+
+      <DashboardPageSection icon={Clock} title={t("pending.title")}>
+        {pendingInvites.length === 0 ? (
+          <p className="flex min-h-[5.5rem] items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 px-4 py-8 text-center text-xs text-muted-foreground">
+            {t("pending.none")}
+          </p>
+        ) : (
+          <ul className="space-y-2" aria-label={t("pending.title")}>
+            {pendingInvites.map((invite) => (
+              <li
+                key={invite.id}
+                className="flex flex-col gap-3 rounded-lg border border-border bg-muted/30 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+              >
+                <div className="flex min-w-0 flex-1 items-start gap-3 sm:items-center">
+                  <div
+                    className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted/80 text-muted-foreground sm:mt-0"
+                    aria-hidden
+                  >
+                    <Mail className="h-4 w-4" strokeWidth={2} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-foreground">{invite.email}</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {t("pending.expires", {
+                        date: formatUtcDate(invite.expiresAt, undefined, locale),
+                      })}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 pl-12 sm:pl-0">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {getRoleLabel(invite.role)}
+                  </span>
+                  {canInvite ? (
+                    <>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="xs"
+                        disabled={resendInviteId !== null || revokeInviteId !== null}
+                        onClick={() => resendInvite(invite.id)}
+                        className="text-muted-foreground"
+                      >
+                        {resendInviteId === invite.id
+                          ? t("actions.resending")
+                          : t("actions.resend")}
+                      </Button>
+                      <ConfirmDialog
+                        title={t("confirmations.revokeInviteTitle")}
+                        description={t("confirmations.revokeInvite")}
+                        confirmLabel={t("actions.revoke")}
+                        cancelLabel={t("actions.cancel")}
+                        variant="destructive"
+                        onConfirm={() => revokeInvite(invite.id)}
+                      >
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="xs"
+                          disabled={revokeInviteId !== null || resendInviteId !== null}
+                          className="border-rose-300/60 text-rose-700 hover:bg-rose-50 dark:border-rose-700/60 dark:text-rose-200 dark:hover:bg-rose-950/30"
+                        >
+                          {revokeInviteId === invite.id
+                            ? t("actions.revoking")
+                            : t("actions.revoke")}
+                        </Button>
+                      </ConfirmDialog>
+                    </>
+                  ) : null}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </DashboardPageSection>
+    </div>
   );
 }

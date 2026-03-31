@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { env, getAppUrl } from "@/lib/env";
+import { getAppUrl } from "@/lib/env";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -24,11 +24,6 @@ import {
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { isValidEmail } from "@/lib/validation";
 
-export type UpdateDashboardSettingsState = {
-  status: "idle" | "success" | "error";
-  message: string | null;
-};
-
 export type RequestEmailChangeState = {
   status: "idle" | "success" | "error";
   message: string | null;
@@ -47,56 +42,6 @@ export type DeleteAccountState = {
 type TeamMembershipRow = {
   team_id: string;
 };
-
-function getSupabaseStorageOrigin(): string | null {
-  try {
-    return new URL(env.NEXT_PUBLIC_SUPABASE_URL).origin;
-  } catch {
-    return null;
-  }
-}
-
-function extractProfilePhotoPath(url: string, expectedStorageOrigin: string): string | null {
-  try {
-    const parsed = new URL(url);
-    if (parsed.origin !== expectedStorageOrigin) {
-      return null;
-    }
-
-    const match = parsed.pathname.match(
-      /^\/storage\/v1\/object\/(?:public|sign)\/profile-photos\/(.+)$/,
-    );
-    if (!match?.[1]) {
-      return null;
-    }
-
-    return decodeURIComponent(match[1]);
-  } catch {
-    return null;
-  }
-}
-
-function isOwnedProfilePhotoPath(profilePhotoPath: string, userId: string): boolean {
-  const pathSegments = profilePhotoPath.split("/").filter((segment) => segment.length > 0);
-  if (pathSegments.length < 2) {
-    return false;
-  }
-
-  if (pathSegments.some((segment) => segment === "." || segment === "..")) {
-    return false;
-  }
-
-  return pathSegments[0] === userId;
-}
-
-function isAllowedAvatarUrl(url: string, expectedStorageOrigin: string, userId: string): boolean {
-  const profilePhotoPath = extractProfilePhotoPath(url, expectedStorageOrigin);
-  if (!profilePhotoPath) {
-    return false;
-  }
-
-  return isOwnedProfilePhotoPath(profilePhotoPath, userId);
-}
 
 async function isLastOwnerOfAnyTeam(userId: string): Promise<boolean> {
   const adminClient = createAdminClient();
@@ -216,127 +161,6 @@ export async function logoutAllSessions(formData: FormData) {
   await rotateCsrfTokenForServerAction();
   await clearOnboardingCookie();
   redirect("/login");
-}
-
-export async function updateDashboardSettings(
-  _previousState: UpdateDashboardSettingsState,
-  formData: FormData,
-): Promise<UpdateDashboardSettingsState> {
-  const csrfError = await verifyDashboardActionCsrf(formData);
-  if (csrfError) {
-    return csrfError;
-  }
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return {
-      status: "error",
-      message: "You must be logged in to update settings.",
-    };
-  }
-
-  const rateLimit = await checkRateLimit({
-    key: `dashboard-settings:update:${user.id}`,
-    ...RATE_LIMITS.dashboardSettingsUpdateByUser,
-  });
-  if (!rateLimit.allowed) {
-    const waitSeconds = Math.max(1, rateLimit.retryAfterSeconds);
-    return {
-      status: "error",
-      message: `Too many settings updates. Please wait ${waitSeconds} seconds and try again.`,
-    };
-  }
-
-  const existingProfileResult = await supabase
-    .from("profiles")
-    .select("avatar_url")
-    .eq("id", user.id)
-    .maybeSingle<{ avatar_url: string | null }>();
-  const previousAvatarUrl = existingProfileResult.data?.avatar_url ?? null;
-  if (existingProfileResult.error) {
-    logger.error("Could not fetch existing profile avatar", existingProfileResult.error, {
-      userId: user.id,
-    });
-  }
-
-  const fullNameInput = formData.get("fullName");
-  const avatarUrlInput = formData.get("avatarUrl");
-  const fullName =
-    typeof fullNameInput === "string" && fullNameInput.trim().length > 0
-      ? fullNameInput.trim()
-      : null;
-  const avatarUrl =
-    typeof avatarUrlInput === "string" && avatarUrlInput.trim().length > 0
-      ? avatarUrlInput.trim()
-      : null;
-  const storageOrigin = getSupabaseStorageOrigin();
-
-  if (!storageOrigin) {
-    logger.error("Supabase URL is invalid; cannot validate avatar URL", undefined, {
-      userId: user.id,
-    });
-    return {
-      status: "error",
-      message: "Could not validate profile photo URL. Please try again.",
-    };
-  }
-
-  let sanitizedAvatarUrl = avatarUrl;
-  if (sanitizedAvatarUrl && !isAllowedAvatarUrl(sanitizedAvatarUrl, storageOrigin, user.id)) {
-    if (sanitizedAvatarUrl === previousAvatarUrl) {
-      // Auto-heal legacy invalid values while still blocking newly injected URLs.
-      sanitizedAvatarUrl = null;
-    } else {
-      return {
-        status: "error",
-        message: "Profile photo URL is invalid. Please upload your photo again.",
-      };
-    }
-  }
-
-  const { error } = await supabase
-    .from("profiles")
-    .update({ full_name: fullName, avatar_url: sanitizedAvatarUrl })
-    .eq("id", user.id);
-
-  if (error) {
-    logger.error("Failed to update dashboard settings", error);
-    return {
-      status: "error",
-      message: "Could not save settings. Please try again.",
-    };
-  }
-
-  if (previousAvatarUrl && previousAvatarUrl !== sanitizedAvatarUrl) {
-    const previousPhotoPath = extractProfilePhotoPath(previousAvatarUrl, storageOrigin);
-    if (previousPhotoPath && isOwnedProfilePhotoPath(previousPhotoPath, user.id)) {
-      const adminClient = createAdminClient();
-      const { error: removeError } = await adminClient.storage
-        .from("profile-photos")
-        .remove([previousPhotoPath]);
-      if (removeError) {
-        logger.error("Failed to remove replaced profile photo", removeError, {
-          userId: user.id,
-          path: previousPhotoPath,
-        });
-      }
-    } else if (previousPhotoPath) {
-      logger.warn("Skipping cleanup for non-owned profile photo path", {
-        userId: user.id,
-        path: previousPhotoPath,
-      });
-    }
-  }
-
-  revalidatePath("/dashboard");
-  return {
-    status: "success",
-    message: "Settings saved.",
-  };
 }
 
 export async function requestEmailChange(

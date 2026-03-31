@@ -24,14 +24,6 @@ type ProfileRow = {
   created_at: string;
 };
 
-type NotificationPreferencesRow = {
-  marketing_emails: boolean;
-  product_updates: boolean;
-  security_alerts: boolean;
-};
-
-export type DashboardNotificationPreferences = NotificationPreferencesRow;
-
 type TeamMembershipRow = {
   user_id: string;
   role: "owner" | "admin" | "member";
@@ -88,12 +80,6 @@ export {
   getTeamMemberCount,
 } from "@/lib/dashboard/team-snapshot";
 export type { DashboardAiUiGateReason, SubscriptionRow } from "@/lib/dashboard/team-snapshot";
-
-const DEFAULT_NOTIFICATION_PREFERENCES: DashboardNotificationPreferences = {
-  marketing_emails: false,
-  product_updates: true,
-  security_alerts: true,
-};
 
 export type UsageMonthlyTotalsRow = {
   month_start: string;
@@ -180,35 +166,6 @@ export const getDashboardBaseData = cache(async function getDashboardBaseData() 
     };
   });
 });
-
-export async function getDashboardNotificationPreferences(
-  supabase: SupabaseClient,
-  userId: string,
-): Promise<DashboardNotificationPreferences> {
-  try {
-    const notificationPreferencesResult = await supabase
-      .from("notification_preferences")
-      .select("marketing_emails,product_updates,security_alerts")
-      .eq("user_id", userId)
-      .maybeSingle<NotificationPreferencesRow>();
-
-    if (notificationPreferencesResult.error) {
-      logger.warn("Failed to load dashboard notification preferences; using defaults.", {
-        userId,
-        error: notificationPreferencesResult.error,
-      });
-      return DEFAULT_NOTIFICATION_PREFERENCES;
-    }
-
-    return notificationPreferencesResult.data ?? DEFAULT_NOTIFICATION_PREFERENCES;
-  } catch (error) {
-    logger.warn("Failed to load dashboard notification preferences; using defaults.", {
-      userId,
-      error,
-    });
-    return DEFAULT_NOTIFICATION_PREFERENCES;
-  }
-}
 
 export async function getDashboardTeamOptions(
   supabase: SupabaseClient,

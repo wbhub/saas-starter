@@ -50,6 +50,7 @@ function mockDashboardDependencies({
     }),
   }));
   vi.doMock("next-intl/server", () => ({
+    getLocale: vi.fn(async () => "en"),
     getTranslations: vi.fn(async (namespace?: string) => {
       if (namespace === "Landing.pricing") {
         return (key: string) => {
@@ -59,6 +60,22 @@ function mockDashboardDependencies({
             "plans.pro.name": "Pro",
           };
           return planNames[key] ?? key;
+        };
+      }
+      if (namespace === "DashboardBillingPage") {
+        return (key: string) => {
+          const billing: Record<string, string> = {
+            "currentSubscription.statusLabels.active": "Active",
+            "currentSubscription.billingInterval": "Billing interval",
+            "currentSubscription.monthly": "Monthly",
+            "currentSubscription.annual": "Annual",
+            "currentSubscription.periodEnd": "Period end",
+            "currentSubscription.notAvailable": "N/A",
+            "currentSubscription.cancelScheduled": "Cancellation scheduled for period end.",
+            "billingDisabled.title": "Billing is disabled",
+            "billingDisabled.description": "Add Stripe environment variables.",
+          };
+          return billing[key] ?? key;
         };
       }
       return (key: string, values?: { name?: string }) => {

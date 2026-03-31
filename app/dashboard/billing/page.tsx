@@ -1,6 +1,17 @@
 import { Suspense, type ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
-import { CalendarDays, CheckCircle2, Coins, CreditCard, Sparkles, Users } from "lucide-react";
+import {
+  AlertCircle,
+  CalendarDays,
+  CheckCircle2,
+  CircleDollarSign,
+  Coins,
+  CreditCard,
+  LayoutGrid,
+  Receipt,
+  Sparkles,
+  Users,
+} from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { AiUsageCard, AiUsageCardSkeleton } from "@/components/ai-usage-card";
 import { BillingActions } from "@/components/billing-actions";
@@ -17,9 +28,13 @@ import { createClient } from "@/lib/supabase/server";
 import { getCachedTeamContextForUser } from "@/lib/team-context-cache";
 import { logger } from "@/lib/logger";
 import { cn } from "@/lib/utils";
+import {
+  DashboardPageSection,
+  dashboardPageSectionClass,
+} from "@/components/dashboard-page-section";
 
-/** Matches `AiUsageCard` / `AiUsageCardSkeleton` outer shell for visual consistency. */
-const billingSectionClass = "rounded-xl bg-card ring-1 ring-border p-6";
+/** Matches settings and `AiUsageCard` / `AiUsageCardSkeleton` outer shell for visual consistency. */
+const billingSectionClass = dashboardPageSectionClass;
 
 function subscriptionStatusLabel(translate: (key: string) => string, status: SubscriptionStatus) {
   return translate(`currentSubscription.statusLabels.${status}`);
@@ -178,37 +193,27 @@ export default async function DashboardBillingPage({
       {!isPaidPlan ? (
         <div className="space-y-6">
           {!billingEnabled ? (
-            <section
-              className={cn(
-                billingSectionClass,
-                "bg-destructive/5 ring-destructive/30 dark:bg-destructive/10",
-              )}
-            >
-              <h2 className="text-lg font-semibold text-foreground">
-                {t("billingDisabled.title")}
-              </h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {t("billingDisabled.description")}
-              </p>
-            </section>
+            <DashboardPageSection
+              icon={AlertCircle}
+              variant="destructive"
+              title={t("billingDisabled.title")}
+              description={t("billingDisabled.description")}
+            />
           ) : null}
 
-          <section className={billingSectionClass}>
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Sparkles className="h-5 w-5" aria-hidden />
-              </div>
-              <div className="min-w-0 space-y-2">
-                <h2 className="text-lg font-semibold text-foreground">{t("freeMode.title")}</h2>
-                <p className="text-sm text-muted-foreground">{t("freeMode.description")}</p>
-              </div>
-            </div>
-          </section>
+          <DashboardPageSection
+            icon={Sparkles}
+            iconTone="primary"
+            title={t("freeMode.title")}
+            description={t("freeMode.description")}
+          />
 
-          <section className={billingSectionClass}>
-            <h2 className="text-lg font-semibold text-foreground">{t("freeMode.compareTitle")}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">{t("freeMode.compareDescription")}</p>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <DashboardPageSection
+            icon={LayoutGrid}
+            title={t("freeMode.compareTitle")}
+            description={t("freeMode.compareDescription")}
+          >
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {livePricing.map((plan) => (
                 <div
                   key={plan.key}
@@ -245,27 +250,26 @@ export default async function DashboardBillingPage({
                 </div>
               ))}
             </div>
-          </section>
+          </DashboardPageSection>
         </div>
       ) : (
-        <section className={billingSectionClass}>
-          <div className="flex flex-col gap-3 border-b border-border pb-6 sm:flex-row sm:items-start sm:justify-between">
-            <div className="min-w-0 space-y-1">
-              <h2 className="text-lg font-semibold text-foreground">
-                {t("currentSubscription.title")}
-              </h2>
-              <p className="text-sm text-muted-foreground">{t("currentSubscription.subtitle")}</p>
-            </div>
-            {subscription ? (
+        <DashboardPageSection
+          icon={Receipt}
+          borderedHeader
+          title={t("currentSubscription.title")}
+          description={t("currentSubscription.subtitle")}
+          endSlot={
+            subscription ? (
               <Badge
                 variant={subscriptionStatusBadgeVariant(subscription.status)}
                 className="h-6 w-fit shrink-0 sm:mt-0.5"
               >
                 {subscriptionStatusLabel(t, subscription.status)}
               </Badge>
-            ) : null}
-          </div>
-          <div className="mt-6 space-y-6">
+            ) : null
+          }
+        >
+          <div className="space-y-6">
             {subscription ? (
               <>
                 {subscription.cancel_at_period_end ? (
@@ -277,47 +281,73 @@ export default async function DashboardBillingPage({
                   </div>
                 ) : null}
                 <div className="grid gap-5 sm:grid-cols-2">
-                  <SubscriptionDetail
-                    icon={CreditCard}
-                    label={t("currentSubscription.currentPlan")}
-                  >
-                    {currentPaidPlanKey
-                      ? tPlanCopy(`plans.${currentPaidPlanKey}.name`)
-                      : t("currentSubscription.unknown")}
-                  </SubscriptionDetail>
-                  <SubscriptionDetail icon={Users} label={t("currentSubscription.seats")}>
-                    {subscription.seat_quantity}
-                  </SubscriptionDetail>
-                  {billingInterval ? (
+                  <div className="flex flex-col gap-5">
+                    <SubscriptionDetail
+                      icon={CreditCard}
+                      label={t("currentSubscription.currentPlan")}
+                    >
+                      {currentPaidPlanKey
+                        ? tPlanCopy(`plans.${currentPaidPlanKey}.name`)
+                        : t("currentSubscription.unknown")}
+                    </SubscriptionDetail>
+                    {billingInterval ? (
+                      <SubscriptionDetail
+                        icon={CalendarDays}
+                        label={t("currentSubscription.billingInterval")}
+                      >
+                        {billingInterval === "year"
+                          ? t("currentSubscription.annual")
+                          : t("currentSubscription.monthly")}
+                      </SubscriptionDetail>
+                    ) : null}
                     <SubscriptionDetail
                       icon={CalendarDays}
-                      label={t("currentSubscription.billingInterval")}
+                      label={t("currentSubscription.periodEnd")}
                     >
-                      {billingInterval === "year"
-                        ? t("currentSubscription.annual")
-                        : t("currentSubscription.monthly")}
+                      {subscription.current_period_end
+                        ? formatUtcDate(subscription.current_period_end, undefined, locale)
+                        : t("currentSubscription.notAvailable")}
                     </SubscriptionDetail>
-                  ) : null}
-                  {perSeatAmount !== null ? (
-                    <SubscriptionDetail icon={Coins} label={t("currentSubscription.perSeatCost")}>
-                      <span>
-                        {catalogSeatPrice(perSeatAmount)}
-                        {billingInterval === "year" ? (
-                          <span className="ml-1.5 text-sm font-normal text-muted-foreground">
-                            ({t("currentSubscription.billedAnnually")})
-                          </span>
-                        ) : null}
-                      </span>
+                  </div>
+                  <div className="flex flex-col gap-5">
+                    <SubscriptionDetail icon={Users} label={t("currentSubscription.seats")}>
+                      {subscription.seat_quantity}
                     </SubscriptionDetail>
-                  ) : null}
-                  <SubscriptionDetail
-                    icon={CalendarDays}
-                    label={t("currentSubscription.periodEnd")}
-                  >
-                    {subscription.current_period_end
-                      ? formatUtcDate(subscription.current_period_end, undefined, locale)
-                      : t("currentSubscription.notAvailable")}
-                  </SubscriptionDetail>
+                    {perSeatAmount !== null ? (
+                      <SubscriptionDetail icon={Coins} label={t("currentSubscription.perSeatCost")}>
+                        <span>
+                          {catalogSeatPrice(perSeatAmount)}
+                          {billingInterval === "year" ? (
+                            <span className="ml-1.5 text-sm font-normal text-muted-foreground">
+                              ({t("currentSubscription.billedAnnually")})
+                            </span>
+                          ) : null}
+                        </span>
+                      </SubscriptionDetail>
+                    ) : null}
+                    {perSeatAmount !== null && estimatedMonthlySeatTotal != null ? (
+                      <SubscriptionDetail
+                        icon={CircleDollarSign}
+                        label={t("currentSubscription.totalCost")}
+                      >
+                        {billingInterval === "year"
+                          ? t("currentSubscription.totalYearlyValue", {
+                              amount: new Intl.NumberFormat(locale, {
+                                style: "currency",
+                                currency: "USD",
+                                maximumFractionDigits: 0,
+                              }).format(estimatedMonthlySeatTotal * 12),
+                            })
+                          : t("currentSubscription.totalMonthlyValue", {
+                              amount: new Intl.NumberFormat(locale, {
+                                style: "currency",
+                                currency: "USD",
+                                maximumFractionDigits: 0,
+                              }).format(estimatedMonthlySeatTotal),
+                            })}
+                      </SubscriptionDetail>
+                    ) : null}
+                  </div>
                 </div>
               </>
             ) : (
@@ -350,7 +380,7 @@ export default async function DashboardBillingPage({
               </>
             ) : null}
           </div>
-        </section>
+        </DashboardPageSection>
       )}
 
       <BillingActions

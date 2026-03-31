@@ -232,17 +232,26 @@
   "DashboardPage": {
     "overview": "概要",
     "welcome": "{name} さん、ようこそ",
-    "subtitle": "アカウントとサブスクリプションの概要です。",
+    "subtitle": "ワークスペースの識別情報と請求情報のスナップショットです。",
     "account": "アカウント",
+    "accountDescription": "認証ユーザー ID とチーム ID は `profiles`・`team_memberships`・`supabase/schema.sql` の RLS と対応します。",
     "userId": "ユーザー ID",
+    "email": "メール",
+    "teamId": "チーム ID",
     "team": "チーム",
     "role": "ロール",
     "memberSince": "参加日",
+    "profileDevHint": "デバッグ時は ID をログや SQL にコピーしてください。必要な環境変数は `.env.example` にあります。スキーマは Supabase SQL エディタで適用し、Auth のリダイレクト URL を `NEXT_PUBLIC_APP_URL` に合わせてください。",
     "subscriptionSnapshot": "サブスクリプション概要",
+    "subscriptionDescription": "このチームの Stripe 上の値です。`lib/stripe/plans` の価格 ID およびダッシュボードと対応します。",
     "currentPlan": "現在のプラン",
     "unknown": "不明",
     "status": "ステータス",
     "seats": "席数",
+    "teamMembers": "チーム人数",
+    "stripePriceId": "Stripe 価格 ID",
+    "subscriptionDevHint": "ローカルでは Stripe CLI と Webhook 署名シークレットを利用してください。Checkout と Customer Portal は README の課金セクションを参照。",
+    "subscriptionFreeDevHint": "有料フローをローカルで試すには `BILLING_PROVIDER=stripe` を設定し、`.env.example` から Stripe キーをコピーしてください。",
     "currentPlanFree": "現在のプラン: Free",
     "visitBillingUpgrade": "いつでも課金ページからアップグレードできます。",
     "noActiveSubscription": "有効なサブスクリプションがありません。課金ページからプランを開始してください。",
@@ -403,6 +412,9 @@
       "cancelScheduled": "現在の請求期間の終了時に解約が予定されています。それまではアクセスを維持します。",
       "seats": "席数",
       "perSeatCost": "1 席あたりの料金",
+      "totalCost": "合計",
+      "totalMonthlyValue": "{amount}/月",
+      "totalYearlyValue": "{amount}/年",
       "billingInterval": "請求間隔",
       "monthly": "月額",
       "annual": "年額",
@@ -441,11 +453,6 @@
       "eyebrow": "設定",
       "title": "アカウント設定",
       "description": "プロフィールの基本情報を更新し、アカウント単位の設定を確認します。"
-    },
-    "inviteTeammates": {
-      "title": "コラボレーション",
-      "description": "準備ができたらチームメイトを招待できます。席数が増えると月額料金も増えます。",
-      "action": "チームメイトを招待"
     }
   },
   "DashboardTeamPage": {
@@ -480,13 +487,18 @@
   "DashboardSettingsCard": {
     "title": "設定",
     "description": "基本的なアカウント設定を更新します。",
+    "errors": {
+      "nameSaveFailed": "表示名を保存できませんでした。",
+      "photoSaveFailed": "プロフィール写真を保存できませんでした。"
+    },
     "actions": {
-      "saving": "保存中...",
-      "saveSettings": "設定を保存"
+      "saving": "保存中..."
     },
     "fields": {
       "displayName": "表示名",
       "displayNamePlaceholder": "あなたの名前",
+      "displayNameAutosave": "入力中に自動で保存されます。",
+      "nameSaved": "保存しました",
       "email": "メール",
       "emailHint": "メールアドレスは認証プロバイダー側で管理されます。"
     },
@@ -494,14 +506,9 @@
       "profilePhoto": "プロフィール写真",
       "profileAvatarAlt": "プロフィールアバター",
       "changePhoto": "写真を変更",
-      "noPhoto": "写真なし",
-      "uploading": "アップロード中...",
-      "uploadPhoto": "写真をアップロード",
+      "autosaveHint": "写真をアップロードまたは削除すると自動で保存されます。",
       "removePhoto": "写真を削除",
-      "ready": "{name} をアップロードできます",
-      "success": "写真をアップロードしました。[設定を保存] をクリックして反映してください。",
       "errors": {
-        "selectImage": "アップロードする前に画像を選択してください。",
         "imageOnly": "画像ファイルのみ対応しています。",
         "maxSize": "画像は 2MB 以下にしてください。",
         "failed": "画像をアップロードできませんでした。もう一度お試しください。"
@@ -514,8 +521,8 @@
     "teamName": {
       "sectionTitle": "チーム名",
       "sectionDescription": "アプリ、メール、招待に表示されます。いつでも変更できます。",
-      "save": "名前を保存",
-      "saving": "保存中..."
+      "saving": "保存中...",
+      "saved": "保存しました"
     },
     "members": {
       "title": "メンバー",
@@ -647,28 +654,6 @@
     "title": "チームアクセスを読み込めませんでした",
     "description": "チームコンテキストの読み込み中に一時的な問題が発生しました。更新してもう一度お試しください。"
   },
-  "NotificationPreferencesCard": {
-    "title": "通知設定",
-    "description": "受け取りたいアカウントメールを選択してください。",
-    "actions": {
-      "saving": "保存中...",
-      "savePreferences": "設定を保存"
-    },
-    "items": {
-      "securityAlerts": {
-        "label": "セキュリティ通知",
-        "description": "サインイン、パスワード再設定、重要なアカウントアクティビティ。"
-      },
-      "productUpdates": {
-        "label": "製品アップデート",
-        "description": "機能のお知らせとリリースノート。"
-      },
-      "marketingEmails": {
-        "label": "マーケティングメール",
-        "description": "ヒント、オファー、時折のプロダクト紹介。"
-      }
-    }
-  },
   "EmailSettingsCard": {
     "title": "メールアドレス",
     "description": "メールアドレスの変更をリクエストします。認証セキュリティ設定に応じて確認手順を送信します。",
@@ -693,7 +678,7 @@
       "confirmPermanent": "この操作が元に戻せない永久的なものだと理解しています。"
     },
     "actions": {
-      "deactivate": "一時的に無効化する（すべてのセッションからサインアウト）",
+      "deactivate": "一時的に無効化する",
       "deleting": "削除中...",
       "deletePermanently": "アカウントを完全に削除"
     }
@@ -928,6 +913,34 @@
       "payloadTooLarge": "リクエストペイロードが大きすぎます。",
       "invalidPayload": "組織設定ペイロードが無効です。",
       "unableToUpdate": "組織設定を更新できません。"
+    }
+  },
+  "ApiProfileFullName": {
+    "errors": {
+      "unauthorized": "認証されていません",
+      "invalidOrigin": "リクエストのオリジンが無効です。",
+      "missingCsrfToken": "CSRF トークンがありません。",
+      "invalidCsrfToken": "CSRF トークンが無効です。",
+      "invalidContentType": "Content-Type は application/json である必要があります。",
+      "rateLimited": "設定更新が多すぎます。しばらくしてから再試行してください。",
+      "payloadTooLarge": "リクエストペイロードが大きすぎます。",
+      "invalidPayload": "表示名のペイロードが無効です。",
+      "unableToUpdate": "表示名を保存できませんでした。"
+    }
+  },
+  "ApiProfileAvatar": {
+    "errors": {
+      "unauthorized": "認証されていません",
+      "invalidOrigin": "リクエストのオリジンが無効です。",
+      "missingCsrfToken": "CSRF トークンがありません。",
+      "invalidCsrfToken": "CSRF トークンが無効です。",
+      "invalidContentType": "Content-Type は application/json である必要があります。",
+      "rateLimited": "設定更新が多すぎます。しばらくしてから再試行してください。",
+      "payloadTooLarge": "リクエストペイロードが大きすぎます。",
+      "invalidPayload": "プロフィール写真のペイロードが無効です。",
+      "unableToUpdate": "プロフィール写真を保存できませんでした。",
+      "unableToValidate": "プロフィール写真の URL を検証できませんでした。",
+      "invalidAvatarUrl": "そのプロフィール写真の URL は許可されていません。"
     }
   },
   "ApiTeamRecoverPersonal": {

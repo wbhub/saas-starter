@@ -2,7 +2,9 @@
 
 import { useActionState } from "react";
 import { useTranslations } from "next-intl";
+import { Mail } from "lucide-react";
 import { requestEmailChange, type RequestEmailChangeState } from "@/app/dashboard/actions";
+import { DashboardPageSection } from "@/components/dashboard-page-section";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,14 +25,18 @@ export function EmailSettingsCard({ email, csrfToken }: EmailSettingsCardProps) 
   const [state, formAction] = useActionState(requestEmailChange, initialState);
 
   return (
-    <section className="rounded-xl border app-border-subtle app-surface p-5 shadow-sm">
-      <h2 className="text-lg font-semibold text-foreground">{t("title")}</h2>
-      <p className="mt-2 text-muted-foreground">{t("description")}</p>
-      <form action={formAction} className="mt-4 space-y-3">
+    <DashboardPageSection icon={Mail} title={t("title")} description={t("description")}>
+      <div className="space-y-4">
+      <form action={formAction} className="space-y-4">
         <input type="hidden" name="csrf_token" value={csrfToken} />
         <div>
           <Label className="mb-1">{t("fields.currentEmail")}</Label>
-          <Input type="email" variant="readonly" value={email ?? ""} />
+          <Input
+            type="email"
+            variant="readonly"
+            value={email ?? ""}
+            className="max-w-md"
+          />
         </div>
         <div>
           <Label className="mb-1">{t("fields.newEmail")}</Label>
@@ -40,6 +46,7 @@ export function EmailSettingsCard({ email, csrfToken }: EmailSettingsCardProps) 
             required
             autoComplete="email"
             placeholder={t("fields.newEmailPlaceholder")}
+            className="max-w-md"
           />
         </div>
         <SubmitButton
@@ -48,6 +55,7 @@ export function EmailSettingsCard({ email, csrfToken }: EmailSettingsCardProps) 
         />
       </form>
       <FormMessage status={state.status} message={state.message} />
-    </section>
+      </div>
+    </DashboardPageSection>
   );
 }

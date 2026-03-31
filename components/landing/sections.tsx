@@ -13,9 +13,11 @@ import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { AuthAwareLink } from "@/components/auth-aware-link";
 import { LandingPricingCards } from "@/components/landing/pricing-toggle";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { getPublicPricingCatalog } from "@/lib/stripe/public-pricing";
 import { hasAnnualPricing } from "@/lib/stripe/config";
 import { env } from "@/lib/env";
+import { cn } from "@/lib/utils";
 
 export function HeroSection() {
   const t = useTranslations("Landing.hero");
@@ -33,7 +35,7 @@ export function HeroSection() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.16),transparent_45%)]" />
       <div className="relative grid gap-10 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] md:items-center">
         <div>
-          <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-indigo-400/60 bg-indigo-500/10 px-3 py-1 text-sm text-indigo-600 dark:text-indigo-400">
+          <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-sm text-primary">
             <Clock3 className="h-4 w-4" />
             {t("badge")}
           </p>
@@ -45,13 +47,16 @@ export function HeroSection() {
               loggedOutHref="/onboarding"
               loggedInLabel={t("goDashboard")}
               loggedOutLabel={t(env.APP_FREE_PLAN_ENABLED ? "startFreeNow" : "getStartedNow")}
-              className="inline-flex items-center gap-2 rounded-lg bg-indigo-500 px-5 py-3 font-medium text-white hover:bg-indigo-400"
+              className={cn(
+                buttonVariants({ variant: "default" }),
+                "inline-flex items-center gap-2 px-5 py-3 font-medium",
+              )}
             >
               <ArrowRight className="h-4 w-4" />
             </AuthAwareLink>
             <Link
               href="#pricing"
-              className="rounded-lg border app-border-subtle px-5 py-3 font-medium hover:bg-[color:var(--surface-subtle)]"
+              className={cn(buttonVariants({ variant: "outline" }), "px-5 py-3 font-medium")}
             >
               {t("viewPricing")}
             </Link>
@@ -165,7 +170,7 @@ export function WhyStarterSection() {
             key={stat.label}
             className="inline-flex items-center gap-2 rounded-full border app-border-subtle bg-[color:var(--surface-subtle)] px-4 py-2 text-xs md:text-sm"
           >
-            <span className="font-medium text-indigo-600 dark:text-indigo-300">{stat.value}</span>
+            <span className="font-medium text-primary">{stat.value}</span>
             <span className="app-muted">· {stat.label}</span>
           </div>
         ))}
@@ -187,17 +192,17 @@ export function BestPracticesSection() {
       </div>
       <div className="grid gap-6 md:grid-cols-3">
         <FeatureCard
-          icon={<ShieldCheck className="h-5 w-5 text-indigo-500 dark:text-indigo-300" />}
+          icon={<ShieldCheck className="h-5 w-5 text-primary" />}
           title={t("securityDefaultsTitle")}
           text={t("securityDefaultsText")}
         />
         <FeatureCard
-          icon={<CreditCard className="h-5 w-5 text-indigo-500 dark:text-indigo-300" />}
+          icon={<CreditCard className="h-5 w-5 text-primary" />}
           title={t("teamBillingTitle")}
           text={t("teamBillingText")}
         />
         <FeatureCard
-          icon={<BarChart3 className="h-5 w-5 text-indigo-500 dark:text-indigo-300" />}
+          icon={<BarChart3 className="h-5 w-5 text-primary" />}
           title={t("operationalTitle")}
           text={t("operationalText")}
         />
@@ -267,7 +272,7 @@ export function CtaFaqSection() {
 
   return (
     <section className="space-y-10">
-      <div className="rounded-3xl border app-border-subtle bg-indigo-500/[0.08] p-8 md:p-10">
+      <div className="rounded-3xl border app-border-subtle bg-primary/[0.08] p-8 md:p-10">
         <div className="grid gap-6 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] md:items-center">
           <div>
             <h2 className="text-3xl font-semibold">{t("title")}</h2>
@@ -279,13 +284,16 @@ export function CtaFaqSection() {
               loggedOutHref="/onboarding"
               loggedInLabel={t("openDashboard")}
               loggedOutLabel={t("createAccount")}
-              className="inline-flex items-center gap-2 rounded-lg bg-indigo-500 px-5 py-3 font-medium text-white hover:bg-indigo-400"
+              className={cn(
+                buttonVariants({ variant: "default" }),
+                "inline-flex items-center gap-2 px-5 py-3 font-medium",
+              )}
             >
               <ArrowRight className="h-4 w-4" />
             </AuthAwareLink>
             <Link
               href="#pricing"
-              className="rounded-lg border app-border-subtle px-5 py-3 font-medium hover:bg-[color:var(--surface-subtle)]"
+              className={cn(buttonVariants({ variant: "outline" }), "px-5 py-3 font-medium")}
             >
               {t("comparePlans")}
             </Link>

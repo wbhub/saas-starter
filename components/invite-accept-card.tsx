@@ -72,19 +72,11 @@ export function InviteAcceptCard({
           {t("loginFirst")}
         </p>
       ) : inviteAccepted ? (
-        <Button
-          render={<Link href="/dashboard" />}
-          className="mt-5 bg-indigo-500 text-white hover:bg-indigo-400"
-        >
+        <Button render={<Link href="/dashboard" />} variant="default" className="mt-5">
           {tNotFound("goDashboard")}
         </Button>
       ) : (
-        <Button
-          type="button"
-          onClick={acceptInvite}
-          disabled={submitting}
-          className="mt-5 bg-indigo-500 text-white hover:bg-indigo-400"
-        >
+        <Button type="button" variant="default" onClick={acceptInvite} disabled={submitting} className="mt-5">
           {submitting ? t("actions.accepting") : t("actions.acceptInvite")}
         </Button>
       )}

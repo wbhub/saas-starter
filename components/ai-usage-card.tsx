@@ -1,4 +1,5 @@
 import { BarChart3 } from "lucide-react";
+import { DashboardPageSection } from "@/components/dashboard-page-section";
 import { formatUtcDate } from "@/lib/date";
 import { getDashboardShellData, getUsageMonthlyTotals } from "@/lib/dashboard/server";
 import {
@@ -17,8 +18,13 @@ function formatTokens(value: number, locale: string) {
 export function AiUsageCardSkeleton() {
   return (
     <section className="rounded-xl bg-card ring-1 ring-border p-6">
-      <div className="h-6 w-40 animate-pulse rounded bg-muted" />
-      <div className="mt-4 h-40 animate-pulse rounded-xl bg-muted" />
+      <div className="flex items-start gap-3 sm:gap-4">
+        <div className="h-10 w-10 shrink-0 animate-pulse rounded-lg bg-muted" />
+        <div className="min-w-0 flex-1 space-y-2">
+          <div className="h-6 w-48 animate-pulse rounded bg-muted" />
+          <div className="h-40 animate-pulse rounded-xl bg-muted" />
+        </div>
+      </div>
     </section>
   );
 }
@@ -43,18 +49,14 @@ export async function AiUsageCard({
   const usageRows = await getUsageMonthlyTotals(supabase, teamId);
 
   return (
-    <section className="rounded-xl bg-card ring-1 ring-border p-6">
-      <h2 className="text-lg font-semibold text-foreground">{copy.title}</h2>
+    <DashboardPageSection icon={BarChart3} title={copy.title}>
       {usageRows.length === 0 ? (
-        <div className="mt-6 flex flex-col items-center py-8 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-            <BarChart3 className="h-6 w-6 text-muted-foreground" />
-          </div>
-          <p className="mt-3 text-sm font-medium text-foreground">{copy.noUsage}</p>
+        <div className="flex flex-col items-center py-6 text-center">
+          <p className="text-sm font-medium text-foreground">{copy.noUsage}</p>
           <p className="mt-1 max-w-xs text-sm text-muted-foreground">{copy.noUsageDescription}</p>
         </div>
       ) : (
-        <div className="mt-4">
+        <div>
           <Table>
             <TableHeader>
               <TableRow className="border-b app-border-subtle">
@@ -91,6 +93,6 @@ export async function AiUsageCard({
           </Table>
         </div>
       )}
-    </section>
+    </DashboardPageSection>
   );
 }

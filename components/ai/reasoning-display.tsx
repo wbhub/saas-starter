@@ -29,7 +29,7 @@ export function ReasoningDisplay({
         </svg>
         <span>{isStreaming ? "Thinking..." : "Reasoning"}</span>
         {isStreaming ? (
-          <span className="ml-auto inline-block h-2 w-2 animate-pulse rounded-full bg-indigo-400" />
+          <span className="ml-auto inline-block h-2 w-2 animate-pulse rounded-full bg-primary" />
         ) : null}
       </button>
       {isOpen ? (

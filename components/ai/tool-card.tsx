@@ -42,7 +42,7 @@ function ToolStateIndicator({ state }: { state: ToolState }) {
   }
   return (
     <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-      <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-indigo-400" />
+      <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-primary" />
       Running
     </span>
   );

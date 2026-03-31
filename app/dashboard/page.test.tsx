@@ -15,6 +15,7 @@ describe("Dashboard page billing selection", () => {
       }),
     }));
     vi.doMock("next-intl/server", () => ({
+      getLocale: vi.fn(async () => "en"),
       getTranslations: vi.fn(async (namespace?: string) => {
         if (namespace === "Landing.pricing") {
           return (key: string) => {
@@ -25,6 +26,9 @@ describe("Dashboard page billing selection", () => {
             };
             return planNames[key] ?? key;
           };
+        }
+        if (namespace === "DashboardBillingPage") {
+          return (key: string) => key;
         }
         return (key: string) => key;
       }),

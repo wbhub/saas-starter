@@ -232,17 +232,26 @@
   "DashboardPage": {
     "overview": "Übersicht",
     "welcome": "Willkommen, {name}",
-    "subtitle": "Hier ist eine Übersicht über dein Konto und dein Abonnement.",
+    "subtitle": "Ein Überblick über die Identität deines Workspace und Abrechnungsinformationen.",
     "account": "Konto",
+    "accountDescription": "Auth-Benutzer- und Team-IDs entsprechen `profiles`, `team_memberships` und RLS in `supabase/schema.sql`.",
     "userId": "Benutzer-ID",
+    "email": "E-Mail",
+    "teamId": "Team-ID",
     "team": "Team",
     "role": "Rolle",
     "memberSince": "Mitglied seit",
+    "profileDevHint": "IDs zum Debuggen in Logs oder SQL kopieren. Erforderliche Umgebungsvariablen stehen in `.env.example`; Schema im Supabase-SQL-Editor anwenden und Auth-Redirect-URLs auf `NEXT_PUBLIC_APP_URL` abstimmen.",
     "subscriptionSnapshot": "Abo-Status",
+    "subscriptionDescription": "Live-Stripe-Felder für dieses Team—Zuordnung zu Preis-IDs in `lib/stripe/plans` und im Dashboard.",
     "currentPlan": "Aktueller Plan",
     "unknown": "Unbekannt",
     "status": "Status",
     "seats": "Sitzplätze",
+    "teamMembers": "Teammitglieder",
+    "stripePriceId": "Stripe-Preis-ID",
+    "subscriptionDevHint": "Stripe CLI und Webhook-Signing-Secret lokal nutzen; siehe README-Abschnitt zur Abrechnung für Checkout und Customer Portal.",
+    "subscriptionFreeDevHint": "Für bezahlte Flows lokal `BILLING_PROVIDER=stripe` setzen und Stripe-Keys aus `.env.example` übernehmen.",
     "currentPlanFree": "Aktueller Plan: Kostenlos",
     "visitBillingUpgrade": "Gehe jederzeit zur Abrechnung, um upzugraden.",
     "noActiveSubscription": "Kein aktives Abonnement. Gehe zur Abrechnung, um einen Plan zu starten.",
@@ -403,6 +412,9 @@
       "cancelScheduled": "Die Kündigung ist zum Ende der aktuellen Abrechnungsperiode geplant. Bis dahin bleibt der Zugriff bestehen.",
       "seats": "Sitzplätze",
       "perSeatCost": "Kosten pro Sitzplatz",
+      "totalCost": "Gesamtkosten",
+      "totalMonthlyValue": "{amount}/Monat",
+      "totalYearlyValue": "{amount}/Jahr",
       "billingInterval": "Abrechnungszeitraum",
       "monthly": "Monatlich",
       "annual": "Jährlich",
@@ -441,11 +453,6 @@
       "eyebrow": "Einstellungen",
       "title": "Kontoeinstellungen",
       "description": "Aktualisiere die Grundlagen deines Profils und prüfe kontobezogene Einstellungen."
-    },
-    "inviteTeammates": {
-      "title": "Zusammenarbeit",
-      "description": "Lade Teammitglieder ein, wenn du bereit bist. Jeder Sitzplatz erhöht deine monatliche Rechnung.",
-      "action": "Teammitglieder einladen"
     }
   },
   "DashboardTeamPage": {
@@ -480,13 +487,18 @@
   "DashboardSettingsCard": {
     "title": "Einstellungen",
     "description": "Aktualisiere deine grundlegenden Kontoeinstellungen.",
+    "errors": {
+      "nameSaveFailed": "Anzeigename konnte nicht gespeichert werden.",
+      "photoSaveFailed": "Profilfoto konnte nicht gespeichert werden."
+    },
     "actions": {
-      "saving": "Wird gespeichert...",
-      "saveSettings": "Einstellungen speichern"
+      "saving": "Wird gespeichert..."
     },
     "fields": {
       "displayName": "Anzeigename",
       "displayNamePlaceholder": "Dein Name",
+      "displayNameAutosave": "Wird automatisch beim Tippen gespeichert.",
+      "nameSaved": "Gespeichert",
       "email": "E-Mail",
       "emailHint": "Die E-Mail wird von deinem Authentifizierungsanbieter verwaltet."
     },
@@ -494,14 +506,9 @@
       "profilePhoto": "Profilfoto",
       "profileAvatarAlt": "Profilavatar",
       "changePhoto": "Foto ändern",
-      "noPhoto": "Kein Foto",
-      "uploading": "Wird hochgeladen...",
-      "uploadPhoto": "Foto hochladen",
+      "autosaveHint": "Wird automatisch gespeichert, wenn du ein Foto hochlädst oder entfernst.",
       "removePhoto": "Foto entfernen",
-      "ready": "Bereit zum Hochladen: {name}",
-      "success": "Foto hochgeladen. Klicke auf Einstellungen speichern, um es dauerhaft zu übernehmen.",
       "errors": {
-        "selectImage": "Wähle vor dem Hochladen ein Bild aus.",
         "imageOnly": "Es werden nur Bilddateien unterstützt.",
         "maxSize": "Das Bild muss 2 MB oder kleiner sein.",
         "failed": "Das Bild konnte nicht hochgeladen werden. Bitte versuche es erneut."
@@ -514,8 +521,8 @@
     "teamName": {
       "sectionTitle": "Teamname",
       "sectionDescription": "Dieser Name erscheint in der App, E-Mails und Einladungen. Du kannst ihn jederzeit ändern.",
-      "save": "Namen speichern",
-      "saving": "Wird gespeichert..."
+      "saving": "Wird gespeichert...",
+      "saved": "Gespeichert"
     },
     "members": {
       "title": "Personen",
@@ -647,28 +654,6 @@
     "title": "Teamzugriff konnte nicht geladen werden",
     "description": "Beim Laden deines Team-Kontexts ist ein vorübergehendes Problem aufgetreten. Bitte aktualisiere die Seite und versuche es erneut."
   },
-  "NotificationPreferencesCard": {
-    "title": "Benachrichtigungseinstellungen",
-    "description": "Wähle aus, welche Konto-E-Mails du erhalten möchtest.",
-    "actions": {
-      "saving": "Wird gespeichert...",
-      "savePreferences": "Einstellungen speichern"
-    },
-    "items": {
-      "securityAlerts": {
-        "label": "Sicherheitswarnungen",
-        "description": "Anmeldungen, Passwort-Resets und wichtige Kontoaktivitäten."
-      },
-      "productUpdates": {
-        "label": "Produktupdates",
-        "description": "Funktionsankündigungen und Release Notes."
-      },
-      "marketingEmails": {
-        "label": "Marketing-E-Mails",
-        "description": "Tipps, Angebote und gelegentliche Produkthighlights."
-      }
-    }
-  },
   "EmailSettingsCard": {
     "title": "E-Mail-Adresse",
     "description": "Fordere eine E-Mail-Änderung an. Wir senden dir Bestätigungsanweisungen basierend auf deinen Auth-Sicherheitseinstellungen.",
@@ -693,7 +678,7 @@
       "confirmPermanent": "Ich verstehe, dass diese Aktion dauerhaft ist und nicht rückgängig gemacht werden kann."
     },
     "actions": {
-      "deactivate": "Vorübergehend deaktivieren (überall abmelden)",
+      "deactivate": "Vorübergehend deaktivieren",
       "deleting": "Wird gelöscht...",
       "deletePermanently": "Konto dauerhaft löschen"
     }
@@ -928,6 +913,34 @@
       "payloadTooLarge": "Die Nutzlast der Anfrage ist zu groß.",
       "invalidPayload": "Ungültige Nutzlast für Organisationseinstellungen.",
       "unableToUpdate": "Organisationseinstellungen konnten nicht aktualisiert werden."
+    }
+  },
+  "ApiProfileFullName": {
+    "errors": {
+      "unauthorized": "Nicht autorisiert",
+      "invalidOrigin": "Ungültige Anfrageherkunft.",
+      "missingCsrfToken": "CSRF-Token fehlt.",
+      "invalidCsrfToken": "Ungültiges CSRF-Token.",
+      "invalidContentType": "Content-Type muss application/json sein.",
+      "rateLimited": "Zu viele Einstellungsänderungen. Bitte versuche es in Kürze erneut.",
+      "payloadTooLarge": "Die Nutzlast der Anfrage ist zu groß.",
+      "invalidPayload": "Ungültige Nutzlast für den Anzeigenamen.",
+      "unableToUpdate": "Anzeigename konnte nicht gespeichert werden."
+    }
+  },
+  "ApiProfileAvatar": {
+    "errors": {
+      "unauthorized": "Nicht autorisiert",
+      "invalidOrigin": "Ungültige Anfrageherkunft.",
+      "missingCsrfToken": "CSRF-Token fehlt.",
+      "invalidCsrfToken": "Ungültiges CSRF-Token.",
+      "invalidContentType": "Content-Type muss application/json sein.",
+      "rateLimited": "Zu viele Einstellungsänderungen. Bitte versuche es in Kürze erneut.",
+      "payloadTooLarge": "Die Nutzlast der Anfrage ist zu groß.",
+      "invalidPayload": "Ungültige Nutzlast für das Profilfoto.",
+      "unableToUpdate": "Profilfoto konnte nicht gespeichert werden.",
+      "unableToValidate": "Profilfoto-URL konnte nicht validiert werden.",
+      "invalidAvatarUrl": "Diese Profilfoto-URL ist nicht zulässig."
     }
   },
   "ApiTeamRecoverPersonal": {

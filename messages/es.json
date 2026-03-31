@@ -232,17 +232,26 @@
   "DashboardPage": {
     "overview": "Resumen",
     "welcome": "Bienvenido, {name}",
-    "subtitle": "Aquí tienes un resumen de tu cuenta y suscripción.",
+    "subtitle": "Un resumen de la identidad de tu espacio de trabajo y la información de facturación.",
     "account": "Cuenta",
+    "accountDescription": "Los IDs de usuario de autenticación y de equipo se alinean con `profiles`, `team_memberships` y RLS en `supabase/schema.sql`.",
     "userId": "ID de usuario",
+    "email": "Correo",
+    "teamId": "ID de equipo",
     "team": "Equipo",
     "role": "Rol",
     "memberSince": "Miembro desde",
+    "profileDevHint": "Copia los IDs en logs o SQL al depurar. Las variables de entorno necesarias están en `.env.example`; aplica el esquema en el editor SQL de Supabase y alinea las URLs de redirección de Auth con `NEXT_PUBLIC_APP_URL`.",
     "subscriptionSnapshot": "Estado de suscripción",
+    "subscriptionDescription": "Campos Stripe en vivo para este equipo—se corresponden con los IDs de precio en `lib/stripe/plans` y el panel.",
     "currentPlan": "Plan actual",
     "unknown": "Desconocido",
     "status": "Estado",
     "seats": "Asientos",
+    "teamMembers": "Miembros del equipo",
+    "stripePriceId": "ID de precio de Stripe",
+    "subscriptionDevHint": "Usa Stripe CLI y el secreto de firma de webhooks en local; consulta la sección de facturación del README para Checkout y Customer Portal.",
+    "subscriptionFreeDevHint": "Para probar flujos de pago en local, configura `BILLING_PROVIDER=stripe` y copia las claves de Stripe desde `.env.example`.",
     "currentPlanFree": "Plan actual: Gratis",
     "visitBillingUpgrade": "Visita facturación para mejorar cuando quieras.",
     "noActiveSubscription": "No hay suscripción activa. Visita facturación para iniciar un plan.",
@@ -403,6 +412,9 @@
       "cancelScheduled": "La cancelación está programada para el final del período de facturación actual. Mantienes acceso hasta entonces.",
       "seats": "Asientos",
       "perSeatCost": "Costo por asiento",
+      "totalCost": "Costo total",
+      "totalMonthlyValue": "{amount}/mes",
+      "totalYearlyValue": "{amount}/año",
       "billingInterval": "Intervalo de facturación",
       "monthly": "Mensual",
       "annual": "Anual",
@@ -441,11 +453,6 @@
       "eyebrow": "Configuración",
       "title": "Preferencias de la cuenta",
       "description": "Actualiza tu perfil básico y revisa preferencias a nivel de cuenta."
-    },
-    "inviteTeammates": {
-      "title": "Colaboración",
-      "description": "Invita compañeros cuando estés listo. Cada asiento aumenta tu factura mensual.",
-      "action": "Invitar compañeros"
     }
   },
   "DashboardTeamPage": {
@@ -480,13 +487,18 @@
   "DashboardSettingsCard": {
     "title": "Configuración",
     "description": "Actualiza la configuración básica de tu cuenta.",
+    "errors": {
+      "nameSaveFailed": "No se pudo guardar el nombre para mostrar.",
+      "photoSaveFailed": "No se pudo guardar la foto de perfil."
+    },
     "actions": {
-      "saving": "Guardando...",
-      "saveSettings": "Guardar configuración"
+      "saving": "Guardando..."
     },
     "fields": {
       "displayName": "Nombre para mostrar",
       "displayNamePlaceholder": "Tu nombre",
+      "displayNameAutosave": "Se guarda automáticamente mientras escribes.",
+      "nameSaved": "Guardado",
       "email": "Email",
       "emailHint": "El email se gestiona en tu proveedor de autenticación."
     },
@@ -494,14 +506,9 @@
       "profilePhoto": "Foto de perfil",
       "profileAvatarAlt": "Avatar de perfil",
       "changePhoto": "Cambiar foto",
-      "noPhoto": "Sin foto",
-      "uploading": "Subiendo...",
-      "uploadPhoto": "Subir foto",
+      "autosaveHint": "Se guarda automáticamente al subir o quitar una foto.",
       "removePhoto": "Quitar foto",
-      "ready": "Listo para subir {name}",
-      "success": "Foto subida. Haz clic en Guardar configuración para persistir.",
       "errors": {
-        "selectImage": "Selecciona una imagen antes de subirla.",
         "imageOnly": "Solo se admiten archivos de imagen.",
         "maxSize": "La imagen debe ser de 2 MB o menos.",
         "failed": "No se pudo subir la imagen. Inténtalo de nuevo."
@@ -514,8 +521,8 @@
     "teamName": {
       "sectionTitle": "Nombre del equipo",
       "sectionDescription": "Este nombre aparece en la app, los correos y las invitaciones. Puedes cambiarlo cuando quieras.",
-      "save": "Guardar nombre",
-      "saving": "Guardando..."
+      "saving": "Guardando...",
+      "saved": "Guardado"
     },
     "members": {
       "title": "Personas",
@@ -647,28 +654,6 @@
     "title": "No se pudo cargar el acceso del equipo",
     "description": "Tuvimos un problema temporal al cargar el contexto de tu equipo. Actualiza e inténtalo de nuevo."
   },
-  "NotificationPreferencesCard": {
-    "title": "Preferencias de notificaciones",
-    "description": "Elige qué emails de cuenta quieres recibir.",
-    "actions": {
-      "saving": "Guardando...",
-      "savePreferences": "Guardar preferencias"
-    },
-    "items": {
-      "securityAlerts": {
-        "label": "Alertas de seguridad",
-        "description": "Inicios de sesión, restablecimientos de contraseña y actividad importante de la cuenta."
-      },
-      "productUpdates": {
-        "label": "Actualizaciones del producto",
-        "description": "Anuncios de funciones y notas de versión."
-      },
-      "marketingEmails": {
-        "label": "Emails de marketing",
-        "description": "Consejos, ofertas y destacados ocasionales del producto."
-      }
-    }
-  },
   "EmailSettingsCard": {
     "title": "Dirección de email",
     "description": "Solicita una actualización de email. Enviaremos instrucciones de confirmación según la configuración de seguridad de tu autenticación.",
@@ -693,7 +678,7 @@
       "confirmPermanent": "Entiendo que esta acción es permanente y no se puede deshacer."
     },
     "actions": {
-      "deactivate": "Desactivar por ahora (cerrar sesión en todos lados)",
+      "deactivate": "Desactivar por ahora",
       "deleting": "Eliminando...",
       "deletePermanently": "Eliminar cuenta permanentemente"
     }
@@ -928,6 +913,34 @@
       "payloadTooLarge": "El cuerpo de la solicitud es demasiado grande.",
       "invalidPayload": "Cuerpo de configuración de organización inválido.",
       "unableToUpdate": "No se puede actualizar la configuración de organización."
+    }
+  },
+  "ApiProfileFullName": {
+    "errors": {
+      "unauthorized": "No autorizado",
+      "invalidOrigin": "Origen de solicitud no válido.",
+      "missingCsrfToken": "Falta el token CSRF.",
+      "invalidCsrfToken": "Token CSRF no válido.",
+      "invalidContentType": "Content-Type debe ser application/json.",
+      "rateLimited": "Demasiadas actualizaciones de configuración. Inténtalo de nuevo en breve.",
+      "payloadTooLarge": "El cuerpo de la solicitud es demasiado grande.",
+      "invalidPayload": "Cuerpo del nombre para mostrar no válido.",
+      "unableToUpdate": "No se pudo guardar el nombre para mostrar."
+    }
+  },
+  "ApiProfileAvatar": {
+    "errors": {
+      "unauthorized": "No autorizado",
+      "invalidOrigin": "Origen de solicitud no válido.",
+      "missingCsrfToken": "Falta el token CSRF.",
+      "invalidCsrfToken": "Token CSRF no válido.",
+      "invalidContentType": "Content-Type debe ser application/json.",
+      "rateLimited": "Demasiadas actualizaciones de configuración. Inténtalo de nuevo en breve.",
+      "payloadTooLarge": "El cuerpo de la solicitud es demasiado grande.",
+      "invalidPayload": "Cuerpo de la foto de perfil no válido.",
+      "unableToUpdate": "No se pudo guardar la foto de perfil.",
+      "unableToValidate": "No se pudo validar la URL de la foto de perfil.",
+      "invalidAvatarUrl": "Esa URL de foto de perfil no está permitida."
     }
   },
   "ApiTeamRecoverPersonal": {

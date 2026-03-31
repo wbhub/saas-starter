@@ -1,16 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { ExternalLink, Loader2 } from "lucide-react";
+import { ExternalLink, Loader2, Wallet } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { CLIENT_IDEMPOTENCY_TTL_MS, SYNC_PENDING_RELOAD_DELAY_MS } from "@/lib/constants/billing";
 import { getCsrfHeaders } from "@/lib/http/csrf";
 import { PLAN_KEYS, type PlanKey } from "@/lib/stripe/plans";
+import { DashboardPageSection } from "@/components/dashboard-page-section";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 
-/** Matches `AiUsageCard` outer shell (`rounded-xl bg-card ring-1 ring-border p-6`). */
-const billingSectionClass = "rounded-xl bg-card ring-1 ring-border p-6";
+/** Same height/padding/gap as other dashboard actions (e.g. security settings `h-10 min-h-10`). */
+const BILLING_ACTION_BUTTON_CLASS = "h-10 min-h-10 gap-2 px-4 py-2";
 
 type Props = {
   billingEnabled: boolean;
@@ -208,12 +210,9 @@ export function BillingActions({
         : t("description.noSubscription");
 
   return (
-    <section className={billingSectionClass}>
-      <h2 className="text-lg font-semibold text-foreground">{t("title")}</h2>
-      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{description}</p>
-
+    <DashboardPageSection icon={Wallet} title={t("title")} description={description}>
       {showActions ? (
-        <div className="mt-6 space-y-8">
+        <div className="space-y-8">
           {hasSubscription ? (
             <>
               <div className="rounded-lg border border-border bg-muted/40 p-4 sm:p-5 dark:bg-muted/25">
@@ -227,8 +226,7 @@ export function BillingActions({
                   <Button
                     type="button"
                     variant="default"
-                    size="lg"
-                    className="w-full shrink-0 gap-2 sm:w-auto"
+                    className={cn(BILLING_ACTION_BUTTON_CLASS, "w-full shrink-0 sm:w-auto")}
                     onClick={openPortal}
                     disabled={isBusy}
                     aria-label={t("portal.ctaAria")}
@@ -266,7 +264,7 @@ export function BillingActions({
                           key={key}
                           type="button"
                           variant="outline"
-                          size="default"
+                          className={BILLING_ACTION_BUTTON_CLASS}
                           onClick={() => changePlan(key)}
                           disabled={isBusy}
                         >
@@ -336,6 +334,6 @@ export function BillingActions({
           ) : null}
         </div>
       ) : null}
-    </section>
+    </DashboardPageSection>
   );
 }

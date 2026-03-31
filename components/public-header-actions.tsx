@@ -4,7 +4,9 @@ import Link from "next/link";
 import { AuthAwareLink, useIsLoggedIn } from "./auth-aware-link";
 import { LocaleSwitcher } from "./locale-switcher";
 import { ThemeToggle } from "./theme-toggle";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { SHOW_LOCALE_SWITCHER } from "@/lib/i18n/config";
+import { cn } from "@/lib/utils";
 
 type PublicHeaderActionsProps = {
   loginLabel: string;
@@ -27,7 +29,7 @@ export function PublicHeaderActions({
         <>
           <Link
             href="/login"
-            className="rounded-lg border app-border-subtle px-4 py-2 text-sm hover:bg-[color:var(--surface-subtle)]"
+            className={cn(buttonVariants({ variant: "outline" }), "text-sm")}
           >
             {loginLabel}
           </Link>
@@ -36,7 +38,7 @@ export function PublicHeaderActions({
             loggedOutHref="/onboarding"
             loggedInLabel={openAppLabel}
             loggedOutLabel={signupLabel}
-            className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400"
+            className={cn(buttonVariants({ variant: "default" }), "text-sm")}
           />
         </>
       ) : (
@@ -45,7 +47,7 @@ export function PublicHeaderActions({
           loggedOutHref="/onboarding"
           loggedInLabel={openAppLabel}
           loggedOutLabel={signupLabel}
-          className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400"
+          className={cn(buttonVariants({ variant: "default" }), "text-sm")}
         />
       )}
     </>
