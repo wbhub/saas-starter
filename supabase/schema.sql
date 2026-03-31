@@ -18,7 +18,8 @@ create table if not exists public.team_memberships (
   role text not null check (role in ('owner', 'admin', 'member')),
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now()),
-  unique (team_id, user_id)
+  unique (team_id, user_id),
+  constraint team_memberships_user_id_profiles_fkey foreign key (user_id) references public.profiles(id)
 );
 
 create table if not exists public.profiles (
@@ -1383,6 +1384,21 @@ on public.profiles
 for select
 to authenticated
 using (auth.uid() = id);
+
+drop policy if exists "Team members can read teammate profiles" on public.profiles;
+create policy "Team members can read teammate profiles"
+on public.profiles
+for select
+to authenticated
+using (
+  exists (
+    select 1
+    from public.team_memberships my_tm
+    join public.team_memberships their_tm on their_tm.team_id = my_tm.team_id
+    where my_tm.user_id = auth.uid()
+      and their_tm.user_id = profiles.id
+  )
+);
 
 drop policy if exists "Users can update own profile" on public.profiles;
 create policy "Users can update own profile"
