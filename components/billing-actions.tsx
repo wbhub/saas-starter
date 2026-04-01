@@ -11,8 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
-/** Same height/padding/gap as other dashboard actions (e.g. security settings `h-10 min-h-10`). */
-const BILLING_ACTION_BUTTON_CLASS = "h-10 min-h-10 gap-2 px-4 py-2";
+/** Use CVA `size="control"` for consistency; only keep layout overrides here. */
+const BILLING_ACTION_BUTTON_CLASS = "";
 
 type Props = {
   billingEnabled: boolean;
@@ -226,6 +226,7 @@ export function BillingActions({
                   <Button
                     type="button"
                     variant="default"
+                    size="control"
                     className={cn(BILLING_ACTION_BUTTON_CLASS, "w-full shrink-0 sm:w-auto")}
                     onClick={openPortal}
                     disabled={isBusy}
@@ -264,6 +265,7 @@ export function BillingActions({
                           key={key}
                           type="button"
                           variant="outline"
+                          size="control"
                           className={BILLING_ACTION_BUTTON_CLASS}
                           onClick={() => changePlan(key)}
                           disabled={isBusy}

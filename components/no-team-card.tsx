@@ -41,7 +41,7 @@ export function NoTeamCard() {
   }
 
   return (
-    <section className="mx-auto mt-16 max-w-xl rounded-xl border app-border-subtle app-surface p-6 shadow-sm">
+    <section className="mx-auto mt-16 max-w-xl rounded-xl border border-border bg-card p-6 shadow-sm">
       <h1 className="text-xl font-semibold text-foreground">{t("title")}</h1>
       <p className="mt-2 text-sm text-muted-foreground">{t("description")}</p>
       <Button
@@ -54,7 +54,7 @@ export function NoTeamCard() {
         {recovering ? t("actions.recovering") : t("actions.recover")}
       </Button>
       {message ? (
-        <p className="mt-3 rounded-lg app-surface-subtle px-3 py-2 text-sm text-muted-foreground">
+        <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
           {message}
         </p>
       ) : null}

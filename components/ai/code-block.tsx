@@ -28,9 +28,9 @@ function CodeBlockInner({ code, language }: { code: string; language?: string })
   }
 
   return (
-    <div className="group relative mb-2 overflow-hidden rounded-lg border app-border-subtle last:mb-0">
+    <div className="group relative mb-2 overflow-hidden rounded-lg border border-border last:mb-0">
       {language ? (
-        <div className="flex items-center justify-between border-b app-border-subtle bg-surface-hover px-3 py-1">
+        <div className="flex items-center justify-between border-b border-border bg-accent px-3 py-1">
           <span className="font-mono text-xs text-muted-foreground">{language}</span>
           <button
             type="button"
@@ -41,7 +41,7 @@ function CodeBlockInner({ code, language }: { code: string; language?: string })
           </button>
         </div>
       ) : null}
-      <pre className="overflow-x-auto bg-surface p-3">
+      <pre className="overflow-x-auto bg-card p-3">
         <code className="font-mono text-xs" dangerouslySetInnerHTML={{ __html: html }} />
       </pre>
     </div>

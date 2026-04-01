@@ -272,7 +272,7 @@ export function OrganizationSettingsCard({
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
             {t("fields.teamNameAutosave")}
           </p>
-          {nameError ? <p className="mt-2 text-xs text-rose-600">{nameError}</p> : null}
+          {nameError ? <p className="mt-2 text-xs text-destructive">{nameError}</p> : null}
         </div>
 
         {currentUserRole === "owner" ? (
@@ -311,7 +311,8 @@ export function OrganizationSettingsCard({
                   type="button"
                   variant="outline"
                   disabled={transferring || !nextOwnerUserId}
-                  className="h-10 min-h-10 border-amber-300/60 px-4 py-2 text-amber-800 hover:bg-amber-50 dark:border-amber-700/60 dark:text-amber-200 dark:hover:bg-amber-950/30"
+                  size="control"
+                  className="border-warning/40 text-warning-foreground hover:bg-warning/10 dark:text-warning dark:hover:bg-warning/15"
                 >
                   {transferring ? t("actions.transferring") : t("actions.transferOwnership")}
                 </Button>

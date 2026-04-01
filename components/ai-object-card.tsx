@@ -77,10 +77,10 @@ function SentimentResult({
   if (!object) return null;
   const sentimentColor =
     object.sentiment === "positive"
-      ? "text-green-700 dark:text-green-400"
+      ? "text-success"
       : object.sentiment === "negative"
-        ? "text-red-700 dark:text-red-400"
-        : "text-yellow-700 dark:text-yellow-400";
+        ? "text-destructive"
+        : "text-warning";
 
   return (
     <div className="space-y-3">
@@ -131,7 +131,7 @@ function EntityResult({
           <div className="mt-1 space-y-1">
             {object.entities.map((entity, i) => (
               <div key={i} className="flex items-center gap-2">
-                <span className="inline-block rounded bg-surface-hover px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
+                <span className="inline-block rounded bg-accent px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
                   {entity.type}
                 </span>
                 <span className="text-sm font-medium text-foreground">{entity.name}</span>
@@ -181,7 +181,7 @@ function ClassificationResult({
             {object.categories.map((cat, i) => (
               <span
                 key={i}
-                className="inline-flex items-center gap-1 rounded-full bg-surface-hover px-2 py-0.5 text-xs"
+                className="inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-xs"
               >
                 <span className="font-medium text-foreground">{cat.label}</span>
                 {cat.confidence !== undefined ? (
@@ -293,7 +293,7 @@ export function AiObjectCard() {
         </form>
 
         {error ? (
-          <p className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200">
+          <p className="rounded-lg border border-destructive/35 bg-destructive/10 px-3 py-2 text-sm text-destructive">
             {resolveUserFacingErrorMessage(error, t("errors.requestFailed"), errorMessagesByCode)}
           </p>
         ) : null}

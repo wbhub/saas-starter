@@ -12,7 +12,7 @@ import {
 
 export function LandingPage() {
   return (
-    <div className="app-content min-h-screen bg-[color:var(--background)] text-[color:var(--foreground)]">
+    <div className="app-content min-h-screen bg-background text-foreground">
       <SiteHeader />
 
       <main className="mx-auto max-w-[1440px] px-6 py-14 md:py-20 lg:px-10">

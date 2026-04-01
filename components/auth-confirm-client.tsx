@@ -84,8 +84,8 @@ export function AuthConfirmClient() {
   }, [supabase]);
 
   return (
-    <div className="w-full max-w-md rounded-2xl border app-border-subtle app-surface p-8 text-[color:var(--foreground)] shadow-sm">
-      <p role="status" aria-live="polite" className="text-sm text-[color:var(--muted-foreground)]">
+    <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 text-foreground shadow-sm sm:p-8">
+      <p role="status" aria-live="polite" className="text-sm text-muted-foreground">
         Completing authentication...
       </p>
     </div>

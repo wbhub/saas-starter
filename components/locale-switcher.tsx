@@ -61,7 +61,7 @@ export function LocaleSwitcher({ className }: LocaleSwitcherProps) {
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
-        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border app-border-subtle app-surface text-[color:var(--foreground)] shadow-sm transition-colors hover:bg-[color:var(--surface-subtle)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ring)]"
+        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <Languages className="h-4 w-4" />
       </button>
@@ -70,7 +70,7 @@ export function LocaleSwitcher({ className }: LocaleSwitcherProps) {
         <div
           role="menu"
           aria-label={t("label")}
-          className="absolute right-0 top-[calc(100%+0.4rem)] z-30 min-w-40 rounded-xl border app-border-subtle app-surface p-1.5 shadow-lg"
+          className="absolute right-0 top-[calc(100%+0.4rem)] z-30 min-w-40 rounded-xl border border-border bg-card p-1.5 shadow-lg"
         >
           {routing.locales.map((item) => {
             const isActive = item === locale;
@@ -86,12 +86,12 @@ export function LocaleSwitcher({ className }: LocaleSwitcherProps) {
                 className={cn(
                   "flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm transition-colors",
                   isActive
-                    ? "bg-[color:var(--surface-subtle)] text-[color:var(--foreground)]"
-                    : "text-[color:var(--foreground)] hover:bg-[color:var(--surface-subtle)]",
+                    ? "bg-muted text-foreground"
+                    : "text-foreground hover:bg-muted",
                 )}
               >
                 <span>{localeLabel}</span>
-                {isActive ? <Check className="h-4 w-4 text-indigo-500" /> : null}
+                {isActive ? <Check className="h-4 w-4 text-primary" /> : null}
               </button>
             );
           })}

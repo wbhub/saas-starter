@@ -30,7 +30,7 @@ export function AttachmentPreview({
         return (
           <div
             key={index}
-            className="flex items-center gap-1.5 rounded-md border app-border-subtle bg-surface px-2 py-1"
+            className="flex items-center gap-1.5 rounded-md border app-border-subtle bg-card px-2 py-1"
           >
             <svg
               className="h-4 w-4 shrink-0 text-muted-foreground"

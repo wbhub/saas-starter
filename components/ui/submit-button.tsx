@@ -32,7 +32,8 @@ export function SubmitButton({
       type="submit"
       variant={variant === "danger" ? "destructive" : "default"}
       disabled={isPending || disabled}
-      className={cn("h-auto px-4 py-2", className)}
+      size="control"
+      className={cn(className)}
       {...rest}
     >
       {isPending ? pendingLabel : idleLabel}

@@ -21,7 +21,7 @@ export function SourceCitation({
             href={source.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 rounded-md border app-border-subtle bg-surface px-2 py-1 text-xs text-foreground hover:bg-surface-hover"
+            className="inline-flex items-center gap-1 rounded-md border app-border-subtle bg-card px-2 py-1 text-xs text-foreground hover:bg-accent"
             title={source.snippet}
           >
             <svg

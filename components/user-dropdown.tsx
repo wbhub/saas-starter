@@ -154,7 +154,7 @@ export function UserDropdown({
     <DropdownMenu open={open} onOpenChange={handleOpenChange}>
       <DropdownMenuTrigger
         aria-label={t("UserDropdown.label")}
-        className="inline-flex items-center gap-2.5 rounded-full border app-border-subtle py-1.5 pl-1.5 pr-3 shadow-sm transition-colors hover:bg-[color:var(--surface-subtle)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="inline-flex items-center gap-2.5 rounded-full border border-border py-1.5 pl-1.5 pr-3 shadow-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <Avatar size="default">
           <AvatarImage src={avatarUrl ?? ""} alt={displayName} />
@@ -222,7 +222,7 @@ export function UserDropdown({
                 </div>
                 <button
                   type="submit"
-                  className="mt-1.5 w-full rounded-lg border app-border-subtle px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-[color:var(--surface-subtle)]"
+                  className="mt-1.5 w-full rounded-lg border border-border px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted"
                 >
                   {t("DashboardSidebar.switch")}
                 </button>

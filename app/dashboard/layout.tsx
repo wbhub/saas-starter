@@ -16,7 +16,7 @@ export default async function DashboardLayout({ children }: Readonly<{ children:
 
   if (shellData.teamContextLoadFailed) {
     return (
-      <main className="min-h-screen bg-[color:var(--background)] px-6 py-10 text-[color:var(--foreground)]">
+      <main className="min-h-screen bg-background px-4 py-10 sm:px-6">
         <TeamContextErrorCard />
       </main>
     );
@@ -24,7 +24,7 @@ export default async function DashboardLayout({ children }: Readonly<{ children:
 
   if (!shellData.teamContext || !shellData.billingContext || !shellData.teamUiMode) {
     return (
-      <main className="min-h-screen bg-[color:var(--background)] px-6 py-10 text-[color:var(--foreground)]">
+      <main className="min-h-screen bg-background px-4 py-10 sm:px-6">
         <NoTeamCard />
       </main>
     );

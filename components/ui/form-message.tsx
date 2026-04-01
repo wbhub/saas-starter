@@ -6,9 +6,9 @@ type FormMessageProps = {
 };
 
 const errorClasses =
-  "border border-rose-300/60 bg-rose-50 text-rose-700 dark:border-rose-700/60 dark:bg-rose-950/30 dark:text-rose-200";
+  "border border-destructive/35 bg-destructive/10 text-destructive";
 
-const successClasses = "app-surface-subtle text-muted-foreground";
+const successClasses = "bg-muted text-muted-foreground";
 
 export function FormMessage({ status, message, id }: FormMessageProps) {
   if (!message) return null;

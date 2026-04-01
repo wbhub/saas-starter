@@ -210,7 +210,7 @@ export function OnboardingPlanSelector({
       {/* Monthly / Annual toggle */}
       {showAnnualToggle ? (
         <div className="flex items-center justify-center gap-3">
-          <div className="inline-flex items-center rounded-lg border app-border-subtle p-1">
+          <div className="inline-flex items-center rounded-lg border border-border p-1">
             <button
               type="button"
               onClick={() => setInterval("month")}

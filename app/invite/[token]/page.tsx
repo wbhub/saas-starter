@@ -30,7 +30,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-[color:var(--background)] px-6 py-12 text-[color:var(--foreground)]">
+    <main className="min-h-screen bg-background px-4 py-12 sm:px-6">
       <InviteErrorCard errorCode={result.errorCode} />
     </main>
   );

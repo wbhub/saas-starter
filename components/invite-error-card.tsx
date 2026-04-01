@@ -18,7 +18,7 @@ export async function InviteErrorCard({ errorCode }: { errorCode: AcceptInviteEr
     : "errors.default";
 
   return (
-    <section className="mx-auto w-full max-w-lg rounded-xl border app-border-subtle app-surface p-6 shadow-sm">
+    <section className="mx-auto w-full max-w-lg rounded-xl border border-border bg-card p-6 shadow-sm">
       <h1 className="text-2xl font-semibold text-foreground">{t("title")}</h1>
       <p className="mt-3 text-sm text-muted-foreground">{t(messageKey)}</p>
       <Link

@@ -20,6 +20,10 @@
   --accent: oklch(0.955 0.015 265);
   --accent-foreground: oklch(0.35 0.04 265);
   --destructive: oklch(0.577 0.245 27.325);
+  --warning: oklch(0.68 0.16 75);
+  --warning-foreground: oklch(0.35 0.08 75);
+  --success: oklch(0.62 0.17 155);
+  --success-foreground: oklch(0.25 0.06 155);
   --border: oklch(0.905 0.01 260);
   --input: oklch(0.905 0.01 260);
   --ring: oklch(0.585 0.19 265);
@@ -40,16 +44,11 @@
   --sidebar-border: oklch(0.905 0.01 260);
   --sidebar-ring: oklch(0.585 0.19 265);
 
-  /* Legacy app vars — align with shadcn tokens so .app-surface matches bg-card */
+  /* Legacy app vars — kept for any remaining third-party or custom CSS usage */
   --surface: var(--card);
   --surface-subtle: var(--muted);
   --surface-hover: var(--accent);
   --border-subtle: var(--border);
-  --btn-primary: #6366f1;
-  --btn-primary-hover: #818cf8;
-  --btn-primary-text: #ffffff;
-  --btn-accent: #6366f1;
-  --btn-accent-hover: #818cf8;
 }
 
 .dark,
@@ -69,6 +68,10 @@
   --accent: oklch(0.24 0.015 265);
   --accent-foreground: oklch(0.93 0.005 260);
   --destructive: oklch(0.704 0.191 22.216);
+  --warning: oklch(0.75 0.15 75);
+  --warning-foreground: oklch(0.88 0.05 75);
+  --success: oklch(0.7 0.16 155);
+  --success-foreground: oklch(0.9 0.04 155);
   --border: oklch(1 0.005 265 / 12%);
   --input: oklch(1 0.005 265 / 15%);
   --ring: oklch(0.65 0.18 265);
@@ -88,16 +91,11 @@
   --sidebar-border: oklch(1 0.005 265 / 12%);
   --sidebar-ring: oklch(0.65 0.18 265);
 
-  /* Legacy app vars — same tokens as light mode; avoids purple-tinted hex vs bg-card */
+  /* Legacy app vars — kept for any remaining third-party or custom CSS usage */
   --surface: var(--card);
   --surface-subtle: var(--muted);
   --surface-hover: var(--accent);
   --border-subtle: var(--border);
-  --btn-primary: #818cf8;
-  --btn-primary-hover: #a5b4fc;
-  --btn-primary-text: #0f0f1a;
-  --btn-accent: #818cf8;
-  --btn-accent-hover: #a5b4fc;
 }
 
 @theme inline {
@@ -116,6 +114,10 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -135,17 +137,6 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  /* Legacy app color mappings */
-  --color-surface: var(--surface);
-  --color-surface-subtle: var(--surface-subtle);
-  --color-surface-hover: var(--surface-hover);
-  --color-border-subtle: var(--border-subtle);
-  --color-btn-primary: var(--btn-primary);
-  --color-btn-primary-hover: var(--btn-primary-hover);
-  --color-btn-primary-text: var(--btn-primary-text);
-  --color-btn-accent: var(--btn-accent);
-  --color-btn-accent-hover: var(--btn-accent-hover);
-
   --font-sans: var(--font-sans);
   --font-heading: var(--font-sans);
 
@@ -156,27 +147,6 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
-}
-
-/* Legacy utility classes — used by non-dashboard components */
-.app-surface {
-  background-color: var(--surface);
-}
-
-.app-surface-subtle {
-  background-color: var(--surface-subtle);
-}
-
-.app-border-subtle {
-  border-color: var(--border-subtle);
-}
-
-.app-muted {
-  color: var(--muted-foreground);
-}
-
-.app-accent {
-  color: var(--accent);
 }
 
 @layer base {

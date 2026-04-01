@@ -16,7 +16,7 @@ describe("Input", () => {
     render(<Input variant="readonly" value="test@example.com" />);
     const input = screen.getByDisplayValue("test@example.com");
     expect(input).toHaveAttribute("readonly");
-    expect(input.className).toContain("app-surface-subtle");
+    expect(input.className).toContain("bg-muted");
     expect(input.className).toContain("text-muted-foreground");
   });
 
@@ -24,7 +24,7 @@ describe("Input", () => {
     render(<Input readOnly value="readonly value" />);
     const input = screen.getByDisplayValue("readonly value");
     expect(input).toHaveAttribute("readonly");
-    expect(input.className).toContain("app-surface-subtle");
+    expect(input.className).toContain("bg-muted");
   });
 
   it("merges custom className with default editable styles", () => {

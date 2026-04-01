@@ -7,7 +7,7 @@ export default async function NotFound() {
   const t = await getTranslations("NotFound");
 
   return (
-    <div className="flex min-h-screen flex-col bg-[color:var(--background)] text-[color:var(--foreground)]">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
       <SiteHeader />
       <main className="flex flex-1 items-center justify-center px-6 py-12 text-center">
         <div>
@@ -18,7 +18,7 @@ export default async function NotFound() {
           <div className="mt-8 flex justify-center gap-4">
             <Link
               href="/"
-              className="rounded-lg border app-border-subtle px-4 py-2 text-sm font-medium hover:bg-surface-subtle"
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-muted"
             >
               {t("goHome")}
             </Link>

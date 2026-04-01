@@ -38,7 +38,7 @@ export default async function DashboardAiPage() {
         <section className="rounded-xl bg-card ring-1 ring-border p-6">
           <h2 className="text-lg font-semibold text-foreground">{t("unavailable.title")}</h2>
           <p className="mt-1 text-sm text-muted-foreground">{t("unavailable.description")}</p>
-          <p className="mt-3 rounded-lg app-surface-subtle px-3 py-2 text-sm text-muted-foreground">
+          <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
             {aiUiGate.reason === "plan_not_allowed"
               ? t("unavailable.reason.planRequired")
               : aiUiGate.reason === "ai_not_configured"
