@@ -104,7 +104,10 @@ describe("checkRateLimit", () => {
     const second = await checkRateLimit(input);
     const third = await checkRateLimit(input);
 
-    expect(second.allowed).toBe(true);
+    // With fail-open now using in-memory fallback, the first call consumed the
+    // limit (1), so subsequent calls within the window are rate-limited.
+    expect(second.allowed).toBe(false);
+    expect(second.retryAfterSeconds).toBeGreaterThan(0);
     expect(third.allowed).toBe(false);
     expect(third.retryAfterSeconds).toBeGreaterThan(0);
   });

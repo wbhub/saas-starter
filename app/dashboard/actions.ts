@@ -14,6 +14,7 @@ import {
   enqueueSeatSyncRetry,
   preEnqueueSeatSyncRetries,
 } from "@/lib/stripe/seat-sync-retries";
+import { runInBatches } from "@/lib/stripe/seat-reconcile";
 import { logger } from "@/lib/logger";
 import { invalidateCachedTeamContextForUser } from "@/lib/team-context-cache";
 import { ONBOARDING_COMPLETE_COOKIE } from "@/lib/constants/onboarding";
@@ -62,7 +63,7 @@ async function isLastOwnerOfAnyTeam(userId: string): Promise<boolean> {
 
 async function deleteSoleMemberTeams(userId: string): Promise<void> {
   const adminClient = createAdminClient();
-  const { error } = await adminClient.rpc("delete_sole_member_teams" as string, {
+  const { error } = await adminClient.rpc("delete_sole_member_teams", {
     p_user_id: userId,
   });
 
@@ -92,43 +93,43 @@ async function getTeamIdsForUserMemberships(userId: string): Promise<string[]> {
   );
 }
 
+const ACCOUNT_DELETE_SEAT_SYNC_CONCURRENCY = 3;
+
 async function syncTeamSeatsAfterAccountDeletion(teamIds: string[], deletedUserId: string) {
   await invalidateCachedDashboardTeamSnapshots(teamIds);
 
-  await Promise.all(
-    teamIds.map(async (teamId) => {
+  await runInBatches(teamIds, ACCOUNT_DELETE_SEAT_SYNC_CONCURRENCY, async (teamId) => {
+    try {
+      await syncTeamSeatQuantity(teamId, {
+        idempotencyKey: `seat-sync:account-delete:${teamId}:${deletedUserId}`,
+      });
       try {
-        await syncTeamSeatQuantity(teamId, {
-          idempotencyKey: `seat-sync:account-delete:${teamId}:${deletedUserId}`,
-        });
-        try {
-          await clearSeatSyncRetry(teamId);
-        } catch (clearError) {
-          logger.error("Failed to clear seat sync retry after account deletion sync", clearError, {
-            teamId,
-            deletedUserId,
-          });
-        }
-      } catch (error) {
-        logger.error("Deleted account but failed to sync Stripe seats", error, {
+        await clearSeatSyncRetry(teamId);
+      } catch (clearError) {
+        logger.error("Failed to clear seat sync retry after account deletion sync", clearError, {
           teamId,
           deletedUserId,
         });
-        try {
-          await enqueueSeatSyncRetry({
-            teamId,
-            source: "account.delete",
-            error,
-          });
-        } catch (retryError) {
-          logger.error("Failed to enqueue seat sync retry after account deletion", retryError, {
-            teamId,
-            deletedUserId,
-          });
-        }
       }
-    }),
-  );
+    } catch (error) {
+      logger.error("Deleted account but failed to sync Stripe seats", error, {
+        teamId,
+        deletedUserId,
+      });
+      try {
+        await enqueueSeatSyncRetry({
+          teamId,
+          source: "account.delete",
+          error,
+        });
+      } catch (retryError) {
+        logger.error("Failed to enqueue seat sync retry after account deletion", retryError, {
+          teamId,
+          deletedUserId,
+        });
+      }
+    }
+  });
 }
 
 async function rotateCsrfTokenForServerAction() {

@@ -83,7 +83,7 @@ function enforceQueueLimit() {
 
   const droppedEvents = auditInsertQueue.length - AUDIT_MAX_QUEUE_SIZE;
   auditInsertQueue.splice(0, droppedEvents);
-  logger.warn("Audit queue capacity exceeded; dropping oldest events", {
+  logger.error("Audit queue capacity exceeded; dropping oldest events", {
     droppedEvents,
     maxQueueSize: AUDIT_MAX_QUEUE_SIZE,
     queuedEvents: auditInsertQueue.length,
