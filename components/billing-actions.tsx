@@ -4,15 +4,11 @@ import { useState } from "react";
 import { ExternalLink, Loader2, Wallet } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { CLIENT_IDEMPOTENCY_TTL_MS, SYNC_PENDING_RELOAD_DELAY_MS } from "@/lib/constants/billing";
-import { getCsrfHeaders } from "@/lib/http/csrf";
+import { clientPostJson } from "@/lib/http/client-fetch";
 import { PLAN_KEYS, type PlanKey } from "@/lib/stripe/plans";
 import { DashboardPageSection } from "@/components/dashboard-page-section";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
-
-/** Same height/padding/gap as other dashboard actions (e.g. security settings `h-10 min-h-10`). */
-const BILLING_ACTION_BUTTON_CLASS = "h-10 min-h-10 gap-2 px-4 py-2";
 
 type Props = {
   billingEnabled: boolean;
@@ -21,35 +17,12 @@ type Props = {
   canManageBilling: boolean;
 };
 
-type PostJsonOptions = {
-  headers?: HeadersInit;
-  fallbackErrorMessage?: string;
+type CheckoutPayload = {
+  url?: string;
+  syncPending?: boolean;
+  warning?: string;
+  planChanged?: boolean;
 };
-
-async function postJson(path: string, body: Record<string, string>, options?: PostJsonOptions) {
-  const response = await fetch(path, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...getCsrfHeaders(),
-      ...options?.headers,
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (!response.ok) {
-    const payload = (await response.json().catch(() => null)) as { error?: string } | null;
-    throw new Error(payload?.error ?? options?.fallbackErrorMessage ?? "Request failed");
-  }
-
-  return (await response.json()) as {
-    url?: string;
-    ok?: boolean;
-    syncPending?: boolean;
-    warning?: string;
-    planChanged?: boolean;
-  };
-}
 
 function createIdempotencyToken(action: "checkout" | "change-plan", planKey: PlanKey) {
   const storageKey = `${action}-idempotency:${planKey}`;
@@ -104,7 +77,7 @@ export function BillingActions({
     setLoadingAction(`checkout-${planKey}`);
     setMessage(null);
     try {
-      const payload = await postJson(
+      const payload = await clientPostJson<CheckoutPayload>(
         "/api/stripe/checkout",
         { planKey },
         {
@@ -131,7 +104,7 @@ export function BillingActions({
     setMessage(null);
     let waitForSyncRefresh = false;
     try {
-      const payload = await postJson(
+      const payload = await clientPostJson<CheckoutPayload>(
         "/api/stripe/change-plan",
         { planKey },
         {
@@ -178,7 +151,7 @@ export function BillingActions({
     setLoadingAction("portal");
     setMessage(null);
     try {
-      const payload = await postJson(
+      const payload = await clientPostJson<CheckoutPayload>(
         "/api/stripe/portal",
         {},
         {
@@ -226,7 +199,8 @@ export function BillingActions({
                   <Button
                     type="button"
                     variant="default"
-                    className={cn(BILLING_ACTION_BUTTON_CLASS, "w-full shrink-0 sm:w-auto")}
+                    size="control"
+                    className="w-full shrink-0 sm:w-auto"
                     onClick={openPortal}
                     disabled={isBusy}
                     aria-label={t("portal.ctaAria")}
@@ -264,7 +238,7 @@ export function BillingActions({
                           key={key}
                           type="button"
                           variant="outline"
-                          className={BILLING_ACTION_BUTTON_CLASS}
+                          size="control"
                           onClick={() => changePlan(key)}
                           disabled={isBusy}
                         >

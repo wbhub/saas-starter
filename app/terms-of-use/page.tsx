@@ -10,14 +10,14 @@ export const metadata: Metadata = {
 
 export default function TermsOfUsePage() {
   return (
-    <div className="app-content min-h-screen bg-[color:var(--background)] text-[color:var(--foreground)]">
+    <div className="app-content min-h-screen bg-background text-foreground">
       <SiteHeader />
       <main className="mx-auto max-w-[1440px] px-6 py-12 lg:px-10">
         <div className="mx-auto max-w-4xl space-y-8">
           <div className="space-y-3">
             <h1 className="text-3xl font-semibold tracking-tight">Terms of Use</h1>
-            <p className="text-sm app-muted">Effective date: [Month DD, YYYY]</p>
-            <p className="app-muted text-sm">
+            <p className="text-sm text-muted-foreground">Effective date: [Month DD, YYYY]</p>
+            <p className="text-muted-foreground text-sm">
               These Terms of Use (&quot;Terms&quot;) govern your access to and use of [Website URL],
               [Product Name], and related services (collectively, the &quot;Services&quot;) provided
               by [Company Legal Name] (&quot;Company,&quot; &quot;we,&quot; &quot;our,&quot; or
@@ -27,7 +27,7 @@ export default function TermsOfUsePage() {
 
           <section className="space-y-2">
             <h2 className="text-xl font-semibold">1. Eligibility and Accounts</h2>
-            <ul className="list-disc space-y-1 pl-5 app-muted text-sm">
+            <ul className="list-disc space-y-1 pl-5 text-muted-foreground text-sm">
               <li>
                 You must be at least [Minimum Age] years old and able to enter a binding agreement.
               </li>
@@ -41,7 +41,7 @@ export default function TermsOfUsePage() {
 
           <section className="space-y-2">
             <h2 className="text-xl font-semibold">2. Subscription, Billing, and Renewal</h2>
-            <ul className="list-disc space-y-1 pl-5 app-muted text-sm">
+            <ul className="list-disc space-y-1 pl-5 text-muted-foreground text-sm">
               <li>
                 Certain features require a paid subscription under the plan selected at checkout.
               </li>
@@ -63,7 +63,7 @@ export default function TermsOfUsePage() {
 
           <section className="space-y-2">
             <h2 className="text-xl font-semibold">3. Free Trials and Promotions</h2>
-            <p className="app-muted text-sm">
+            <p className="text-muted-foreground text-sm">
               If offered, free trials or promotional credits are subject to the terms presented at
               sign-up, including [Trial Duration], [Eligibility Limits], and [Auto-Conversion
               Terms].
@@ -72,8 +72,8 @@ export default function TermsOfUsePage() {
 
           <section className="space-y-2">
             <h2 className="text-xl font-semibold">4. Acceptable Use</h2>
-            <p className="app-muted text-sm">You agree not to:</p>
-            <ul className="list-disc space-y-1 pl-5 app-muted text-sm">
+            <p className="text-muted-foreground text-sm">You agree not to:</p>
+            <ul className="list-disc space-y-1 pl-5 text-muted-foreground text-sm">
               <li>Use the Services for unlawful, fraudulent, or abusive purposes.</li>
               <li>Reverse engineer, decompile, or attempt to extract source code.</li>
               <li>Interfere with or disrupt system integrity, security, or availability.</li>
@@ -87,7 +87,7 @@ export default function TermsOfUsePage() {
 
           <section className="space-y-2">
             <h2 className="text-xl font-semibold">5. Customer Data and License</h2>
-            <ul className="list-disc space-y-1 pl-5 app-muted text-sm">
+            <ul className="list-disc space-y-1 pl-5 text-muted-foreground text-sm">
               <li>
                 You retain all rights to data you submit to the Services (&quot;Customer
                 Data&quot;).
@@ -106,7 +106,7 @@ export default function TermsOfUsePage() {
 
           <section className="space-y-2">
             <h2 className="text-xl font-semibold">6. Intellectual Property</h2>
-            <p className="app-muted text-sm">
+            <p className="text-muted-foreground text-sm">
               The Services, including software, design, text, graphics, and branding, are owned by
               the Company or its licensors and are protected by intellectual property laws. Except
               for rights expressly granted in these Terms, no rights are transferred to you.
@@ -115,7 +115,7 @@ export default function TermsOfUsePage() {
 
           <section className="space-y-2">
             <h2 className="text-xl font-semibold">7. Feedback</h2>
-            <p className="app-muted text-sm">
+            <p className="text-muted-foreground text-sm">
               If you provide suggestions or feedback, you grant us a worldwide, royalty-free,
               perpetual license to use it without restriction or obligation.
             </p>
@@ -123,7 +123,7 @@ export default function TermsOfUsePage() {
 
           <section className="space-y-2">
             <h2 className="text-xl font-semibold">8. Termination</h2>
-            <p className="app-muted text-sm">
+            <p className="text-muted-foreground text-sm">
               You may stop using the Services at any time. We may suspend or terminate access if you
               violate these Terms, pose a security risk, or where needed to comply with law. Upon
               termination, sections that by nature should survive will remain in effect.
@@ -132,7 +132,7 @@ export default function TermsOfUsePage() {
 
           <section className="space-y-2">
             <h2 className="text-xl font-semibold">9. Disclaimer of Warranties</h2>
-            <p className="app-muted text-sm">
+            <p className="text-muted-foreground text-sm">
               To the maximum extent permitted by law, the Services are provided &quot;as is&quot;
               and &quot;as available,&quot; without warranties of any kind, whether express,
               implied, statutory, or otherwise, including implied warranties of merchantability,
@@ -142,7 +142,7 @@ export default function TermsOfUsePage() {
 
           <section className="space-y-2">
             <h2 className="text-xl font-semibold">10. Limitation of Liability</h2>
-            <p className="app-muted text-sm">
+            <p className="text-muted-foreground text-sm">
               To the fullest extent permitted by law, in no event will the Company and its
               affiliates be liable for indirect, incidental, special, consequential, exemplary, or
               punitive damages, or for lost profits, revenues, data, or goodwill. Our total
@@ -154,7 +154,7 @@ export default function TermsOfUsePage() {
 
           <section className="space-y-2">
             <h2 className="text-xl font-semibold">11. Indemnification</h2>
-            <p className="app-muted text-sm">
+            <p className="text-muted-foreground text-sm">
               You agree to defend, indemnify, and hold harmless the Company and its affiliates from
               and against claims, liabilities, damages, losses, and expenses (including reasonable
               attorneys&apos; fees) arising from your use of the Services, your Customer Data, or
@@ -164,12 +164,12 @@ export default function TermsOfUsePage() {
 
           <section className="space-y-2">
             <h2 className="text-xl font-semibold">12. Governing Law and Disputes</h2>
-            <p className="app-muted text-sm">
+            <p className="text-muted-foreground text-sm">
               These Terms are governed by the laws of [State/Country], excluding its conflict-of-law
               principles. Any disputes will be resolved in the courts located in
               [Venue/Jurisdiction], unless otherwise required by applicable law.
             </p>
-            <p className="app-muted text-sm">
+            <p className="text-muted-foreground text-sm">
               [Optional: Include arbitration clause, class action waiver, or informal dispute
               resolution process if desired.]
             </p>
@@ -177,7 +177,7 @@ export default function TermsOfUsePage() {
 
           <section className="space-y-2">
             <h2 className="text-xl font-semibold">13. Changes to These Terms</h2>
-            <p className="app-muted text-sm">
+            <p className="text-muted-foreground text-sm">
               We may update these Terms from time to time. If we make material changes, we will
               provide reasonable notice through the Services or by other means. Continued use of the
               Services after the updated Terms take effect constitutes acceptance of the revised
@@ -187,7 +187,7 @@ export default function TermsOfUsePage() {
 
           <section className="space-y-2">
             <h2 className="text-xl font-semibold">14. Contact Information</h2>
-            <p className="app-muted text-sm">
+            <p className="text-muted-foreground text-sm">
               [Company Legal Name]
               <br />
               [Mailing Address]
@@ -199,7 +199,7 @@ export default function TermsOfUsePage() {
           </section>
 
           <div className="pt-2">
-            <Link href="/" className="text-sm text-indigo-600 hover:underline dark:text-indigo-300">
+            <Link href="/" className="text-sm text-primary hover:underline">
               Back to home
             </Link>
           </div>

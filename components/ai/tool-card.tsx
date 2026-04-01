@@ -15,7 +15,7 @@ type ToolState =
 function ToolStateIndicator({ state }: { state: ToolState }) {
   if (state === "output-available") {
     return (
-      <span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+      <span className="inline-flex items-center gap-1 text-xs text-success">
         <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
           <path
             fillRule="evenodd"
@@ -29,7 +29,7 @@ function ToolStateIndicator({ state }: { state: ToolState }) {
   }
   if (state === "output-error") {
     return (
-      <span className="inline-flex items-center gap-1 text-xs text-red-600 dark:text-red-400">
+      <span className="inline-flex items-center gap-1 text-xs text-destructive">
         <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
           <path
             fillRule="evenodd"
@@ -74,7 +74,7 @@ function TavilyResultCard({ result }: { result: unknown }) {
           <Tag
             key={i}
             {...(href ? { href, target: "_blank", rel: "noopener noreferrer" } : {})}
-            className="block rounded-md border app-border-subtle bg-surface-hover p-2 hover:bg-surface"
+            className="block rounded-md border border-border bg-accent p-2 hover:bg-card"
           >
             <p className="text-xs font-medium text-foreground">{item.title}</p>
             {item.content ? (
@@ -94,7 +94,7 @@ function FirecrawlResultCard({ result }: { result: unknown }) {
   return (
     <div className="mt-2 space-y-1">
       {data.title ? <p className="text-xs font-medium text-foreground">{data.title}</p> : null}
-      <pre className="max-h-[200px] overflow-y-auto rounded-md bg-surface-hover p-2 font-mono text-xs text-muted-foreground">
+      <pre className="max-h-[200px] overflow-y-auto rounded-md bg-accent p-2 font-mono text-xs text-muted-foreground">
         {data.markdown.slice(0, 2000)}
         {data.markdown.length > 2000 ? "..." : ""}
       </pre>
@@ -118,22 +118,22 @@ function E2BResultCard({ result }: { result: unknown }) {
   return (
     <div className="mt-2 space-y-2">
       {data.text ? (
-        <pre className="max-h-[200px] overflow-y-auto rounded-md bg-surface-hover p-2 font-mono text-xs text-muted-foreground">
+        <pre className="max-h-[200px] overflow-y-auto rounded-md bg-accent p-2 font-mono text-xs text-muted-foreground">
           {data.text}
         </pre>
       ) : null}
       {data.stdout?.length ? (
         <div>
           <p className="text-xs font-medium text-foreground">stdout</p>
-          <pre className="max-h-[160px] overflow-y-auto rounded-md bg-surface-hover p-2 font-mono text-xs text-muted-foreground">
+          <pre className="max-h-[160px] overflow-y-auto rounded-md bg-accent p-2 font-mono text-xs text-muted-foreground">
             {data.stdout.join("\n")}
           </pre>
         </div>
       ) : null}
       {data.stderr?.length ? (
         <div>
-          <p className="text-xs font-medium text-red-600 dark:text-red-400">stderr</p>
-          <pre className="max-h-[160px] overflow-y-auto rounded-md bg-surface-hover p-2 font-mono text-xs text-muted-foreground">
+          <p className="text-xs font-medium text-destructive">stderr</p>
+          <pre className="max-h-[160px] overflow-y-auto rounded-md bg-accent p-2 font-mono text-xs text-muted-foreground">
             {data.stderr.join("\n")}
           </pre>
         </div>
@@ -141,10 +141,7 @@ function E2BResultCard({ result }: { result: unknown }) {
       {data.results?.length ? (
         <div className="space-y-1">
           {data.results.slice(0, 3).map((item, index) => (
-            <div
-              key={index}
-              className="rounded-md bg-surface-hover p-2 text-xs text-muted-foreground"
-            >
+            <div key={index} className="rounded-md bg-accent p-2 text-xs text-muted-foreground">
               {item.text ? <p className="font-mono">{item.text}</p> : null}
               <p className="mt-1">
                 Formats: {item.formats?.join(", ") || "unknown"}
@@ -155,7 +152,7 @@ function E2BResultCard({ result }: { result: unknown }) {
         </div>
       ) : null}
       {data.error ? (
-        <pre className="max-h-[200px] overflow-y-auto rounded-md bg-surface-hover p-2 font-mono text-xs text-red-600 dark:text-red-400">
+        <pre className="max-h-[200px] overflow-y-auto rounded-md bg-accent p-2 font-mono text-xs text-destructive">
           {JSON.stringify(data.error, null, 2)}
         </pre>
       ) : null}
@@ -165,7 +162,7 @@ function E2BResultCard({ result }: { result: unknown }) {
 
 function GenericResultCard({ result }: { result: unknown }) {
   return (
-    <pre className="mt-2 overflow-x-auto rounded-md bg-surface-hover p-2 font-mono text-xs">
+    <pre className="mt-2 overflow-x-auto rounded-md bg-accent p-2 font-mono text-xs">
       {JSON.stringify(result, null, 2)}
     </pre>
   );
@@ -222,7 +219,7 @@ export function ToolCard({
         <div className="border-t border-primary/10 bg-background/50 px-4 py-3 space-y-3">
           <div>
             <p className="text-xs font-medium text-muted-foreground">Input</p>
-            <pre className="mt-0.5 overflow-x-auto rounded bg-surface-hover p-2 font-mono text-xs">
+            <pre className="mt-0.5 overflow-x-auto rounded bg-accent p-2 font-mono text-xs">
               {JSON.stringify(args, null, 2)}
             </pre>
           </div>

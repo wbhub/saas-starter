@@ -5,7 +5,7 @@ export function SiteFooter() {
   const t = useTranslations("SiteFooter");
 
   return (
-    <footer className="border-t app-border-subtle">
+    <footer className="border-t border-border">
       <div className="mx-auto flex max-w-[1440px] flex-col justify-between gap-3 px-6 py-6 text-sm text-muted-foreground md:flex-row md:items-center lg:px-10">
         <p>
           &copy; {new Date().getFullYear()} {t("companyPlaceholder")}

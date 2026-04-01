@@ -57,11 +57,7 @@ export function DangerZoneCard({ email, csrfToken }: DangerZoneCardProps) {
               className="flex shrink-0 sm:max-w-[min(100%,14rem)] sm:flex-1 sm:justify-end"
             >
               <input type="hidden" name="csrf_token" value={csrfToken} />
-              <Button
-                type="submit"
-                variant="outline"
-                className="h-10 min-h-10 w-full border-border px-4 py-2 sm:w-auto"
-              >
+              <Button type="submit" variant="outline" size="control" className="w-full sm:w-auto">
                 {t("actions.deactivate")}
               </Button>
             </form>
@@ -148,7 +144,7 @@ export function DangerZoneCard({ email, csrfToken }: DangerZoneCardProps) {
                   "rounded-lg border px-3 py-2.5 text-sm",
                   state.status === "error"
                     ? "border-destructive/35 bg-destructive/10 text-destructive"
-                    : "border-emerald-500/30 bg-emerald-500/10 text-emerald-900 dark:text-emerald-100",
+                    : "border-success/30 bg-success/10 text-success-foreground dark:text-success",
                 )}
               >
                 {state.message}

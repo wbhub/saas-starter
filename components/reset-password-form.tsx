@@ -137,7 +137,7 @@ export function ResetPasswordForm({ hasRecoveryProof, recoveryUserId }: ResetPas
 
   if (checkingSession) {
     return (
-      <div className="w-full max-w-md rounded-2xl border app-border-subtle app-surface p-8 text-foreground shadow-sm">
+      <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 text-foreground shadow-sm sm:p-8">
         <p role="status" aria-live="polite" className="text-sm text-muted-foreground">
           {t("checking")}
         </p>
@@ -147,7 +147,7 @@ export function ResetPasswordForm({ hasRecoveryProof, recoveryUserId }: ResetPas
 
   if (!hasRecoverySession) {
     return (
-      <div className="w-full max-w-md rounded-2xl border app-border-subtle app-surface p-8 text-foreground shadow-sm">
+      <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 text-foreground shadow-sm sm:p-8">
         <h1 className="text-2xl font-semibold">{t("invalidTitle")}</h1>
         <p className="mt-2 text-sm text-muted-foreground">{t("invalidDescription")}</p>
         <Button
@@ -163,7 +163,7 @@ export function ResetPasswordForm({ hasRecoveryProof, recoveryUserId }: ResetPas
   }
 
   return (
-    <div className="w-full max-w-md rounded-2xl border app-border-subtle app-surface p-8 text-foreground shadow-sm">
+    <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 text-foreground shadow-sm sm:p-8">
       <h1 className="text-2xl font-semibold">{t("title")}</h1>
       <p className="mt-2 text-sm text-muted-foreground">{t("description")}</p>
 
@@ -217,7 +217,7 @@ export function ResetPasswordForm({ hasRecoveryProof, recoveryUserId }: ResetPas
           id={messageId}
           role={messageType === "error" ? "alert" : "status"}
           aria-live={messageType === "error" ? "assertive" : "polite"}
-          className="mt-4 rounded-lg app-surface-subtle px-3 py-2 text-sm text-foreground"
+          className="mt-4 rounded-lg bg-muted px-3 py-2 text-sm text-foreground"
         >
           {message}
         </p>

@@ -8,15 +8,12 @@ export default async function ForgotPasswordPage() {
   const t = await getTranslations("AuthPages");
 
   return (
-    <div className="flex min-h-screen flex-col bg-[color:var(--background)] text-[color:var(--foreground)]">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
       <SiteHeader />
 
       <main className="flex flex-1 flex-col items-center justify-center px-4 py-12">
         <ForgotPasswordForm />
-        <Link
-          href="/login"
-          className="mt-6 text-sm text-[color:var(--muted-foreground)] hover:text-[color:var(--foreground)]"
-        >
+        <Link href="/login" className="mt-6 text-sm text-muted-foreground hover:text-foreground">
           {t("backLogin")}
         </Link>
       </main>

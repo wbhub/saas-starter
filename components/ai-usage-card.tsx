@@ -59,7 +59,7 @@ export async function AiUsageCard({
         <div>
           <Table>
             <TableHeader>
-              <TableRow className="border-b app-border-subtle">
+              <TableRow className="border-b border-border">
                 <TableHead className="text-muted-foreground">{copy.month}</TableHead>
                 <TableHead className="text-muted-foreground">{copy.usedTokens}</TableHead>
                 <TableHead className="text-muted-foreground">{copy.reservedTokens}</TableHead>
@@ -67,10 +67,7 @@ export async function AiUsageCard({
             </TableHeader>
             <TableBody>
               {usageRows.map((row) => (
-                <TableRow
-                  key={row.month_start}
-                  className="border-b app-border-subtle last:border-0"
-                >
+                <TableRow key={row.month_start} className="border-b border-border last:border-0">
                   <TableCell className="text-foreground">
                     {formatUtcDate(
                       row.month_start,

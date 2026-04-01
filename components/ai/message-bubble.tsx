@@ -89,7 +89,7 @@ export function MessageBubble({
           return (
             <div
               key={partIndex}
-              className="max-w-[88%] rounded-lg bg-surface px-3 py-2 text-sm font-normal leading-relaxed text-foreground"
+              className="max-w-[88%] rounded-lg bg-card px-3 py-2 text-sm font-normal leading-relaxed text-foreground"
             >
               <MarkdownContent content={part.text} />
               {isStreaming && partIndex === message.parts.length - 1 ? (

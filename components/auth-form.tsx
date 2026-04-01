@@ -9,7 +9,7 @@ import {
   getSocialProviderOptions,
   toSupabaseOAuthProvider,
 } from "@/lib/auth/social-auth";
-import { getCsrfHeaders } from "@/lib/http/csrf";
+import { clientPostJson } from "@/lib/http/client-fetch";
 import { createClient } from "@/lib/supabase/client";
 import { validatePasswordComplexity } from "@/lib/validation";
 import { Button } from "@/components/ui/button";
@@ -142,15 +142,13 @@ export function AuthForm({
 
     try {
       if (isLogin) {
-        const response = await fetch("/api/auth/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", ...getCsrfHeaders() },
-          body: JSON.stringify({ email, password }),
-        });
-        const payload = (await response.json().catch(() => null)) as AuthApiResponse | null;
-        if (!response.ok) {
-          throw new Error(payload?.error ?? t("errors.unableToLogIn"));
-        }
+        await clientPostJson(
+          "/api/auth/login",
+          { email, password },
+          {
+            fallbackErrorMessage: t("errors.unableToLogIn"),
+          },
+        );
 
         dispatch({ type: "SUBMIT_SUCCESS" });
         router.push(redirectTo);
@@ -161,15 +159,13 @@ export function AuthForm({
           throw new Error(passwordValidation.error);
         }
 
-        const response = await fetch("/api/auth/signup", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", ...getCsrfHeaders() },
-          body: JSON.stringify({ email, password }),
-        });
-        const payload = (await response.json().catch(() => null)) as AuthApiResponse | null;
-        if (!response.ok) {
-          throw new Error(payload?.error ?? t("errors.unableToCreateAccount"));
-        }
+        const payload = await clientPostJson<AuthApiResponse>(
+          "/api/auth/signup",
+          { email, password },
+          {
+            fallbackErrorMessage: t("errors.unableToCreateAccount"),
+          },
+        );
 
         if (payload?.sessionCreated) {
           dispatch({ type: "SUBMIT_SUCCESS" });
@@ -218,7 +214,7 @@ export function AuthForm({
   }
 
   return (
-    <div className="w-full max-w-md rounded-2xl border app-border-subtle app-surface p-8 text-foreground shadow-sm">
+    <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 text-foreground shadow-sm sm:p-8">
       <h1 className="text-2xl font-semibold">{isLogin ? t("title.login") : t("title.signup")}</h1>
       <p className="mt-2 text-sm text-muted-foreground">
         {isLogin ? t("description.login") : t("description.signup")}
@@ -236,14 +232,14 @@ export function AuthForm({
                 variant="outline"
                 onClick={() => onOAuthClick(provider)}
                 disabled={loading || Boolean(socialLoadingProvider)}
-                className="flex h-auto w-full items-center justify-center gap-2 px-4 py-2 font-medium hover:bg-[color:var(--surface-subtle)]"
+                className="flex h-auto w-full items-center justify-center gap-2 px-4 py-2 font-medium hover:bg-muted"
               >
                 <SocialProviderIcon provider={provider} />
                 <span>
                   {isProviderLoading ? t("pleaseWait") : t("continueWith", { provider: label })}
                 </span>
                 {isLastUsed ? (
-                  <span className="rounded-full border app-border-subtle px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+                  <span className="rounded-full border border-border px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
                     {t("lastUsed")}
                   </span>
                 ) : null}
@@ -252,10 +248,10 @@ export function AuthForm({
           })}
           <div className="relative py-1">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t app-border-subtle" />
+              <span className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center">
-              <span className="app-surface px-2 text-xs text-muted-foreground">
+              <span className="bg-card px-2 text-xs text-muted-foreground">
                 {t("orContinueWithEmail")}
               </span>
             </div>
@@ -312,7 +308,7 @@ export function AuthForm({
           id={messageId}
           role={messageType === "error" ? "alert" : "status"}
           aria-live={messageType === "error" ? "assertive" : "polite"}
-          className="mt-4 rounded-lg app-surface-subtle px-3 py-2 text-sm text-foreground"
+          className="mt-4 rounded-lg bg-muted px-3 py-2 text-sm text-foreground"
         >
           {message}
         </p>

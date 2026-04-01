@@ -13,7 +13,7 @@ describe("FormMessage", () => {
     render(<FormMessage status="error" message="Something went wrong" />);
     const el = screen.getByRole("alert");
     expect(el).toHaveTextContent("Something went wrong");
-    expect(el.className).toContain("text-rose-700");
+    expect(el.className).toContain("text-destructive");
   });
 
   it("renders success message with status role", () => {

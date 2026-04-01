@@ -62,7 +62,7 @@ export default async function LoginPage({
   }
 
   return (
-    <div className="app-content flex min-h-screen flex-col bg-[color:var(--background)] text-[color:var(--foreground)]">
+    <div className="app-content flex min-h-screen flex-col bg-background text-foreground">
       <SiteHeader />
 
       <main className="flex flex-1 flex-col items-center justify-center px-4 py-12">
@@ -72,10 +72,7 @@ export default async function LoginPage({
           socialProviders={socialProviders}
           lastUsedProvider={lastUsedProvider}
         />
-        <Link
-          href="/"
-          className="mt-6 text-sm text-[color:var(--muted-foreground)] hover:text-[color:var(--foreground)]"
-        >
+        <Link href="/" className="mt-6 text-sm text-muted-foreground hover:text-foreground">
           {t("backHome")}
         </Link>
       </main>

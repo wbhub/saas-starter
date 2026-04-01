@@ -31,7 +31,7 @@ export function HeroSection() {
   ];
 
   return (
-    <section className="relative overflow-hidden rounded-3xl border app-border-subtle app-surface px-6 py-10 md:px-10 md:py-14">
+    <section className="relative overflow-hidden rounded-3xl border border-border bg-card px-6 py-10 md:px-10 md:py-14">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.16),transparent_45%)]" />
       <div className="relative grid gap-10 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] md:items-center">
         <div>
@@ -40,7 +40,7 @@ export function HeroSection() {
             {t("badge")}
           </p>
           <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">{t("title")}</h1>
-          <p className="app-muted mt-5 max-w-xl text-base">{t("description")}</p>
+          <p className="text-muted-foreground mt-5 max-w-xl text-base">{t("description")}</p>
           <div className="mt-8 flex flex-wrap gap-3">
             <AuthAwareLink
               loggedInHref="/dashboard"
@@ -58,51 +58,47 @@ export function HeroSection() {
               {t("viewPricing")}
             </Link>
           </div>
-          <div className="mt-8 flex flex-wrap items-center gap-4 text-sm app-muted">
+          <div className="mt-8 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
             <span className="inline-flex items-center gap-2">
-              <BadgeCheck className="h-4 w-4 text-emerald-500 dark:text-emerald-300" />
+              <BadgeCheck className="h-4 w-4 text-success" />
               {t("feature1")}
             </span>
             <span className="inline-flex items-center gap-2">
-              <BadgeCheck className="h-4 w-4 text-emerald-500 dark:text-emerald-300" />
+              <BadgeCheck className="h-4 w-4 text-success" />
               {t("feature2")}
             </span>
             <span className="inline-flex items-center gap-2">
-              <BadgeCheck className="h-4 w-4 text-emerald-500 dark:text-emerald-300" />
+              <BadgeCheck className="h-4 w-4 text-success" />
               {t("feature3")}
             </span>
             <span className="inline-flex items-center gap-2">
-              <BadgeCheck className="h-4 w-4 text-emerald-500 dark:text-emerald-300" />
+              <BadgeCheck className="h-4 w-4 text-success" />
               {t("feature4")}
             </span>
             <span className="inline-flex items-center gap-2">
-              <BadgeCheck className="h-4 w-4 text-emerald-500 dark:text-emerald-300" />
+              <BadgeCheck className="h-4 w-4 text-success" />
               {t("feature5")}
             </span>
             <span className="inline-flex items-center gap-2">
-              <BadgeCheck className="h-4 w-4 text-emerald-500 dark:text-emerald-300" />
+              <BadgeCheck className="h-4 w-4 text-success" />
               {t("feature6")}
             </span>
           </div>
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-2xl border app-border-subtle app-surface-subtle p-6">
+          <div className="rounded-2xl border border-border bg-muted p-6">
             <div className="mb-4">
               <h2 className="text-lg font-semibold">{t("shipNowTitle")}</h2>
-              <p className="app-muted mt-1 text-sm">{t("shipNowDescription")}</p>
+              <p className="text-muted-foreground mt-1 text-sm">{t("shipNowDescription")}</p>
             </div>
             <div className="grid gap-4">
               {shipItems.map((item) => (
                 <div key={item} className="flex items-start gap-3">
                   <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center">
-                    <CheckCircle2
-                      size={20}
-                      className="text-emerald-500 dark:text-emerald-300"
-                      aria-hidden="true"
-                    />
+                    <CheckCircle2 size={20} className="text-success" aria-hidden="true" />
                   </span>
-                  <p className="app-muted text-sm">{item}</p>
+                  <p className="text-muted-foreground text-sm">{item}</p>
                 </div>
               ))}
             </div>
@@ -126,19 +122,16 @@ export function GettingStartedSection() {
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <h2 className="text-2xl font-semibold md:text-3xl">{t("title")}</h2>
-          <p className="app-muted mt-2 max-w-2xl">{t("description")}</p>
+          <p className="text-muted-foreground mt-2 max-w-2xl">{t("description")}</p>
         </div>
       </div>
       <div className="grid gap-4 md:grid-cols-3">
         {steps.map((step) => (
-          <article
-            key={step.title}
-            className="rounded-2xl border app-border-subtle app-surface p-5"
-          >
-            <h3 className="text-sm font-semibold uppercase tracking-wide app-muted">
+          <article key={step.title} className="rounded-2xl border border-border bg-card p-5">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               {step.title}
             </h3>
-            <p className="mt-2 text-sm app-muted">{step.text}</p>
+            <p className="mt-2 text-sm text-muted-foreground">{step.text}</p>
           </article>
         ))}
       </div>
@@ -155,20 +148,22 @@ export function WhyStarterSection() {
   ];
 
   return (
-    <section className="rounded-3xl border app-border-subtle app-surface px-6 py-8 md:px-10 md:py-10">
+    <section className="rounded-3xl border border-border bg-card px-6 py-8 md:px-10 md:py-10">
       <div className="mx-auto max-w-3xl text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] app-muted">{t("label")}</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          {t("label")}
+        </p>
         <h2 className="mt-3 text-2xl font-semibold md:text-3xl">{t("title")}</h2>
-        <p className="app-muted mt-3">{t("description")}</p>
+        <p className="text-muted-foreground mt-3">{t("description")}</p>
       </div>
       <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
         {stats.map((stat) => (
           <div
             key={stat.label}
-            className="inline-flex items-center gap-2 rounded-full border app-border-subtle bg-[color:var(--surface-subtle)] px-4 py-2 text-xs md:text-sm"
+            className="inline-flex items-center gap-2 rounded-full border border-border bg-muted px-4 py-2 text-xs md:text-sm"
           >
             <span className="font-medium text-primary">{stat.value}</span>
-            <span className="app-muted">· {stat.label}</span>
+            <span className="text-muted-foreground">· {stat.label}</span>
           </div>
         ))}
       </div>
@@ -184,7 +179,7 @@ export function BestPracticesSection() {
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <h2 className="text-3xl font-semibold">{t("title")}</h2>
-          <p className="app-muted mt-2 max-w-2xl">{t("description")}</p>
+          <p className="text-muted-foreground mt-2 max-w-2xl">{t("description")}</p>
         </div>
       </div>
       <div className="grid gap-6 md:grid-cols-3">
@@ -212,31 +207,31 @@ export function StackSection() {
   const t = useTranslations("Landing.stack");
 
   return (
-    <section className="space-y-6 rounded-3xl border app-border-subtle app-surface px-6 py-8 md:px-8 md:py-9">
+    <section className="space-y-6 rounded-3xl border border-border bg-card px-6 py-8 md:px-8 md:py-9">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <h2 className="text-2xl font-semibold md:text-3xl">{t("title")}</h2>
-          <p className="app-muted mt-2 max-w-2xl">{t("description")}</p>
+          <p className="text-muted-foreground mt-2 max-w-2xl">{t("description")}</p>
         </div>
       </div>
       <div className="grid gap-6 md:grid-cols-3">
-        <article className="rounded-2xl border app-border-subtle app-surface-subtle p-5 text-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] app-muted">
+        <article className="rounded-2xl border border-border bg-muted p-5 text-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
             {t("authTitle")}
           </p>
-          <p className="app-muted mt-2">{t("authText")}</p>
+          <p className="text-muted-foreground mt-2">{t("authText")}</p>
         </article>
-        <article className="rounded-2xl border app-border-subtle app-surface-subtle p-5 text-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] app-muted">
+        <article className="rounded-2xl border border-border bg-muted p-5 text-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
             {t("billingTitle")}
           </p>
-          <p className="app-muted mt-2">{t("billingText")}</p>
+          <p className="text-muted-foreground mt-2">{t("billingText")}</p>
         </article>
-        <article className="rounded-2xl border app-border-subtle app-surface-subtle p-5 text-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] app-muted">
+        <article className="rounded-2xl border border-border bg-muted p-5 text-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
             {t("opsTitle")}
           </p>
-          <p className="app-muted mt-2">{t("opsText")}</p>
+          <p className="text-muted-foreground mt-2">{t("opsText")}</p>
         </article>
       </div>
     </section>
@@ -251,7 +246,7 @@ export async function PricingSection() {
     <section id="pricing" className="space-y-8">
       <div>
         <h2 className="text-3xl font-semibold">{t("title")}</h2>
-        <p className="app-muted mt-3">{t("description")}</p>
+        <p className="text-muted-foreground mt-3">{t("description")}</p>
       </div>
       <LandingPricingCards plans={pricingCatalog} showAnnualToggle={hasAnnualPricing} />
     </section>
@@ -269,11 +264,11 @@ export function CtaFaqSection() {
 
   return (
     <section className="space-y-10">
-      <div className="rounded-3xl border app-border-subtle bg-primary/[0.08] p-8 md:p-10">
+      <div className="rounded-3xl border border-border bg-primary/[0.08] p-8 md:p-10">
         <div className="grid gap-6 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] md:items-center">
           <div>
             <h2 className="text-3xl font-semibold">{t("title")}</h2>
-            <p className="app-muted mt-3 max-w-2xl">{t("description")}</p>
+            <p className="text-muted-foreground mt-3 max-w-2xl">{t("description")}</p>
           </div>
           <div className="flex flex-wrap justify-start gap-3 md:justify-end">
             <AuthAwareLink
@@ -299,12 +294,9 @@ export function CtaFaqSection() {
         <h2 className="text-3xl font-semibold">{t("faqTitle")}</h2>
         <div className="mt-8 grid gap-4 md:grid-cols-2">
           {faqs.map((faq) => (
-            <article
-              key={faq.question}
-              className="rounded-xl border app-border-subtle app-surface p-5"
-            >
+            <article key={faq.question} className="rounded-xl border border-border bg-card p-5">
               <h3 className="font-medium">{faq.question}</h3>
-              <p className="app-muted mt-2 text-sm">{faq.answer}</p>
+              <p className="text-muted-foreground mt-2 text-sm">{faq.answer}</p>
             </article>
           ))}
         </div>
@@ -315,10 +307,10 @@ export function CtaFaqSection() {
 
 function FeatureCard({ icon, title, text }: { icon: ReactNode; title: string; text: string }) {
   return (
-    <article className="app-surface-subtle rounded-2xl border app-border-subtle p-6">
+    <article className="bg-muted rounded-2xl border border-border p-6">
       <div className="mb-3">{icon}</div>
       <h3 className="text-lg font-semibold">{title}</h3>
-      <p className="app-muted mt-2 text-sm">{text}</p>
+      <p className="text-muted-foreground mt-2 text-sm">{text}</p>
     </article>
   );
 }

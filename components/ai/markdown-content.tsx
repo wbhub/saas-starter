@@ -17,10 +17,7 @@ function MarkdownContentInner({ content }: { content: string }) {
             return <CodeBlock code={code} language={match[1]} />;
           }
           return (
-            <code
-              className="rounded bg-surface-hover px-1 py-0.5 font-mono text-[0.85em]"
-              {...props}
-            >
+            <code className="rounded bg-accent px-1 py-0.5 font-mono text-[0.85em]" {...props}>
               {children}
             </code>
           );
@@ -46,7 +43,7 @@ function MarkdownContentInner({ content }: { content: string }) {
               href={href}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-indigo-500 underline hover:text-indigo-400"
+              className="text-primary underline hover:text-primary/80"
             >
               {children}
             </a>
@@ -54,7 +51,7 @@ function MarkdownContentInner({ content }: { content: string }) {
         },
         blockquote({ children }) {
           return (
-            <blockquote className="mb-2 border-l-2 border-border-subtle pl-3 italic text-muted-foreground last:mb-0">
+            <blockquote className="mb-2 border-l-2 border-border pl-3 italic text-muted-foreground last:mb-0">
               {children}
             </blockquote>
           );
@@ -68,13 +65,13 @@ function MarkdownContentInner({ content }: { content: string }) {
         },
         th({ children }) {
           return (
-            <th className="border border-border-subtle bg-surface-hover px-2 py-1 text-left font-medium">
+            <th className="border border-border bg-accent px-2 py-1 text-left font-medium">
               {children}
             </th>
           );
         },
         td({ children }) {
-          return <td className="border border-border-subtle px-2 py-1">{children}</td>;
+          return <td className="border border-border px-2 py-1">{children}</td>;
         },
         h1({ children }) {
           return <h1 className="mb-2 text-lg font-bold">{children}</h1>;
@@ -86,7 +83,7 @@ function MarkdownContentInner({ content }: { content: string }) {
           return <h3 className="mb-1.5 text-sm font-bold">{children}</h3>;
         },
         hr() {
-          return <hr className="my-3 border-border-subtle" />;
+          return <hr className="my-3 border-border" />;
         },
       }}
     >

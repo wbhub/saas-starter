@@ -31,7 +31,7 @@ export function LandingPricingCards({ plans, showAnnualToggle }: Props) {
     <>
       {showAnnualToggle ? (
         <div className="flex items-center justify-center gap-3">
-          <div className="inline-flex items-center rounded-lg border app-border-subtle p-1">
+          <div className="inline-flex items-center rounded-lg border border-border p-1">
             <button
               type="button"
               onClick={() => setIsAnnual(false)}
@@ -56,7 +56,7 @@ export function LandingPricingCards({ plans, showAnnualToggle }: Props) {
             </button>
           </div>
           {isAnnual ? (
-            <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+            <span className="rounded-full bg-success/10 px-3 py-1 text-xs font-medium text-success">
               {t("toggle.save")}
             </span>
           ) : null}
@@ -70,8 +70,8 @@ export function LandingPricingCards({ plans, showAnnualToggle }: Props) {
         {plans.map((tier) => (
           <article
             key={tier.key}
-            className={`rounded-2xl border app-surface p-6 ${
-              tier.popular ? "border-primary/50 shadow-lg shadow-primary/10" : "app-border-subtle"
+            className={`rounded-2xl border bg-card p-6 ${
+              tier.popular ? "border-primary/50 shadow-lg shadow-primary/10" : "border-border"
             }`}
           >
             <p
@@ -88,12 +88,14 @@ export function LandingPricingCards({ plans, showAnnualToggle }: Props) {
                 {isAnnual && tier.annualPriceLabel ? tier.annualPriceLabel : tier.priceLabel}
               </p>
               {isAnnual && tier.annualPriceLabel ? (
-                <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                <span className="rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
                   {t("toggle.save")}
                 </span>
               ) : null}
             </div>
-            <p className="app-muted mt-3 text-sm">{t(`plans.${tier.key}.description`)}</p>
+            <p className="text-muted-foreground mt-3 text-sm">
+              {t(`plans.${tier.key}.description`)}
+            </p>
             <AuthAwareLink
               loggedInHref="/dashboard"
               loggedOutHref="/onboarding"
