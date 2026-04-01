@@ -9,7 +9,11 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { invalidateCachedDashboardTeamSnapshots } from "@/lib/dashboard/team-snapshot-cache";
 import { syncTeamSeatQuantity } from "@/lib/stripe/seats";
-import { enqueueSeatSyncRetry } from "@/lib/stripe/seat-sync-retries";
+import {
+  clearSeatSyncRetry,
+  enqueueSeatSyncRetry,
+  preEnqueueSeatSyncRetries,
+} from "@/lib/stripe/seat-sync-retries";
 import { logger } from "@/lib/logger";
 import { invalidateCachedTeamContextForUser } from "@/lib/team-context-cache";
 import { ONBOARDING_COMPLETE_COOKIE } from "@/lib/constants/onboarding";
@@ -97,6 +101,14 @@ async function syncTeamSeatsAfterAccountDeletion(teamIds: string[], deletedUserI
         await syncTeamSeatQuantity(teamId, {
           idempotencyKey: `seat-sync:account-delete:${teamId}:${deletedUserId}`,
         });
+        try {
+          await clearSeatSyncRetry(teamId);
+        } catch (clearError) {
+          logger.error("Failed to clear seat sync retry after account deletion sync", clearError, {
+            teamId,
+            deletedUserId,
+          });
+        }
       } catch (error) {
         logger.error("Deleted account but failed to sync Stripe seats", error, {
           teamId,
@@ -367,6 +379,22 @@ export async function deleteAccount(
     affectedTeamIds = await getTeamIdsForUserMemberships(user.id);
   } catch (error) {
     logger.error("Failed to load team memberships before account deletion", error, {
+      userId: user.id,
+    });
+    return {
+      status: "error",
+      message: "Could not prepare billing updates. Please try again.",
+    };
+  }
+
+  // Pre-enqueue seat sync retries so the background reconciler picks them
+  // up even if the process crashes after user deletion but before the
+  // inline seat sync completes. Rows for sole-member teams are cascade-
+  // deleted when those teams are removed in the next step.
+  try {
+    await preEnqueueSeatSyncRetries(affectedTeamIds, `account.delete.pre:${user.id}`);
+  } catch (error) {
+    logger.error("Failed to pre-enqueue seat sync retries before account deletion", error, {
       userId: user.id,
     });
     return {

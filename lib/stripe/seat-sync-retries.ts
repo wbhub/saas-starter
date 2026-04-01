@@ -64,6 +64,29 @@ export async function enqueueSeatSyncRetry({
   }
 }
 
+export async function preEnqueueSeatSyncRetries(teamIds: string[], source: string) {
+  if (teamIds.length === 0) {
+    return;
+  }
+
+  const admin = createAdminClient();
+  const now = new Date().toISOString();
+  const rows = teamIds.map((teamId) => ({
+    team_id: teamId,
+    reason: source,
+    attempt_count: 0,
+    next_attempt_at: now,
+  }));
+
+  const { error } = await admin
+    .from("seat_sync_retries")
+    .upsert(rows, { onConflict: "team_id", ignoreDuplicates: true });
+
+  if (error) {
+    throw new Error(`Failed to pre-enqueue seat sync retries: ${error.message}`);
+  }
+}
+
 export async function clearSeatSyncRetry(teamId: string) {
   const { error } = await createAdminClient()
     .from("seat_sync_retries")
