@@ -22,6 +22,7 @@ describe("PromptInput", () => {
       <PromptInput
         onSubmit={onSubmit}
         isSending={false}
+        onStop={() => {}}
         providerName="openai"
         validateFiles={() => null}
       />,
@@ -43,6 +44,6 @@ describe("PromptInput", () => {
 
     fireEvent.click(sendButton);
 
-    expect(onSubmit).toHaveBeenCalledWith("", [file]);
+    expect(onSubmit).toHaveBeenCalledWith("", [file], undefined);
   });
 });

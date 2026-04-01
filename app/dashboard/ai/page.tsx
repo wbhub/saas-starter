@@ -2,12 +2,11 @@ import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { AiChatCard } from "@/components/ai-chat-card";
-import { AiObjectCard } from "@/components/ai-object-card";
-import { AiPageTabs } from "@/components/ai/page-tabs";
 import { env } from "@/lib/env";
 import { getAiToolsEnabled } from "@/lib/ai/config";
 import { AI_TOOL_MAP } from "@/lib/ai/tools";
 import { parseAiProviderName } from "@/lib/ai/provider-name";
+import { getAvailableModels } from "@/lib/ai/provider";
 import { getDashboardShellData } from "@/lib/dashboard/server";
 import { cn } from "@/lib/utils";
 
@@ -15,7 +14,8 @@ export default async function DashboardAiPage() {
   const aiProviderName = parseAiProviderName(env.AI_PROVIDER);
   const aiToolsEnabled = getAiToolsEnabled() && Object.keys(AI_TOOL_MAP).length > 0;
   const t = await getTranslations("DashboardAiPage");
-  const { aiUiGate } = await getDashboardShellData();
+  const { aiUiGate, displayName } = await getDashboardShellData();
+  const availableModels = getAvailableModels(aiUiGate);
 
   return (
     <>
@@ -28,9 +28,11 @@ export default async function DashboardAiPage() {
       </div>
 
       {aiUiGate.isVisibleInUi ? (
-        <AiPageTabs
-          chatContent={<AiChatCard providerName={aiProviderName} toolsEnabled={aiToolsEnabled} />}
-          structuredOutputContent={<AiObjectCard />}
+        <AiChatCard
+          providerName={aiProviderName}
+          toolsEnabled={aiToolsEnabled}
+          userDisplayName={displayName}
+          availableModels={availableModels}
         />
       ) : (
         <section className="rounded-xl bg-card ring-1 ring-border p-6">

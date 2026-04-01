@@ -6,6 +6,8 @@ import { type AiModality } from "@/lib/ai/config";
 import { parseAiProviderName, type AiProviderName } from "@/lib/ai/provider-name";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
+import { type DashboardAiUiGate } from "@/lib/dashboard/team-snapshot";
+import { resolveAiAccess } from "@/lib/ai/access";
 
 const KNOWN_TEXT_ONLY_MODEL_PREFIXES = ["gpt-3.5"] as const;
 const ALL_MODALITIES = ["text", "image", "file"] as const satisfies readonly AiModality[];
@@ -205,4 +207,35 @@ export function providerSupportsModalities(model: string, modalities: AiModality
 
   // Fail closed for multimodal when no explicit/default capabilities match.
   return false;
+}
+
+export function getAvailableModels(aiUiGate?: DashboardAiUiGate): string[] {
+  if (aiUiGate && aiUiGate.accessMode !== "all") {
+    const access = resolveAiAccess({ effectivePlanKey: aiUiGate.effectivePlanKey });
+    if (access.model) {
+      return [access.model];
+    }
+    return [];
+  }
+
+  const entries =
+    customModelModalityMap.length > 0
+      ? customModelModalityMap
+      : DEFAULT_MODEL_MODALITIES_BY_PROVIDER[provider].map((entry) => ({
+          ...entry,
+          key: `${provider}:${entry.key.toLowerCase()}`,
+        }));
+
+  const models = new Set<string>();
+  for (const entry of entries) {
+    if (entry.key.startsWith(`${provider}:`)) {
+      let modelName = entry.key.slice(provider.length + 1);
+      if (modelName.endsWith("*")) {
+        modelName = modelName.slice(0, -1);
+      }
+      models.add(modelName);
+    }
+  }
+
+  return Array.from(models);
 }
