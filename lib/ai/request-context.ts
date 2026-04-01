@@ -334,7 +334,9 @@ export async function resolveAiRequestContext<TSchema extends ZodType>(
     };
   }
 
-  const model = aiAccess.model;
+  const requestedModel = (body as { modelId?: string }).modelId;
+  const model =
+    requestedModel && typeof requestedModel === "string" ? requestedModel : aiAccess.model;
 
   // ── Modality validation ──
   const disallowedModality = requestModalities.find(

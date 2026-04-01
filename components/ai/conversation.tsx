@@ -25,13 +25,7 @@ export function Conversation({ children, className }: { children: ReactNode; cla
     <div
       ref={containerRef}
       onScroll={handleScroll}
-      className={cn(
-        "min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-xl border border-border/50",
-        "bg-gradient-to-b from-muted/40 via-muted/25 to-muted/10 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]",
-        "dark:from-muted/20 dark:via-muted/10 dark:to-muted/5 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]",
-        "space-y-3",
-        className,
-      )}
+      className={cn("min-h-0 flex-1 overflow-y-auto overscroll-contain space-y-4 p-2", className)}
     >
       {children}
     </div>

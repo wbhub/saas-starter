@@ -55,23 +55,6 @@ function mockAiPageDependencies({
   vi.doMock("@/components/ai-chat-card", () => ({
     AiChatCard: () => <div>AiChatCardMock</div>,
   }));
-  vi.doMock("@/components/ai-object-card", () => ({
-    AiObjectCard: () => <div>AiObjectCardMock</div>,
-  }));
-  vi.doMock("@/components/ai/page-tabs", () => ({
-    AiPageTabs: ({
-      chatContent,
-      structuredOutputContent,
-    }: {
-      chatContent: ReactNode;
-      structuredOutputContent: ReactNode;
-    }) => (
-      <div>
-        {chatContent}
-        {structuredOutputContent}
-      </div>
-    ),
-  }));
 }
 
 describe("Dashboard AI page UI gating", () => {

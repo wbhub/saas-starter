@@ -64,10 +64,12 @@ function toThreadMessage(row: ThreadMessageRow): AiThreadMessage {
 }
 
 export async function createThread({
+  id,
   teamId,
   userId,
   title,
 }: {
+  id?: string;
   teamId: string;
   userId: string;
   title?: string;
@@ -76,6 +78,7 @@ export async function createThread({
   const { data, error } = await supabase
     .from("ai_threads")
     .insert({
+      ...(id ? { id } : {}),
       team_id: teamId,
       user_id: userId,
       title: title ?? null,

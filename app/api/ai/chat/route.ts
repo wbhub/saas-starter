@@ -100,6 +100,8 @@ const messageSchema = z.discriminatedUnion("role", [userMessageSchema, assistant
 const chatPayloadSchema = z.object({
   messages: z.array(messageSchema).min(1).max(30),
   threadId: z.string().uuid().optional(),
+  sessionId: z.string().uuid().optional(),
+  modelId: z.string().optional(),
 });
 
 type UsageTotals = {
@@ -516,6 +518,7 @@ export async function POST(request: Request) {
               if (!resolvedThreadId) {
                 const lastUserMessage = body.messages.findLast((m) => m.role === "user");
                 const thread = await createThread({
+                  id: body.sessionId,
                   teamId: resolvedTeamId,
                   userId: resolvedUserId,
                   title: getUserMessageTitle(lastUserMessage),
@@ -741,6 +744,7 @@ export async function POST(request: Request) {
               if (!resolvedThreadId) {
                 const lastUserMessage = body.messages.findLast((m) => m.role === "user");
                 const thread = await createThread({
+                  id: body.sessionId,
                   teamId: teamContext.teamId,
                   userId: user.id,
                   title: getUserMessageTitle(lastUserMessage),

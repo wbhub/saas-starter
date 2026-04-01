@@ -23,12 +23,10 @@ import {
   MAX_CHAT_IMAGE_RAW_BYTES,
   MAX_CHAT_IMAGE_RAW_MB,
 } from "@/lib/ai/compress-chat-image";
-import { Sparkles } from "lucide-react";
 import { Conversation } from "@/components/ai/conversation";
 import { MessageBubble } from "@/components/ai/message-bubble";
 import { PromptInput } from "@/components/ai/prompt-input";
 import { ThreadSidebar } from "@/components/ai/thread-sidebar";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const MAX_ATTACHMENTS_PER_MESSAGE = 8;
@@ -279,10 +277,16 @@ function toApiChatMessages(messages: UIMessage[], providerName: AttachmentProvid
 export function AiChatCard({
   providerName,
   toolsEnabled,
+  userDisplayName,
+  availableModels,
 }: {
   providerName: AttachmentProviderName;
   toolsEnabled: boolean;
+  /** Passed from the dashboard for future personalization (e.g. greeting). */
+  userDisplayName: string;
+  availableModels?: string[];
 }) {
+  void userDisplayName;
   const t = useTranslations("AiChatCard");
   const [chatSessionId, setChatSessionId] = useState(() => crypto.randomUUID());
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
@@ -290,6 +294,8 @@ export function AiChatCard({
   const [threadRefreshSignal, setThreadRefreshSignal] = useState(0);
   const [uploadErrorMessage, setUploadErrorMessage] = useState<string | null>(null);
   const threadSwitchAbortRef = useRef<AbortController | null>(null);
+
+  const [selectedModelId, setSelectedModelId] = useState<string | undefined>();
 
   const transport = useMemo(() => {
     const prepareSendMessagesRequest = ({
@@ -305,7 +311,9 @@ export function AiChatCard({
       body: {
         ...body,
         messages: toApiChatMessages(messages, providerName),
+        sessionId: chatSessionId,
         ...(activeThreadId ? { threadId: activeThreadId } : {}),
+        ...(selectedModelId ? { modelId: selectedModelId } : {}),
       },
     });
 
@@ -321,7 +329,7 @@ export function AiChatCard({
       headers: getCsrfHeaders,
       prepareSendMessagesRequest,
     });
-  }, [toolsEnabled, activeThreadId, providerName]);
+  }, [toolsEnabled, activeThreadId, providerName, chatSessionId, selectedModelId]);
 
   const { messages, sendMessage, status, stop, error, clearError, setMessages } = useChat({
     id: chatSessionId,
@@ -330,8 +338,10 @@ export function AiChatCard({
 
   // Rehydrate messages when initialMessages changes (thread load or clear)
   useEffect(() => {
-    setMessages(initialMessages);
-  }, [initialMessages, setMessages]);
+    if (initialMessages.length > 0 || activeThreadId === null) {
+      setMessages(initialMessages);
+    }
+  }, [initialMessages, activeThreadId, setMessages]);
 
   // Abort in-flight thread load on unmount
   useEffect(() => {
@@ -391,7 +401,8 @@ export function AiChatCard({
     [t, providerName],
   );
 
-  async function handleSubmit(text: string, files: File[]) {
+  async function handleSubmit(text: string, files: File[], modelId?: string) {
+    setSelectedModelId(modelId);
     clearError();
     setUploadErrorMessage(null);
     try {
@@ -421,7 +432,11 @@ export function AiChatCard({
         text,
         ...(fileParts.length > 0 ? { files: fileParts } : {}),
       });
-      // Refresh thread sidebar after send
+
+      if (!activeThreadId) {
+        setActiveThreadId(chatSessionId);
+      }
+      // Always refresh sidebar on send to ensure latest thread title/timestamp is visible
       setThreadRefreshSignal((k) => k + 1);
     } catch (error) {
       if (error instanceof ChatImageCompressionError) {
@@ -478,119 +493,73 @@ export function AiChatCard({
     setChatSessionId(crypto.randomUUID());
     setActiveThreadId(null);
     setInitialMessages([]);
+    setMessages([]);
   }
 
   return (
-    <div className="flex min-h-[min(560px,calc(100vh-260px))] flex-col overflow-hidden lg:flex-row">
+    <div className="flex h-[min(800px,calc(100vh-200px))] flex-col overflow-hidden lg:flex-row rounded-2xl border border-border/80 bg-background shadow-sm">
       <ThreadSidebar
         activeThreadId={activeThreadId}
         onSelectThread={handleSelectThread}
         onNewThread={handleNewThread}
         refreshSignal={threadRefreshSignal}
       />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header
-          className={cn(
-            "border-b border-border/50 bg-gradient-to-r from-muted/30 to-transparent",
-            "px-5 py-4 sm:px-6",
-          )}
-        >
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-semibold tracking-tight text-foreground">{t("title")}</h2>
-              <p className="mt-1 max-w-prose text-sm leading-relaxed text-muted-foreground">
-                {t("description")}
-              </p>
-            </div>
-            {isSending ? (
-              <span
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full border border-primary/25",
-                  "bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary",
-                )}
-              >
-                <span className="relative flex h-2 w-2">
-                  <span
-                    className={cn(
-                      "absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60",
-                      "opacity-75",
-                    )}
-                  />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
-                </span>
-                {t("actions.sending")}
-              </span>
-            ) : null}
-          </div>
-        </header>
-
-        <div className="flex min-h-0 flex-1 flex-col gap-0 px-5 py-4 sm:px-6">
-          <Conversation>
-            {messages.length === 0 ? (
-              <div
-                className={cn(
-                  "flex min-h-[220px] flex-col items-center justify-center gap-4 px-4 py-12",
-                  "text-center",
-                )}
-              >
+      <div className="flex min-w-0 flex-1 flex-col relative before:hidden lg:before:block before:absolute before:inset-y-4 before:left-0 before:w-px before:bg-border/40">
+        <div className="flex min-h-0 flex-1 flex-col gap-0 px-4 py-4 sm:px-6 lg:px-8">
+          <div className="mx-auto w-full max-w-4xl flex-1 flex flex-col min-h-0">
+            <Conversation>
+              {messages.length === 0 ? (
                 <div
                   className={cn(
-                    "flex size-14 items-center justify-center rounded-2xl",
-                    "bg-primary/10 text-primary shadow-inner ring-1 ring-primary/15",
+                    "flex h-full flex-col items-center justify-center gap-4 px-4 py-12",
+                    "text-center",
                   )}
                 >
-                  <Sparkles className="size-7" aria-hidden />
+                  <h2 className="text-2xl font-medium text-foreground">What can I help with?</h2>
                 </div>
-                <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
-                  {t("emptyState")}
-                </p>
-              </div>
-            ) : (
-              messages.map((message, index) => (
-                <MessageBubble
-                  key={message.id}
-                  message={message}
-                  isStreaming={
-                    isSending && message.role === "assistant" && index === messages.length - 1
-                  }
-                />
-              ))
-            )}
-          </Conversation>
-
-          {error || uploadErrorMessage ? (
-            <p
-              className={cn(
-                "mt-3 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700",
-                "dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200",
+              ) : (
+                messages.map((message, index) => (
+                  <MessageBubble
+                    key={message.id}
+                    message={message}
+                    isStreaming={
+                      isSending && message.role === "assistant" && index === messages.length - 1
+                    }
+                  />
+                ))
               )}
-            >
-              {uploadErrorMessage
-                ? uploadErrorMessage
-                : resolveUserFacingErrorMessage(
-                    error,
-                    t("errors.requestFailed"),
-                    errorMessagesByCode,
-                  )}
-            </p>
-          ) : null}
+            </Conversation>
 
-          {isSending ? (
-            <div className="mt-3 flex justify-end">
-              <Button type="button" variant="outline" size="sm" onClick={() => void stop()}>
-                {t("actions.stop")}
-              </Button>
-            </div>
-          ) : null}
+            {error || uploadErrorMessage ? (
+              <p
+                className={cn(
+                  "mt-3 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700",
+                  "dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200",
+                )}
+              >
+                {uploadErrorMessage
+                  ? uploadErrorMessage
+                  : resolveUserFacingErrorMessage(
+                      error,
+                      t("errors.requestFailed"),
+                      errorMessagesByCode,
+                    )}
+              </p>
+            ) : null}
+          </div>
         </div>
 
-        <div className="border-t border-border/50 bg-muted/20 px-5 py-4 sm:px-6 dark:bg-muted/10">
-          <PromptInput
-            onSubmit={(text, files) => void handleSubmit(text, files)}
-            isSending={isSending}
-            providerName={providerName}
-            validateFiles={validateFiles}
-          />
+        <div className="px-4 py-4 sm:px-6 lg:px-8">
+          <div className="mx-auto w-full max-w-4xl">
+            <PromptInput
+              onSubmit={(text, files, modelId) => void handleSubmit(text, files, modelId)}
+              isSending={isSending}
+              onStop={() => void stop()}
+              providerName={providerName}
+              validateFiles={validateFiles}
+              availableModels={availableModels}
+            />
+          </div>
         </div>
       </div>
     </div>

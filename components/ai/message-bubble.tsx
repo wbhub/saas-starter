@@ -80,7 +80,7 @@ export function MessageBubble({
             return (
               <div
                 key={partIndex}
-                className="ml-auto max-w-[88%] rounded-lg bg-btn-accent px-3 py-2 text-sm text-white"
+                className="ml-auto max-w-[88%] rounded-lg bg-primary/78 px-3 py-2 text-sm font-normal leading-relaxed text-primary-foreground"
               >
                 {part.text}
               </div>
@@ -89,7 +89,7 @@ export function MessageBubble({
           return (
             <div
               key={partIndex}
-              className="max-w-[88%] rounded-lg bg-surface px-3 py-2 text-sm text-foreground"
+              className="max-w-[88%] rounded-lg bg-surface px-3 py-2 text-sm font-normal leading-relaxed text-foreground"
             >
               <MarkdownContent content={part.text} />
               {isStreaming && partIndex === message.parts.length - 1 ? (
@@ -111,7 +111,7 @@ export function MessageBubble({
         }
 
         if (part.type === "step-start") {
-          return <div key={partIndex} className="my-1 border-t app-border-subtle" />;
+          return null; // Removed the weird grey divider
         }
 
         if (isToolUIPart(part)) {
