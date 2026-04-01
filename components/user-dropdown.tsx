@@ -6,7 +6,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import Cookies from "js-cookie";
 import {
-  Check,
   ChevronDown,
   CircleHelp,
   Loader2,
@@ -20,12 +19,15 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -78,8 +80,8 @@ export function UserDropdown({
   const [teamOptionsState, setTeamOptionsState] = useState<"idle" | "loading" | "loaded" | "error">(
     canSwitchTeams === false ? "loaded" : "idle",
   );
+  const [selectedTeamId, setSelectedTeamId] = useState(activeTeamId);
   const logoutFormRef = useRef<HTMLFormElement | null>(null);
-  const teamSwitchFormRef = useRef<HTMLFormElement | null>(null);
   const teamSwitchingDisabled = canSwitchTeams === false;
   const teamSwitchingAvailableOrUnknown = !teamSwitchingDisabled;
 
@@ -88,9 +90,12 @@ export function UserDropdown({
     if (!nextOpen) {
       setShowLocales(false);
     }
-    if (nextOpen && teamSwitchingAvailableOrUnknown) {
-      setTeamOptions([]);
-      setTeamOptionsState("loading");
+    if (nextOpen) {
+      setSelectedTeamId(activeTeamId);
+      if (teamSwitchingAvailableOrUnknown) {
+        setTeamOptions([]);
+        setTeamOptionsState("loading");
+      }
     }
     if (!nextOpen) {
       if (teamSwitchingDisabled || teamOptionsState !== "error") {
@@ -131,6 +136,13 @@ export function UserDropdown({
       cancelled = true;
     };
   }, [open, teamOptionsState, teamSwitchingDisabled]);
+
+  const effectiveSelectedTeamId =
+    teamOptions.length > 0 && !teamOptions.some((team) => team.teamId === selectedTeamId)
+      ? (teamOptions.find((team) => team.teamId === activeTeamId)?.teamId ??
+        teamOptions[0]?.teamId ??
+        "")
+      : selectedTeamId;
 
   const themeOrder: Array<"system" | "light" | "dark"> = ["system", "light", "dark"];
   const themeIndex = themeOrder.indexOf(theme);
@@ -193,36 +205,42 @@ export function UserDropdown({
               onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => e.stopPropagation()}
             >
-              <form ref={teamSwitchFormRef} action={switchActiveTeam}>
+              <form action={switchActiveTeam} className="space-y-2">
                 <input type="hidden" name="csrf_token" value={csrfToken} />
                 <input type="hidden" name="redirectTo" value={pathname} />
-                <label
-                  htmlFor="dropdown-team-select"
-                  className="block text-[10px] font-medium uppercase tracking-wider text-muted-foreground"
-                >
+                <input type="hidden" name="teamId" value={effectiveSelectedTeamId} />
+                <p className="block text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                   {t("DashboardSidebar.team")}
-                </label>
-                <div className="relative mt-1">
-                  <select
-                    id="dropdown-team-select"
-                    name="teamId"
-                    defaultValue={activeTeamId}
-                    className="w-full appearance-none rounded-lg border bg-background py-1 pl-2 pr-6 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
+                </p>
+                <DropdownMenuRadioGroup
+                  value={effectiveSelectedTeamId}
+                  onValueChange={(value) => setSelectedTeamId(value ?? "")}
+                >
+                  <div
+                    aria-label={t("DashboardSidebar.team")}
+                    className="rounded-lg border border-border bg-background/70 p-1"
                   >
                     {teamOptions.map((m) => (
-                      <option key={m.teamId} value={m.teamId}>
+                      <DropdownMenuRadioItem
+                        key={m.teamId}
+                        value={m.teamId}
+                        closeOnClick={false}
+                        className="gap-2.5 rounded-lg px-2.5 py-2 text-xs"
+                      >
                         {m.teamName ?? t("Common.myTeam")}
-                      </option>
+                      </DropdownMenuRadioItem>
                     ))}
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-1.5 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
-                </div>
-                <button
+                  </div>
+                </DropdownMenuRadioGroup>
+                <Button
                   type="submit"
-                  className="mt-1.5 w-full rounded-lg border border-border px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted"
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  disabled={!effectiveSelectedTeamId || effectiveSelectedTeamId === activeTeamId}
                 >
                   {t("DashboardSidebar.switch")}
-                </button>
+                </Button>
               </form>
             </div>
           </>
@@ -265,20 +283,20 @@ export function UserDropdown({
                 className={`ml-auto h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${showLocales ? "rotate-180" : ""}`}
               />
             </DropdownMenuItem>
-            {showLocales
-              ? routing.locales.map((item) => (
-                  <DropdownMenuItem
+            {showLocales ? (
+              <DropdownMenuRadioGroup value={locale} onValueChange={onLocaleChange}>
+                {routing.locales.map((item) => (
+                  <DropdownMenuRadioItem
                     key={item}
-                    onClick={() => onLocaleChange(item)}
+                    value={item}
+                    closeOnClick
                     className="gap-2.5 rounded-lg py-1.5 pl-11 pr-2.5"
                   >
                     {tLocale(`localeNames.${item}`)}
-                    {item === locale ? (
-                      <Check className="ml-auto h-3.5 w-3.5 text-muted-foreground" />
-                    ) : null}
-                  </DropdownMenuItem>
-                ))
-              : null}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            ) : null}
           </>
         ) : null}
 

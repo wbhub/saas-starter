@@ -374,33 +374,26 @@ async function fetchAuthEmailsByUserIds(userIds: string[]): Promise<Map<string, 
   const admin = createAdminClient();
   const map = new Map<string, string>();
 
-  const AUTH_EMAIL_LOOKUP_CONCURRENCY = 10;
-  for (let i = 0; i < unique.length; i += AUTH_EMAIL_LOOKUP_CONCURRENCY) {
-    const batch = unique.slice(i, i + AUTH_EMAIL_LOOKUP_CONCURRENCY);
-    const settled = await Promise.allSettled(
-      batch.map(async (userId) => {
-        const { data, error } = await admin.auth.admin.getUserById(userId);
-        if (error) {
-          logger.warn("Failed to load auth user email for team member list.", { userId, error });
-          return [userId, null] as const;
-        }
-        const email = data.user?.email?.trim() || null;
-        return [userId, email] as const;
-      }),
-    );
+  try {
+    const { data, error } = await admin.rpc("get_user_emails_by_ids", {
+      p_user_ids: unique,
+    });
 
-    for (const entry of settled) {
-      if (entry.status !== "fulfilled") {
-        logger.warn("Failed to load auth user email for team member list.", {
-          error: entry.reason,
-        });
-        continue;
-      }
-      const [userId, email] = entry.value;
-      if (email) {
-        map.set(userId, email);
+    if (error) {
+      logger.warn("Failed to batch-fetch auth user emails via RPC", { error });
+      return map;
+    }
+
+    const rows = data as Array<{ id: string; email: string | null }> | null;
+    if (rows) {
+      for (const row of rows) {
+        if (row.email) {
+          map.set(row.id, row.email.trim());
+        }
       }
     }
+  } catch (error) {
+    logger.warn("Failed to batch-fetch auth user emails", { error });
   }
 
   return map;

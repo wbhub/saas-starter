@@ -29,10 +29,11 @@ async function loadAuditModule({
     error: vi.fn(),
   };
 
+  const deadLetterInsert = vi.fn().mockResolvedValue({ error: null });
   vi.doMock("@/lib/supabase/admin", () => ({
     createAdminClient: () => ({
-      from: vi.fn(() => ({
-        insert,
+      from: vi.fn((table: string) => ({
+        insert: table === "audit_event_dead_letters" ? deadLetterInsert : insert,
       })),
     }),
   }));
@@ -40,7 +41,7 @@ async function loadAuditModule({
 
   const audit = (await import("./audit")) as AuditModule;
   audit.__resetAuditBufferForTests();
-  return { ...audit, insert, logger };
+  return { ...audit, insert, deadLetterInsert, logger };
 }
 
 describe("audit batching", () => {

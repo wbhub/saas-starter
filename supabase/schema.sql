@@ -1767,3 +1767,41 @@ using (
   bucket_id = 'profile-photos'
   and auth.uid()::text = (storage.foldername(name))[1]
 );
+
+-- Batch-fetch emails from auth.users by a set of user IDs.
+-- Replaces N individual getUserById() calls with a single DB round-trip.
+create or replace function public.get_user_emails_by_ids(p_user_ids uuid[])
+returns table(id uuid, email text)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select u.id, u.email
+  from auth.users u
+  where u.id = any(p_user_ids);
+$$;
+
+revoke execute on function public.get_user_emails_by_ids(uuid[]) from public;
+revoke execute on function public.get_user_emails_by_ids(uuid[]) from anon;
+revoke execute on function public.get_user_emails_by_ids(uuid[]) from authenticated;
+grant execute on function public.get_user_emails_by_ids(uuid[]) to service_role;
+
+-- Dead-letter table for audit events that could not be persisted to audit_events.
+-- Events land here when the primary insert fails after all retries, or when the
+-- in-memory queue overflows.  A background job or manual process can replay them later.
+create table if not exists public.audit_event_dead_letters (
+  id uuid primary key default gen_random_uuid(),
+  events jsonb not null,
+  reason text not null,
+  event_count integer not null,
+  created_at timestamptz not null default timezone('utc', now())
+);
+
+-- Only the service_role (admin client) should write to this table.
+alter table public.audit_event_dead_letters enable row level security;
+
+revoke all on public.audit_event_dead_letters from public;
+revoke all on public.audit_event_dead_letters from anon;
+revoke all on public.audit_event_dead_letters from authenticated;
+grant all on public.audit_event_dead_letters to service_role;

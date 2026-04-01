@@ -1,3 +1,5 @@
+import { cn } from "@/lib/utils";
+
 type FormMessageProps = {
   status: "error" | "success" | "idle";
   message: string | null;
@@ -7,7 +9,10 @@ type FormMessageProps = {
 
 const errorClasses = "border border-destructive/35 bg-destructive/10 text-destructive";
 
-const successClasses = "bg-muted text-muted-foreground";
+const successClasses =
+  "border border-success/30 bg-success/10 text-success-foreground dark:text-success";
+
+const idleClasses = "border border-border bg-muted/60 text-muted-foreground";
 
 export function FormMessage({ status, message, id }: FormMessageProps) {
   if (!message) return null;
@@ -17,9 +22,10 @@ export function FormMessage({ status, message, id }: FormMessageProps) {
       id={id}
       role={status === "error" ? "alert" : "status"}
       aria-live={status === "error" ? "assertive" : "polite"}
-      className={`mt-3 rounded-lg px-3 py-2 text-sm ${
-        status === "error" ? errorClasses : successClasses
-      }`}
+      className={cn(
+        "mt-3 rounded-lg px-3 py-2 text-sm",
+        status === "error" ? errorClasses : status === "success" ? successClasses : idleClasses,
+      )}
     >
       {message}
     </p>

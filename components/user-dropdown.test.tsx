@@ -69,7 +69,7 @@ function renderDropdown(overrides?: Partial<ComponentProps<typeof UserDropdown>>
       teamName="Alpha"
       role="owner"
       teamUiMode="paid_team"
-      canSwitchTeams
+      canSwitchTeams={true}
       activeTeamId="team_1"
       csrfToken="csrf_token"
       {...overrides}
@@ -125,7 +125,7 @@ describe("UserDropdown", () => {
 
     await waitFor(() => {
       expect(fetch).toHaveBeenCalledTimes(1);
-      expect(screen.getByRole("option", { name: "Beta" })).toBeTruthy();
+      expect(screen.getByRole("menuitemradio", { name: "Beta" })).toBeTruthy();
     });
   });
 
@@ -150,7 +150,7 @@ describe("UserDropdown", () => {
 
     await waitFor(() => {
       expect(fetch).toHaveBeenCalledTimes(1);
-      expect(screen.getByRole("option", { name: "Alpha" })).toBeTruthy();
+      expect(screen.getByRole("menuitemradio", { name: "Alpha" })).toBeTruthy();
     });
 
     fireEvent.click(screen.getByRole("button", { name: "UserDropdown.label" }));
@@ -173,7 +173,7 @@ describe("UserDropdown", () => {
 
     await waitFor(() => {
       expect(fetch).toHaveBeenCalledTimes(2);
-      expect(screen.getByRole("option", { name: "Alpha Renamed" })).toBeTruthy();
+      expect(screen.getByRole("menuitemradio", { name: "Alpha Renamed" })).toBeTruthy();
     });
   });
 
@@ -198,7 +198,7 @@ describe("UserDropdown", () => {
 
     await waitFor(() => {
       expect(fetch).toHaveBeenCalledTimes(1);
-      expect(screen.getByRole("option", { name: "Beta" })).toBeTruthy();
+      expect(screen.getByRole("menuitemradio", { name: "Beta" })).toBeTruthy();
     });
 
     fireEvent.click(screen.getByRole("button", { name: "UserDropdown.label" }));
@@ -206,7 +206,7 @@ describe("UserDropdown", () => {
 
     await waitFor(() => {
       expect(fetch).toHaveBeenCalledTimes(2);
-      expect(screen.getByRole("option", { name: "Beta Updated" })).toBeTruthy();
+      expect(screen.getByRole("menuitemradio", { name: "Beta Updated" })).toBeTruthy();
     });
   });
 });

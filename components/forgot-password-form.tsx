@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import { useTranslations } from "next-intl";
 import { getCsrfHeaders } from "@/lib/http/csrf";
 import { Button } from "@/components/ui/button";
+import { FormMessage } from "@/components/ui/form-message";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -76,16 +77,7 @@ export function ForgotPasswordForm() {
         </Button>
       </form>
 
-      {message ? (
-        <p
-          id={messageId}
-          role={messageType === "error" ? "alert" : "status"}
-          aria-live={messageType === "error" ? "assertive" : "polite"}
-          className="mt-4 rounded-lg bg-muted px-3 py-2 text-sm text-foreground"
-        >
-          {message}
-        </p>
-      ) : null}
+      <FormMessage id={messageId} status={messageType} message={message} />
     </div>
   );
 }

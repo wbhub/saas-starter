@@ -6,6 +6,7 @@ import { AlertTriangle, LogOut, Trash2 } from "lucide-react";
 import { deleteAccount, logoutAllSessions, type DeleteAccountState } from "@/app/dashboard/actions";
 import { DashboardPageSection } from "@/components/dashboard-page-section";
 import { Checkbox } from "@/components/ui/checkbox";
+import { FormMessage } from "@/components/ui/form-message";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -137,19 +138,7 @@ export function DangerZoneCard({ email, csrfToken }: DangerZoneCardProps) {
               />
             </div>
 
-            {state.message ? (
-              <p
-                role="status"
-                className={cn(
-                  "rounded-lg border px-3 py-2.5 text-sm",
-                  state.status === "error"
-                    ? "border-destructive/35 bg-destructive/10 text-destructive"
-                    : "border-success/30 bg-success/10 text-success-foreground dark:text-success",
-                )}
-              >
-                {state.message}
-              </p>
-            ) : null}
+            <FormMessage status={state.status} message={state.message} />
           </form>
         </div>
       </div>

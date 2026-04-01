@@ -76,18 +76,42 @@ function getRetryDelayMs() {
   return Math.max(AUDIT_FLUSH_INTERVAL_MS, Math.min(jitteredDelay, AUDIT_RETRY_MAX_INTERVAL_MS));
 }
 
+async function persistToDeadLetterQueue(events: AuditInsertRow[], reason: string) {
+  try {
+    const supabase = createAdminClient();
+    const { error } = await supabase.from("audit_event_dead_letters").insert({
+      events: JSON.parse(JSON.stringify(events)),
+      reason,
+      event_count: events.length,
+    });
+    if (error) {
+      logger.error("Failed to persist dropped audit events to dead-letter table", {
+        error,
+        droppedEvents: events.length,
+        reason,
+      });
+    }
+  } catch (error) {
+    logger.error("Failed to persist dropped audit events to dead-letter table", error, {
+      droppedEvents: events.length,
+      reason,
+    });
+  }
+}
+
 function enforceQueueLimit() {
   if (auditInsertQueue.length <= AUDIT_MAX_QUEUE_SIZE) {
     return;
   }
 
   const droppedEvents = auditInsertQueue.length - AUDIT_MAX_QUEUE_SIZE;
-  auditInsertQueue.splice(0, droppedEvents);
+  const dropped = auditInsertQueue.splice(0, droppedEvents);
   logger.error("Audit queue capacity exceeded; dropping oldest events", {
     droppedEvents,
     maxQueueSize: AUDIT_MAX_QUEUE_SIZE,
     queuedEvents: auditInsertQueue.length,
   });
+  void persistToDeadLetterQueue(dropped, "queue_overflow");
 }
 
 function scheduleFlush(delayMs = AUDIT_FLUSH_INTERVAL_MS) {
@@ -144,6 +168,7 @@ async function flushAuditQueue() {
         },
       );
       consecutiveFlushFailures = 0;
+      void persistToDeadLetterQueue(batch, "retry_exhaustion");
       return;
     }
     auditInsertQueue.unshift(...batch);

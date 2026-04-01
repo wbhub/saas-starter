@@ -13,6 +13,7 @@ import { getCsrfHeaders } from "@/lib/http/csrf";
 import { createClient } from "@/lib/supabase/client";
 import { validatePasswordComplexity } from "@/lib/validation";
 import { Button } from "@/components/ui/button";
+import { FormMessage } from "@/components/ui/form-message";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -212,16 +213,7 @@ export function ResetPasswordForm({ hasRecoveryProof, recoveryUserId }: ResetPas
         </Button>
       </form>
 
-      {message ? (
-        <p
-          id={messageId}
-          role={messageType === "error" ? "alert" : "status"}
-          aria-live={messageType === "error" ? "assertive" : "polite"}
-          className="mt-4 rounded-lg bg-muted px-3 py-2 text-sm text-foreground"
-        >
-          {message}
-        </p>
-      ) : null}
+      <FormMessage id={messageId} status={messageType} message={message} />
     </div>
   );
 }
