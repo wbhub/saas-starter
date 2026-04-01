@@ -25,7 +25,7 @@ const DEFAULT_MODEL_MODALITIES_BY_PROVIDER: Record<
     { key: "gpt-3.5*", modalities: ["text"] },
     { key: "gpt-4.1*", modalities: ["text", "image", "file"] },
     { key: "gpt-4o*", modalities: ["text", "image", "file"] },
-    { key: "gpt-5*", modalities: ["text", "image", "file"] },
+    { key: "gpt-5.4*", modalities: ["text", "image", "file"] },
   ],
   anthropic: [{ key: "claude*", modalities: ["text", "image", "file"] }],
   google: [{ key: "gemini*", modalities: ["text", "image", "file"] }],
