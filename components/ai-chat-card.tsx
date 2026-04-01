@@ -306,16 +306,22 @@ export function AiChatCard({
       body: Record<string, unknown> | undefined;
       messages: UIMessage[];
       [key: string]: unknown;
-    }) => ({
-      ...request,
-      body: {
-        ...body,
-        messages: toApiChatMessages(messages, providerName),
-        sessionId: chatSessionId,
-        ...(activeThreadId ? { threadId: activeThreadId } : {}),
-        ...(selectedModelId ? { modelId: selectedModelId } : {}),
-      },
-    });
+    }) => {
+      const requestedModelId =
+        typeof body?.modelId === "string" && body.modelId.trim().length > 0
+          ? body.modelId.trim()
+          : selectedModelId;
+      return {
+        ...request,
+        body: {
+          ...body,
+          messages: toApiChatMessages(messages, providerName),
+          sessionId: chatSessionId,
+          ...(activeThreadId ? { threadId: activeThreadId } : {}),
+          ...(requestedModelId ? { modelId: requestedModelId } : {}),
+        },
+      };
+    };
 
     if (toolsEnabled) {
       return new DefaultChatTransport({
@@ -428,10 +434,13 @@ export function AiChatCard({
         setUploadErrorMessage(t("errors.totalAttachmentsTooLarge"));
         return;
       }
-      await sendMessage({
-        text,
-        ...(fileParts.length > 0 ? { files: fileParts } : {}),
-      });
+      await sendMessage(
+        {
+          text,
+          ...(fileParts.length > 0 ? { files: fileParts } : {}),
+        },
+        modelId ? { body: { modelId } } : undefined,
+      );
 
       if (!activeThreadId) {
         setActiveThreadId(chatSessionId);
@@ -497,7 +506,7 @@ export function AiChatCard({
   }
 
   return (
-    <div className="flex h-[min(800px,calc(100vh-200px))] flex-col overflow-hidden lg:flex-row rounded-2xl border border-border/80 bg-background shadow-sm">
+    <div className="flex h-[min(800px,calc(100vh-200px))] flex-col overflow-hidden lg:flex-row rounded-2xl bg-card ring-1 ring-border">
       <ThreadSidebar
         activeThreadId={activeThreadId}
         onSelectThread={handleSelectThread}
