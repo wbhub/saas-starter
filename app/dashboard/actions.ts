@@ -56,6 +56,17 @@ async function isLastOwnerOfAnyTeam(userId: string): Promise<boolean> {
   return data === true;
 }
 
+async function deleteSoleMemberTeams(userId: string): Promise<void> {
+  const adminClient = createAdminClient();
+  const { error } = await adminClient.rpc("delete_sole_member_teams" as string, {
+    p_user_id: userId,
+  });
+
+  if (error) {
+    throw new Error(`Failed to delete sole-member teams: ${error.message}`);
+  }
+}
+
 async function getTeamIdsForUserMemberships(userId: string): Promise<string[]> {
   const adminClient = createAdminClient();
   const { data: memberships, error } = await adminClient
@@ -347,7 +358,7 @@ export async function deleteAccount(
     return {
       status: "error",
       message:
-        "You are the last owner of at least one team. Transfer ownership before deleting your account.",
+        "You are the last owner of a team with other members. Transfer ownership or remove all members before deleting your account.",
     };
   }
 
@@ -364,6 +375,21 @@ export async function deleteAccount(
     };
   }
 
+  // Delete teams where user is the sole member (personal/solo teams).
+  // This must happen before deleteUser() because the cascade would
+  // trigger prevent_last_team_owner_membership_delete and block deletion.
+  try {
+    await deleteSoleMemberTeams(user.id);
+  } catch (error) {
+    logger.error("Failed to delete sole-member teams before account deletion", error, {
+      userId: user.id,
+    });
+    return {
+      status: "error",
+      message: "Could not prepare account for deletion. Please try again.",
+    };
+  }
+
   const adminClient = createAdminClient();
   const { error } = await adminClient.auth.admin.deleteUser(user.id);
 
@@ -373,7 +399,7 @@ export async function deleteAccount(
       return {
         status: "error",
         message:
-          "You are the last owner of at least one team. Transfer ownership before deleting your account.",
+          "You are the last owner of a team with other members. Transfer ownership or remove all members before deleting your account.",
       };
     }
     return {
