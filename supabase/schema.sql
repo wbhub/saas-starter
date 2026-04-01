@@ -1216,6 +1216,14 @@ as $$
         where other.team_id = tm.team_id
           and other.role = 'owner'
       ) = 1
+      -- Only block if other members exist on this team.
+      -- Solo teams (e.g. personal teams) can be deleted with the account.
+      and exists (
+        select 1
+        from public.team_memberships other_member
+        where other_member.team_id = tm.team_id
+          and other_member.user_id <> p_user_id
+      )
   );
 $$;
 
@@ -1223,6 +1231,43 @@ revoke execute on function public.is_last_owner_of_any_team(uuid) from public;
 revoke execute on function public.is_last_owner_of_any_team(uuid) from anon;
 revoke execute on function public.is_last_owner_of_any_team(uuid) from authenticated;
 grant execute on function public.is_last_owner_of_any_team(uuid) to service_role;
+
+-- Deletes all teams where the given user is the only member.
+-- Must be called before deleteUser() so the cascade doesn't hit
+-- the prevent_last_team_owner_membership_delete trigger.
+-- The trigger's existing escape hatch (team row already gone) handles cleanup.
+create or replace function public.delete_sole_member_teams(p_user_id uuid)
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_deleted_count integer;
+begin
+  with sole_member_teams as (
+    select tm.team_id
+    from public.team_memberships tm
+    where tm.user_id = p_user_id
+      and not exists (
+        select 1
+        from public.team_memberships other
+        where other.team_id = tm.team_id
+          and other.user_id <> p_user_id
+      )
+  )
+  delete from public.teams
+  where id in (select team_id from sole_member_teams);
+
+  get diagnostics v_deleted_count = row_count;
+  return v_deleted_count;
+end;
+$$;
+
+revoke execute on function public.delete_sole_member_teams(uuid) from public;
+revoke execute on function public.delete_sole_member_teams(uuid) from anon;
+revoke execute on function public.delete_sole_member_teams(uuid) from authenticated;
+grant execute on function public.delete_sole_member_teams(uuid) to service_role;
 
 -- Resolves a user's active team context in a single round trip.
 -- Returns the membership for the user's active_team_id (from profiles),
