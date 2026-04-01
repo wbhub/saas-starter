@@ -9,7 +9,7 @@ import {
   getSocialProviderOptions,
   toSupabaseOAuthProvider,
 } from "@/lib/auth/social-auth";
-import { getCsrfHeaders } from "@/lib/http/csrf";
+import { clientPostJson } from "@/lib/http/client-fetch";
 import { createClient } from "@/lib/supabase/client";
 import { validatePasswordComplexity } from "@/lib/validation";
 import { Button } from "@/components/ui/button";
@@ -142,15 +142,9 @@ export function AuthForm({
 
     try {
       if (isLogin) {
-        const response = await fetch("/api/auth/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", ...getCsrfHeaders() },
-          body: JSON.stringify({ email, password }),
+        await clientPostJson("/api/auth/login", { email, password }, {
+          fallbackErrorMessage: t("errors.unableToLogIn"),
         });
-        const payload = (await response.json().catch(() => null)) as AuthApiResponse | null;
-        if (!response.ok) {
-          throw new Error(payload?.error ?? t("errors.unableToLogIn"));
-        }
 
         dispatch({ type: "SUBMIT_SUCCESS" });
         router.push(redirectTo);
@@ -161,15 +155,9 @@ export function AuthForm({
           throw new Error(passwordValidation.error);
         }
 
-        const response = await fetch("/api/auth/signup", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", ...getCsrfHeaders() },
-          body: JSON.stringify({ email, password }),
+        const payload = await clientPostJson<AuthApiResponse>("/api/auth/signup", { email, password }, {
+          fallbackErrorMessage: t("errors.unableToCreateAccount"),
         });
-        const payload = (await response.json().catch(() => null)) as AuthApiResponse | null;
-        if (!response.ok) {
-          throw new Error(payload?.error ?? t("errors.unableToCreateAccount"));
-        }
 
         if (payload?.sessionCreated) {
           dispatch({ type: "SUBMIT_SUCCESS" });

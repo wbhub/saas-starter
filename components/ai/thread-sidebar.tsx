@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Trash2 } from "lucide-react";
-import { getCsrfHeaders } from "@/lib/http/csrf";
+import { clientFetch } from "@/lib/http/client-fetch";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -14,13 +14,6 @@ type Thread = {
   updatedAt: string;
 };
 
-async function fetchWithCsrf(url: string, init?: RequestInit) {
-  const headers = {
-    ...getCsrfHeaders(),
-    ...(init?.headers ?? {}),
-  };
-  return fetch(url, { ...init, headers });
-}
 
 export function ThreadSidebar({
   activeThreadId,
@@ -41,13 +34,9 @@ export function ThreadSidebar({
   const loadThreads = useCallback(async () => {
     setLoadError(false);
     try {
-      const response = await fetchWithCsrf("/api/ai/threads");
-      if (response.ok) {
-        const data = await response.json();
-        setThreads(data.threads ?? []);
-      } else {
-        setLoadError(true);
-      }
+      const response = await clientFetch("/api/ai/threads");
+      const data = await response.json();
+      setThreads(data.threads ?? []);
     } catch {
       setLoadError(true);
     } finally {
@@ -61,13 +50,18 @@ export function ThreadSidebar({
 
   async function handleDelete(threadId: string) {
     try {
-      await fetchWithCsrf(`/api/ai/threads/${threadId}`, { method: "DELETE" });
+      await clientFetch(`/api/ai/threads/${threadId}`, { method: "DELETE" });
       setThreads((prev) => prev.filter((thread) => thread.id !== threadId));
       if (activeThreadId === threadId) {
         onNewThread();
       }
     } catch {
-      // Silently fail
+      // Optimistic delete: remove from list even if the request failed.
+      // The thread will reappear on next load if it wasn't actually deleted.
+      setThreads((prev) => prev.filter((thread) => thread.id !== threadId));
+      if (activeThreadId === threadId) {
+        onNewThread();
+      }
     }
   }
 

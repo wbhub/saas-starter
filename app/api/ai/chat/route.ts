@@ -270,6 +270,10 @@ function toUserMessageContent(message: ChatMessage): UserContent {
     return message.content;
   }
 
+  // The AI SDK's UserContent union (TextPart | ImagePart | FilePart)[] is
+  // narrower than what we construct at runtime — FilePart requires compile-time
+  // literal `type: "file"` which an index-signature object can't satisfy.
+  // The double assertion is the least-bad workaround until the SDK widens the type.
   const content: Array<Record<string, unknown>> = [];
   if (message.content.length > 0) {
     content.push({ type: "text", text: message.content });

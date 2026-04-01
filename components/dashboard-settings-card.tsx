@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { Camera, Trash2, UserRound } from "lucide-react";
 import { DashboardPageSection } from "@/components/dashboard-page-section";
 import { createClient } from "@/lib/supabase/client";
-import { getCsrfHeaders } from "@/lib/http/csrf";
+import { clientPatchJson } from "@/lib/http/client-fetch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -101,21 +101,9 @@ export function DashboardSettingsCard({
     setNameSaveStatus("saving");
     setNameError(null);
 
-    const response = await fetch("/api/profile/full-name", {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        ...getCsrfHeaders(),
-      },
-      body: JSON.stringify({ fullName: displayNameRef.current }),
+    await clientPatchJson("/api/profile/full-name", { fullName: displayNameRef.current }, {
+      fallbackErrorMessage: t("errors.nameSaveFailed"),
     });
-    const payload = (await response.json().catch(() => null)) as {
-      ok?: boolean;
-      error?: string;
-    } | null;
-    if (!response.ok) {
-      throw new Error(payload?.error ?? t("errors.nameSaveFailed"));
-    }
 
     const latest = displayNameRef.current.trim();
     if (latest !== normalized) {
@@ -166,21 +154,9 @@ export function DashboardSettingsCard({
   }
 
   async function persistAvatarUrl(nextUrl: string | null) {
-    const response = await fetch("/api/profile/avatar", {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        ...getCsrfHeaders(),
-      },
-      body: JSON.stringify({ avatarUrl: nextUrl }),
+    await clientPatchJson("/api/profile/avatar", { avatarUrl: nextUrl }, {
+      fallbackErrorMessage: t("errors.photoSaveFailed"),
     });
-    const payload = (await response.json().catch(() => null)) as {
-      ok?: boolean;
-      error?: string;
-    } | null;
-    if (!response.ok) {
-      throw new Error(payload?.error ?? t("errors.photoSaveFailed"));
-    }
   }
 
   function showAvatarSavedBriefly() {
@@ -306,7 +282,7 @@ export function DashboardSettingsCard({
                       void handleRemovePhoto();
                     }}
                     disabled={avatarBusy}
-                    className="rounded-full p-1.5 text-white outline-none transition hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white"
+                    className="rounded-full p-1.5 text-white outline-none transition hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-ring"
                     aria-label={t("upload.removePhotoAria")}
                   >
                     <Trash2 className="h-5 w-5" aria-hidden />
@@ -360,7 +336,7 @@ export function DashboardSettingsCard({
                   placeholder={t("fields.displayNamePlaceholder")}
                   aria-busy={nameSaveStatus === "saving"}
                   autoComplete="name"
-                  className="h-10 min-h-10 w-full min-w-0 max-w-md py-2"
+                  className="w-full min-w-0 max-w-md"
                 />
                 {nameSaveStatus === "saving" ||
                 nameSaveStatus === "saved" ||
@@ -386,14 +362,14 @@ export function DashboardSettingsCard({
                   </div>
                 ) : null}
               </div>
-              {nameError ? <p className="mt-2 text-xs text-rose-600">{nameError}</p> : null}
+              {nameError ? <p className="mt-2 text-xs text-destructive">{nameError}</p> : null}
             </div>
           </div>
         </div>
 
         <p className="mt-5 text-xs leading-relaxed text-muted-foreground">{t("profileRowHint")}</p>
 
-        {uploadError ? <p className="mt-2 text-xs text-rose-600">{uploadError}</p> : null}
+        {uploadError ? <p className="mt-2 text-xs text-destructive">{uploadError}</p> : null}
       </div>
     </DashboardPageSection>
   );

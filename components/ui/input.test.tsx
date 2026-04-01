@@ -9,7 +9,7 @@ describe("Input", () => {
     const input = screen.getByPlaceholderText("Enter text");
     expect(input).not.toHaveAttribute("readonly");
     expect(input.className).toContain("bg-transparent");
-    expect(input.className).toContain("focus:ring-2");
+    expect(input.className).toContain("focus-visible:ring-2");
   });
 
   it("renders a readonly input for readonly variant", () => {

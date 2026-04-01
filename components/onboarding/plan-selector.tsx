@@ -4,7 +4,7 @@ import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { CheckCircle2 } from "lucide-react";
-import { getCsrfHeaders } from "@/lib/http/csrf";
+import { clientFetch, clientPostJson } from "@/lib/http/client-fetch";
 import { Button } from "@/components/ui/button";
 import type { PlanInterval, PlanKey } from "@/lib/stripe/plans";
 
@@ -110,19 +110,11 @@ export function OnboardingPlanSelector({
     setLoadingAction("free");
     setError(null);
     try {
-      const response = await fetch("/api/onboarding/complete", {
+      await clientFetch("/api/onboarding/complete", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...getCsrfHeaders(),
-        },
+        json: {},
+        fallbackErrorMessage: t("errors.completeFailed"),
       });
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as {
-          error?: string;
-        } | null;
-        throw new Error(payload?.error ?? t("errors.completeFailed"));
-      }
       router.push("/dashboard");
       router.refresh();
     } catch (err) {
@@ -140,26 +132,14 @@ export function OnboardingPlanSelector({
     setLoadingAction(planKey);
     setError(null);
     try {
-      const response = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...getCsrfHeaders(),
-          "x-idempotency-key": createIdempotencyToken(planKey),
+      const data = await clientPostJson<{ url?: string }>(
+        "/api/stripe/checkout",
+        { planKey, interval, source: "onboarding" },
+        {
+          fallbackErrorMessage: t("errors.checkoutFailed"),
+          headers: { "x-idempotency-key": createIdempotencyToken(planKey) },
         },
-        body: JSON.stringify({
-          planKey,
-          interval,
-          source: "onboarding",
-        }),
-      });
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as {
-          error?: string;
-        } | null;
-        throw new Error(payload?.error ?? t("errors.checkoutFailed"));
-      }
-      const data = (await response.json()) as { url?: string };
+      );
       if (!data.url) throw new Error(t("errors.missingCheckoutUrl"));
       window.location.assign(data.url);
     } catch (err) {
@@ -235,7 +215,7 @@ export function OnboardingPlanSelector({
             </button>
           </div>
           {isAnnual ? (
-            <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+            <span className="rounded-full bg-success/10 px-3 py-1 text-xs font-medium text-success">
               {t("toggle.save")}
             </span>
           ) : null}
@@ -260,7 +240,7 @@ export function OnboardingPlanSelector({
             <ul className="mt-4 space-y-2.5 flex-1">
               {freePlanFeatures.map((feature) => (
                 <li key={feature} className="flex items-start gap-2 text-sm">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
                   <span className="text-muted-foreground">{feature}</span>
                 </li>
               ))}
@@ -306,7 +286,7 @@ export function OnboardingPlanSelector({
                   {formatUsd(price)}
                 </span>
                 {isAnnual && plan.amountAnnualMonthly ? (
-                  <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                  <span className="rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
                     {t("toggle.save")}
                   </span>
                 ) : null}
@@ -320,7 +300,7 @@ export function OnboardingPlanSelector({
               <ul className="mt-4 space-y-2.5 flex-1">
                 {plan.features.map((feature) => (
                   <li key={feature} className="flex items-start gap-2 text-sm">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
                     <span className="text-muted-foreground">{feature}</span>
                   </li>
                 ))}

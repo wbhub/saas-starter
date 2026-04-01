@@ -29,6 +29,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { clientFetch } from "@/lib/http/client-fetch";
 import { useTheme } from "@/components/theme-provider";
 import { SHOW_LOCALE_SWITCHER } from "@/lib/i18n/config";
 import { routing, type AppLocale } from "@/i18n/routing";
@@ -107,12 +108,8 @@ export function UserDropdown({
 
     let cancelled = false;
 
-    fetch("/api/team/options", { cache: "no-store" })
+    clientFetch("/api/team/options", { cache: "no-store" })
       .then(async (response) => {
-        if (!response.ok) {
-          throw new Error(`Team options request failed: ${response.status}`);
-        }
-
         const payload = (await response.json()) as TeamOptionsResponse;
         if (cancelled) {
           return;

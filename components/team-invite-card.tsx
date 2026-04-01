@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Building2, Clock, Mail, UserMinus, Users } from "lucide-react";
 import { DashboardPageSection } from "@/components/dashboard-page-section";
 import { useLocale, useTranslations } from "next-intl";
-import { getCsrfHeaders } from "@/lib/http/csrf";
+import { clientFetch, clientPatchJson, clientPostJson } from "@/lib/http/client-fetch";
 import { formatUtcDate } from "@/lib/date";
 import { type AppLocale } from "@/i18n/routing";
 import { Button } from "@/components/ui/button";
@@ -285,18 +285,9 @@ export function TeamInviteCard({
     setTeamNameBanner({ message: null, variant: "success" });
     dispatch({ type: "CLEAR_BANNER" });
 
-    const response = await fetch("/api/team/settings", {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        ...getCsrfHeaders(),
-      },
-      body: JSON.stringify({ teamName: normalized }),
+    await clientPatchJson("/api/team/settings", { teamName: normalized }, {
+      fallbackErrorMessage: t("errors.updateTeamName"),
     });
-    const payload = (await response.json().catch(() => null)) as { error?: string } | null;
-    if (!response.ok) {
-      throw new Error(payload?.error ?? t("errors.updateTeamName"));
-    }
 
     const latest = inviteTeamNameRef.current.trim();
     if (latest !== normalized) {
@@ -382,31 +373,14 @@ export function TeamInviteCard({
         normalizedInviteTeamName !== teamName.trim();
 
       if (shouldUpdateTeamName) {
-        const teamNameResponse = await fetch("/api/team/settings", {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            ...getCsrfHeaders(),
-          },
-          body: JSON.stringify({ teamName: normalizedInviteTeamName }),
+        await clientPatchJson("/api/team/settings", { teamName: normalizedInviteTeamName }, {
+          fallbackErrorMessage: t("errors.updateTeamName"),
         });
-        const teamNamePayload = (await teamNameResponse.json().catch(() => null)) as {
-          error?: string;
-        } | null;
-        if (!teamNameResponse.ok) {
-          throw new Error(teamNamePayload?.error ?? t("errors.updateTeamName"));
-        }
       }
 
-      const response = await fetch("/api/team/invites", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...getCsrfHeaders() },
-        body: JSON.stringify({ email, role }),
+      const payload = await clientPostJson<InviteApiResponse>("/api/team/invites", { email, role }, {
+        fallbackErrorMessage: t("errors.sendInvite"),
       });
-      const payload = (await response.json().catch(() => null)) as InviteApiResponse | null;
-      if (!response.ok) {
-        throw new Error(payload?.error ?? t("errors.sendInvite"));
-      }
 
       dispatch({
         type: "SUBMIT_SUCCESS",
@@ -427,14 +401,11 @@ export function TeamInviteCard({
     dispatch({ type: "REMOVE_MEMBER_START", userId: targetUserId });
 
     try {
-      const response = await fetch(`/api/team/members/${targetUserId}`, {
+      const response = await clientFetch(`/api/team/members/${targetUserId}`, {
         method: "DELETE",
-        headers: getCsrfHeaders(),
+        fallbackErrorMessage: t("errors.removeMember"),
       });
-      const payload = (await response.json().catch(() => null)) as TeamMutationResponse | null;
-      if (!response.ok) {
-        throw new Error(payload?.error ?? t("errors.removeMember"));
-      }
+      const payload = (await response.json()) as TeamMutationResponse | null;
 
       dispatch({
         type: "REMOVE_MEMBER_END",
@@ -454,18 +425,9 @@ export function TeamInviteCard({
   async function updateMemberRole(targetUserId: string, newRole: "member" | "admin") {
     dispatch({ type: "UPDATE_ROLE_START", userId: targetUserId });
     try {
-      const response = await fetch(`/api/team/members/${targetUserId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          ...getCsrfHeaders(),
-        },
-        body: JSON.stringify({ role: newRole }),
+      await clientPatchJson(`/api/team/members/${targetUserId}`, { role: newRole }, {
+        fallbackErrorMessage: t("errors.updateRole"),
       });
-      const payload = (await response.json().catch(() => null)) as TeamMutationResponse | null;
-      if (!response.ok) {
-        throw new Error(payload?.error ?? t("errors.updateRole"));
-      }
       dispatch({
         type: "UPDATE_ROLE_END",
         message: t("feedback.roleUpdated"),
@@ -484,14 +446,10 @@ export function TeamInviteCard({
   async function revokeInvite(inviteId: string) {
     dispatch({ type: "REVOKE_INVITE_START", inviteId });
     try {
-      const response = await fetch(`/api/team/invites/${inviteId}`, {
+      await clientFetch(`/api/team/invites/${inviteId}`, {
         method: "DELETE",
-        headers: getCsrfHeaders(),
+        fallbackErrorMessage: t("errors.revokeInvite"),
       });
-      const payload = (await response.json().catch(() => null)) as TeamMutationResponse | null;
-      if (!response.ok) {
-        throw new Error(payload?.error ?? t("errors.revokeInvite"));
-      }
       dispatch({
         type: "REVOKE_INVITE_END",
         message: t("feedback.inviteRevoked"),
@@ -510,14 +468,11 @@ export function TeamInviteCard({
   async function resendInvite(inviteId: string) {
     dispatch({ type: "RESEND_INVITE_START", inviteId });
     try {
-      const response = await fetch(`/api/team/invites/${inviteId}/resend`, {
+      const response = await clientFetch(`/api/team/invites/${inviteId}/resend`, {
         method: "POST",
-        headers: getCsrfHeaders(),
+        fallbackErrorMessage: t("errors.resendInvite"),
       });
-      const payload = (await response.json().catch(() => null)) as TeamMutationResponse | null;
-      if (!response.ok) {
-        throw new Error(payload?.error ?? t("errors.resendInvite"));
-      }
+      const payload = (await response.json()) as TeamMutationResponse | null;
       const message =
         payload?.deliveryStatus === "sent" || payload?.emailSent
           ? t("feedback.inviteResent")

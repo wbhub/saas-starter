@@ -160,11 +160,11 @@ export default async function DashboardBillingPage({
         <section
           className={cn(
             billingSectionClass,
-            "bg-emerald-500/5 ring-emerald-500/30 dark:bg-emerald-500/10",
+            "bg-success/5 ring-success/30 dark:bg-success/10",
           )}
         >
           <div className="flex gap-3 sm:items-start">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-success/15 text-success-foreground dark:text-success">
               <CheckCircle2 className="h-5 w-5" aria-hidden />
             </div>
             <div className="space-y-1">
@@ -267,7 +267,7 @@ export default async function DashboardBillingPage({
               <>
                 {subscription.cancel_at_period_end ? (
                   <div
-                    className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-950 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-100"
+                    className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning-foreground dark:border-warning/30 dark:bg-warning/15 dark:text-warning"
                     role="status"
                   >
                     {t("currentSubscription.cancelScheduled")}
