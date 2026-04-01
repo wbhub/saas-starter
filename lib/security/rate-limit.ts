@@ -126,6 +126,9 @@ function fallbackCheckRateLimit({ key, limit, windowMs }: RateLimitOptions): Rat
   }
 
   if (current.count >= limit) {
+    // LRU touch: move to end of Map iteration order so eviction targets least-recently-used
+    store.delete(key);
+    store.set(key, current);
     return {
       allowed: false,
       retryAfterSeconds: Math.max(1, Math.ceil((current.resetAt - now) / 1000)),
@@ -233,10 +236,10 @@ export async function checkRateLimit({
 
       if (failOpenWindowActive) {
         console.error(
-          "Distributed rate limit check failed; temporarily allowing traffic while fail-open window is active",
+          "Distributed rate limit check failed; using in-memory fallback during fail-open window",
           error,
         );
-        return { allowed: true, retryAfterSeconds: 0 };
+        return fallbackCheckRateLimit({ key, limit, windowMs });
       }
 
       console.error(

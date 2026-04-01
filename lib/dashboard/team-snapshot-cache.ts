@@ -91,15 +91,20 @@ function readInMemoryCache(teamId: string): DashboardTeamSnapshot | undefined {
   const cache = getInMemoryDashboardTeamSnapshotCache();
   const now = Date.now();
   cleanupInMemoryCache(cache, now);
-  const entry = cache.get(getCacheKey(teamId));
+  const key = getCacheKey(teamId);
+  const entry = cache.get(key);
   if (!entry) {
     return undefined;
   }
 
   if (entry.expiresAt <= now) {
-    cache.delete(getCacheKey(teamId));
+    cache.delete(key);
     return undefined;
   }
+
+  // LRU touch: move to end of Map iteration order so eviction targets least-recently-used
+  cache.delete(key);
+  cache.set(key, entry);
 
   return entry.value;
 }

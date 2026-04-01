@@ -26,7 +26,7 @@ type ReconcileOptions = {
 const DEFAULT_SYNC_CONCURRENCY = 10;
 const DEFAULT_STRIPE_DISCOVERY_CONCURRENCY = 10;
 
-async function runInBatches<T>(
+export async function runInBatches<T>(
   items: T[],
   concurrency: number,
   worker: (item: T, index: number) => Promise<void>,

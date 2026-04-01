@@ -251,7 +251,7 @@ describe("audit batching", () => {
       expect.objectContaining({ action: "event-3" }),
       expect.objectContaining({ action: "event-4" }),
     ]);
-    expect(logger.warn).toHaveBeenCalledWith(
+    expect(logger.error).toHaveBeenCalledWith(
       "Audit queue capacity exceeded; dropping oldest events",
       expect.objectContaining({
         droppedEvents: 1,
