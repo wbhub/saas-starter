@@ -881,10 +881,7 @@ export function TeamInviteCard({
                           ? t("actions.resending")
                           : t("actions.resend")}
                       </Button>
-                      <span
-                        className="select-none text-muted-foreground/50"
-                        aria-hidden
-                      >
+                      <span className="select-none text-muted-foreground/50" aria-hidden>
                         |
                       </span>
                       <Button
@@ -895,9 +892,7 @@ export function TeamInviteCard({
                         onClick={() => void revokeInvite(invite.id)}
                         className="cursor-pointer px-1.5 text-destructive hover:bg-transparent hover:text-[color-mix(in_oklch,var(--destructive)_82%,black)] dark:hover:bg-transparent dark:hover:text-[color-mix(in_oklch,var(--destructive)_88%,black)] disabled:cursor-not-allowed"
                       >
-                        {revokeInviteId === invite.id
-                          ? t("actions.revoking")
-                          : t("actions.revoke")}
+                        {revokeInviteId === invite.id ? t("actions.revoking") : t("actions.revoke")}
                       </Button>
                     </div>
                   ) : null}

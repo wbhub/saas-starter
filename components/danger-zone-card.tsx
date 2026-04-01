@@ -47,7 +47,9 @@ export function DangerZoneCard({ email, csrfToken }: DangerZoneCardProps) {
                 <h3 className="text-sm font-semibold leading-tight text-foreground">
                   {t("deactivate.title")}
                 </h3>
-                <p className="text-sm leading-relaxed text-muted-foreground">{t("deactivate.hint")}</p>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  {t("deactivate.hint")}
+                </p>
               </div>
             </div>
             <form
@@ -75,7 +77,9 @@ export function DangerZoneCard({ email, csrfToken }: DangerZoneCardProps) {
               <Trash2 className="h-[18px] w-[18px]" />
             </div>
             <div className="min-w-0 space-y-1">
-              <h3 className="text-sm font-semibold leading-tight text-foreground">{t("delete.title")}</h3>
+              <h3 className="text-sm font-semibold leading-tight text-foreground">
+                {t("delete.title")}
+              </h3>
               <p className="text-sm leading-relaxed text-muted-foreground">{t("delete.hint")}</p>
             </div>
           </div>
