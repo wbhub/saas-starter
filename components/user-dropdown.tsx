@@ -90,9 +90,12 @@ export function UserDropdown({
     if (!nextOpen) {
       setShowLocales(false);
     }
-    if (nextOpen && teamSwitchingAvailableOrUnknown) {
-      setTeamOptions([]);
-      setTeamOptionsState("loading");
+    if (nextOpen) {
+      setSelectedTeamId(activeTeamId);
+      if (teamSwitchingAvailableOrUnknown) {
+        setTeamOptions([]);
+        setTeamOptionsState("loading");
+      }
     }
     if (!nextOpen) {
       if (teamSwitchingDisabled || teamOptionsState !== "error") {
@@ -102,13 +105,6 @@ export function UserDropdown({
       setTeamOptionsState("idle");
     }
   }
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    setSelectedTeamId(activeTeamId);
-  }, [activeTeamId, open]);
 
   useEffect(() => {
     if (!open || teamSwitchingDisabled || teamOptionsState !== "loading") {
@@ -141,23 +137,12 @@ export function UserDropdown({
     };
   }, [open, teamOptionsState, teamSwitchingDisabled]);
 
-  useEffect(() => {
-    if (!open || teamOptions.length === 0) {
-      return;
-    }
-
-    if (teamOptions.some((team) => team.teamId === selectedTeamId)) {
-      return;
-    }
-
-    const fallbackTeamId =
-      teamOptions.find((team) => team.teamId === activeTeamId)?.teamId ??
-      teamOptions[0]?.teamId ??
-      "";
-    if (fallbackTeamId) {
-      setSelectedTeamId(fallbackTeamId);
-    }
-  }, [activeTeamId, open, selectedTeamId, teamOptions]);
+  const effectiveSelectedTeamId =
+    teamOptions.length > 0 && !teamOptions.some((team) => team.teamId === selectedTeamId)
+      ? (teamOptions.find((team) => team.teamId === activeTeamId)?.teamId ??
+        teamOptions[0]?.teamId ??
+        "")
+      : selectedTeamId;
 
   const themeOrder: Array<"system" | "light" | "dark"> = ["system", "light", "dark"];
   const themeIndex = themeOrder.indexOf(theme);
@@ -223,12 +208,12 @@ export function UserDropdown({
               <form action={switchActiveTeam} className="space-y-2">
                 <input type="hidden" name="csrf_token" value={csrfToken} />
                 <input type="hidden" name="redirectTo" value={pathname} />
-                <input type="hidden" name="teamId" value={selectedTeamId} />
+                <input type="hidden" name="teamId" value={effectiveSelectedTeamId} />
                 <p className="block text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                   {t("DashboardSidebar.team")}
                 </p>
                 <DropdownMenuRadioGroup
-                  value={selectedTeamId}
+                  value={effectiveSelectedTeamId}
                   onValueChange={(value) => setSelectedTeamId(value ?? "")}
                 >
                   <div
@@ -252,7 +237,7 @@ export function UserDropdown({
                   variant="outline"
                   size="sm"
                   className="w-full"
-                  disabled={!selectedTeamId || selectedTeamId === activeTeamId}
+                  disabled={!effectiveSelectedTeamId || effectiveSelectedTeamId === activeTeamId}
                 >
                   {t("DashboardSidebar.switch")}
                 </Button>
