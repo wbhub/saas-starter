@@ -285,9 +285,13 @@ export function TeamInviteCard({
     setTeamNameBanner({ message: null, variant: "success" });
     dispatch({ type: "CLEAR_BANNER" });
 
-    await clientPatchJson("/api/team/settings", { teamName: normalized }, {
-      fallbackErrorMessage: t("errors.updateTeamName"),
-    });
+    await clientPatchJson(
+      "/api/team/settings",
+      { teamName: normalized },
+      {
+        fallbackErrorMessage: t("errors.updateTeamName"),
+      },
+    );
 
     const latest = inviteTeamNameRef.current.trim();
     if (latest !== normalized) {
@@ -373,14 +377,22 @@ export function TeamInviteCard({
         normalizedInviteTeamName !== teamName.trim();
 
       if (shouldUpdateTeamName) {
-        await clientPatchJson("/api/team/settings", { teamName: normalizedInviteTeamName }, {
-          fallbackErrorMessage: t("errors.updateTeamName"),
-        });
+        await clientPatchJson(
+          "/api/team/settings",
+          { teamName: normalizedInviteTeamName },
+          {
+            fallbackErrorMessage: t("errors.updateTeamName"),
+          },
+        );
       }
 
-      const payload = await clientPostJson<InviteApiResponse>("/api/team/invites", { email, role }, {
-        fallbackErrorMessage: t("errors.sendInvite"),
-      });
+      const payload = await clientPostJson<InviteApiResponse>(
+        "/api/team/invites",
+        { email, role },
+        {
+          fallbackErrorMessage: t("errors.sendInvite"),
+        },
+      );
 
       dispatch({
         type: "SUBMIT_SUCCESS",
@@ -425,9 +437,13 @@ export function TeamInviteCard({
   async function updateMemberRole(targetUserId: string, newRole: "member" | "admin") {
     dispatch({ type: "UPDATE_ROLE_START", userId: targetUserId });
     try {
-      await clientPatchJson(`/api/team/members/${targetUserId}`, { role: newRole }, {
-        fallbackErrorMessage: t("errors.updateRole"),
-      });
+      await clientPatchJson(
+        `/api/team/members/${targetUserId}`,
+        { role: newRole },
+        {
+          fallbackErrorMessage: t("errors.updateRole"),
+        },
+      );
       dispatch({
         type: "UPDATE_ROLE_END",
         message: t("feedback.roleUpdated"),

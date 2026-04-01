@@ -57,12 +57,7 @@ export function DangerZoneCard({ email, csrfToken }: DangerZoneCardProps) {
               className="flex shrink-0 sm:max-w-[min(100%,14rem)] sm:flex-1 sm:justify-end"
             >
               <input type="hidden" name="csrf_token" value={csrfToken} />
-              <Button
-                type="submit"
-                variant="outline"
-                size="control"
-                className="w-full sm:w-auto"
-              >
+              <Button type="submit" variant="outline" size="control" className="w-full sm:w-auto">
                 {t("actions.deactivate")}
               </Button>
             </form>

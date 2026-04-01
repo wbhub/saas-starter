@@ -13,10 +13,7 @@ export default async function ForgotPasswordPage() {
 
       <main className="flex flex-1 flex-col items-center justify-center px-4 py-12">
         <ForgotPasswordForm />
-        <Link
-          href="/login"
-          className="mt-6 text-sm text-muted-foreground hover:text-foreground"
-        >
+        <Link href="/login" className="mt-6 text-sm text-muted-foreground hover:text-foreground">
           {t("backLogin")}
         </Link>
       </main>

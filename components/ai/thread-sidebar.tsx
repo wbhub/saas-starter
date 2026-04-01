@@ -14,7 +14,6 @@ type Thread = {
   updatedAt: string;
 };
 
-
 export function ThreadSidebar({
   activeThreadId,
   onSelectThread,

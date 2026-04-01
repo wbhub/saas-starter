@@ -96,11 +96,7 @@ export function HeroSection() {
               {shipItems.map((item) => (
                 <div key={item} className="flex items-start gap-3">
                   <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center">
-                    <CheckCircle2
-                      size={20}
-                      className="text-success"
-                      aria-hidden="true"
-                    />
+                    <CheckCircle2 size={20} className="text-success" aria-hidden="true" />
                   </span>
                   <p className="text-muted-foreground text-sm">{item}</p>
                 </div>
@@ -131,10 +127,7 @@ export function GettingStartedSection() {
       </div>
       <div className="grid gap-4 md:grid-cols-3">
         {steps.map((step) => (
-          <article
-            key={step.title}
-            className="rounded-2xl border border-border bg-card p-5"
-          >
+          <article key={step.title} className="rounded-2xl border border-border bg-card p-5">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               {step.title}
             </h3>
@@ -157,7 +150,9 @@ export function WhyStarterSection() {
   return (
     <section className="rounded-3xl border border-border bg-card px-6 py-8 md:px-10 md:py-10">
       <div className="mx-auto max-w-3xl text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t("label")}</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          {t("label")}
+        </p>
         <h2 className="mt-3 text-2xl font-semibold md:text-3xl">{t("title")}</h2>
         <p className="text-muted-foreground mt-3">{t("description")}</p>
       </div>
@@ -299,10 +294,7 @@ export function CtaFaqSection() {
         <h2 className="text-3xl font-semibold">{t("faqTitle")}</h2>
         <div className="mt-8 grid gap-4 md:grid-cols-2">
           {faqs.map((faq) => (
-            <article
-              key={faq.question}
-              className="rounded-xl border border-border bg-card p-5"
-            >
+            <article key={faq.question} className="rounded-xl border border-border bg-card p-5">
               <h3 className="font-medium">{faq.question}</h3>
               <p className="text-muted-foreground mt-2 text-sm">{faq.answer}</p>
             </article>

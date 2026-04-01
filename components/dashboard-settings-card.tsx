@@ -101,9 +101,13 @@ export function DashboardSettingsCard({
     setNameSaveStatus("saving");
     setNameError(null);
 
-    await clientPatchJson("/api/profile/full-name", { fullName: displayNameRef.current }, {
-      fallbackErrorMessage: t("errors.nameSaveFailed"),
-    });
+    await clientPatchJson(
+      "/api/profile/full-name",
+      { fullName: displayNameRef.current },
+      {
+        fallbackErrorMessage: t("errors.nameSaveFailed"),
+      },
+    );
 
     const latest = displayNameRef.current.trim();
     if (latest !== normalized) {
@@ -154,9 +158,13 @@ export function DashboardSettingsCard({
   }
 
   async function persistAvatarUrl(nextUrl: string | null) {
-    await clientPatchJson("/api/profile/avatar", { avatarUrl: nextUrl }, {
-      fallbackErrorMessage: t("errors.photoSaveFailed"),
-    });
+    await clientPatchJson(
+      "/api/profile/avatar",
+      { avatarUrl: nextUrl },
+      {
+        fallbackErrorMessage: t("errors.photoSaveFailed"),
+      },
+    );
   }
 
   function showAvatarSavedBriefly() {

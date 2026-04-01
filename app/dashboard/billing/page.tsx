@@ -158,10 +158,7 @@ export default async function DashboardBillingPage({
     <>
       {checkoutStatus === "success" ? (
         <section
-          className={cn(
-            billingSectionClass,
-            "bg-success/5 ring-success/30 dark:bg-success/10",
-          )}
+          className={cn(billingSectionClass, "bg-success/5 ring-success/30 dark:bg-success/10")}
         >
           <div className="flex gap-3 sm:items-start">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-success/15 text-success-foreground dark:text-success">

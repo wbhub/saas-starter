@@ -10,8 +10,6 @@ import { DashboardPageSection } from "@/components/dashboard-page-section";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
-
-
 type Props = {
   billingEnabled: boolean;
   currentPlanKey: PlanKey | null;

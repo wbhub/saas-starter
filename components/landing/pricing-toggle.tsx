@@ -93,7 +93,9 @@ export function LandingPricingCards({ plans, showAnnualToggle }: Props) {
                 </span>
               ) : null}
             </div>
-            <p className="text-muted-foreground mt-3 text-sm">{t(`plans.${tier.key}.description`)}</p>
+            <p className="text-muted-foreground mt-3 text-sm">
+              {t(`plans.${tier.key}.description`)}
+            </p>
             <AuthAwareLink
               loggedInHref="/dashboard"
               loggedOutHref="/onboarding"

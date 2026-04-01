@@ -67,10 +67,7 @@ export async function AiUsageCard({
             </TableHeader>
             <TableBody>
               {usageRows.map((row) => (
-                <TableRow
-                  key={row.month_start}
-                  className="border-b border-border last:border-0"
-                >
+                <TableRow key={row.month_start} className="border-b border-border last:border-0">
                   <TableCell className="text-foreground">
                     {formatUtcDate(
                       row.month_start,

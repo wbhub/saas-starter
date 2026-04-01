@@ -5,8 +5,7 @@ type FormMessageProps = {
   id?: string;
 };
 
-const errorClasses =
-  "border border-destructive/35 bg-destructive/10 text-destructive";
+const errorClasses = "border border-destructive/35 bg-destructive/10 text-destructive";
 
 const successClasses = "bg-muted text-muted-foreground";
 

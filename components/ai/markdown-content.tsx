@@ -17,10 +17,7 @@ function MarkdownContentInner({ content }: { content: string }) {
             return <CodeBlock code={code} language={match[1]} />;
           }
           return (
-            <code
-              className="rounded bg-accent px-1 py-0.5 font-mono text-[0.85em]"
-              {...props}
-            >
+            <code className="rounded bg-accent px-1 py-0.5 font-mono text-[0.85em]" {...props}>
               {children}
             </code>
           );

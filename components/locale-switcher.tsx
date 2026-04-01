@@ -85,9 +85,7 @@ export function LocaleSwitcher({ className }: LocaleSwitcherProps) {
                 onClick={() => onLocaleChange(item)}
                 className={cn(
                   "flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm transition-colors",
-                  isActive
-                    ? "bg-muted text-foreground"
-                    : "text-foreground hover:bg-muted",
+                  isActive ? "bg-muted text-foreground" : "text-foreground hover:bg-muted",
                 )}
               >
                 <span>{localeLabel}</span>

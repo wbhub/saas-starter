@@ -29,9 +29,8 @@ vi.mock("@/lib/http/csrf", () => ({
 // clientFetch (used by clientPostJson) re-exports getCsrfHeaders internally,
 // so we mock the underlying module rather than the wrapper.
 vi.mock("@/lib/http/client-fetch", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/http/client-fetch")>(
-    "@/lib/http/client-fetch",
-  );
+  const actual =
+    await vi.importActual<typeof import("@/lib/http/client-fetch")>("@/lib/http/client-fetch");
   return actual;
 });
 
@@ -86,19 +85,22 @@ describe("OnboardingPlanSelector", () => {
     render(<OnboardingPlanSelector {...baseProps} autoStartPlanKey="starter" />);
 
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith("/api/stripe/checkout", expect.objectContaining({
-        method: "POST",
-        headers: expect.objectContaining({
-          "Content-Type": "application/json",
-          "x-csrf-token": "csrf-token",
-          "x-idempotency-key": expect.any(String),
+      expect(fetch).toHaveBeenCalledWith(
+        "/api/stripe/checkout",
+        expect.objectContaining({
+          method: "POST",
+          headers: expect.objectContaining({
+            "Content-Type": "application/json",
+            "x-csrf-token": "csrf-token",
+            "x-idempotency-key": expect.any(String),
+          }),
+          body: JSON.stringify({
+            planKey: "starter",
+            interval: "year",
+            source: "onboarding",
+          }),
         }),
-        body: JSON.stringify({
-          planKey: "starter",
-          interval: "year",
-          source: "onboarding",
-        }),
-      }));
+      );
     });
 
     expect(assign).toHaveBeenCalledWith("https://checkout.stripe.test/session");
@@ -113,13 +115,16 @@ describe("OnboardingPlanSelector", () => {
     render(<OnboardingPlanSelector {...baseProps} autoCompleteFreePlan />);
 
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith("/api/onboarding/complete", expect.objectContaining({
-        method: "POST",
-        headers: expect.objectContaining({
-          "Content-Type": "application/json",
-          "x-csrf-token": "csrf-token",
+      expect(fetch).toHaveBeenCalledWith(
+        "/api/onboarding/complete",
+        expect.objectContaining({
+          method: "POST",
+          headers: expect.objectContaining({
+            "Content-Type": "application/json",
+            "x-csrf-token": "csrf-token",
+          }),
         }),
-      }));
+      );
     });
 
     expect(push).toHaveBeenCalledWith("/dashboard");

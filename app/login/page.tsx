@@ -72,10 +72,7 @@ export default async function LoginPage({
           socialProviders={socialProviders}
           lastUsedProvider={lastUsedProvider}
         />
-        <Link
-          href="/"
-          className="mt-6 text-sm text-muted-foreground hover:text-foreground"
-        >
+        <Link href="/" className="mt-6 text-sm text-muted-foreground hover:text-foreground">
           {t("backHome")}
         </Link>
       </main>

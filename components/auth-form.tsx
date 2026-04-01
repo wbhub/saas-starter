@@ -142,9 +142,13 @@ export function AuthForm({
 
     try {
       if (isLogin) {
-        await clientPostJson("/api/auth/login", { email, password }, {
-          fallbackErrorMessage: t("errors.unableToLogIn"),
-        });
+        await clientPostJson(
+          "/api/auth/login",
+          { email, password },
+          {
+            fallbackErrorMessage: t("errors.unableToLogIn"),
+          },
+        );
 
         dispatch({ type: "SUBMIT_SUCCESS" });
         router.push(redirectTo);
@@ -155,9 +159,13 @@ export function AuthForm({
           throw new Error(passwordValidation.error);
         }
 
-        const payload = await clientPostJson<AuthApiResponse>("/api/auth/signup", { email, password }, {
-          fallbackErrorMessage: t("errors.unableToCreateAccount"),
-        });
+        const payload = await clientPostJson<AuthApiResponse>(
+          "/api/auth/signup",
+          { email, password },
+          {
+            fallbackErrorMessage: t("errors.unableToCreateAccount"),
+          },
+        );
 
         if (payload?.sessionCreated) {
           dispatch({ type: "SUBMIT_SUCCESS" });
