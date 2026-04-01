@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import * as Sentry from "@sentry/nextjs";
+import { Button } from "@/components/ui/button";
 
 const SENTRY_ENABLED = Boolean(process.env.NEXT_PUBLIC_SENTRY_DSN);
 
@@ -40,13 +41,9 @@ export default function GlobalError({
           <p className="text-sm text-muted-foreground">
             An unexpected error occurred. Please try again.
           </p>
-          <button
-            type="button"
-            onClick={() => reset()}
-            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/80"
-          >
+          <Button type="button" size="control" onClick={() => reset()}>
             Try again
-          </button>
+          </Button>
         </main>
       </body>
     </html>

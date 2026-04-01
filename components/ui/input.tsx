@@ -2,10 +2,10 @@ import { forwardRef, type InputHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
 const editableClasses =
-  "w-full rounded-lg border border-border bg-transparent px-3 py-2 text-sm text-foreground outline-none ring-ring placeholder:text-muted-foreground focus-visible:ring-2";
+  "flex h-10 w-full min-w-0 rounded-lg border border-input bg-transparent px-3 py-2 text-base text-foreground transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40";
 
 const readonlyClasses =
-  "w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm text-muted-foreground outline-none";
+  "flex h-10 w-full min-w-0 rounded-lg border border-input bg-muted/60 px-3 py-2 text-base text-muted-foreground outline-none md:text-sm dark:bg-input/30";
 
 type InputProps = {
   variant?: "editable" | "readonly";
@@ -19,6 +19,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
 
   return (
     <input
+      data-slot="input"
       ref={ref}
       readOnly={isReadonly}
       className={cn(isReadonly ? readonlyClasses : editableClasses, className)}

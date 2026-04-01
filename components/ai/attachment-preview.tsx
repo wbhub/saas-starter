@@ -17,7 +17,7 @@ export function AttachmentPreview({
         const isImage = attachment.mediaType?.startsWith("image/");
         if (isImage && attachment.url) {
           return (
-            <div key={index} className="overflow-hidden rounded-md border app-border-subtle">
+            <div key={index} className="overflow-hidden rounded-md border border-border">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={attachment.url}
@@ -30,7 +30,7 @@ export function AttachmentPreview({
         return (
           <div
             key={index}
-            className="flex items-center gap-1.5 rounded-md border app-border-subtle bg-card px-2 py-1"
+            className="flex items-center gap-1.5 rounded-md border border-border bg-card px-2 py-1"
           >
             <svg
               className="h-4 w-4 shrink-0 text-muted-foreground"

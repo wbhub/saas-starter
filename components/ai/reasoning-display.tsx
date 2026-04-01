@@ -12,7 +12,7 @@ export function ReasoningDisplay({
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="mb-2 rounded-lg border app-border-subtle bg-card last:mb-0">
+    <div className="mb-2 rounded-lg border border-border bg-card last:mb-0">
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
@@ -33,7 +33,7 @@ export function ReasoningDisplay({
         ) : null}
       </button>
       {isOpen ? (
-        <div className="border-t app-border-subtle px-3 py-2 text-sm text-muted-foreground">
+        <div className="border-t border-border px-3 py-2 text-sm text-muted-foreground">
           <pre className="whitespace-pre-wrap font-sans">{reasoning}</pre>
         </div>
       ) : null}
