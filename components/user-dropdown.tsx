@@ -122,6 +122,17 @@ export function UserDropdown({
 
         setTeamOptions(payload.teams);
         setTeamOptionsState("loaded");
+        setSelectedTeamId((currentSelectedTeamId) => {
+          if (payload.teams.some((team) => team.teamId === currentSelectedTeamId)) {
+            return currentSelectedTeamId;
+          }
+
+          return (
+            payload.teams.find((team) => team.teamId === activeTeamId)?.teamId ??
+            payload.teams[0]?.teamId ??
+            currentSelectedTeamId
+          );
+        });
       })
       .catch(() => {
         if (cancelled) {
@@ -135,7 +146,7 @@ export function UserDropdown({
     return () => {
       cancelled = true;
     };
-  }, [open, teamOptionsState, teamSwitchingDisabled]);
+  }, [activeTeamId, open, teamOptionsState, teamSwitchingDisabled]);
 
   const effectiveSelectedTeamId =
     teamOptions.length > 0 && !teamOptions.some((team) => team.teamId === selectedTeamId)
