@@ -26,19 +26,19 @@ export default function DashboardError({ error, reset }: { error: Error; reset: 
   }, [error]);
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-4">
-      <Card className="max-w-sm text-center">
-        <CardContent className="flex flex-col items-center gap-4 pt-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
-            <AlertTriangle className="h-5 w-5 text-destructive" />
+    <main className="min-h-screen bg-background px-4 py-10 sm:px-6">
+      <Card className="mx-auto mt-16 max-w-md text-center shadow-sm">
+        <CardContent className="flex flex-col items-center gap-4 pt-6 pb-6">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
+            <AlertTriangle className="h-6 w-6 text-destructive" />
           </div>
           <div>
-            <h2 className="text-base font-semibold">Dashboard error</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <h2 className="text-lg font-semibold">Dashboard error</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
               Something went wrong while loading your dashboard.
             </p>
           </div>
-          <Button onClick={reset} size="sm">
+          <Button onClick={reset} className="mt-2">
             Try again
           </Button>
         </CardContent>
