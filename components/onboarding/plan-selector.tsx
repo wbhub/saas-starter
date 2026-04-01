@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { CheckCircle2 } from "lucide-react";
 import { clientFetch, clientPostJson } from "@/lib/http/client-fetch";
 import { Button } from "@/components/ui/button";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import type { PlanInterval, PlanKey } from "@/lib/stripe/plans";
 
 type PlanData = {
@@ -190,30 +191,15 @@ export function OnboardingPlanSelector({
       {/* Monthly / Annual toggle */}
       {showAnnualToggle ? (
         <div className="flex items-center justify-center gap-3">
-          <div className="inline-flex items-center rounded-lg border border-border p-1">
-            <button
-              type="button"
-              onClick={() => setInterval("month")}
-              className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
-                !isAnnual
-                  ? "bg-foreground text-background"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {t("toggle.monthly")}
-            </button>
-            <button
-              type="button"
-              onClick={() => setInterval("year")}
-              className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
-                isAnnual
-                  ? "bg-foreground text-background"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {t("toggle.annual")}
-            </button>
-          </div>
+          <SegmentedControl
+            aria-label={`${t("toggle.monthly")} / ${t("toggle.annual")}`}
+            value={interval}
+            onValueChange={(nextValue) => setInterval(nextValue)}
+            options={[
+              { value: "month", label: t("toggle.monthly") },
+              { value: "year", label: t("toggle.annual") },
+            ]}
+          />
           {isAnnual ? (
             <span className="rounded-full bg-success/10 px-3 py-1 text-xs font-medium text-success">
               {t("toggle.save")}

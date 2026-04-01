@@ -20,7 +20,7 @@ describe("FormMessage", () => {
     render(<FormMessage status="success" message="Saved successfully" />);
     const el = screen.getByRole("status");
     expect(el).toHaveTextContent("Saved successfully");
-    expect(el.className).toContain("text-muted-foreground");
+    expect(el.className).toContain("text-success-foreground");
   });
 
   it("passes through id attribute for aria-describedby", () => {
