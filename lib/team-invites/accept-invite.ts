@@ -53,6 +53,35 @@ export async function acceptTeamInvite(params: {
     p_max_members: teamMaxMembers,
   });
 
+  // #region agent log
+  {
+    const rpcRow = (Array.isArray(data) ? data[0] : data) as AcceptInviteRpcResult | null;
+    fetch("http://127.0.0.1:7682/ingest/9890b261-4ef1-42f4-9a39-56fb9758768c", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Debug-Session-Id": "5d5cf2",
+      },
+      body: JSON.stringify({
+        sessionId: "5d5cf2",
+        runId: "pre-fix",
+        hypothesisId: "H-RPC",
+        location: "lib/team-invites/accept-invite.ts:post-rpc",
+        message: "accept_team_invite_atomic",
+        data: {
+          tokenLen: token.length,
+          hashPrefix: tokenHash.slice(0, 8),
+          hasRpcError: Boolean(rpcError),
+          rpcErrCode: rpcError?.code ?? null,
+          rpcRowOk: rpcRow?.ok ?? null,
+          rowErrorCode: rpcRow?.error_code ?? null,
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+  }
+  // #endregion
+
   if (rpcError) {
     logger.error("Failed to accept invite atomically", rpcError, {
       requestId,

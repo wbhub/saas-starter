@@ -189,6 +189,21 @@
   html {
     @apply font-sans;
   }
+
+  /* Native controls default to arrow cursor; use pointer for clickable affordance. */
+  button:not(:disabled):not([aria-disabled="true"]),
+  input[type="button"]:not(:disabled):not([aria-disabled="true"]),
+  input[type="submit"]:not(:disabled):not([aria-disabled="true"]),
+  input[type="reset"]:not(:disabled):not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+  button:disabled,
+  button[aria-disabled="true"],
+  input[type="button"]:disabled,
+  input[type="submit"]:disabled,
+  input[type="reset"]:disabled {
+    cursor: not-allowed;
+  }
 }
 
 /* Bump small text inside the app for better readability.

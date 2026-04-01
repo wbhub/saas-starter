@@ -561,7 +561,6 @@
       "sectionDescription": "我们将通过电子邮件发送用于加入的安全链接。",
       "teamNameLabel": "团队名称",
       "teamNamePlaceholder": "Acme 团队",
-      "teamNameHint": "在首次邀请前起一个清晰的名称，有助于对方识别你的工作区。",
       "emailLabel": "邀请邮件",
       "emailPlaceholder": "teammate@example.com",
       "roleLabel": "角色"
@@ -579,9 +578,7 @@
     },
     "confirmations": {
       "removeMemberTitle": "移除成员",
-      "removeMember": "从团队中删除该成员吗？他们将立即失去访问权限。",
-      "revokeInviteTitle": "撤销邀请",
-      "revokeInvite": "撤销此邀请？"
+      "removeMember": "从团队中删除该成员吗？他们将立即失去访问权限。"
     },
     "feedback": {
       "teamNameUpdated": "团队名称已保存。",
@@ -676,6 +673,14 @@
   "DangerZoneCard": {
     "title": "危险区",
     "description": "停用将使您退出所有会话。删除将永久删除您的帐户。",
+    "deactivate": {
+      "title": "在所有设备上退出登录",
+      "hint": "结束本设备及其他设备上的所有活动会话。您随时可以再次登录。"
+    },
+    "delete": {
+      "title": "删除您的账户",
+      "hint": "将移除您的个人资料和数据。请在下方确认，此操作无法撤销。"
+    },
     "fields": {
       "confirmDelete": "键入 DELETE 进行确认",
       "deleteToken": "删除",
@@ -732,8 +737,8 @@
     }
   },
   "SupportEmailCard": {
-    "title": "电子邮件支持（重新发送）",
-    "description": "使用重新发送将消息直接发送到您的支持收件箱。",
+    "title": "电子邮件支持",
+    "description": "通过邮件联系支持团队。我们会尽快回复。",
     "fields": {
       "subject": "主题（可选）",
       "subjectPlaceholder": "计费问题",
