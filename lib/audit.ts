@@ -135,15 +135,24 @@ function scheduleFlush() {
     return;
   }
   flushScheduled = true;
-  after(async () => {
+
+  const doFlush = async () => {
     try {
       await flushAuditQueue();
     } catch (error) {
-      logger.error("Failed to flush audit queue in after() callback", error, {
+      logger.error("Failed to flush audit queue", error, {
         queuedEvents: auditInsertQueue.length,
       });
     }
-  });
+  };
+
+  try {
+    after(doFlush);
+  } catch {
+    // after() throws outside a Next.js request scope (e.g. in tests).
+    // Fall back to a best-effort fire-and-forget flush.
+    void doFlush();
+  }
 }
 
 function enqueueAuditEvent(event: AuditEvent) {
