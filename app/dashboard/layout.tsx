@@ -41,13 +41,7 @@ export default async function DashboardLayout({ children }: Readonly<{ children:
 
     // Free plan but hasn't completed onboarding → auto-complete on the free plan
     if (effectivePlanKey === "free" && shellData.profile) {
-      const { data: onboardingCheck } = await shellData.supabase
-        .from("profiles")
-        .select("onboarding_completed_at")
-        .eq("id", shellData.user.id)
-        .maybeSingle<{ onboarding_completed_at: string | null }>();
-
-      if (!onboardingCheck?.onboarding_completed_at) {
+      if (!shellData.profile.onboarding_completed_at) {
         await shellData.supabase
           .from("profiles")
           .update({ onboarding_completed_at: new Date().toISOString() })

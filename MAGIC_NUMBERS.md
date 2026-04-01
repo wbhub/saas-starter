@@ -143,6 +143,18 @@ Defined in `lib/team/limits.ts`.
 | `MAX_RETRY_DELAY_MS`    | 3,600,000 (1 hour) | Exponential backoff caps at 1 hour. Prevents retries from spreading too far apart while avoiding hammering a failing API. |
 | `MAX_ERROR_TEXT_LENGTH` | 1,000              | Truncates error messages stored in the retry queue. Prevents a single stack trace from bloating the database row.         |
 
+### Account Deletion (`app/dashboard/actions.ts`)
+
+| Constant                               | Value | Why                                                                                                                                                                                                          |
+| -------------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ACCOUNT_DELETE_SEAT_SYNC_CONCURRENCY` | 3     | Sync Stripe seat quantities for at most 3 teams in parallel during account deletion. Lower than reconciliation concurrency to avoid triggering Stripe rate limits when multiple users delete simultaneously. |
+
+### Dashboard Data (`lib/dashboard/server.ts`)
+
+| Constant                        | Value | Why                                                                                                                                                                                   |
+| ------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AUTH_EMAIL_LOOKUP_CONCURRENCY` | 10    | Fetch auth user emails in batches of 10 concurrent `getUserById` calls. Prevents overwhelming the Supabase Auth API for large teams while keeping latency low for typical team sizes. |
+
 ### Seat Reconciliation (`lib/stripe/seat-reconcile.ts`)
 
 | Constant                               | Value | Why                                                                                                                         |

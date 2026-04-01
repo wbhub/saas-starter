@@ -155,6 +155,13 @@ export function UserDropdown({
         "")
       : selectedTeamId;
 
+  const effectiveSelectedTeamId =
+    teamOptions.length > 0 && !teamOptions.some((team) => team.teamId === selectedTeamId)
+      ? (teamOptions.find((team) => team.teamId === activeTeamId)?.teamId ??
+        teamOptions[0]?.teamId ??
+        "")
+      : selectedTeamId;
+
   const themeOrder: Array<"system" | "light" | "dark"> = ["system", "light", "dark"];
   const themeIndex = themeOrder.indexOf(theme);
   const nextTheme = themeOrder[(themeIndex + 1) % themeOrder.length];

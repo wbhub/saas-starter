@@ -23,6 +23,7 @@ type ProfileRow = {
   full_name: string | null;
   avatar_url: string | null;
   created_at: string;
+  onboarding_completed_at: string | null;
 };
 
 type TeamMembershipRow = {
@@ -126,7 +127,7 @@ export const getDashboardBaseData = cache(async function getDashboardBaseData() 
     const [profileQuery, teamContextQuery] = await Promise.allSettled([
       supabase
         .from("profiles")
-        .select("id,full_name,avatar_url,created_at")
+        .select("id,full_name,avatar_url,created_at,onboarding_completed_at")
         .eq("id", user.id)
         .maybeSingle<ProfileRow>(),
       getCachedTeamContextForUser(supabase, user.id),
@@ -371,31 +372,30 @@ async function fetchAuthEmailsByUserIds(userIds: string[]): Promise<Map<string, 
   }
 
   const admin = createAdminClient();
-  const settled = await Promise.allSettled(
-    unique.map(async (userId) => {
-      const { data, error } = await admin.auth.admin.getUserById(userId);
-      if (error) {
-        logger.warn("Failed to load auth user email for team member list.", { userId, error });
-        return [userId, null] as const;
-      }
-      const email = data.user?.email?.trim() || null;
-      return [userId, email] as const;
-    }),
-  );
-
   const map = new Map<string, string>();
-  for (const entry of settled) {
-    if (entry.status !== "fulfilled") {
-      logger.warn("Failed to load auth user email for team member list.", {
-        error: entry.reason,
-      });
-      continue;
+
+  try {
+    const { data, error } = await admin.rpc("get_user_emails_by_ids", {
+      p_user_ids: unique,
+    });
+
+    if (error) {
+      logger.warn("Failed to batch-fetch auth user emails via RPC", { error });
+      return map;
     }
-    const [userId, email] = entry.value;
-    if (email) {
-      map.set(userId, email);
+
+    const rows = data as Array<{ id: string; email: string | null }> | null;
+    if (rows) {
+      for (const row of rows) {
+        if (row.email) {
+          map.set(row.id, row.email.trim());
+        }
+      }
     }
+  } catch (error) {
+    logger.warn("Failed to batch-fetch auth user emails", { error });
   }
+
   return map;
 }
 

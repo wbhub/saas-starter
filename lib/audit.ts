@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { logger } from "@/lib/logger";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -29,25 +30,13 @@ function getPositiveIntegerFromEnv(name: string, fallback: number) {
   return fallback;
 }
 
-function getBoundedFloatFromEnv(name: string, fallback: number, min: number, max: number) {
-  const parsed = Number(process.env[name]);
-  if (Number.isFinite(parsed) && parsed >= min && parsed <= max) {
-    return parsed;
-  }
-  return fallback;
-}
-
 const AUDIT_BATCH_SIZE = 25;
-const AUDIT_FLUSH_INTERVAL_MS = 200;
 const AUDIT_MAX_QUEUE_SIZE = getPositiveIntegerFromEnv("AUDIT_MAX_QUEUE_SIZE", 1000);
-const AUDIT_RETRY_MAX_INTERVAL_MS = getPositiveIntegerFromEnv("AUDIT_RETRY_MAX_INTERVAL_MS", 5000);
 const AUDIT_RETRY_MAX_ATTEMPTS = getPositiveIntegerFromEnv("AUDIT_RETRY_MAX_ATTEMPTS", 5);
-const AUDIT_RETRY_JITTER_FACTOR = getBoundedFloatFromEnv("AUDIT_RETRY_JITTER_FACTOR", 0.2, 0, 1);
 
 const auditInsertQueue: AuditInsertRow[] = [];
-let flushTimer: ReturnType<typeof setTimeout> | null = null;
-let flushInFlight: Promise<void> | null = null;
-let consecutiveFlushFailures = 0;
+const deadLetterEntries: { events: AuditInsertRow[]; reason: string }[] = [];
+let flushScheduled = false;
 
 function mapAuditEventToRow(event: AuditEvent): AuditInsertRow {
   return {
@@ -60,20 +49,27 @@ function mapAuditEventToRow(event: AuditEvent): AuditInsertRow {
   };
 }
 
-function getRetryDelayMs() {
-  if (consecutiveFlushFailures <= 0) {
-    return AUDIT_FLUSH_INTERVAL_MS;
+async function persistToDeadLetterQueue(events: AuditInsertRow[], reason: string) {
+  try {
+    const supabase = createAdminClient();
+    const { error } = await supabase.from("audit_event_dead_letters").insert({
+      events: JSON.parse(JSON.stringify(events)),
+      reason,
+      event_count: events.length,
+    });
+    if (error) {
+      logger.error("Failed to persist dropped audit events to dead-letter table", {
+        error,
+        droppedEvents: events.length,
+        reason,
+      });
+    }
+  } catch (error) {
+    logger.error("Failed to persist dropped audit events to dead-letter table", error, {
+      droppedEvents: events.length,
+      reason,
+    });
   }
-
-  const exponentialDelay = AUDIT_FLUSH_INTERVAL_MS * 2 ** consecutiveFlushFailures;
-  const boundedExponentialDelay = Math.min(exponentialDelay, AUDIT_RETRY_MAX_INTERVAL_MS);
-  if (AUDIT_RETRY_JITTER_FACTOR <= 0) {
-    return boundedExponentialDelay;
-  }
-
-  const jitterMultiplier = 1 + (Math.random() * 2 - 1) * AUDIT_RETRY_JITTER_FACTOR;
-  const jitteredDelay = Math.round(boundedExponentialDelay * jitterMultiplier);
-  return Math.max(AUDIT_FLUSH_INTERVAL_MS, Math.min(jitteredDelay, AUDIT_RETRY_MAX_INTERVAL_MS));
 }
 
 function enforceQueueLimit() {
@@ -82,27 +78,13 @@ function enforceQueueLimit() {
   }
 
   const droppedEvents = auditInsertQueue.length - AUDIT_MAX_QUEUE_SIZE;
-  auditInsertQueue.splice(0, droppedEvents);
-  logger.warn("Audit queue capacity exceeded; dropping oldest events", {
+  const dropped = auditInsertQueue.splice(0, droppedEvents);
+  logger.error("Audit queue capacity exceeded; dropping oldest events", {
     droppedEvents,
     maxQueueSize: AUDIT_MAX_QUEUE_SIZE,
     queuedEvents: auditInsertQueue.length,
   });
-}
-
-function scheduleFlush(delayMs = AUDIT_FLUSH_INTERVAL_MS) {
-  if (flushTimer) {
-    return;
-  }
-
-  flushTimer = setTimeout(() => {
-    flushTimer = null;
-    void flushAuditQueue().catch((error) => {
-      logger.error("Failed to persist audit event batch", error, {
-        queuedEvents: auditInsertQueue.length,
-      });
-    });
-  }, delayMs);
+  deadLetterEntries.push({ events: dropped, reason: "queue_overflow" });
 }
 
 async function persistBatch(batch: AuditInsertRow[]) {
@@ -115,64 +97,67 @@ async function persistBatch(batch: AuditInsertRow[]) {
 }
 
 async function flushAuditQueue() {
-  if (flushInFlight) {
-    await flushInFlight;
-    return;
+  while (deadLetterEntries.length > 0) {
+    const entry = deadLetterEntries.shift()!;
+    await persistToDeadLetterQueue(entry.events, entry.reason);
   }
 
-  if (auditInsertQueue.length === 0) {
-    return;
+  while (auditInsertQueue.length > 0) {
+    const batch = auditInsertQueue.splice(0, AUDIT_BATCH_SIZE);
+
+    for (let attempt = 1; attempt <= AUDIT_RETRY_MAX_ATTEMPTS; attempt++) {
+      try {
+        await persistBatch(batch);
+        break;
+      } catch (error) {
+        if (attempt >= AUDIT_RETRY_MAX_ATTEMPTS) {
+          logger.error(
+            "Dropping audit batch after max retry attempts due to persistent failures",
+            error,
+            {
+              droppedEvents: batch.length,
+              maxRetryAttempts: AUDIT_RETRY_MAX_ATTEMPTS,
+              consecutiveFailures: attempt,
+              queuedEvents: auditInsertQueue.length,
+            },
+          );
+          await persistToDeadLetterQueue(batch, "retry_exhaustion");
+        }
+      }
+    }
   }
 
-  const batch = auditInsertQueue.splice(0, AUDIT_BATCH_SIZE);
-  flushInFlight = persistBatch(batch);
+  flushScheduled = false;
+}
+
+function scheduleFlush() {
+  if (flushScheduled) {
+    return;
+  }
+  flushScheduled = true;
+
+  const doFlush = async () => {
+    try {
+      await flushAuditQueue();
+    } catch (error) {
+      logger.error("Failed to flush audit queue", error, {
+        queuedEvents: auditInsertQueue.length,
+      });
+    }
+  };
 
   try {
-    await flushInFlight;
-    consecutiveFlushFailures = 0;
-  } catch (error) {
-    consecutiveFlushFailures += 1;
-    if (consecutiveFlushFailures >= AUDIT_RETRY_MAX_ATTEMPTS) {
-      logger.error(
-        "Dropping audit batch after max retry attempts due to persistent failures",
-        error,
-        {
-          droppedEvents: batch.length,
-          maxRetryAttempts: AUDIT_RETRY_MAX_ATTEMPTS,
-          consecutiveFlushFailures,
-          queuedEvents: auditInsertQueue.length,
-        },
-      );
-      consecutiveFlushFailures = 0;
-      return;
-    }
-    auditInsertQueue.unshift(...batch);
-    enforceQueueLimit();
-    throw error;
-  } finally {
-    flushInFlight = null;
-    if (auditInsertQueue.length > 0) {
-      scheduleFlush(getRetryDelayMs());
-    }
+    after(doFlush);
+  } catch {
+    // after() throws outside a Next.js request scope (e.g. in tests).
+    // Fall back to a best-effort fire-and-forget flush.
+    void doFlush();
   }
 }
 
 function enqueueAuditEvent(event: AuditEvent) {
   auditInsertQueue.push(mapAuditEventToRow(event));
   enforceQueueLimit();
-  if (auditInsertQueue.length >= AUDIT_BATCH_SIZE) {
-    if (consecutiveFlushFailures > 0) {
-      scheduleFlush(getRetryDelayMs());
-      return;
-    }
-    void flushAuditQueue().catch((error) => {
-      logger.error("Failed to persist audit event batch", error, {
-        queuedEvents: auditInsertQueue.length,
-      });
-    });
-    return;
-  }
-
   scheduleFlush();
 }
 
@@ -192,10 +177,6 @@ export function logAuditEvent(event: AuditEvent) {
 
 export function __resetAuditBufferForTests() {
   auditInsertQueue.length = 0;
-  if (flushTimer) {
-    clearTimeout(flushTimer);
-    flushTimer = null;
-  }
-  flushInFlight = null;
-  consecutiveFlushFailures = 0;
+  deadLetterEntries.length = 0;
+  flushScheduled = false;
 }
