@@ -1,7 +1,7 @@
 import { logAuditEvent } from "@/lib/audit";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { createClient } from "@/lib/supabase/server";
-import { getPlanByKey } from "@/lib/stripe/config";
+import { getPlanByKey, getPlanPriceId } from "@/lib/stripe/config";
 import { getStripeServerClient } from "@/lib/stripe/server";
 import { syncSubscription } from "@/lib/stripe/sync";
 import { isBillingEnabled } from "@/lib/billing/capabilities";
@@ -133,9 +133,6 @@ export async function POST(req: Request) {
   if (!plan) {
     return err(t("errors.invalidTargetPlan"), 400);
   }
-  if (!plan.priceId) {
-    return err(t("errors.billingPlansNotConfigured"), 503);
-  }
   const idempotencyKey = getChangePlanIdempotencyKey(req, teamContext.teamId, plan.key);
 
   const { data: subscriptionRow, error: subscriptionRowError } = await supabase
@@ -177,14 +174,20 @@ export async function POST(req: Request) {
       return err(t("errors.subscriptionItemNotFound"), 400);
     }
 
-    if (firstItem.price.id === plan.priceId) {
+    const currentInterval = firstItem.price.recurring?.interval === "year" ? "year" : "month";
+    const targetPriceId = getPlanPriceId(plan.key, currentInterval);
+    if (!targetPriceId) {
+      return err(t("errors.billingPlansNotConfigured"), 503);
+    }
+
+    if (firstItem.price.id === targetPriceId) {
       return err(t("errors.alreadyOnPlan"), 409);
     }
 
     const updated = await stripe.subscriptions.update(
       stripeSubscription.id,
       {
-        items: [{ id: firstItem.id, price: plan.priceId, quantity: firstItem.quantity ?? 1 }],
+        items: [{ id: firstItem.id, price: targetPriceId, quantity: firstItem.quantity ?? 1 }],
         proration_behavior: "create_prorations",
       },
       idempotencyKey ? { idempotencyKey } : undefined,
@@ -198,7 +201,7 @@ export async function POST(req: Request) {
         supabase,
         teamContext.teamId,
         stripeSubscription.id,
-        plan.priceId,
+        targetPriceId,
       );
       if (!localSyncComplete) {
         throw new Error("Subscription sync completed, but local state does not match target plan.");

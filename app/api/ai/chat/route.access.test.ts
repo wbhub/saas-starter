@@ -9,6 +9,7 @@ const providerMockState = vi.hoisted(() => ({
   aiProviderName: "openai" as "openai" | "anthropic" | "google",
   supportsProviderFileIds: true,
   providerSupportsModalities: vi.fn(),
+  isRequestedModelAllowed: vi.fn(),
   getAiLanguageModel: vi.fn(),
 }));
 
@@ -29,6 +30,7 @@ vi.mock("@/lib/ai/provider", () => ({
     return providerMockState.supportsProviderFileIds;
   },
   providerSupportsModalities: providerMockState.providerSupportsModalities,
+  isRequestedModelAllowed: providerMockState.isRequestedModelAllowed,
   getAiLanguageModel: providerMockState.getAiLanguageModel,
 }));
 
@@ -64,6 +66,8 @@ function mockProviderModule({
   providerMockState.providerSupportsModalities.mockImplementation(
     (model: string) => !model.startsWith("gpt-3.5"),
   );
+  providerMockState.isRequestedModelAllowed.mockReset();
+  providerMockState.isRequestedModelAllowed.mockReturnValue(true);
   providerMockState.getAiLanguageModel.mockReset();
   providerMockState.getAiLanguageModel.mockReturnValue("provider-model");
 }
@@ -593,6 +597,65 @@ describe("POST /api/ai/chat access and gating", () => {
 
     expect(response.status).toBe(503);
     expect(inFn).toHaveBeenCalledWith("status", LIVE_SUBSCRIPTION_STATUSES);
+  });
+
+  it("rejects model overrides that are not allowed for the current plan", async () => {
+    providerMockState.isRequestedModelAllowed.mockReturnValue(false);
+
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          getUser: async () => ({
+            data: { user: { id: "user_123" } },
+          }),
+        },
+        from: vi.fn(() => ({
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          in: vi.fn().mockReturnThis(),
+          order: vi.fn().mockReturnThis(),
+          limit: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({
+            data: { stripe_price_id: "price_growth", status: "active" },
+            error: null,
+          }),
+        })),
+      }),
+    }));
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
+        teamId: "team_123",
+        teamName: "Acme Team",
+        role: "owner",
+      }),
+    }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({
+        allowed: true,
+        retryAfterSeconds: 0,
+      }),
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          modelId: "gpt-5.4",
+          messages: [{ role: "user", content: "hello" }],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      ok: false,
+      error: "Invalid request payload.",
+      code: "invalid_model",
+    });
+    const { streamText } = await import("ai");
+    expect(streamText).not.toHaveBeenCalled();
   });
 
   it("rejects unsupported attachment MIME types", async () => {

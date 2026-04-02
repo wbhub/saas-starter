@@ -69,4 +69,64 @@ describe("lib/ai/provider", () => {
     expect(provider.providerSupportsModalities("claude-3-5-sonnet", ["text", "image"])).toBe(true);
     expect(provider.providerSupportsModalities("claude-3-5-sonnet", ["text", "file"])).toBe(false);
   });
+
+  it("allows only configured models in all mode and only the plan model otherwise", async () => {
+    vi.stubEnv("AI_PROVIDER", "openai");
+    const provider = await import("./provider");
+
+    expect(
+      provider.isRequestedModelAllowed({
+        requestedModel: "gpt-4o-mini",
+        accessMode: "all",
+        allowedModel: "gpt-4.1-mini",
+      }),
+    ).toBe(true);
+    expect(
+      provider.isRequestedModelAllowed({
+        requestedModel: "my-custom-model",
+        accessMode: "all",
+        allowedModel: "gpt-4.1-mini",
+      }),
+    ).toBe(false);
+    expect(
+      provider.isRequestedModelAllowed({
+        requestedModel: "GPT-4.1-MINI",
+        accessMode: "paid",
+        allowedModel: "gpt-4.1-mini",
+      }),
+    ).toBe(true);
+    expect(
+      provider.isRequestedModelAllowed({
+        requestedModel: "gpt-5.4",
+        accessMode: "paid",
+        allowedModel: "gpt-4.1-mini",
+      }),
+    ).toBe(false);
+  });
+
+  it("restricts all-mode model overrides to the custom model map when one is configured", async () => {
+    vi.stubEnv("AI_PROVIDER", "openai");
+    vi.stubEnv(
+      "AI_MODEL_MODALITIES_MAP_JSON",
+      JSON.stringify({
+        "openai:gpt-4.1-mini": ["text"],
+      }),
+    );
+
+    const provider = await import("./provider");
+    expect(
+      provider.isRequestedModelAllowed({
+        requestedModel: "gpt-4.1-mini",
+        accessMode: "all",
+        allowedModel: "gpt-4.1-mini",
+      }),
+    ).toBe(true);
+    expect(
+      provider.isRequestedModelAllowed({
+        requestedModel: "gpt-4o-mini",
+        accessMode: "all",
+        allowedModel: "gpt-4.1-mini",
+      }),
+    ).toBe(false);
+  });
 });

@@ -22,6 +22,12 @@ function buildStripeCustomerMetadata(teamId: string, userId: string) {
   };
 }
 
+function buildStripeCustomerCreateMetadata(teamId: string) {
+  return {
+    supabase_team_id: teamId,
+  };
+}
+
 export async function getOrCreateStripeCustomerForTeam({
   stripe,
   teamId,
@@ -54,7 +60,7 @@ export async function getOrCreateStripeCustomerForTeam({
       const needsMetadataUpdate =
         customer.metadata?.supabase_team_id !== expectedMetadata.supabase_team_id ||
         customer.metadata?.supabase_user_id !== expectedMetadata.supabase_user_id;
-      const nextEmail = customer.email ?? email ?? undefined;
+      const nextEmail = email ?? customer.email ?? undefined;
       const needsEmailUpdate = Boolean(nextEmail && customer.email !== nextEmail);
 
       if (needsMetadataUpdate || needsEmailUpdate) {
@@ -73,8 +79,7 @@ export async function getOrCreateStripeCustomerForTeam({
 
   const createdCustomer = await stripe.customers.create(
     {
-      email: email ?? undefined,
-      metadata: buildStripeCustomerMetadata(teamId, userId),
+      metadata: buildStripeCustomerCreateMetadata(teamId),
     },
     idempotencyKey ? { idempotencyKey } : undefined,
   );
@@ -89,6 +94,14 @@ export async function getOrCreateStripeCustomerForTeam({
 
   if (upsertError) {
     throw new Error(`Failed to upsert Stripe customer mapping: ${upsertError.message}`);
+  }
+
+  const nextEmail = email ?? undefined;
+  if (nextEmail || userId) {
+    await stripe.customers.update(createdCustomer.id, {
+      ...(nextEmail ? { email: nextEmail } : {}),
+      metadata: buildStripeCustomerMetadata(teamId, userId),
+    });
   }
 
   return createdCustomer.id;

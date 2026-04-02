@@ -13,6 +13,8 @@ const ANTHROPIC_FILES_API_URL = "https://api.anthropic.com/v1/files";
 const ANTHROPIC_API_VERSION = "2023-06-01";
 const ANTHROPIC_FILES_API_BETA = "files-api-2025-04-14";
 const GOOGLE_FILES_UPLOAD_API_URL = "https://generativelanguage.googleapis.com/upload/v1beta/files";
+const MAX_AI_FILE_UPLOAD_BYTES = 25 * 1024 * 1024;
+const MAX_AI_MULTIPART_BODY_BYTES = MAX_AI_FILE_UPLOAD_BYTES + 256 * 1024;
 
 type UploadedAttachmentResult =
   | {
@@ -194,11 +196,20 @@ export async function POST(request: Request) {
         return jsonError(t("errors.unavailable"), 503);
       }
 
+      const contentLengthHeader = request.headers.get("content-length");
+      const contentLength = contentLengthHeader ? Number(contentLengthHeader) : Number.NaN;
+      if (Number.isFinite(contentLength) && contentLength > MAX_AI_MULTIPART_BODY_BYTES) {
+        return jsonError(t("errors.payloadTooLarge"), 413);
+      }
+
       const formData = await request.formData();
       const file = formData.get("file");
 
       if (!(file instanceof File)) {
         return jsonError(t("errors.invalidPayload"), 400);
+      }
+      if (file.size > MAX_AI_FILE_UPLOAD_BYTES) {
+        return jsonError(t("errors.payloadTooLarge"), 413);
       }
 
       const mimeType = resolveAttachmentMimeType({

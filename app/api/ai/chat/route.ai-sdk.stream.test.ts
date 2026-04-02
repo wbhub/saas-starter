@@ -122,6 +122,7 @@ describe("POST /api/ai/chat AI SDK streaming", () => {
       isAiProviderConfigured: true,
       supportsProviderFileIds: true,
       providerSupportsModalities: vi.fn().mockReturnValue(true),
+      isRequestedModelAllowed: vi.fn().mockReturnValue(true),
       getAiLanguageModel: vi.fn().mockReturnValue("provider-model"),
     }));
     vi.doMock("@/lib/audit", () => ({
@@ -261,6 +262,7 @@ describe("POST /api/ai/chat AI SDK streaming", () => {
       isAiProviderConfigured: true,
       supportsProviderFileIds: true,
       providerSupportsModalities: vi.fn().mockReturnValue(true),
+      isRequestedModelAllowed: vi.fn().mockReturnValue(true),
       getAiLanguageModel: vi.fn().mockReturnValue("provider-model"),
     }));
     vi.doMock("@/lib/audit", () => ({
@@ -456,6 +458,7 @@ describe("POST /api/ai/chat AI SDK streaming", () => {
       isAiProviderConfigured: true,
       supportsProviderFileIds: true,
       providerSupportsModalities: vi.fn().mockReturnValue(true),
+      isRequestedModelAllowed: vi.fn().mockReturnValue(true),
       getAiLanguageModel: vi.fn().mockReturnValue("provider-model"),
     }));
     vi.doMock("@/lib/audit", () => ({

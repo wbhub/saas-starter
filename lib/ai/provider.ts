@@ -2,7 +2,7 @@ import "server-only";
 import type { createAnthropic } from "@ai-sdk/anthropic";
 import type { createGoogleGenerativeAI } from "@ai-sdk/google";
 import type { createOpenAI } from "@ai-sdk/openai";
-import { type AiModality } from "@/lib/ai/config";
+import { type AiAccessMode, type AiModality } from "@/lib/ai/config";
 import { parseAiProviderName, type AiProviderName } from "@/lib/ai/provider-name";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
@@ -130,6 +130,42 @@ export const supportsProviderFileIds = provider === "openai";
 export const isAiProviderConfigured = Boolean(providerApiKey);
 const customModelModalityMap = parseModelModalityMap(env.AI_MODEL_MODALITIES_MAP_JSON);
 
+function normalizeModelName(model: string) {
+  return model.trim().toLowerCase();
+}
+
+function getDefaultProviderModelEntries(): ModelModalityMapEntry[] {
+  return DEFAULT_MODEL_MODALITIES_BY_PROVIDER[provider].map((entry) => ({
+    ...entry,
+    key: `${provider}:${entry.key.toLowerCase()}`,
+  }));
+}
+
+function findMatchingModelEntry(
+  entries: readonly ModelModalityMapEntry[],
+  model: string,
+): ModelModalityMapEntry | null {
+  const normalizedModel = normalizeModelName(model);
+  const providerModelKey = `${provider}:${normalizedModel}`;
+
+  const exactMatch = entries.find(
+    (entry) => entry.key === providerModelKey || entry.key === normalizedModel,
+  );
+  if (exactMatch) {
+    return exactMatch;
+  }
+
+  return (
+    entries
+      .filter((entry) => entry.key.endsWith("*"))
+      .filter((entry) => {
+        const prefix = entry.key.slice(0, -1);
+        return providerModelKey.startsWith(prefix) || normalizedModel.startsWith(prefix);
+      })
+      .sort((a, b) => b.key.length - a.key.length)[0] ?? null
+  );
+}
+
 type AiProviderClient =
   | ReturnType<typeof createAnthropic>
   | ReturnType<typeof createGoogleGenerativeAI>
@@ -166,43 +202,51 @@ export async function getAiLanguageModel(model: string) {
   return client(model);
 }
 
+export function isRequestedModelAllowed({
+  requestedModel,
+  accessMode,
+  allowedModel,
+}: {
+  requestedModel: string;
+  accessMode: AiAccessMode;
+  allowedModel: string;
+}) {
+  const normalizedRequestedModel = normalizeModelName(requestedModel);
+  const normalizedAllowedModel = normalizeModelName(allowedModel);
+  if (!normalizedRequestedModel) {
+    return false;
+  }
+
+  if (normalizedRequestedModel === normalizedAllowedModel) {
+    return true;
+  }
+
+  if (accessMode !== "all") {
+    return false;
+  }
+
+  const allowlistEntries =
+    customModelModalityMap.length > 0 ? customModelModalityMap : getDefaultProviderModelEntries();
+  return findMatchingModelEntry(allowlistEntries, normalizedRequestedModel) !== null;
+}
+
 export function providerSupportsModalities(model: string, modalities: AiModality[]) {
   const requiresMultimodal = modalities.includes("image") || modalities.includes("file");
   if (!requiresMultimodal) {
     return true;
   }
 
-  const normalizedModel = model.toLowerCase();
+  const normalizedModel = normalizeModelName(model);
   if (KNOWN_TEXT_ONLY_MODEL_PREFIXES.some((prefix) => normalizedModel.startsWith(prefix))) {
     return false;
   }
 
-  const providerModelKey = `${provider}:${normalizedModel}`;
-  const entries = [
-    ...customModelModalityMap,
-    ...DEFAULT_MODEL_MODALITIES_BY_PROVIDER[provider].map((entry) => ({
-      ...entry,
-      key: `${provider}:${entry.key.toLowerCase()}`,
-    })),
-  ];
-
-  const exactMatch = entries.find(
-    (entry) => entry.key === providerModelKey || entry.key === normalizedModel,
+  const matchingEntry = findMatchingModelEntry(
+    [...customModelModalityMap, ...getDefaultProviderModelEntries()],
+    normalizedModel,
   );
-  if (exactMatch) {
-    return modalities.every((modality) => exactMatch.modalities.includes(modality));
-  }
-
-  const wildcardMatches = entries
-    .filter((entry) => entry.key.endsWith("*"))
-    .filter((entry) => {
-      const prefix = entry.key.slice(0, -1);
-      return providerModelKey.startsWith(prefix) || normalizedModel.startsWith(prefix);
-    })
-    .sort((a, b) => b.key.length - a.key.length);
-
-  if (wildcardMatches.length > 0) {
-    return modalities.every((modality) => wildcardMatches[0]!.modalities.includes(modality));
+  if (matchingEntry) {
+    return modalities.every((modality) => matchingEntry.modalities.includes(modality));
   }
 
   // Fail closed for multimodal when no explicit/default capabilities match.
@@ -219,12 +263,7 @@ export function getAvailableModels(aiUiGate?: DashboardAiUiGate): string[] {
   }
 
   const entries =
-    customModelModalityMap.length > 0
-      ? customModelModalityMap
-      : DEFAULT_MODEL_MODALITIES_BY_PROVIDER[provider].map((entry) => ({
-          ...entry,
-          key: `${provider}:${entry.key.toLowerCase()}`,
-        }));
+    customModelModalityMap.length > 0 ? customModelModalityMap : getDefaultProviderModelEntries();
 
   const models = new Set<string>();
   for (const entry of entries) {

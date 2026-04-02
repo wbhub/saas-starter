@@ -18,6 +18,7 @@ describe("POST /api/stripe/change-plan", () => {
     }));
     vi.doMock("@/lib/stripe/config", () => ({
       getPlanByKey: vi.fn(),
+      getPlanPriceId: vi.fn(),
     }));
 
     const { POST } = await import("./route");
@@ -63,6 +64,7 @@ describe("POST /api/stripe/change-plan", () => {
     }));
     vi.doMock("@/lib/stripe/config", () => ({
       getPlanByKey: () => ({ key: "growth", priceId: "price_growth" }),
+      getPlanPriceId: () => "price_growth",
     }));
     vi.doMock("@/lib/stripe/sync", () => ({
       syncSubscription: vi.fn(),
@@ -70,12 +72,14 @@ describe("POST /api/stripe/change-plan", () => {
     vi.doMock("@/lib/stripe/seat-sync-retries", () => ({
       enqueueSeatSyncRetry: vi.fn().mockResolvedValue(undefined),
     }));
-    vi.doMock("@/lib/team-context", () => ({
-      getTeamContextForUser: vi.fn().mockResolvedValue({
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
         teamId: "team_123",
         teamName: "Acme Team",
         role: "owner",
       }),
+    }));
+    vi.doMock("@/lib/team-context", () => ({
       canManageTeamBilling: vi.fn().mockReturnValue(true),
     }));
     vi.doMock("@/lib/stripe/server", () => ({
@@ -113,7 +117,7 @@ describe("POST /api/stripe/change-plan", () => {
     });
   });
 
-  it("passes idempotency key to Stripe update", async () => {
+  it("preserves annual billing interval when changing plans", async () => {
     const maybeSingle = vi
       .fn()
       .mockResolvedValueOnce({
@@ -121,7 +125,7 @@ describe("POST /api/stripe/change-plan", () => {
         error: null,
       })
       .mockResolvedValueOnce({
-        data: { stripe_price_id: "price_growth", status: "active" },
+        data: { stripe_price_id: "price_growth_year", status: "active" },
         error: null,
       });
     const subscriptionsQuery = {
@@ -142,7 +146,7 @@ describe("POST /api/stripe/change-plan", () => {
         data: [
           {
             id: "si_123",
-            price: { id: "price_growth" },
+            price: { id: "price_growth_year" },
             current_period_start: 1_700_000_000,
             current_period_end: 1_700_086_400,
           },
@@ -165,7 +169,14 @@ describe("POST /api/stripe/change-plan", () => {
       checkRateLimit: async () => ({ allowed: true, retryAfterSeconds: 0 }),
     }));
     vi.doMock("@/lib/stripe/config", () => ({
-      getPlanByKey: () => ({ key: "growth", priceId: "price_growth" }),
+      getPlanByKey: () => ({
+        key: "growth",
+        priceId: "price_growth",
+        annualPriceId: "price_growth_year",
+      }),
+      getPlanPriceId: vi.fn((_planKey: string, interval: "month" | "year") =>
+        interval === "year" ? "price_growth_year" : "price_growth",
+      ),
     }));
     vi.doMock("@/lib/stripe/sync", () => ({
       syncSubscription,
@@ -173,12 +184,14 @@ describe("POST /api/stripe/change-plan", () => {
     vi.doMock("@/lib/stripe/seat-sync-retries", () => ({
       enqueueSeatSyncRetry: vi.fn().mockResolvedValue(undefined),
     }));
-    vi.doMock("@/lib/team-context", () => ({
-      getTeamContextForUser: vi.fn().mockResolvedValue({
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
         teamId: "team_123",
         teamName: "Acme Team",
         role: "owner",
       }),
+    }));
+    vi.doMock("@/lib/team-context", () => ({
       canManageTeamBilling: vi.fn().mockReturnValue(true),
     }));
     vi.doMock("@/lib/stripe/server", () => ({
@@ -189,12 +202,26 @@ describe("POST /api/stripe/change-plan", () => {
             .mockResolvedValueOnce({
               id: "sub_123",
               customer: "cus_123",
-              items: { data: [{ id: "si_123", price: { id: "price_starter" } }] },
+              items: {
+                data: [
+                  {
+                    id: "si_123",
+                    price: { id: "price_starter_year", recurring: { interval: "year" } },
+                  },
+                ],
+              },
             })
             .mockResolvedValueOnce({
               id: "sub_123",
               customer: "cus_123",
-              items: { data: [{ id: "si_123", price: { id: "price_starter" } }] },
+              items: {
+                data: [
+                  {
+                    id: "si_123",
+                    price: { id: "price_starter_year", recurring: { interval: "year" } },
+                  },
+                ],
+              },
             }),
           update,
         },
@@ -224,7 +251,7 @@ describe("POST /api/stripe/change-plan", () => {
     expect(update).toHaveBeenCalledWith(
       "sub_123",
       {
-        items: [{ id: "si_123", price: "price_growth", quantity: 1 }],
+        items: [{ id: "si_123", price: "price_growth_year", quantity: 1 }],
         proration_behavior: "create_prorations",
       },
       { idempotencyKey: "change-plan:team_123:growth:client-retry-1" },
@@ -278,6 +305,7 @@ describe("POST /api/stripe/change-plan", () => {
     }));
     vi.doMock("@/lib/stripe/config", () => ({
       getPlanByKey: () => ({ key: "growth", priceId: "price_growth" }),
+      getPlanPriceId: () => "price_growth",
     }));
     const enqueueSeatSyncRetry = vi.fn().mockResolvedValue(undefined);
     vi.doMock("@/lib/stripe/sync", () => ({
@@ -286,12 +314,14 @@ describe("POST /api/stripe/change-plan", () => {
     vi.doMock("@/lib/stripe/seat-sync-retries", () => ({
       enqueueSeatSyncRetry,
     }));
-    vi.doMock("@/lib/team-context", () => ({
-      getTeamContextForUser: vi.fn().mockResolvedValue({
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
         teamId: "team_123",
         teamName: "Acme Team",
         role: "owner",
       }),
+    }));
+    vi.doMock("@/lib/team-context", () => ({
       canManageTeamBilling: vi.fn().mockReturnValue(true),
     }));
     vi.doMock("@/lib/stripe/server", () => ({

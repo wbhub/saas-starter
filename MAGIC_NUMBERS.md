@@ -207,6 +207,15 @@ Images are decoded in the browser, downscaled, and re-encoded (prefer **WebP** w
 | `MAX_ATTACHMENT_DATA_CHARS`        | 180,000    | Per-attachment target for encoded `data:` length after compression (unchanged; non-image inline files still use the same cap in validation where applicable). |
 | `MAX_TOTAL_ATTACHMENT_DATA_CHARS`  | 220,000    | Enforced after compression: total length of all `data:` attachment URLs in one outgoing message.                                                              |
 
+### AI file uploads (`app/api/ai/files/route.ts`)
+
+The upload route now checks `Content-Length` before calling `request.formData()` and also validates the parsed `File` size. The multipart-body cap intentionally allows a small amount of overhead for form boundaries and headers so a near-limit valid file is not rejected prematurely.
+
+| Constant                      | Value     | Why                                                                                                                                     |
+| ----------------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `MAX_AI_FILE_UPLOAD_BYTES`    | 25 MiB    | Maximum accepted AI file upload size. Matches the existing raw chat image cap and rejects oversized uploads before forwarding upstream. |
+| `MAX_AI_MULTIPART_BODY_BYTES` | 25.25 MiB | Allows roughly 256 KiB of multipart envelope overhead above the 25 MiB file cap before `request.formData()` buffers the request body.   |
+
 ### AI Structured Output (`app/api/ai/object/route.ts`)
 
 | Constant                | Value       | Why                                                                                                                                                   |
