@@ -11,8 +11,19 @@ import {
 
 async function loginAndSaveState(page: Page, email: string, password: string, outputPath: string) {
   await page.goto("/login");
+  const passwordField = page.getByLabel("Password");
+  if (!(await passwordField.isVisible())) {
+    const usePasswordButton = page.getByRole("button", { name: "Use password instead" });
+    if (await usePasswordButton.isVisible()) {
+      await usePasswordButton.click();
+    } else {
+      throw new Error(
+        "Password login is not available. Set NEXT_PUBLIC_AUTH_LOGIN_METHOD to 'password' or 'magic-link-and-password' for seeded E2E tests.",
+      );
+    }
+  }
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(password);
+  await passwordField.fill(password);
   await page.getByRole("button", { name: "Log In" }).click();
   await page.waitForURL("**/dashboard**");
   await expect(page.getByText("Overview")).toBeVisible();

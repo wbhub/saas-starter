@@ -80,6 +80,13 @@
       "login": "Entrar",
       "signup": "Crear cuenta"
     },
+    "magicLink": {
+      "sendLink": "Enviar enlace mágico",
+      "checkInbox": "Revisa tu bandeja de entrada para un enlace de inicio de sesión.",
+      "sentTo": "Enviamos un enlace a {email}",
+      "usePasswordInstead": "Usar contraseña en su lugar",
+      "useMagicLinkInstead": "Usar enlace mágico en su lugar"
+    },
     "needAccount": "¿Necesitas una cuenta?",
     "signUp": "Regístrate",
     "forgotPassword": "¿Olvidaste tu contraseña?",
@@ -892,6 +899,21 @@
       "userId": "ID de usuario: {userId}",
       "email": "Email: {email}",
       "messageLabel": "Mensaje:"
+    }
+  },
+  "ApiAuthMagicLink": {
+    "messages": {
+      "genericSuccess": "Si existe una cuenta con ese correo, se ha enviado un enlace de inicio de sesión."
+    },
+    "errors": {
+      "payloadTooLarge": "La solicitud es demasiado grande.",
+      "magicLinkDisabled": "La autenticación por enlace mágico no está habilitada."
+    },
+    "email": {
+      "subject": "Inicia sesión en tu cuenta",
+      "line1": "Haz clic en el enlace a continuación para iniciar sesión.",
+      "useLink": "Usa este enlace para continuar:",
+      "ignoreIfNotRequested": "Si no solicitaste esto, puedes ignorar este correo."
     }
   },
   "ApiForgotPassword": {
