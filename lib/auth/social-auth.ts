@@ -11,6 +11,12 @@ export type SocialProviderOption = {
 };
 
 const ENABLED_TRUE_VALUES = new Set(["1", "true", "yes", "on"]);
+export type LoginMethod = "magic-link" | "magic-link-and-password" | "password";
+const VALID_LOGIN_METHODS = new Set<LoginMethod>([
+  "magic-link",
+  "magic-link-and-password",
+  "password",
+]);
 
 function isEnabledFlag(value: string | undefined) {
   if (!value) {
@@ -67,6 +73,12 @@ export function getProviderLabel(provider: AuthProvider) {
     return "Microsoft";
   }
   return "Google";
+}
+
+export function getLoginMethod(): LoginMethod {
+  const value = process.env.NEXT_PUBLIC_AUTH_LOGIN_METHOD?.trim().toLowerCase() as LoginMethod;
+  if (value && VALID_LOGIN_METHODS.has(value)) return value;
+  return "magic-link";
 }
 
 export function getSocialProviderOptions(

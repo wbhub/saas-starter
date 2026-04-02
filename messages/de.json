@@ -80,6 +80,13 @@
       "login": "Anmelden",
       "signup": "Konto erstellen"
     },
+    "magicLink": {
+      "sendLink": "Magic-Link senden",
+      "checkInbox": "Überprüfen Sie Ihren Posteingang auf einen Anmeldelink.",
+      "sentTo": "Wir haben einen Link an {email} gesendet",
+      "usePasswordInstead": "Stattdessen Passwort verwenden",
+      "useMagicLinkInstead": "Stattdessen Magic-Link verwenden"
+    },
     "needAccount": "Noch kein Konto?",
     "signUp": "Registrieren",
     "forgotPassword": "Passwort vergessen?",
@@ -892,6 +899,21 @@
       "userId": "Benutzer-ID: {userId}",
       "email": "E-Mail: {email}",
       "messageLabel": "Nachricht:"
+    }
+  },
+  "ApiAuthMagicLink": {
+    "messages": {
+      "genericSuccess": "Falls ein Konto für diese E-Mail existiert, wurde ein Anmeldelink gesendet."
+    },
+    "errors": {
+      "payloadTooLarge": "Die Anfrage ist zu groß.",
+      "magicLinkDisabled": "Magic-Link-Authentifizierung ist nicht aktiviert."
+    },
+    "email": {
+      "subject": "Melden Sie sich bei Ihrem Konto an",
+      "line1": "Klicken Sie auf den folgenden Link, um sich anzumelden.",
+      "useLink": "Verwenden Sie diesen Link, um fortzufahren:",
+      "ignoreIfNotRequested": "Wenn Sie dies nicht angefordert haben, können Sie diese E-Mail ignorieren."
     }
   },
   "ApiForgotPassword": {

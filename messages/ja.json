@@ -80,6 +80,13 @@
       "login": "ログイン",
       "signup": "アカウントを作成"
     },
+    "magicLink": {
+      "sendLink": "マジックリンクを送信",
+      "checkInbox": "サインインリンクが届いているか受信トレイを確認してください。",
+      "sentTo": "{email} にリンクを送信しました",
+      "usePasswordInstead": "代わりにパスワードを使用",
+      "useMagicLinkInstead": "代わりにマジックリンクを使用"
+    },
     "needAccount": "アカウントが必要ですか？",
     "signUp": "登録する",
     "forgotPassword": "パスワードをお忘れですか？",
@@ -892,6 +899,21 @@
       "userId": "ユーザー ID: {userId}",
       "email": "メール: {email}",
       "messageLabel": "メッセージ:"
+    }
+  },
+  "ApiAuthMagicLink": {
+    "messages": {
+      "genericSuccess": "そのメールアドレスにアカウントが存在する場合、サインインリンクが送信されました。"
+    },
+    "errors": {
+      "payloadTooLarge": "リクエストが大きすぎます。",
+      "magicLinkDisabled": "マジックリンク認証は有効になっていません。"
+    },
+    "email": {
+      "subject": "アカウントにサインイン",
+      "line1": "以下のリンクをクリックしてサインインしてください。",
+      "useLink": "このリンクを使用して続行してください：",
+      "ignoreIfNotRequested": "リクエストしていない場合は、このメールを無視してください。"
     }
   },
   "ApiForgotPassword": {

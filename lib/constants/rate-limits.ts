@@ -9,6 +9,8 @@ export const RATE_LIMITS = {
   authLoginByEmail: { limit: 10, windowMs: 10 * MINUTE_MS },
   forgotPasswordByClient: { limit: 10, windowMs: 10 * MINUTE_MS },
   forgotPasswordByEmail: { limit: 3, windowMs: 10 * MINUTE_MS },
+  magicLinkByClient: { limit: 10, windowMs: 10 * MINUTE_MS },
+  magicLinkByEmail: { limit: 3, windowMs: 10 * MINUTE_MS },
   resetPasswordSubmitByClient: { limit: 15, windowMs: 10 * MINUTE_MS },
   teamInviteCreateByTeam: { limit: 20, windowMs: HOUR_MS },
   teamInviteAcceptByUser: { limit: 20, windowMs: 10 * MINUTE_MS },

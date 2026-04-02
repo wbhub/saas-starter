@@ -80,6 +80,13 @@
       "login": "Log In",
       "signup": "Create Account"
     },
+    "magicLink": {
+      "sendLink": "Send magic link",
+      "checkInbox": "Check your inbox for a sign-in link.",
+      "sentTo": "We sent a link to {email}",
+      "usePasswordInstead": "Use password instead",
+      "useMagicLinkInstead": "Use magic link instead"
+    },
     "needAccount": "Need an account?",
     "signUp": "Sign up",
     "forgotPassword": "Forgot password?",
@@ -892,6 +899,21 @@
       "userId": "User ID: {userId}",
       "email": "Email: {email}",
       "messageLabel": "Message:"
+    }
+  },
+  "ApiAuthMagicLink": {
+    "messages": {
+      "genericSuccess": "If an account exists for that email, a sign-in link has been sent."
+    },
+    "errors": {
+      "payloadTooLarge": "Request payload is too large.",
+      "magicLinkDisabled": "Magic link authentication is not enabled."
+    },
+    "email": {
+      "subject": "Sign in to your account",
+      "line1": "Click the link below to sign in to your account.",
+      "useLink": "Use this link to continue:",
+      "ignoreIfNotRequested": "If you did not request this, you can ignore this email."
     }
   },
   "ApiForgotPassword": {

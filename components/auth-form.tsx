@@ -6,6 +6,7 @@ import { FormEvent, useReducer } from "react";
 import { useTranslations } from "next-intl";
 import {
   AuthProvider,
+  getLoginMethod,
   getSocialProviderOptions,
   toSupabaseOAuthProvider,
 } from "@/lib/auth/social-auth";
@@ -32,6 +33,8 @@ type AuthFormState = {
   socialLoadingProvider: AuthProvider | null;
   message: string | null;
   messageType: "error" | "success";
+  showPasswordForm: boolean;
+  magicLinkSent: boolean;
 };
 
 type AuthFormAction =
@@ -40,7 +43,9 @@ type AuthFormAction =
   | { type: "SUBMIT_SUCCESS"; message?: string }
   | { type: "SUBMIT_ERROR"; message: string }
   | { type: "OAUTH_START"; provider: AuthProvider }
-  | { type: "OAUTH_ERROR"; message: string };
+  | { type: "OAUTH_ERROR"; message: string }
+  | { type: "TOGGLE_PASSWORD_FORM" }
+  | { type: "MAGIC_LINK_SENT" };
 
 const authFormInitialState: AuthFormState = {
   email: "",
@@ -49,6 +54,8 @@ const authFormInitialState: AuthFormState = {
   socialLoadingProvider: null,
   message: null,
   messageType: "success",
+  showPasswordForm: false,
+  magicLinkSent: false,
 };
 
 function authFormReducer(state: AuthFormState, action: AuthFormAction): AuthFormState {
@@ -74,6 +81,21 @@ function authFormReducer(state: AuthFormState, action: AuthFormAction): AuthForm
         socialLoadingProvider: null,
         messageType: "error",
         message: action.message,
+      };
+    case "TOGGLE_PASSWORD_FORM":
+      return {
+        ...state,
+        showPasswordForm: !state.showPasswordForm,
+        message: null,
+        magicLinkSent: false,
+      };
+    case "MAGIC_LINK_SENT":
+      return {
+        ...state,
+        loading: false,
+        magicLinkSent: true,
+        messageType: "success",
+        message: null,
       };
   }
 }
@@ -126,8 +148,21 @@ export function AuthForm({
   const router = useRouter();
   const t = useTranslations("AuthForm");
   const [state, dispatch] = useReducer(authFormReducer, authFormInitialState);
-  const { email, password, loading, socialLoadingProvider, message, messageType } = state;
+  const {
+    email,
+    password,
+    loading,
+    socialLoadingProvider,
+    message,
+    messageType,
+    showPasswordForm,
+    magicLinkSent,
+  } = state;
   const isLogin = mode === "login";
+  const loginMethod = getLoginMethod();
+  const hasMagicLink = loginMethod !== "password";
+  const hasPasswordToggle = loginMethod === "magic-link-and-password";
+  const showingMagicLink = hasMagicLink && !showPasswordForm;
   const hasSocialProviders = socialProviders.length > 0;
   const socialProviderOptions = getSocialProviderOptions(socialProviders, lastUsedProvider);
   const messageId = `${mode}-auth-message`;
@@ -141,6 +176,18 @@ export function AuthForm({
     dispatch({ type: "SUBMIT_START" });
 
     try {
+      if (showingMagicLink) {
+        await clientPostJson(
+          "/api/auth/magic-link",
+          { email, redirectTo },
+          {
+            fallbackErrorMessage: t("errors.unexpected"),
+          },
+        );
+        dispatch({ type: "MAGIC_LINK_SENT" });
+        return;
+      }
+
       if (isLogin) {
         await clientPostJson(
           "/api/auth/login",
@@ -259,49 +306,81 @@ export function AuthForm({
         </div>
       ) : null}
 
-      <form className="mt-6 space-y-4" onSubmit={onSubmit} aria-busy={loading}>
-        <div>
-          <Label className="mb-1">{t("email")}</Label>
-          <Input
-            type="email"
-            required
-            autoComplete="email"
-            value={email}
-            onChange={(e) => dispatch({ type: "SET_FIELD", field: "email", value: e.target.value })}
-            aria-describedby={message ? messageId : undefined}
-            aria-invalid={messageType === "error" && Boolean(message)}
-          />
-        </div>
-        <div>
-          <Label className="mb-1">{t("password")}</Label>
-          <Input
-            type="password"
-            required
-            minLength={12}
-            autoComplete={isLogin ? "current-password" : "new-password"}
-            value={password}
-            onChange={(e) =>
-              dispatch({ type: "SET_FIELD", field: "password", value: e.target.value })
-            }
-            aria-describedby={passwordDescribedBy || undefined}
-            aria-invalid={messageType === "error" && Boolean(message)}
-          />
-        </div>
-        {!isLogin ? (
-          <p id={passwordHintId} className="text-xs text-muted-foreground">
-            {t("passwordHint")}
+      {magicLinkSent ? (
+        <div className="mt-6 space-y-2 text-center">
+          <p role="status" aria-live="polite" className="text-sm font-medium text-foreground">
+            {t("magicLink.checkInbox")}
           </p>
-        ) : null}
-        <Button
-          type="submit"
-          variant="default"
-          size="control"
-          disabled={loading}
-          className="w-full hover:bg-primary/80"
-        >
-          {loading ? t("pleaseWait") : isLogin ? t("submit.login") : t("submit.signup")}
-        </Button>
-      </form>
+          <p className="text-sm text-muted-foreground">{t("magicLink.sentTo", { email })}</p>
+        </div>
+      ) : (
+        <form className="mt-6 space-y-4" onSubmit={onSubmit} aria-busy={loading}>
+          <div>
+            <Label className="mb-1">{t("email")}</Label>
+            <Input
+              type="email"
+              required
+              autoComplete="email"
+              value={email}
+              onChange={(e) =>
+                dispatch({ type: "SET_FIELD", field: "email", value: e.target.value })
+              }
+              aria-describedby={message ? messageId : undefined}
+              aria-invalid={messageType === "error" && Boolean(message)}
+            />
+          </div>
+          {!showingMagicLink ? (
+            <>
+              <div>
+                <Label className="mb-1">{t("password")}</Label>
+                <Input
+                  type="password"
+                  required
+                  minLength={12}
+                  autoComplete={isLogin ? "current-password" : "new-password"}
+                  value={password}
+                  onChange={(e) =>
+                    dispatch({ type: "SET_FIELD", field: "password", value: e.target.value })
+                  }
+                  aria-describedby={passwordDescribedBy || undefined}
+                  aria-invalid={messageType === "error" && Boolean(message)}
+                />
+              </div>
+              {!isLogin ? (
+                <p id={passwordHintId} className="text-xs text-muted-foreground">
+                  {t("passwordHint")}
+                </p>
+              ) : null}
+            </>
+          ) : null}
+          <Button
+            type="submit"
+            variant="default"
+            size="control"
+            disabled={loading}
+            className="w-full hover:bg-primary/80"
+          >
+            {loading
+              ? t("pleaseWait")
+              : showingMagicLink
+                ? t("magicLink.sendLink")
+                : isLogin
+                  ? t("submit.login")
+                  : t("submit.signup")}
+          </Button>
+          {hasPasswordToggle ? (
+            <button
+              type="button"
+              onClick={() => dispatch({ type: "TOGGLE_PASSWORD_FORM" })}
+              className="w-full text-center text-sm font-medium text-primary hover:opacity-90"
+            >
+              {showPasswordForm
+                ? t("magicLink.useMagicLinkInstead")
+                : t("magicLink.usePasswordInstead")}
+            </button>
+          ) : null}
+        </form>
+      )}
 
       {message ? (
         <p
@@ -322,9 +401,11 @@ export function AuthForm({
               {t("signUp")}
             </Link>
           </p>
-          <Link href="/forgot-password" className="font-medium text-primary hover:opacity-90">
-            {t("forgotPassword")}
-          </Link>
+          {!showingMagicLink ? (
+            <Link href="/forgot-password" className="font-medium text-primary hover:opacity-90">
+              {t("forgotPassword")}
+            </Link>
+          ) : null}
         </div>
       ) : (
         <p className="mt-5 text-sm text-muted-foreground">

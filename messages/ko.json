@@ -80,6 +80,13 @@
       "login": "로그인",
       "signup": "계정 만들기"
     },
+    "magicLink": {
+      "sendLink": "매직 링크 보내기",
+      "checkInbox": "받은편지함에서 로그인 링크를 확인하세요.",
+      "sentTo": "{email}로 링크를 보냈습니다",
+      "usePasswordInstead": "대신 비밀번호 사용",
+      "useMagicLinkInstead": "대신 매직 링크 사용"
+    },
     "needAccount": "계정이 필요하신가요?",
     "signUp": "가입하기",
     "forgotPassword": "비밀번호를 잊으셨나요?",
@@ -892,6 +899,21 @@
       "userId": "사용자 ID: {userId}",
       "email": "이메일: {email}",
       "messageLabel": "메시지:"
+    }
+  },
+  "ApiAuthMagicLink": {
+    "messages": {
+      "genericSuccess": "해당 이메일에 계정이 있는 경우 로그인 링크가 전송되었습니다."
+    },
+    "errors": {
+      "payloadTooLarge": "요청이 너무 큽니다.",
+      "magicLinkDisabled": "매직 링크 인증이 활성화되어 있지 않습니다."
+    },
+    "email": {
+      "subject": "계정에 로그인",
+      "line1": "아래 링크를 클릭하여 로그인하세요.",
+      "useLink": "이 링크를 사용하여 계속하세요:",
+      "ignoreIfNotRequested": "요청하지 않은 경우 이 이메일을 무시하셔도 됩니다."
     }
   },
   "ApiForgotPassword": {

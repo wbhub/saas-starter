@@ -80,6 +80,13 @@
       "login": "登录",
       "signup": "创建账户"
     },
+    "magicLink": {
+      "sendLink": "发送魔法链接",
+      "checkInbox": "请查看您的收件箱获取登录链接。",
+      "sentTo": "我们已向 {email} 发送了链接",
+      "usePasswordInstead": "改用密码登录",
+      "useMagicLinkInstead": "改用魔法链接登录"
+    },
     "needAccount": "需要帐户吗？",
     "signUp": "报名",
     "forgotPassword": "忘记密码？",
@@ -892,6 +899,21 @@
       "userId": "用户 ID：{userId}",
       "email": "电子邮件： {email}",
       "messageLabel": "信息："
+    }
+  },
+  "ApiAuthMagicLink": {
+    "messages": {
+      "genericSuccess": "如果该邮箱存在账户，登录链接已发送。"
+    },
+    "errors": {
+      "payloadTooLarge": "请求内容过大。",
+      "magicLinkDisabled": "魔法链接认证未启用。"
+    },
+    "email": {
+      "subject": "登录您的账户",
+      "line1": "点击以下链接登录您的账户。",
+      "useLink": "使用此链接继续：",
+      "ignoreIfNotRequested": "如果您未请求此操作，可以忽略此邮件。"
     }
   },
   "ApiForgotPassword": {

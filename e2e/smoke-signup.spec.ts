@@ -17,8 +17,14 @@ test.describe("@smoke signup flow", () => {
     });
 
     await page.goto("/signup");
+    const passwordField = page.getByLabel("Password");
+    if (!(await passwordField.isVisible())) {
+      const usePasswordButton = page.getByRole("button", { name: "Use password instead" });
+      test.skip(!(await usePasswordButton.isVisible()), "Password signup is not available.");
+      await usePasswordButton.click();
+    }
     await page.getByLabel("Email").fill(`e2e+${Date.now()}@example.com`);
-    await page.getByLabel("Password").fill("supersecurepass123");
+    await passwordField.fill("supersecurepass123");
     await page.getByRole("button", { name: "Create Account" }).click();
 
     await expect(page.locator("#signup-auth-message")).toBeVisible();
@@ -34,8 +40,14 @@ test.describe("@smoke signup flow", () => {
     );
 
     await page.goto("/signup");
+    const passwordField = page.getByLabel("Password");
+    if (!(await passwordField.isVisible())) {
+      const usePasswordButton = page.getByRole("button", { name: "Use password instead" });
+      test.skip(!(await usePasswordButton.isVisible()), "Password signup is not available.");
+      await usePasswordButton.click();
+    }
     await page.getByLabel("Email").fill(`e2e+${Date.now()}@example.com`);
-    await page.getByLabel("Password").fill("supersecurepass123");
+    await passwordField.fill("supersecurepass123");
     await page.getByRole("button", { name: "Create Account" }).click();
 
     await page.waitForURL(/\/dashboard(?:\?|$)/, { timeout: 30_000 });

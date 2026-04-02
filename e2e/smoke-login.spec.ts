@@ -6,8 +6,14 @@ test.describe("@smoke login flow", () => {
     test.skip(!hasSeededOwner(), "Missing seeded owner credentials.");
 
     await page.goto("/login");
+    const passwordField = page.getByLabel("Password");
+    if (!(await passwordField.isVisible())) {
+      const usePasswordButton = page.getByRole("button", { name: "Use password instead" });
+      test.skip(!(await usePasswordButton.isVisible()), "Password login is not available.");
+      await usePasswordButton.click();
+    }
     await page.getByLabel("Email").fill(seededUsers.owner.email);
-    await page.getByLabel("Password").fill(seededUsers.owner.password);
+    await passwordField.fill(seededUsers.owner.password);
     await page.getByRole("button", { name: "Log In" }).click();
 
     await expect(page).toHaveURL(/\/dashboard(?:\?|$)/);
