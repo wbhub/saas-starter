@@ -305,6 +305,18 @@
       "delete": "Thread löschen"
     }
   },
+  "ApiAiThreads": {
+    "errors": {
+      "unauthorized": "Nicht autorisiert.",
+      "noTeamMembership": "Keine Teammitgliedschaft gefunden.",
+      "rateLimited": "Zu viele Anfragen. Bitte versuche es in Kürze erneut.",
+      "invalidPayload": "Ungültige Anfrage.",
+      "invalidThreadId": "Ungültige Thread-ID.",
+      "threadNotFound": "Thread nicht gefunden.",
+      "createFailed": "Thread konnte nicht erstellt werden.",
+      "deleteFailed": "Thread konnte nicht gelöscht werden."
+    }
+  },
   "AiObjectCard": {
     "title": "KI-strukturierte Ausgabe",
     "description": "Analysiere Text mit KI und erhalte typisierte, strukturierte Ergebnisse in Echtzeit.",
@@ -313,6 +325,9 @@
       "analyze": "Analysieren",
       "analyzing": "Wird analysiert...",
       "stop": "Stopp"
+    },
+    "schemaSelector": {
+      "label": "Analysetyp"
     },
     "result": {
       "sentiment": "Stimmung",
@@ -1041,7 +1056,8 @@
       "planRequired": "Für den KI-Zugriff ist ein berechtigter kostenpflichtiger Plan erforderlich.",
       "upstreamRateLimited": "Der KI-Anbieter ist derzeit rate-limitiert. Bitte versuche es in Kürze erneut.",
       "upstreamBadRequest": "Diese KI-Anfrage konnte nicht verarbeitet werden. Passe deine Eingabe an und versuche es erneut.",
-      "unavailable": "Der KI-Assistent ist derzeit nicht verfügbar."
+      "unavailable": "Der KI-Assistent ist derzeit nicht verfügbar.",
+      "threadNotFound": "Thread nicht gefunden."
     }
   },
   "ApiStripeCheckout": {

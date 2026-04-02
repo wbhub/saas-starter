@@ -305,6 +305,18 @@
       "delete": "Supprimer la conversation"
     }
   },
+  "ApiAiThreads": {
+    "errors": {
+      "unauthorized": "Non autorisé.",
+      "noTeamMembership": "Aucune adhésion à une équipe trouvée.",
+      "rateLimited": "Trop de requêtes. Veuillez réessayer dans quelques instants.",
+      "invalidPayload": "Requête invalide.",
+      "invalidThreadId": "ID de conversation invalide.",
+      "threadNotFound": "Conversation introuvable.",
+      "createFailed": "Échec de la création de la conversation.",
+      "deleteFailed": "Échec de la suppression de la conversation."
+    }
+  },
   "AiObjectCard": {
     "title": "Sortie structurée IA",
     "description": "Analysez du texte avec l'IA et recevez des résultats typés et structurés en temps réel.",
@@ -313,6 +325,9 @@
       "analyze": "Analyser",
       "analyzing": "Analyse en cours...",
       "stop": "Arrêt"
+    },
+    "schemaSelector": {
+      "label": "Type d'analyse"
     },
     "result": {
       "sentiment": "Sentiment",
@@ -1041,7 +1056,8 @@
       "planRequired": "L’accès à l’IA nécessite un forfait payant éligible.",
       "upstreamRateLimited": "Le fournisseur d’IA a actuellement un tarif limité. Veuillez réessayer sous peu.",
       "upstreamBadRequest": "Cette demande AI n'a pas pu être traitée. Ajustez votre saisie et réessayez.",
-      "unavailable": "L'assistant IA est actuellement indisponible."
+      "unavailable": "L'assistant IA est actuellement indisponible.",
+      "threadNotFound": "Conversation introuvable."
     }
   },
   "ApiStripeCheckout": {

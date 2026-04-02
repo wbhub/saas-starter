@@ -305,6 +305,18 @@
       "delete": "スレッドを削除"
     }
   },
+  "ApiAiThreads": {
+    "errors": {
+      "unauthorized": "認証されていません。",
+      "noTeamMembership": "チームメンバーシップが見つかりません。",
+      "rateLimited": "リクエストが多すぎます。しばらくしてからもう一度お試しください。",
+      "invalidPayload": "無効なリクエストです。",
+      "invalidThreadId": "無効なスレッドIDです。",
+      "threadNotFound": "スレッドが見つかりません。",
+      "createFailed": "スレッドの作成に失敗しました。",
+      "deleteFailed": "スレッドの削除に失敗しました。"
+    }
+  },
   "AiObjectCard": {
     "title": "AI 構造化出力",
     "description": "AI でテキストを分析し、型付きの構造化された結果をリアルタイムで受信します。",
@@ -313,6 +325,9 @@
       "analyze": "分析",
       "analyzing": "分析中...",
       "stop": "停止"
+    },
+    "schemaSelector": {
+      "label": "分析タイプ"
     },
     "result": {
       "sentiment": "感情",
@@ -1041,7 +1056,8 @@
       "planRequired": "AI へのアクセスには対象の有料プランが必要です。",
       "upstreamRateLimited": "AI プロバイダーは現在レート制限中です。しばらくしてから再試行してください。",
       "upstreamBadRequest": "この AI リクエストは処理できませんでした。入力を調整して再試行してください。",
-      "unavailable": "AI アシスタントは現在利用できません。"
+      "unavailable": "AI アシスタントは現在利用できません。",
+      "threadNotFound": "スレッドが見つかりません。"
     }
   },
   "ApiStripeCheckout": {

@@ -305,6 +305,18 @@
       "delete": "删除对话"
     }
   },
+  "ApiAiThreads": {
+    "errors": {
+      "unauthorized": "未授权。",
+      "noTeamMembership": "未找到团队成员身份。",
+      "rateLimited": "请求过多。请稍后重试。",
+      "invalidPayload": "无效请求。",
+      "invalidThreadId": "无效的对话 ID。",
+      "threadNotFound": "未找到对话。",
+      "createFailed": "创建对话失败。",
+      "deleteFailed": "删除对话失败。"
+    }
+  },
   "AiObjectCard": {
     "title": "AI 结构化输出",
     "description": "使用 AI 分析文本，实时接收类型化的结构化结果。",
@@ -313,6 +325,9 @@
       "analyze": "分析",
       "analyzing": "分析中...",
       "stop": "停止"
+    },
+    "schemaSelector": {
+      "label": "分析类型"
     },
     "result": {
       "sentiment": "情感",
@@ -1041,7 +1056,8 @@
       "planRequired": "AI 访问需要符合条件的付费计划。",
       "upstreamRateLimited": "AI 提供商目前受到费率限制。请稍后重试。",
       "upstreamBadRequest": "无法处理此 AI 请求。调整您的输入并重试。",
-      "unavailable": "AI助手目前不可用。"
+      "unavailable": "AI助手目前不可用。",
+      "threadNotFound": "未找到对话。"
     }
   },
   "ApiStripeCheckout": {

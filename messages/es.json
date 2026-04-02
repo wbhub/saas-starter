@@ -305,6 +305,18 @@
       "delete": "Eliminar conversación"
     }
   },
+  "ApiAiThreads": {
+    "errors": {
+      "unauthorized": "No autorizado.",
+      "noTeamMembership": "No se encontró ninguna membresía de equipo.",
+      "rateLimited": "Demasiadas solicitudes. Vuelve a intentarlo en breve.",
+      "invalidPayload": "Solicitud inválida.",
+      "invalidThreadId": "ID de conversación inválido.",
+      "threadNotFound": "Conversación no encontrada.",
+      "createFailed": "No se pudo crear la conversación.",
+      "deleteFailed": "No se pudo eliminar la conversación."
+    }
+  },
   "AiObjectCard": {
     "title": "Salida estructurada de AI",
     "description": "Analiza texto con AI y recibe resultados tipados y estructurados en tiempo real.",
@@ -313,6 +325,9 @@
       "analyze": "Analizar",
       "analyzing": "Analizando...",
       "stop": "Detener"
+    },
+    "schemaSelector": {
+      "label": "Tipo de análisis"
     },
     "result": {
       "sentiment": "Sentimiento",
@@ -1041,7 +1056,8 @@
       "planRequired": "El acceso a AI requiere un plan de pago elegible.",
       "upstreamRateLimited": "El proveedor de AI está limitado temporalmente. Inténtalo de nuevo en breve.",
       "upstreamBadRequest": "La solicitud de AI no se pudo procesar. Ajusta tu entrada e inténtalo nuevamente.",
-      "unavailable": "El asistente de AI no está disponible actualmente."
+      "unavailable": "El asistente de AI no está disponible actualmente.",
+      "threadNotFound": "Conversación no encontrada."
     }
   },
   "ApiStripeCheckout": {
