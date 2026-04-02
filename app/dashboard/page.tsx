@@ -9,6 +9,12 @@ import { type PlanKey, type SubscriptionStatus } from "@/lib/stripe/plans";
 import { getDashboardShellData } from "@/lib/dashboard/server";
 import { cn } from "@/lib/utils";
 
+/** Same scale as `DashboardDetailField` / billing subscription rows */
+const metaLabel = "text-xs font-medium leading-normal text-muted-foreground";
+const metaValue = "text-sm font-medium leading-normal text-foreground";
+const metaValueMono = cn(metaValue, "break-all font-mono");
+const metaRow = "flex flex-col gap-0.5";
+
 function subscriptionStatusLabel(translate: (key: string) => string, status: SubscriptionStatus) {
   return translate(`currentSubscription.statusLabels.${status}`);
 }
@@ -68,35 +74,31 @@ export default async function DashboardPage() {
           title={t("DashboardPage.account")}
           description={t("DashboardPage.accountDescription")}
         >
-          <dl className="space-y-4">
-            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-              <dt className="text-muted-foreground">{t("DashboardPage.userId")}</dt>
-              <dd className="break-all font-mono text-xs sm:max-w-[min(100%,28rem)] sm:text-right">
-                {user.id}
-              </dd>
+          <dl className="grid gap-5 sm:grid-cols-2">
+            <div className={metaRow}>
+              <dt className={metaLabel}>{t("DashboardPage.userId")}</dt>
+              <dd className={metaValueMono}>{user.id}</dd>
             </div>
             {user.email ? (
-              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                <dt className="text-muted-foreground">{t("DashboardPage.email")}</dt>
-                <dd className="break-all text-sm font-medium sm:text-right">{user.email}</dd>
+              <div className={metaRow}>
+                <dt className={metaLabel}>{t("DashboardPage.email")}</dt>
+                <dd className={cn(metaValue, "break-all")}>{user.email}</dd>
               </div>
             ) : null}
-            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-              <dt className="text-muted-foreground">{t("DashboardPage.teamId")}</dt>
-              <dd className="break-all font-mono text-xs sm:max-w-[min(100%,28rem)] sm:text-right">
-                {teamContext.teamId}
-              </dd>
+            <div className={metaRow}>
+              <dt className={metaLabel}>{t("DashboardPage.teamId")}</dt>
+              <dd className={metaValueMono}>{teamContext.teamId}</dd>
             </div>
             {teamUiMode !== "free" ? (
               <>
-                <div className="flex items-center justify-between">
-                  <dt className="text-muted-foreground">{t("DashboardPage.team")}</dt>
-                  <dd className="truncate font-medium">
+                <div className={metaRow}>
+                  <dt className={metaLabel}>{t("DashboardPage.team")}</dt>
+                  <dd className={cn(metaValue, "min-w-0 truncate")}>
                     {teamContext.teamName ?? t("Common.myTeam")}
                   </dd>
                 </div>
-                <div className="flex items-center justify-between">
-                  <dt className="text-muted-foreground">{t("DashboardPage.role")}</dt>
+                <div className={metaRow}>
+                  <dt className={metaLabel}>{t("DashboardPage.role")}</dt>
                   <dd>
                     <Badge variant="secondary" className="capitalize">
                       {teamContext.role}
@@ -105,9 +107,9 @@ export default async function DashboardPage() {
                 </div>
               </>
             ) : null}
-            <div className="flex items-center justify-between">
-              <dt className="text-muted-foreground">{t("DashboardPage.memberSince")}</dt>
-              <dd>{formatUtcDate(profile?.created_at ?? user.created_at)}</dd>
+            <div className={metaRow}>
+              <dt className={metaLabel}>{t("DashboardPage.memberSince")}</dt>
+              <dd className={metaValue}>{formatUtcDate(profile?.created_at ?? user.created_at)}</dd>
             </div>
           </dl>
           <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
@@ -129,36 +131,34 @@ export default async function DashboardPage() {
             </div>
           ) : subscription ? (
             <>
-              <dl className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <dt className="text-muted-foreground">{t("DashboardPage.currentPlan")}</dt>
-                  <dd className="font-medium">
+              <dl className="grid gap-5 sm:grid-cols-2">
+                <div className={metaRow}>
+                  <dt className={metaLabel}>{t("DashboardPage.currentPlan")}</dt>
+                  <dd className={metaValue}>
                     {currentPaidPlanKey
                       ? tPlans(`plans.${currentPaidPlanKey}.name`)
                       : t("DashboardPage.unknown")}
                   </dd>
                 </div>
-                <div className="flex items-center justify-between">
-                  <dt className="text-muted-foreground">{t("DashboardPage.status")}</dt>
+                <div className={metaRow}>
+                  <dt className={metaLabel}>{t("DashboardPage.status")}</dt>
                   <dd>
                     <Badge variant={subscriptionStatusBadgeVariant(subscription.status)}>
                       {subscriptionStatusLabel(tBilling, subscription.status)}
                     </Badge>
                   </dd>
                 </div>
-                <div className="flex items-center justify-between">
-                  <dt className="text-muted-foreground">{t("DashboardPage.seats")}</dt>
-                  <dd className="font-medium">{subscription.seat_quantity}</dd>
+                <div className={metaRow}>
+                  <dt className={metaLabel}>{t("DashboardPage.seats")}</dt>
+                  <dd className={cn(metaValue, "tabular-nums")}>{subscription.seat_quantity}</dd>
                 </div>
-                <div className="flex items-center justify-between">
-                  <dt className="text-muted-foreground">{t("DashboardPage.teamMembers")}</dt>
-                  <dd className="font-medium">{memberCount}</dd>
+                <div className={metaRow}>
+                  <dt className={metaLabel}>{t("DashboardPage.teamMembers")}</dt>
+                  <dd className={cn(metaValue, "tabular-nums")}>{memberCount}</dd>
                 </div>
-                <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
-                  <dt className="text-muted-foreground">
-                    {tBilling("currentSubscription.billingInterval")}
-                  </dt>
-                  <dd className="font-medium sm:text-right">
+                <div className={metaRow}>
+                  <dt className={metaLabel}>{tBilling("currentSubscription.billingInterval")}</dt>
+                  <dd className={metaValue}>
                     {billingInterval === "year"
                       ? tBilling("currentSubscription.annual")
                       : billingInterval === "month"
@@ -166,21 +166,17 @@ export default async function DashboardPage() {
                         : tBilling("currentSubscription.notAvailable")}
                   </dd>
                 </div>
-                <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
-                  <dt className="text-muted-foreground">
-                    {tBilling("currentSubscription.periodEnd")}
-                  </dt>
-                  <dd className="font-medium sm:text-right">
+                <div className={metaRow}>
+                  <dt className={metaLabel}>{tBilling("currentSubscription.periodEnd")}</dt>
+                  <dd className={metaValue}>
                     {subscription.current_period_end
                       ? formatUtcDate(subscription.current_period_end, undefined, locale)
                       : tBilling("currentSubscription.notAvailable")}
                   </dd>
                 </div>
-                <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
-                  <dt className="text-muted-foreground">{t("DashboardPage.stripePriceId")}</dt>
-                  <dd className="break-all font-mono text-xs sm:max-w-[min(100%,28rem)] sm:text-right">
-                    {subscription.stripe_price_id}
-                  </dd>
+                <div className={metaRow}>
+                  <dt className={metaLabel}>{t("DashboardPage.stripePriceId")}</dt>
+                  <dd className={metaValueMono}>{subscription.stripe_price_id ?? "—"}</dd>
                 </div>
               </dl>
               {subscription.cancel_at_period_end ? (
