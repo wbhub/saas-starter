@@ -163,6 +163,7 @@ If you want `/dashboard/ai` and `/api/ai/chat`:
 - Note: attachment `fileId` sources are OpenAI-only; for other providers, use `url` or `data`.
 - (Recommended) Set `AI_MODEL_MODALITIES_MAP_JSON` so model capability checks are explicit per provider/model
 - Configure AI policy vars in `.env.example` (`AI_ACCESS_MODE`, plan/model/budget settings)
+- AI file uploads are capped server-side at 25 MiB per file, with about 256 KiB of extra multipart overhead allowed before the route buffers the body. See `MAGIC_NUMBERS.md` for the rationale.
 - (Optional) Enable agent tool-calling: set `AI_TOOLS_ENABLED=true` and `NEXT_PUBLIC_AI_TOOLS_ENABLED=true`. Set `AI_MAX_STEPS` to control how many steps the agent loop can take per request (default 5 when tools are enabled). When tools are disabled, chat remains single-turn. Tools are defined in `lib/ai/tools/`. Per-plan `maxSteps` can be configured via `AI_PLAN_RULES_JSON`.
 - (Optional) Tool integrations (each enabled when its API key is set):
   - `E2B_API_KEY` -- isolated code execution via E2B Code Interpreter
