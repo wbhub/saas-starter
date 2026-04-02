@@ -53,19 +53,17 @@ describe("getOrCreateStripeCustomerForTeam", () => {
         teamId: "team_123",
         userId: "user_123",
         email: "owner@example.com",
-        idempotencyKey: "checkout:team_123:starter:token:customer",
+        idempotencyKey: "checkout-customer:team_123",
       }),
     ).resolves.toBe("cus_new");
 
     expect(customerCreate).toHaveBeenCalledWith(
       {
-        email: "owner@example.com",
         metadata: {
           supabase_team_id: "team_123",
-          supabase_user_id: "user_123",
         },
       },
-      { idempotencyKey: "checkout:team_123:starter:token:customer" },
+      { idempotencyKey: "checkout-customer:team_123" },
     );
     expect(upsert).toHaveBeenCalledWith(
       {
@@ -74,6 +72,13 @@ describe("getOrCreateStripeCustomerForTeam", () => {
       },
       { onConflict: "team_id" },
     );
+    expect(customerUpdate).toHaveBeenCalledWith("cus_new", {
+      email: "owner@example.com",
+      metadata: {
+        supabase_team_id: "team_123",
+        supabase_user_id: "user_123",
+      },
+    });
   });
 
   it("backfills ownership metadata onto an existing Stripe customer", async () => {
@@ -83,7 +88,7 @@ describe("getOrCreateStripeCustomerForTeam", () => {
     });
     customerRetrieve.mockResolvedValue({
       id: "cus_existing",
-      email: null,
+      email: "old-owner@example.com",
       metadata: {},
     });
 
@@ -100,7 +105,7 @@ describe("getOrCreateStripeCustomerForTeam", () => {
         teamId: "team_123",
         userId: "user_123",
         email: "owner@example.com",
-        idempotencyKey: "checkout:team_123:starter:token:customer",
+        idempotencyKey: "checkout-customer:team_123",
       }),
     ).resolves.toBe("cus_existing");
 

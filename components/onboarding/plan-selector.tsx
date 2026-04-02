@@ -40,8 +40,8 @@ function formatUsd(amount: number) {
   }).format(amount);
 }
 
-function createIdempotencyToken(planKey: string) {
-  const storageKey = `onboarding-checkout:${planKey}`;
+function createIdempotencyToken(planKey: string, interval: PlanInterval) {
+  const storageKey = `onboarding-checkout:${planKey}:${interval}`;
   const now = Date.now();
   const ttlMs = 10 * 60 * 1000;
 
@@ -68,7 +68,7 @@ function createIdempotencyToken(planKey: string) {
     typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
       ? crypto.randomUUID()
       : `${Math.random().toString(36).slice(2)}-${now.toString(36)}`;
-  const token = `onboarding-${planKey}-${randomPart}`;
+  const token = `onboarding-${planKey}-${interval}-${randomPart}`;
   try {
     window.sessionStorage.setItem(storageKey, JSON.stringify({ token, expiresAt: now + ttlMs }));
   } catch {
@@ -138,7 +138,7 @@ export function OnboardingPlanSelector({
         { planKey, interval, source: "onboarding" },
         {
           fallbackErrorMessage: t("errors.checkoutFailed"),
-          headers: { "x-idempotency-key": createIdempotencyToken(planKey) },
+          headers: { "x-idempotency-key": createIdempotencyToken(planKey, interval) },
         },
       );
       if (!data.url) throw new Error(t("errors.missingCheckoutUrl"));

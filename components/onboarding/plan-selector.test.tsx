@@ -92,7 +92,7 @@ describe("OnboardingPlanSelector", () => {
           headers: expect.objectContaining({
             "Content-Type": "application/json",
             "x-csrf-token": "csrf-token",
-            "x-idempotency-key": expect.any(String),
+            "x-idempotency-key": expect.stringMatching(/^onboarding-starter-year-/),
           }),
           body: JSON.stringify({
             planKey: "starter",

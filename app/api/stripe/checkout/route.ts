@@ -28,14 +28,19 @@ type ExistingSubscriptionRow = {
   stripe_subscription_id: string | null;
 };
 
-function getCheckoutIdempotencyKey(request: Request, teamId: string, planKey: string) {
+function getCheckoutIdempotencyKey(
+  request: Request,
+  teamId: string,
+  planKey: string,
+  interval: "month" | "year",
+) {
   const rawKey = request.headers.get("x-idempotency-key")?.trim();
   if (!rawKey) {
     return undefined;
   }
 
   const safeKey = rawKey.slice(0, 80);
-  return `checkout:${teamId}:${planKey}:${safeKey}`;
+  return `checkout:${teamId}:${planKey}:${interval}:${safeKey}`;
 }
 
 function getScopedIdempotencyKey(baseKey: string | undefined, scope: string) {
@@ -44,6 +49,10 @@ function getScopedIdempotencyKey(baseKey: string | undefined, scope: string) {
   }
 
   return `${baseKey}:${scope}`;
+}
+
+function getCheckoutCustomerIdempotencyKey(teamId: string) {
+  return `checkout-customer:${teamId}`;
 }
 
 export async function POST(req: Request) {
@@ -123,7 +132,12 @@ export async function POST(req: Request) {
   if (!resolvedPriceId) {
     return err(t("errors.billingPlansNotConfigured"), 503);
   }
-  const idempotencyKey = getCheckoutIdempotencyKey(req, teamContext.teamId, plan.key);
+  const idempotencyKey = getCheckoutIdempotencyKey(
+    req,
+    teamContext.teamId,
+    plan.key,
+    requestedInterval,
+  );
 
   const inFlightCheckout = await checkRateLimit({
     key: `stripe-checkout:inflight:${teamContext.teamId}:${plan.key}`,
@@ -155,13 +169,14 @@ export async function POST(req: Request) {
   }
 
   try {
-    const customerIdempotencyKey = getScopedIdempotencyKey(idempotencyKey, "customer");
     const customerId = await getOrCreateStripeCustomerForTeam({
       stripe,
       teamId: teamContext.teamId,
       userId: user.id,
       email: user.email,
-      idempotencyKey: customerIdempotencyKey,
+      // Keep customer creation idempotent per team so concurrent checkout attempts
+      // cannot create duplicate Stripe customers before the DB mapping is written.
+      idempotencyKey: getCheckoutCustomerIdempotencyKey(teamContext.teamId),
     });
     const appUrl = getAppUrl();
 

@@ -244,4 +244,33 @@ describe("POST /api/ai/files", () => {
     });
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it("rejects oversized uploads before calling the provider", async () => {
+    providerMockState.aiProviderName = "openai";
+    vi.stubEnv("OPENAI_API_KEY", "test-openai-key");
+
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { POST } = await import("./route");
+    const formData = new FormData();
+    formData.set("file", new File(["%PDF-1.4"], "contract.pdf", { type: "application/pdf" }));
+
+    const response = await POST(
+      new Request("http://localhost/api/ai/files", {
+        method: "POST",
+        headers: {
+          "content-length": String(26 * 1024 * 1024),
+        },
+        body: formData,
+      }),
+    );
+
+    expect(response.status).toBe(413);
+    await expect(response.json()).resolves.toEqual({
+      ok: false,
+      error: "Request payload is too large.",
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 });

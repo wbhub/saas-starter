@@ -102,6 +102,7 @@ describe("POST /api/ai/object finalize retry enqueue", () => {
       isAiProviderConfigured: true,
       supportsOpenAiFileIds: true,
       providerSupportsModalities: vi.fn().mockReturnValue(true),
+      isRequestedModelAllowed: vi.fn().mockReturnValue(true),
       getAiLanguageModel: vi.fn().mockReturnValue("provider-model"),
     }));
     // streamObject throws so the catch block runs, triggering finalize with 0 tokens

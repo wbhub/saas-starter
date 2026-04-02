@@ -358,6 +358,7 @@ export function AiChatCard({
 
   const errorMessagesByCode = {
     budget_exceeded: t("errors.budgetExceeded"),
+    invalid_model: t("errors.requestFailed"),
     modality_not_allowed: t("errors.modalityNotAllowed"),
     plan_required: t("errors.planRequired"),
     upstream_rate_limited: t("errors.upstreamRateLimited"),

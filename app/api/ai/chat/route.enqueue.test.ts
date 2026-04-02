@@ -111,6 +111,7 @@ describe("POST /api/ai/chat finalize retry enqueue", () => {
       isAiProviderConfigured: true,
       supportsProviderFileIds: true,
       providerSupportsModalities: vi.fn().mockReturnValue(true),
+      isRequestedModelAllowed: vi.fn().mockReturnValue(true),
       getAiLanguageModel: vi.fn().mockReturnValue("provider-model"),
     }));
     vi.doMock("ai", async () => {

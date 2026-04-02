@@ -79,6 +79,7 @@ describe("POST /api/ai/object access and gating", () => {
       isAiProviderConfigured: true,
       supportsOpenAiFileIds: true,
       providerSupportsModalities: vi.fn().mockReturnValue(true),
+      isRequestedModelAllowed: vi.fn().mockReturnValue(true),
       getAiLanguageModel: vi.fn().mockReturnValue("provider-model"),
     }));
     vi.doMock("@/lib/ai/budget-finalize-retries", () => ({

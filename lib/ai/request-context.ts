@@ -17,6 +17,7 @@ import {
   aiProviderName,
   getAiLanguageModel,
   isAiProviderConfigured,
+  isRequestedModelAllowed,
   providerSupportsModalities,
 } from "@/lib/ai/provider";
 import { type EffectivePlanKey, resolveEffectivePlanKey } from "@/lib/billing/effective-plan";
@@ -334,9 +335,40 @@ export async function resolveAiRequestContext<TSchema extends ZodType>(
     };
   }
 
-  const requestedModel = (body as { modelId?: string }).modelId;
-  const model =
-    requestedModel && typeof requestedModel === "string" ? requestedModel : aiAccess.model;
+  const requestedModelRaw = (body as { modelId?: string }).modelId;
+  const requestedModel =
+    typeof requestedModelRaw === "string" ? requestedModelRaw.trim() : undefined;
+
+  if (
+    requestedModel &&
+    !isRequestedModelAllowed({
+      requestedModel,
+      accessMode: aiAccessMode,
+      allowedModel: aiAccess.model,
+    })
+  ) {
+    logAuditEvent({
+      action: config.auditAction,
+      outcome: "denied",
+      actorUserId: user.id,
+      teamId: teamContext.teamId,
+      metadata: {
+        reason: "model_not_allowed",
+        planKey: effectivePlanKey,
+        accessMode: aiAccessMode,
+        requestedModel,
+        allowedModel: aiAccess.model,
+        requestModalities,
+        attachmentCounts,
+      },
+    });
+    return {
+      ok: false,
+      response: err(t("errors.invalidPayload"), 400, { code: "invalid_model" }),
+    };
+  }
+
+  const model = requestedModel || aiAccess.model;
 
   // ── Modality validation ──
   const disallowedModality = requestModalities.find(

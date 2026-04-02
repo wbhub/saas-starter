@@ -87,12 +87,14 @@ describe("POST /api/stripe/checkout", () => {
       env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
       getAppUrl: () => "http://localhost:3000",
     }));
-    vi.doMock("@/lib/team-context", () => ({
-      getTeamContextForUser: vi.fn().mockResolvedValue({
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
         teamId: "team_123",
         teamName: "Acme Team",
         role: "owner",
       }),
+    }));
+    vi.doMock("@/lib/team-context", () => ({
       canManageTeamBilling: vi.fn().mockReturnValue(true),
     }));
 
@@ -142,12 +144,14 @@ describe("POST /api/stripe/checkout", () => {
       env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
       getAppUrl: () => "http://localhost:3000",
     }));
-    vi.doMock("@/lib/team-context", () => ({
-      getTeamContextForUser: vi.fn().mockResolvedValue({
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
         teamId: "team_123",
         teamName: "Acme Team",
         role: "member",
       }),
+    }));
+    vi.doMock("@/lib/team-context", () => ({
       canManageTeamBilling: vi.fn().mockReturnValue(false),
     }));
 
@@ -167,7 +171,7 @@ describe("POST /api/stripe/checkout", () => {
     });
   });
 
-  it("creates checkout session with a Stripe customer for first-time users", async () => {
+  it("scopes checkout idempotency keys by billing interval", async () => {
     const subscriptionsMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
 
     const subscriptionsQuery = {
@@ -209,8 +213,13 @@ describe("POST /api/stripe/checkout", () => {
       checkRateLimit: async () => ({ allowed: true, retryAfterSeconds: 0 }),
     }));
     vi.doMock("@/lib/stripe/config", () => ({
-      getPlanByKey: () => ({ key: "starter", priceId: "price_starter" }),
-      getPlanPriceId: () => "price_starter",
+      getPlanByKey: () => ({
+        key: "starter",
+        priceId: "price_starter",
+        annualPriceId: "price_starter_year",
+      }),
+      getPlanPriceId: (_planKey: string, interval: "month" | "year") =>
+        interval === "year" ? "price_starter_year" : "price_starter",
     }));
     vi.doMock("@/lib/stripe/server", () => ({
       getStripeServerClient: () => ({
@@ -221,12 +230,14 @@ describe("POST /api/stripe/checkout", () => {
       env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
       getAppUrl: () => "http://localhost:3000",
     }));
-    vi.doMock("@/lib/team-context", () => ({
-      getTeamContextForUser: vi.fn().mockResolvedValue({
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
         teamId: "team_123",
         teamName: "Acme Team",
         role: "owner",
       }),
+    }));
+    vi.doMock("@/lib/team-context", () => ({
       canManageTeamBilling: vi.fn().mockReturnValue(true),
     }));
 
@@ -238,7 +249,7 @@ describe("POST /api/stripe/checkout", () => {
           "Content-Type": "application/json",
           "x-idempotency-key": "client-key-1",
         },
-        body: JSON.stringify({ planKey: "starter" }),
+        body: JSON.stringify({ planKey: "starter", interval: "year" }),
       }),
     );
 
@@ -252,18 +263,18 @@ describe("POST /api/stripe/checkout", () => {
       teamId: "team_123",
       userId: "user_123",
       email: "user@example.com",
-      idempotencyKey: "checkout:team_123:starter:client-key-1:customer",
+      idempotencyKey: "checkout-customer:team_123",
     });
     expect(sessionsCreate).toHaveBeenCalledWith(
       expect.objectContaining({
         customer: "cus_123",
         client_reference_id: "team_123",
-        line_items: [{ price: "price_starter", quantity: 1 }],
+        line_items: [{ price: "price_starter_year", quantity: 1 }],
         success_url:
           "http://localhost:3000/dashboard/billing?checkout=success&session_id={CHECKOUT_SESSION_ID}",
         cancel_url: "http://localhost:3000/dashboard/billing?checkout=canceled",
       }),
-      { idempotencyKey: "checkout:team_123:starter:client-key-1:session" },
+      { idempotencyKey: "checkout:team_123:starter:year:client-key-1:session" },
     );
   });
 
@@ -303,11 +314,12 @@ describe("POST /api/stripe/checkout", () => {
         }),
       }),
     }));
+    const checkRateLimit = vi
+      .fn()
+      .mockResolvedValueOnce({ allowed: true, retryAfterSeconds: 0 })
+      .mockResolvedValueOnce({ allowed: false, retryAfterSeconds: 8 });
     vi.doMock("@/lib/security/rate-limit", () => ({
-      checkRateLimit: vi
-        .fn()
-        .mockResolvedValueOnce({ allowed: true, retryAfterSeconds: 0 })
-        .mockResolvedValueOnce({ allowed: false, retryAfterSeconds: 8 }),
+      checkRateLimit,
     }));
     vi.doMock("@/lib/stripe/config", () => ({
       getPlanByKey: () => ({ key: "starter", priceId: "price_starter" }),
@@ -327,12 +339,14 @@ describe("POST /api/stripe/checkout", () => {
       env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
       getAppUrl: () => "http://localhost:3000",
     }));
-    vi.doMock("@/lib/team-context", () => ({
-      getTeamContextForUser: vi.fn().mockResolvedValue({
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
         teamId: "team_123",
         teamName: "Acme Team",
         role: "owner",
       }),
+    }));
+    vi.doMock("@/lib/team-context", () => ({
       canManageTeamBilling: vi.fn().mockReturnValue(true),
     }));
 
@@ -341,7 +355,7 @@ describe("POST /api/stripe/checkout", () => {
       new Request("http://localhost/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planKey: "starter" }),
+        body: JSON.stringify({ planKey: "starter", interval: "year" }),
       }),
     );
 
@@ -351,5 +365,11 @@ describe("POST /api/stripe/checkout", () => {
       ok: false,
       error: "Checkout is already in progress. Please wait and try again.",
     });
+    expect(checkRateLimit).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        key: "stripe-checkout:inflight:team_123:starter",
+      }),
+    );
   });
 });
