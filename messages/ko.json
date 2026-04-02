@@ -921,7 +921,8 @@
       "genericSuccess": "해당 이메일의 계정이 있으면 재설정 링크가 전송되었습니다."
     },
     "errors": {
-      "payloadTooLarge": "요청 본문이 너무 큽니다."
+      "payloadTooLarge": "요청 본문이 너무 큽니다.",
+      "passwordResetDisabled": "비밀번호 재설정이 활성화되어 있지 않습니다."
     },
     "email": {
       "subject": "비밀번호 재설정",
@@ -1021,7 +1022,8 @@
       "invalidContentType": "Content-Type은 application/json이어야 합니다.",
       "payloadTooLarge": "요청 본문이 너무 큽니다.",
       "invalidCredentials": "이메일 또는 비밀번호가 잘못되었습니다.",
-      "rateLimited": "로그인 시도가 너무 많습니다. 나중에 다시 시도하세요."
+      "rateLimited": "로그인 시도가 너무 많습니다. 나중에 다시 시도하세요.",
+      "passwordAuthDisabled": "비밀번호 인증이 활성화되어 있지 않습니다."
     }
   },
   "ApiAuthSignup": {
@@ -1037,7 +1039,8 @@
       "invalidEmailOrPassword": "유효한 이메일과 비밀번호를 입력하세요.",
       "passwordComplexity": "비밀번호는 12자 이상 128자 이하여야 합니다.",
       "rateLimited": "가입 시도가 너무 많습니다. 나중에 다시 시도하세요.",
-      "unableToCreateAccount": "계정을 만들 수 없습니다."
+      "unableToCreateAccount": "계정을 만들 수 없습니다.",
+      "passwordSignupDisabled": "비밀번호 가입이 활성화되어 있지 않습니다."
     }
   },
   "ApiAiObject": {

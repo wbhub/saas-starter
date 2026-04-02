@@ -1,10 +1,16 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import { redirect } from "next/navigation";
 import { ForgotPasswordForm } from "@/components/forgot-password-form";
+import { isPasswordAuthEnabled } from "@/lib/auth/social-auth";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 
 export default async function ForgotPasswordPage() {
+  if (!isPasswordAuthEnabled()) {
+    redirect("/login");
+  }
+
   const t = await getTranslations("AuthPages");
 
   return (

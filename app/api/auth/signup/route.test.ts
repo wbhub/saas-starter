@@ -4,6 +4,8 @@ describe("POST /api/auth/signup", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    vi.unstubAllEnvs();
+    vi.stubEnv("NEXT_PUBLIC_AUTH_LOGIN_METHOD", "password");
   });
 
   function mockDeps(
@@ -70,6 +72,23 @@ describe("POST /api/auth/signup", () => {
         password: "correct horse battery staple",
       }),
     );
+  });
+
+  it("returns 403 when password signup is disabled", async () => {
+    const { signUp } = mockDeps();
+    vi.stubEnv("NEXT_PUBLIC_AUTH_LOGIN_METHOD", "magic-link");
+    const { POST } = await import("./route");
+
+    const res = await POST(
+      makeRequest({ email: "new@example.com", password: "correct horse battery staple" }),
+    );
+
+    expect(res.status).toBe(403);
+    await expect(res.json()).resolves.toEqual({
+      ok: false,
+      error: "Password signup is not enabled.",
+    });
+    expect(signUp).not.toHaveBeenCalled();
   });
 
   it("returns 400 when supabase rejects signup", async () => {

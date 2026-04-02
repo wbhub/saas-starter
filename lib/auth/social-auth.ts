@@ -81,6 +81,10 @@ export function getLoginMethod(): LoginMethod {
   return "magic-link";
 }
 
+export function isPasswordAuthEnabled() {
+  return getLoginMethod() !== "magic-link";
+}
+
 export function getSocialProviderOptions(
   providers: AuthProvider[],
   lastUsedProvider: AuthProvider | null,

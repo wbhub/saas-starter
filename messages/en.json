@@ -921,7 +921,8 @@
       "genericSuccess": "If an account exists for that email, a reset link has been sent."
     },
     "errors": {
-      "payloadTooLarge": "Request payload is too large."
+      "payloadTooLarge": "Request payload is too large.",
+      "passwordResetDisabled": "Password reset is not enabled."
     },
     "email": {
       "subject": "Reset your password",
@@ -1021,7 +1022,8 @@
       "invalidContentType": "Content-Type must be application/json.",
       "payloadTooLarge": "Request payload is too large.",
       "invalidCredentials": "Invalid email or password.",
-      "rateLimited": "Too many login attempts. Please try again later."
+      "rateLimited": "Too many login attempts. Please try again later.",
+      "passwordAuthDisabled": "Password authentication is not enabled."
     }
   },
   "ApiAuthSignup": {
@@ -1037,7 +1039,8 @@
       "invalidEmailOrPassword": "Please provide a valid email and password.",
       "passwordComplexity": "Password must be between 12 and 128 characters.",
       "rateLimited": "Too many signup attempts. Please try again later.",
-      "unableToCreateAccount": "Unable to create your account."
+      "unableToCreateAccount": "Unable to create your account.",
+      "passwordSignupDisabled": "Password signup is not enabled."
     }
   },
   "ApiAiObject": {

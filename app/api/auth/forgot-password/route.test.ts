@@ -16,6 +16,7 @@ describe("POST /api/auth/forgot-password", () => {
     vi.resetModules();
     vi.clearAllMocks();
     vi.unstubAllEnvs();
+    vi.stubEnv("NEXT_PUBLIC_AUTH_LOGIN_METHOD", "password");
     vi.doMock("@/lib/security/csrf", () => ({
       verifyCsrfProtection: vi.fn().mockReturnValue(null),
     }));
@@ -54,6 +55,44 @@ describe("POST /api/auth/forgot-password", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
       message: "If an account exists for that email, a reset link has been sent.",
+    });
+  });
+
+  it("returns 403 when password reset is disabled", async () => {
+    vi.stubEnv("NEXT_PUBLIC_AUTH_LOGIN_METHOD", "magic-link");
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: async () => ({ allowed: true, retryAfterSeconds: 0 }),
+    }));
+    vi.doMock("@/lib/http/client-ip", () => ({
+      getClientRateLimitIdentifier: () => ({ keyType: "ip", value: "198.51.100.1" }),
+    }));
+    vi.doMock("@/lib/supabase/admin", () => ({
+      createAdminClient: vi.fn(),
+    }));
+    vi.doMock("@/lib/resend/server", () => ({
+      isResendCustomEmailConfigured: () => true,
+      getResendClientIfConfigured: vi.fn(),
+      getResendFromEmailIfConfigured: vi.fn(),
+      sendResendEmail: vi.fn(),
+    }));
+    vi.doMock("@/lib/env", () => ({
+      env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
+      getAppUrl: () => "http://localhost:3000",
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: "test@example.com" }),
+      }),
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      ok: false,
+      error: "Password reset is not enabled.",
     });
   });
 

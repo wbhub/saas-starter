@@ -921,7 +921,8 @@
       "genericSuccess": "Se existir uma conta para esse e-mail, um link de redefinição foi enviado."
     },
     "errors": {
-      "payloadTooLarge": "A carga útil da solicitação é muito grande."
+      "payloadTooLarge": "A carga útil da solicitação é muito grande.",
+      "passwordResetDisabled": "A redefinição de senha não está habilitada."
     },
     "email": {
       "subject": "Redefinir sua senha",
@@ -1021,7 +1022,8 @@
       "invalidContentType": "O tipo de conteúdo deve ser application/json.",
       "payloadTooLarge": "A carga útil da solicitação é muito grande.",
       "invalidCredentials": "E-mail ou senha inválidos.",
-      "rateLimited": "Muitas tentativas de login. Por favor, tente novamente mais tarde."
+      "rateLimited": "Muitas tentativas de login. Por favor, tente novamente mais tarde.",
+      "passwordAuthDisabled": "A autenticação por senha não está habilitada."
     }
   },
   "ApiAuthSignup": {
@@ -1037,7 +1039,8 @@
       "invalidEmailOrPassword": "Forneça um e-mail e uma senha válidos.",
       "passwordComplexity": "A senha deve ter entre 12 e 128 caracteres.",
       "rateLimited": "Muitas tentativas de inscrição. Por favor, tente novamente mais tarde.",
-      "unableToCreateAccount": "Não foi possível criar sua conta."
+      "unableToCreateAccount": "Não foi possível criar sua conta.",
+      "passwordSignupDisabled": "O cadastro com senha não está habilitado."
     }
   },
   "ApiAiObject": {

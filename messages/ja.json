@@ -921,7 +921,8 @@
       "genericSuccess": "そのメールアドレスのアカウントが存在する場合、再設定リンクを送信しました。"
     },
     "errors": {
-      "payloadTooLarge": "リクエストペイロードが大きすぎます。"
+      "payloadTooLarge": "リクエストペイロードが大きすぎます。",
+      "passwordResetDisabled": "パスワードのリセットは有効になっていません。"
     },
     "email": {
       "subject": "パスワードを再設定",
@@ -1021,7 +1022,8 @@
       "invalidContentType": "Content-Type は application/json である必要があります。",
       "payloadTooLarge": "リクエストペイロードが大きすぎます。",
       "invalidCredentials": "メールアドレスまたはパスワードが正しくありません。",
-      "rateLimited": "ログイン試行回数が多すぎます。後でもう一度お試しください。"
+      "rateLimited": "ログイン試行回数が多すぎます。後でもう一度お試しください。",
+      "passwordAuthDisabled": "パスワード認証は有効になっていません。"
     }
   },
   "ApiAuthSignup": {
@@ -1037,7 +1039,8 @@
       "invalidEmailOrPassword": "有効なメールアドレスとパスワードを入力してください。",
       "passwordComplexity": "パスワードは 12 文字以上 128 文字以下である必要があります。",
       "rateLimited": "サインアップ試行回数が多すぎます。後でもう一度お試しください。",
-      "unableToCreateAccount": "アカウントを作成できません。"
+      "unableToCreateAccount": "アカウントを作成できません。",
+      "passwordSignupDisabled": "パスワードでの新規登録は有効になっていません。"
     }
   },
   "ApiAiObject": {

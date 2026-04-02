@@ -921,7 +921,8 @@
       "genericSuccess": "Falls für diese E-Mail ein Konto existiert, wurde ein Link zum Zurücksetzen gesendet."
     },
     "errors": {
-      "payloadTooLarge": "Die Nutzlast der Anfrage ist zu groß."
+      "payloadTooLarge": "Die Nutzlast der Anfrage ist zu groß.",
+      "passwordResetDisabled": "Das Zurücksetzen des Passworts ist nicht aktiviert."
     },
     "email": {
       "subject": "Setze dein Passwort zurück",
@@ -1021,7 +1022,8 @@
       "invalidContentType": "Content-Type muss application/json sein.",
       "payloadTooLarge": "Die Nutzlast der Anfrage ist zu groß.",
       "invalidCredentials": "Ungültige E-Mail oder ungültiges Passwort.",
-      "rateLimited": "Zu viele Anmeldeversuche. Bitte versuche es später erneut."
+      "rateLimited": "Zu viele Anmeldeversuche. Bitte versuche es später erneut.",
+      "passwordAuthDisabled": "Passwort-Authentifizierung ist nicht aktiviert."
     }
   },
   "ApiAuthSignup": {
@@ -1037,7 +1039,8 @@
       "invalidEmailOrPassword": "Bitte gib eine gültige E-Mail und ein gültiges Passwort an.",
       "passwordComplexity": "Das Passwort muss zwischen 12 und 128 Zeichen lang sein.",
       "rateLimited": "Zu viele Registrierungsversuche. Bitte versuche es später erneut.",
-      "unableToCreateAccount": "Dein Konto konnte nicht erstellt werden."
+      "unableToCreateAccount": "Dein Konto konnte nicht erstellt werden.",
+      "passwordSignupDisabled": "Registrierung mit Passwort ist nicht aktiviert."
     }
   },
   "ApiAiObject": {

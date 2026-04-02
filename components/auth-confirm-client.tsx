@@ -69,7 +69,7 @@ export function AuthConfirmClient() {
         return;
       }
 
-      if (redirectType === "recovery" || safeNext.startsWith("/reset-password")) {
+      if (redirectType === "recovery") {
         saveRecoveryMarker();
       }
 

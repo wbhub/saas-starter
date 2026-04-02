@@ -16,6 +16,8 @@ describe("POST /reset-password/submit", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    vi.unstubAllEnvs();
+    vi.stubEnv("NEXT_PUBLIC_AUTH_LOGIN_METHOD", "password");
     vi.doMock("@/lib/security/csrf", async () => {
       const actual =
         await vi.importActual<typeof import("@/lib/security/csrf")>("@/lib/security/csrf");
@@ -49,6 +51,29 @@ describe("POST /reset-password/submit", () => {
     await expect(response.json()).resolves.toEqual({
       ok: false,
       error: "Too many password reset attempts. Please try again later.",
+    });
+  });
+
+  it("returns 403 when password reset is disabled", async () => {
+    vi.stubEnv("NEXT_PUBLIC_AUTH_LOGIN_METHOD", "magic-link");
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),
+    }));
+    vi.doMock("@supabase/ssr", () => ({
+      createServerClient: vi.fn(),
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      makeRequest("http://localhost/reset-password/submit", {
+        password: "correct horse battery staple",
+      }),
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      ok: false,
+      error: "Password reset is not enabled.",
     });
   });
 

@@ -62,4 +62,38 @@ describe("AuthConfirmClient", () => {
     expect(replace).toHaveBeenCalledWith("http://localhost:3000/reset-password");
     expect(getSession).not.toHaveBeenCalled();
   });
+
+  it("does not save a recovery marker for magic links that only target reset-password", async () => {
+    const replace = vi.fn();
+
+    setSession.mockResolvedValue({
+      data: {
+        session: {
+          user: { id: "user_123" },
+        },
+      },
+      error: null,
+    });
+
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: {
+        ...originalLocation,
+        href: "http://localhost:3000/auth/confirm?next=/reset-password#access_token=test-access&refresh_token=test-refresh&type=magiclink",
+        replace,
+      },
+    });
+
+    render(<AuthConfirmClient />);
+
+    await waitFor(() => {
+      expect(setSession).toHaveBeenCalledWith({
+        access_token: "test-access",
+        refresh_token: "test-refresh",
+      });
+    });
+
+    expect(window.sessionStorage.getItem(RECOVERY_MARKER_KEY)).toBeNull();
+    expect(replace).toHaveBeenCalledWith("http://localhost:3000/reset-password");
+  });
 });

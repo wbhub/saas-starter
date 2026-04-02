@@ -76,6 +76,98 @@ describe("GET /auth/callback", () => {
     expect(response.headers.get("location")).toBe("https://app.example.com/dashboard");
   });
 
+  it("sets recovery cookies for token_hash recovery callbacks", async () => {
+    const verifyOtp = vi.fn().mockResolvedValue({
+      data: {
+        session: {
+          user: { id: "user_123", app_metadata: { provider: "email" } },
+        },
+      },
+      error: null,
+    });
+
+    vi.doMock("@/lib/env", () => ({
+      env: {
+        NEXT_PUBLIC_APP_URL: "https://app.example.com",
+        NEXT_PUBLIC_SUPABASE_URL: "https://test.supabase.co",
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "test-key",
+      },
+      getAppUrl: () => "https://app.example.com",
+    }));
+    vi.doMock("@supabase/ssr", () => ({
+      createServerClient: () => ({
+        auth: {
+          verifyOtp,
+        },
+      }),
+    }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),
+    }));
+    vi.doMock("@/lib/http/client-ip", () => ({
+      getClientIp: vi.fn().mockReturnValue("198.51.100.1"),
+    }));
+
+    const { GET } = await import("./route");
+    const response = await GET(
+      makeRequest(
+        "https://app.example.com/auth/callback?token_hash=test-hash&type=recovery&next=/reset-password",
+      ),
+    );
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe("https://app.example.com/reset-password");
+    expect(verifyOtp).toHaveBeenCalledWith({
+      token_hash: "test-hash",
+      type: "recovery",
+    });
+    expect(response.cookies.get("auth_password_recovery")?.value).toBe("1");
+    expect(response.cookies.get("auth_password_recovery_user")?.value).toBe("user_123");
+  });
+
+  it("does not set recovery cookies for magiclink callbacks even with reset-password next", async () => {
+    vi.doMock("@/lib/env", () => ({
+      env: {
+        NEXT_PUBLIC_APP_URL: "https://app.example.com",
+        NEXT_PUBLIC_SUPABASE_URL: "https://test.supabase.co",
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "test-key",
+      },
+      getAppUrl: () => "https://app.example.com",
+    }));
+    vi.doMock("@supabase/ssr", () => ({
+      createServerClient: () => ({
+        auth: {
+          verifyOtp: async () => ({
+            data: {
+              session: {
+                user: { id: "user_123", app_metadata: { provider: "email" } },
+              },
+            },
+            error: null,
+          }),
+        },
+      }),
+    }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),
+    }));
+    vi.doMock("@/lib/http/client-ip", () => ({
+      getClientIp: vi.fn().mockReturnValue("198.51.100.1"),
+    }));
+
+    const { GET } = await import("./route");
+    const response = await GET(
+      makeRequest(
+        "https://app.example.com/auth/callback?token_hash=test-hash&type=magiclink&next=/reset-password",
+      ),
+    );
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe("https://app.example.com/reset-password");
+    expect(response.cookies.get("auth_password_recovery")).toBeUndefined();
+    expect(response.cookies.get("auth_password_recovery_user")).toBeUndefined();
+  });
+
   it("stores the last social provider after successful callback", async () => {
     vi.doMock("@/lib/env", () => ({
       env: {
