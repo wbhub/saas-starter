@@ -63,7 +63,7 @@ describe("POST /api/auth/forgot-password", () => {
       .mockResolvedValueOnce({ allowed: true, retryAfterSeconds: 0 })
       .mockResolvedValueOnce({ allowed: true, retryAfterSeconds: 0 });
     const generateLink = vi.fn().mockResolvedValue({
-      data: { properties: { action_link: "https://example.com/reset" } },
+      data: { properties: { hashed_token: "hashed_abc123" } },
       error: null,
     });
     const send = vi.fn().mockResolvedValue({});
@@ -313,7 +313,7 @@ describe("POST /api/auth/forgot-password", () => {
       .mockResolvedValueOnce({ allowed: true, retryAfterSeconds: 0 })
       .mockResolvedValueOnce({ allowed: true, retryAfterSeconds: 0 });
     const generateLink = vi.fn().mockResolvedValue({
-      data: { properties: { action_link: "https://example.com/reset" } },
+      data: { properties: { hashed_token: "hashed_abc123" } },
       error: null,
     });
     const resetPasswordForEmail = vi.fn();
@@ -368,7 +368,7 @@ describe("POST /api/auth/forgot-password", () => {
     });
     expect(resetPasswordForEmail).not.toHaveBeenCalled();
     expect(consoleInfo).toHaveBeenCalledWith(
-      "Forgot-password: local reset link for test@example.com: https://example.com/reset",
+      "Forgot-password: local reset link for test@example.com: http://localhost:3000/auth/callback?next=%2Freset-password&token_hash=hashed_abc123&type=recovery",
     );
 
     consoleInfo.mockRestore();
