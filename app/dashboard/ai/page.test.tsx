@@ -2,6 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { ReactNode } from "react";
 
+const listThreads = vi.fn();
+const aiChatCard = vi.fn(({ initialThreads }: { initialThreads?: Array<{ id: string }> }) => (
+  <div>AiChatCardMock:{initialThreads?.length ?? 0}</div>
+));
+
 function mockAiPageDependencies({
   isVisibleInUi,
   reason,
@@ -50,10 +55,16 @@ function mockAiPageDependencies({
         effectivePlanKey: "free",
         accessMode: "paid",
       },
+      displayName: "Test User",
+      user: { id: "user-123" },
+      teamContext: isVisibleInUi ? { teamId: "team-123", teamName: "Team", role: "owner" } : null,
     }),
   }));
+  vi.doMock("@/lib/ai/threads", () => ({
+    listThreads,
+  }));
   vi.doMock("@/components/ai-chat-card", () => ({
-    AiChatCard: () => <div>AiChatCardMock</div>,
+    AiChatCard: aiChatCard,
   }));
 }
 
@@ -61,6 +72,14 @@ describe("Dashboard AI page UI gating", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    listThreads.mockResolvedValue([
+      {
+        id: "thread-1",
+        title: "Recent thread",
+        createdAt: "2026-04-01T00:00:00.000Z",
+        updatedAt: "2026-04-01T00:00:00.000Z",
+      },
+    ]);
   });
 
   it("renders unavailable state and billing CTA when plan-gated", async () => {
@@ -74,16 +93,21 @@ describe("Dashboard AI page UI gating", () => {
     expect(html).toContain("AI access requires an eligible paid plan.");
     expect(html).toContain('href="/dashboard/billing"');
     expect(html).not.toContain("AiChatCardMock");
+    expect(listThreads).not.toHaveBeenCalled();
   });
 
-  it("renders chat card when AI is visible", async () => {
+  it("loads initial threads on the server when AI is visible", async () => {
     mockAiPageDependencies({ isVisibleInUi: true, reason: "enabled" });
 
     const DashboardAiPage = (await import("./page")).default;
     const html = renderToStaticMarkup(await DashboardAiPage());
 
     expect(html).toContain("AI Chat &amp; Agents");
-    expect(html).toContain("AiChatCardMock");
+    expect(html).toContain("AiChatCardMock:1");
     expect(html).not.toContain("AI chat is unavailable");
+    expect(listThreads).toHaveBeenCalledWith({
+      teamId: "team-123",
+      userId: "user-123",
+    });
   });
 });

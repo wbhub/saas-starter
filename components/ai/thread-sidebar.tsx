@@ -1,13 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Trash2 } from "lucide-react";
 import { clientFetch } from "@/lib/http/client-fetch";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-type Thread = {
+export type ThreadSidebarThread = {
   id: string;
   title: string | null;
   createdAt: string;
@@ -19,16 +19,20 @@ export function ThreadSidebar({
   onSelectThread,
   onNewThread,
   refreshSignal,
+  initialThreads,
 }: {
   activeThreadId: string | null;
   onSelectThread: (threadId: string) => void;
   onNewThread: () => void;
   refreshSignal?: number;
+  initialThreads?: ThreadSidebarThread[];
 }) {
   const t = useTranslations("AiThreads");
-  const [threads, setThreads] = useState<Thread[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const hasInitialThreads = (initialThreads?.length ?? 0) > 0;
+  const [threads, setThreads] = useState<ThreadSidebarThread[]>(() => initialThreads ?? []);
+  const [isLoading, setIsLoading] = useState(initialThreads === undefined);
   const [loadError, setLoadError] = useState(false);
+  const skipInitialClientLoadRef = useRef(hasInitialThreads);
 
   const loadThreads = useCallback(async () => {
     setLoadError(false);
@@ -44,6 +48,19 @@ export function ThreadSidebar({
   }, []);
 
   useEffect(() => {
+    if (initialThreads === undefined) {
+      return;
+    }
+    setThreads(initialThreads);
+    setIsLoading(false);
+    setLoadError(false);
+  }, [initialThreads]);
+
+  useEffect(() => {
+    if (skipInitialClientLoadRef.current) {
+      skipInitialClientLoadRef.current = false;
+      return;
+    }
     void loadThreads();
   }, [loadThreads, refreshSignal]);
 

@@ -26,7 +26,7 @@ import {
 import { Conversation } from "@/components/ai/conversation";
 import { MessageBubble } from "@/components/ai/message-bubble";
 import { PromptInput } from "@/components/ai/prompt-input";
-import { ThreadSidebar } from "@/components/ai/thread-sidebar";
+import { ThreadSidebar, type ThreadSidebarThread } from "@/components/ai/thread-sidebar";
 import { cn } from "@/lib/utils";
 
 const MAX_ATTACHMENTS_PER_MESSAGE = 8;
@@ -279,12 +279,14 @@ export function AiChatCard({
   toolsEnabled,
   userDisplayName,
   availableModels,
+  initialThreads,
 }: {
   providerName: AttachmentProviderName;
   toolsEnabled: boolean;
   /** Passed from the dashboard for future personalization (e.g. greeting). */
   userDisplayName: string;
   availableModels?: string[];
+  initialThreads?: ThreadSidebarThread[];
 }) {
   void userDisplayName;
   const t = useTranslations("AiChatCard");
@@ -513,6 +515,7 @@ export function AiChatCard({
         onSelectThread={handleSelectThread}
         onNewThread={handleNewThread}
         refreshSignal={threadRefreshSignal}
+        initialThreads={initialThreads}
       />
       <div className="flex min-w-0 flex-1 flex-col relative before:hidden lg:before:block before:absolute before:inset-y-4 before:left-0 before:w-px before:bg-border/40">
         <div className="flex min-h-0 flex-1 flex-col gap-0 px-4 py-4 sm:px-6 lg:px-8">
