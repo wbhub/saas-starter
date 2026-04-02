@@ -1,5 +1,4 @@
-import { Suspense, type ReactNode } from "react";
-import type { LucideIcon } from "lucide-react";
+import { Suspense } from "react";
 import {
   AlertCircle,
   CalendarDays,
@@ -27,6 +26,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCachedTeamContextForUser } from "@/lib/team-context-cache";
 import { logger } from "@/lib/logger";
 import { cn } from "@/lib/utils";
+import { DashboardDetailField } from "@/components/dashboard-detail-field";
 import {
   DashboardPageSection,
   dashboardPageSectionClass,
@@ -63,28 +63,6 @@ function subscriptionStatusBadgeVariant(
     default:
       return "outline";
   }
-}
-
-function SubscriptionDetail({
-  icon: Icon,
-  label,
-  children,
-}: {
-  icon: LucideIcon;
-  label: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="flex items-center gap-3">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted/80 ring-1 ring-border">
-        <Icon className="h-4 w-4 text-muted-foreground" aria-hidden />
-      </div>
-      <div className="min-w-0 flex-1 space-y-0.5 leading-tight">
-        <p className="text-xs font-medium leading-normal text-muted-foreground">{label}</p>
-        <div className="text-sm font-medium leading-normal text-foreground">{children}</div>
-      </div>
-    </div>
-  );
 }
 
 export default async function DashboardBillingPage({
@@ -272,39 +250,42 @@ export default async function DashboardBillingPage({
                 ) : null}
                 <div className="grid gap-5 sm:grid-cols-2">
                   <div className="flex flex-col gap-5">
-                    <SubscriptionDetail
+                    <DashboardDetailField
                       icon={CreditCard}
                       label={t("currentSubscription.currentPlan")}
                     >
                       {currentPaidPlanKey
                         ? tPlanCopy(`plans.${currentPaidPlanKey}.name`)
                         : t("currentSubscription.unknown")}
-                    </SubscriptionDetail>
+                    </DashboardDetailField>
                     {billingInterval ? (
-                      <SubscriptionDetail
+                      <DashboardDetailField
                         icon={CalendarDays}
                         label={t("currentSubscription.billingInterval")}
                       >
                         {billingInterval === "year"
                           ? t("currentSubscription.annual")
                           : t("currentSubscription.monthly")}
-                      </SubscriptionDetail>
+                      </DashboardDetailField>
                     ) : null}
-                    <SubscriptionDetail
+                    <DashboardDetailField
                       icon={CalendarDays}
                       label={t("currentSubscription.periodEnd")}
                     >
                       {subscription.current_period_end
                         ? formatUtcDate(subscription.current_period_end, undefined, locale)
                         : t("currentSubscription.notAvailable")}
-                    </SubscriptionDetail>
+                    </DashboardDetailField>
                   </div>
                   <div className="flex flex-col gap-5">
-                    <SubscriptionDetail icon={Users} label={t("currentSubscription.seats")}>
+                    <DashboardDetailField icon={Users} label={t("currentSubscription.seats")}>
                       {subscription.seat_quantity}
-                    </SubscriptionDetail>
+                    </DashboardDetailField>
                     {perSeatAmount !== null ? (
-                      <SubscriptionDetail icon={Coins} label={t("currentSubscription.perSeatCost")}>
+                      <DashboardDetailField
+                        icon={Coins}
+                        label={t("currentSubscription.perSeatCost")}
+                      >
                         <span>
                           {catalogSeatPrice(perSeatAmount)}
                           {billingInterval === "year" ? (
@@ -313,10 +294,10 @@ export default async function DashboardBillingPage({
                             </span>
                           ) : null}
                         </span>
-                      </SubscriptionDetail>
+                      </DashboardDetailField>
                     ) : null}
                     {perSeatAmount !== null && estimatedMonthlySeatTotal != null ? (
-                      <SubscriptionDetail
+                      <DashboardDetailField
                         icon={CircleDollarSign}
                         label={t("currentSubscription.totalCost")}
                       >
@@ -335,7 +316,7 @@ export default async function DashboardBillingPage({
                                 maximumFractionDigits: 0,
                               }).format(estimatedMonthlySeatTotal),
                             })}
-                      </SubscriptionDetail>
+                      </DashboardDetailField>
                     ) : null}
                   </div>
                 </div>
