@@ -48,6 +48,13 @@ function isProviderOutageError(error: unknown) {
   );
 }
 
+function buildDirectCallbackUrl(callbackUrl: string, hashedToken: string, type: string) {
+  const url = new URL(callbackUrl);
+  url.searchParams.set("token_hash", hashedToken);
+  url.searchParams.set("type", type);
+  return url.toString();
+}
+
 async function sendPasswordResetEmail(email: string, locale: AppLocale) {
   try {
     const t = await getLocaleTranslator("ApiForgotPassword", locale);
@@ -69,16 +76,19 @@ async function sendPasswordResetEmail(email: string, locale: AppLocale) {
           return;
         }
 
-        if (!data.properties?.action_link) {
+        if (!data.properties?.hashed_token) {
           logger.error(
-            "Forgot-password: local development reset link missing from Supabase response",
+            "Forgot-password: local development hashed_token missing from Supabase response",
           );
           return;
         }
 
-        console.info(
-          `Forgot-password: local reset link for ${email}: ${data.properties.action_link}`,
+        const directLink = buildDirectCallbackUrl(
+          redirectTo,
+          data.properties.hashed_token,
+          "recovery",
         );
+        console.info(`Forgot-password: local reset link for ${email}: ${directLink}`);
         return;
       }
 
@@ -115,10 +125,12 @@ async function sendPasswordResetEmail(email: string, locale: AppLocale) {
       return;
     }
 
-    if (!data.properties?.action_link) {
-      logger.error("Password reset link missing from Supabase response");
+    if (!data.properties?.hashed_token) {
+      logger.error("Password reset hashed_token missing from Supabase response");
       return;
     }
+
+    const directLink = buildDirectCallbackUrl(redirectTo, data.properties.hashed_token, "recovery");
 
     try {
       const resend = getResendClientIfConfigured();
@@ -149,7 +161,7 @@ async function sendPasswordResetEmail(email: string, locale: AppLocale) {
           t("email.line1"),
           "",
           t("email.useLink"),
-          data.properties.action_link,
+          directLink,
           "",
           t("email.ignoreIfNotRequested"),
         ].join("\n"),

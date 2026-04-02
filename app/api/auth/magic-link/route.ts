@@ -52,6 +52,13 @@ function isProviderOutageError(error: unknown) {
   );
 }
 
+function buildDirectCallbackUrl(callbackUrl: string, hashedToken: string, type: string) {
+  const url = new URL(callbackUrl);
+  url.searchParams.set("token_hash", hashedToken);
+  url.searchParams.set("type", type);
+  return url.toString();
+}
+
 async function sendMagicLink(email: string, callbackUrl: string, locale: AppLocale) {
   try {
     const t = await getLocaleTranslator("ApiAuthMagicLink", locale);
@@ -70,12 +77,17 @@ async function sendMagicLink(email: string, callbackUrl: string, locale: AppLoca
           return;
         }
 
-        if (!data.properties?.action_link) {
-          logger.error("Magic link: local development link missing from Supabase response");
+        if (!data.properties?.hashed_token) {
+          logger.error("Magic link: local development hashed_token missing from Supabase response");
           return;
         }
 
-        console.info(`Magic link: local link for ${email}: ${data.properties.action_link}`);
+        const directLink = buildDirectCallbackUrl(
+          callbackUrl,
+          data.properties.hashed_token,
+          "magiclink",
+        );
+        console.info(`Magic link: local link for ${email}: ${directLink}`);
         return;
       }
 
@@ -116,10 +128,16 @@ async function sendMagicLink(email: string, callbackUrl: string, locale: AppLoca
       return;
     }
 
-    if (!data.properties?.action_link) {
-      logger.error("Magic link: action link missing from Supabase response");
+    if (!data.properties?.hashed_token) {
+      logger.error("Magic link: hashed_token missing from Supabase response");
       return;
     }
+
+    const directLink = buildDirectCallbackUrl(
+      callbackUrl,
+      data.properties.hashed_token,
+      "magiclink",
+    );
 
     try {
       const resend = getResendClientIfConfigured();
@@ -155,7 +173,7 @@ async function sendMagicLink(email: string, callbackUrl: string, locale: AppLoca
           t("email.line1"),
           "",
           t("email.useLink"),
-          data.properties.action_link,
+          directLink,
           "",
           t("email.ignoreIfNotRequested"),
         ].join("\n"),
