@@ -21,6 +21,7 @@ import { getLocaleTranslator, resolveRequestLocale } from "@/lib/i18n/locale";
 import { type AppLocale } from "@/i18n/routing";
 import { isTriggerConfigured } from "@/lib/trigger/config";
 import { triggerSendEmailTask } from "@/lib/trigger/dispatch";
+import { isPasswordAuthEnabled } from "@/lib/auth/social-auth";
 
 const forgotPasswordPayloadSchema = z.object({
   email: z.string().trim().toLowerCase(),
@@ -192,6 +193,10 @@ export async function POST(request: Request) {
   const genericSuccessMessage = t("messages.genericSuccess");
   const genericSuccess = () =>
     withRequestId(NextResponse.json({ message: genericSuccessMessage }), requestId);
+
+  if (!isPasswordAuthEnabled()) {
+    return withRequestId(jsonError(t("errors.passwordResetDisabled"), 403), requestId);
+  }
 
   const csrfError = verifyCsrfProtection(request);
   if (csrfError) {

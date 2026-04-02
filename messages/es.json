@@ -921,7 +921,8 @@
       "genericSuccess": "Si existe una cuenta para ese email, se envió un enlace de restablecimiento."
     },
     "errors": {
-      "payloadTooLarge": "El cuerpo de la solicitud es demasiado grande."
+      "payloadTooLarge": "El cuerpo de la solicitud es demasiado grande.",
+      "passwordResetDisabled": "El restablecimiento de contraseña no está habilitado."
     },
     "email": {
       "subject": "Restablece tu contraseña",
@@ -1021,7 +1022,8 @@
       "invalidContentType": "Content-Type debe ser application/json.",
       "payloadTooLarge": "El cuerpo de la solicitud es demasiado grande.",
       "invalidCredentials": "Email o contraseña inválidos.",
-      "rateLimited": "Demasiados intentos de inicio de sesión. Inténtalo de nuevo más tarde."
+      "rateLimited": "Demasiados intentos de inicio de sesión. Inténtalo de nuevo más tarde.",
+      "passwordAuthDisabled": "La autenticación con contraseña no está habilitada."
     }
   },
   "ApiAuthSignup": {
@@ -1037,7 +1039,8 @@
       "invalidEmailOrPassword": "Proporciona un email y contraseña válidos.",
       "passwordComplexity": "La contraseña debe tener entre 12 y 128 caracteres.",
       "rateLimited": "Demasiados intentos de registro. Inténtalo de nuevo más tarde.",
-      "unableToCreateAccount": "No se pudo crear tu cuenta."
+      "unableToCreateAccount": "No se pudo crear tu cuenta.",
+      "passwordSignupDisabled": "El registro con contraseña no está habilitado."
     }
   },
   "ApiAiObject": {

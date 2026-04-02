@@ -921,7 +921,8 @@
       "genericSuccess": "Si un compte existe pour cet e-mail, un lien de réinitialisation a été envoyé."
     },
     "errors": {
-      "payloadTooLarge": "La charge utile de la demande est trop importante."
+      "payloadTooLarge": "La charge utile de la demande est trop importante.",
+      "passwordResetDisabled": "La réinitialisation du mot de passe n'est pas activée."
     },
     "email": {
       "subject": "Réinitialisez votre mot de passe",
@@ -1021,7 +1022,8 @@
       "invalidContentType": "Le type de contenu doit être application/json.",
       "payloadTooLarge": "La charge utile de la demande est trop importante.",
       "invalidCredentials": "Email ou mot de passe invalide.",
-      "rateLimited": "Trop de tentatives de connexion. Veuillez réessayer plus tard."
+      "rateLimited": "Trop de tentatives de connexion. Veuillez réessayer plus tard.",
+      "passwordAuthDisabled": "L'authentification par mot de passe n'est pas activée."
     }
   },
   "ApiAuthSignup": {
@@ -1037,7 +1039,8 @@
       "invalidEmailOrPassword": "Veuillez fournir un e-mail et un mot de passe valides.",
       "passwordComplexity": "Le mot de passe doit comporter entre 12 et 128 caractères.",
       "rateLimited": "Trop de tentatives d'inscription. Veuillez réessayer plus tard.",
-      "unableToCreateAccount": "Impossible de créer votre compte."
+      "unableToCreateAccount": "Impossible de créer votre compte.",
+      "passwordSignupDisabled": "L'inscription par mot de passe n'est pas activée."
     }
   },
   "ApiAiObject": {

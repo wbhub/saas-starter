@@ -921,7 +921,8 @@
       "genericSuccess": "如果该电子邮件的帐户存在，则重置链接已发送。"
     },
     "errors": {
-      "payloadTooLarge": "请求负载太大。"
+      "payloadTooLarge": "请求负载太大。",
+      "passwordResetDisabled": "密码重置未启用。"
     },
     "email": {
       "subject": "重置您的密码",
@@ -1021,7 +1022,8 @@
       "invalidContentType": "Content-Type 必须是 application/json。",
       "payloadTooLarge": "请求负载太大。",
       "invalidCredentials": "电子邮件或密码无效。",
-      "rateLimited": "登录尝试次数过多。请稍后重试。"
+      "rateLimited": "登录尝试次数过多。请稍后重试。",
+      "passwordAuthDisabled": "密码身份验证未启用。"
     }
   },
   "ApiAuthSignup": {
@@ -1037,7 +1039,8 @@
       "invalidEmailOrPassword": "请提供有效的电子邮件和密码。",
       "passwordComplexity": "密码必须介于 12 到 128 个字符之间。",
       "rateLimited": "注册尝试次数过多。请稍后重试。",
-      "unableToCreateAccount": "无法创建您的帐户。"
+      "unableToCreateAccount": "无法创建您的帐户。",
+      "passwordSignupDisabled": "密码注册未启用。"
     }
   },
   "ApiAiObject": {

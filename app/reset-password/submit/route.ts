@@ -7,6 +7,7 @@ import { getClientRateLimitIdentifier } from "@/lib/http/client-ip";
 import { requireJsonContentType } from "@/lib/http/content-type";
 import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
 import { logger } from "@/lib/logger";
+import { isPasswordAuthEnabled } from "@/lib/auth/social-auth";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { rotateCsrfTokenOnResponse, verifyCsrfProtection } from "@/lib/security/csrf";
 import { validatePasswordComplexity } from "@/lib/validation";
@@ -19,6 +20,10 @@ const resetPasswordPayloadSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  if (!isPasswordAuthEnabled()) {
+    return jsonError("Password reset is not enabled.", 403);
+  }
+
   const csrfError = verifyCsrfProtection(request);
   if (csrfError) {
     return csrfError;

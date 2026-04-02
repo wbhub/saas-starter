@@ -5,6 +5,7 @@ import { requireJsonContentType } from "@/lib/http/content-type";
 import { getOrCreateRequestId, withRequestId } from "@/lib/http/request-id";
 import { parseJsonWithSchema, z } from "@/lib/http/request-validation";
 import { getRouteTranslator } from "@/lib/i18n/locale";
+import { isPasswordAuthEnabled } from "@/lib/auth/social-auth";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { rotateCsrfTokenOnResponse, verifyCsrfProtection } from "@/lib/security/csrf";
 import { createClient } from "@/lib/supabase/server";
@@ -18,6 +19,10 @@ const loginPayloadSchema = z.object({
 export async function POST(request: Request) {
   const t = await getRouteTranslator("ApiAuthLogin", request);
   const requestId = getOrCreateRequestId(request);
+
+  if (!isPasswordAuthEnabled()) {
+    return withRequestId(jsonError(t("errors.passwordAuthDisabled"), 403), requestId);
+  }
 
   const csrfError = verifyCsrfProtection(request, {
     invalidOrigin: t("errors.invalidOrigin"),

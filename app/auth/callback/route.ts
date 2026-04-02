@@ -71,8 +71,9 @@ function maybeSetPasswordRecoveryCookies(
   request: NextRequest,
   safeNextPath: string,
   recoveryUserId: string,
+  isRecoveryFlow: boolean,
 ) {
-  if (!safeNextPath.startsWith("/reset-password")) {
+  if (!isRecoveryFlow || !safeNextPath.startsWith("/reset-password")) {
     return response;
   }
 
@@ -245,7 +246,7 @@ export async function GET(request: NextRequest) {
     const userId = data.session.user.id;
     rotateCsrfTokenOnResponse(response, request);
     if (userId) {
-      maybeSetPasswordRecoveryCookies(response, request, safeNext, userId);
+      maybeSetPasswordRecoveryCookies(response, request, safeNext, userId, otpType === "recovery");
     }
     maybeSetLastAuthProviderCookie(response, request, data.session.user.app_metadata?.provider);
     return maybeSetCallbackCookie(
@@ -308,8 +309,14 @@ export async function GET(request: NextRequest) {
   }
 
   rotateCsrfTokenOnResponse(response, request);
+  const redirectType =
+    "redirectType" in (data as object) &&
+    typeof (data as { redirectType?: unknown }).redirectType === "string"
+      ? (data as { redirectType?: string }).redirectType
+      : null;
+  const isRecoveryFlow = searchParams.get("type") === "recovery" || redirectType === "recovery";
   if (recoveredUserId) {
-    maybeSetPasswordRecoveryCookies(response, request, safeNext, recoveredUserId);
+    maybeSetPasswordRecoveryCookies(response, request, safeNext, recoveredUserId, isRecoveryFlow);
   }
   maybeSetLastAuthProviderCookie(response, request, data.session?.user.app_metadata?.provider);
   return maybeSetCallbackCookie(response, request, callbackClientId.isNew, callbackClientId.value);
