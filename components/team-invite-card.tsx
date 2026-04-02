@@ -765,7 +765,9 @@ export function TeamInviteCard({
                           <SelectContent sideOffset={2}>
                             {canManageRole(member) ? (
                               <>
-                                <SelectItem value="member">{tCommon("teamRoles.member")}</SelectItem>
+                                <SelectItem value="member">
+                                  {tCommon("teamRoles.member")}
+                                </SelectItem>
                                 <SelectItem value="admin">{tCommon("teamRoles.admin")}</SelectItem>
                               </>
                             ) : null}

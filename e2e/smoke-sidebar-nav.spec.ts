@@ -19,10 +19,7 @@ test.describe("@smoke sidebar navigation state", () => {
     if (await aiLink.count()) {
       await aiLink.click();
       await expect(page).toHaveURL(/\/dashboard\/ai$/);
-      await expect(page.getByRole("link", { name: "AI" })).toHaveAttribute(
-        "aria-current",
-        "page",
-      );
+      await expect(page.getByRole("link", { name: "AI" })).toHaveAttribute("aria-current", "page");
     } else {
       await expect(aiLink).toHaveCount(0);
     }

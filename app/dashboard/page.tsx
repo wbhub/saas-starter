@@ -100,9 +100,7 @@ export default async function DashboardPage() {
                 <div className={metaRow}>
                   <dt className={metaLabel}>{t("DashboardPage.role")}</dt>
                   <dd>
-                    <Badge variant="secondary">
-                      {t(`Common.teamRoles.${teamContext.role}`)}
-                    </Badge>
+                    <Badge variant="secondary">{t(`Common.teamRoles.${teamContext.role}`)}</Badge>
                   </dd>
                 </div>
               </>
