@@ -3,6 +3,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ComponentProps } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { mockCommonTeamRolesNamespacedKeys } from "@/test-support/i18n-team-role-mocks";
 import { UserDropdown } from "./user-dropdown";
 
 const routerRefresh = vi.fn();
@@ -17,7 +18,12 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("next-intl", () => ({
   useLocale: () => "en",
-  useTranslations: () => (key: string) => key,
+  useTranslations: (namespace?: string) => (key: string) => {
+    if (namespace === "Common" && key in mockCommonTeamRolesNamespacedKeys) {
+      return mockCommonTeamRolesNamespacedKeys[key];
+    }
+    return key;
+  },
 }));
 
 vi.mock("js-cookie", () => ({

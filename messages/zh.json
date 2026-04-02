@@ -1,7 +1,12 @@
 {
   "Common": {
     "brandName": "SaaS 入门者",
-    "myTeam": "我的团队"
+    "myTeam": "我的团队",
+    "teamRoles": {
+      "owner": "所有者",
+      "admin": "管理员",
+      "member": "成员"
+    }
   },
   "Metadata": {
     "title": "SaaS Starter | 生产级 Next.js SaaS 基础",
@@ -210,7 +215,7 @@
     "inviteTeammates": "邀请队友",
     "switch": "转变",
     "overview": "概述",
-    "ai": "AI",
+    "ai": "智能助手",
     "billing": "计费",
     "usage": "用法",
     "settings": "设置",
@@ -255,7 +260,7 @@
     "currentPlanFree": "当前计划：免费",
     "visitBillingUpgrade": "随时访问账单进行升级。",
     "noActiveSubscription": "没有活跃的订阅。访问账单以开始计划。",
-    "ai": "人工智能聊天",
+    "ai": "智能助手",
     "billing": "计费",
     "teamNav": "团队",
     "inviteTeammates": "邀请队友",
@@ -264,21 +269,21 @@
   },
   "DashboardAiPage": {
     "header": {
-      "eyebrow": "AI",
-      "title": "AI Chat & Agents",
-      "description": "Chat with your configured model using your team billing and usage limits."
+      "eyebrow": "人工智能",
+      "title": "人工智能聊天与智能体",
+      "description": "在团队计费与用量限制内，使用您配置的模型进行对话。"
     },
     "unavailable": {
-      "title": "AI chat is unavailable",
-      "description": "This workspace cannot use AI chat right now.",
+      "title": "人工智能聊天不可用",
+      "description": "此工作区目前无法使用人工智能聊天。",
       "reason": {
-        "planRequired": "AI access requires an eligible paid plan.",
-        "notConfigured": "AI is not configured for this app yet.",
-        "teamMissing": "AI requires an active team workspace.",
-        "accessMisconfigured": "AI access settings are currently misconfigured."
+        "planRequired": "人工智能访问需要符合条件的付费计划。",
+        "notConfigured": "此应用尚未配置人工智能。",
+        "teamMissing": "人工智能需要活跃的团队工作区。",
+        "accessMisconfigured": "人工智能访问设置当前配置有误。"
       },
       "actions": {
-        "goToBilling": "Go to billing"
+        "goToBilling": "前往计费"
       }
     },
     "tabs": {
@@ -286,6 +291,18 @@
       "structuredOutput": "结构化输出",
       "ariaLabel": "AI 工作区模式",
       "hint": "在自由对话与类型化结构化结果之间切换。"
+    }
+  },
+  "AiThreads": {
+    "title": "对话",
+    "recents": "最近",
+    "loading": "正在加载对话…",
+    "loadError": "加载失败。点击重试。",
+    "empty": "暂无对话。",
+    "untitled": "无标题对话",
+    "actions": {
+      "newThread": "新对话",
+      "delete": "删除对话"
     }
   },
   "AiObjectCard": {
@@ -317,6 +334,8 @@
     "description": "消息实时传输并自动跟踪使用情况。",
     "placeholder": "询问有关您的产品、文档或工作流程的任何信息...",
     "emptyState": "请在下方发送消息开始。",
+    "emptyConversationHeading": "我能帮你什么？",
+    "modelAuto": "自动",
     "attachments": {
       "label": "附件",
       "selected": "已选择 {count}"
@@ -465,7 +484,7 @@
   "DashboardUsagePage": {
     "header": {
       "eyebrow": "用法",
-      "title": "Team AI Usage",
+      "title": "团队人工智能用量",
       "description": "跟踪您的团队最近的代币使用情况。"
     },
     "table": {
@@ -536,11 +555,6 @@
       "noOtherMembers": "还没有其他成员——目前此工作区只有你。",
       "unnamed": "队友",
       "actionsSelectAriaLabel": "{name} 的操作"
-    },
-    "roles": {
-      "owner": "所有者",
-      "admin": "行政",
-      "member": "成员"
     },
     "actions": {
       "cancel": "取消",
@@ -683,7 +697,7 @@
     },
     "fields": {
       "confirmDelete": "键入 DELETE 进行确认",
-      "deleteToken": "删除",
+      "deleteToken": "DELETE",
       "confirmEmail": "确认您的电子邮件地址",
       "confirmEmailPlaceholder": "你@example.com",
       "confirmPermanent": "我了解此操作是永久性的且无法撤消。"

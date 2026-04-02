@@ -1,7 +1,12 @@
 {
   "Common": {
     "brandName": "SaaS Starter",
-    "myTeam": "Mi equipo"
+    "myTeam": "Mi equipo",
+    "teamRoles": {
+      "owner": "Propietario",
+      "admin": "Administrador",
+      "member": "Miembro"
+    }
   },
   "Metadata": {
     "title": "SaaS Starter | Base SaaS de producción con Next.js",
@@ -210,7 +215,7 @@
     "inviteTeammates": "Invitar compañeros",
     "switch": "Cambiar",
     "overview": "Resumen",
-    "ai": "AI",
+    "ai": "IA",
     "billing": "Facturación",
     "usage": "Uso",
     "settings": "Configuración",
@@ -255,7 +260,7 @@
     "currentPlanFree": "Plan actual: Gratis",
     "visitBillingUpgrade": "Visita facturación para mejorar cuando quieras.",
     "noActiveSubscription": "No hay suscripción activa. Visita facturación para iniciar un plan.",
-    "ai": "Chat AI",
+    "ai": "IA",
     "billing": "Facturación",
     "teamNav": "Equipo",
     "inviteTeammates": "Invitar compañeros",
@@ -264,21 +269,21 @@
   },
   "DashboardAiPage": {
     "header": {
-      "eyebrow": "AI",
-      "title": "AI Chat & Agents",
-      "description": "Chat with your configured model using your team billing and usage limits."
+      "eyebrow": "IA",
+      "title": "Chat de IA y agentes",
+      "description": "Chatea con tu modelo configurado según la facturación y los límites de uso de tu equipo."
     },
     "unavailable": {
-      "title": "AI chat is unavailable",
-      "description": "This workspace cannot use AI chat right now.",
+      "title": "El chat de IA no está disponible",
+      "description": "Este espacio de trabajo no puede usar el chat de IA en este momento.",
       "reason": {
-        "planRequired": "AI access requires an eligible paid plan.",
-        "notConfigured": "AI is not configured for this app yet.",
-        "teamMissing": "AI requires an active team workspace.",
-        "accessMisconfigured": "AI access settings are currently misconfigured."
+        "planRequired": "El acceso a la IA requiere un plan de pago elegible.",
+        "notConfigured": "La IA aún no está configurada en esta aplicación.",
+        "teamMissing": "La IA requiere un espacio de trabajo de equipo activo.",
+        "accessMisconfigured": "La configuración de acceso a la IA es incorrecta."
       },
       "actions": {
-        "goToBilling": "Go to billing"
+        "goToBilling": "Ir a facturación"
       }
     },
     "tabs": {
@@ -286,6 +291,18 @@
       "structuredOutput": "Salida estructurada",
       "ariaLabel": "Modo del espacio de IA",
       "hint": "Cambia entre chat libre y resultados estructurados tipados."
+    }
+  },
+  "AiThreads": {
+    "title": "Conversaciones",
+    "recents": "Recientes",
+    "loading": "Cargando conversaciones...",
+    "loadError": "No se pudieron cargar. Toca para reintentar.",
+    "empty": "Aún no hay conversaciones.",
+    "untitled": "Sin título",
+    "actions": {
+      "newThread": "Nueva conversación",
+      "delete": "Eliminar conversación"
     }
   },
   "AiObjectCard": {
@@ -317,6 +334,8 @@
     "description": "Los mensajes se transmiten en tiempo real y el uso se registra automáticamente.",
     "placeholder": "Pregunta lo que necesites sobre tu producto, docs o flujo de trabajo...",
     "emptyState": "Empieza enviando un mensaje abajo.",
+    "emptyConversationHeading": "¿En qué puedo ayudarte?",
+    "modelAuto": "Automático",
     "attachments": {
       "label": "Adjuntos",
       "selected": "{count} seleccionados"
@@ -465,7 +484,7 @@
   "DashboardUsagePage": {
     "header": {
       "eyebrow": "Uso",
-      "title": "Team AI Usage",
+      "title": "Uso de IA del equipo",
       "description": "Haz seguimiento del uso reciente de tokens para tu equipo."
     },
     "table": {
@@ -536,11 +555,6 @@
       "noOtherMembers": "Aún no hay más miembros — por ahora solo estás tú en este espacio.",
       "unnamed": "Compañero",
       "actionsSelectAriaLabel": "Acciones para {name}"
-    },
-    "roles": {
-      "owner": "Propietario",
-      "admin": "Administrador",
-      "member": "Miembro"
     },
     "actions": {
       "cancel": "Cancelar",

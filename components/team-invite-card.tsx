@@ -194,6 +194,7 @@ export function TeamInviteCard({
   seatPriceLabel?: string | null;
 }) {
   const t = useTranslations("TeamInviteCard");
+  const tCommon = useTranslations("Common");
   const locale = useLocale() as AppLocale;
   const router = useRouter();
   const [state, dispatch] = useReducer(teamInviteReducer, {
@@ -252,9 +253,7 @@ export function TeamInviteCard({
   );
 
   function getRoleLabel(value: "owner" | "admin" | "member") {
-    if (value === "owner") return t("roles.owner");
-    if (value === "admin") return t("roles.admin");
-    return t("roles.member");
+    return tCommon(`teamRoles.${value}`);
   }
 
   const TEAM_NAME_AUTOSAVE_MS = 600;
@@ -641,8 +640,8 @@ export function TeamInviteCard({
                   <SelectValue>{getRoleLabel(role)}</SelectValue>
                 </SelectTrigger>
                 <SelectContent sideOffset={2}>
-                  <SelectItem value="member">{t("roles.member")}</SelectItem>
-                  <SelectItem value="admin">{t("roles.admin")}</SelectItem>
+                  <SelectItem value="member">{tCommon("teamRoles.member")}</SelectItem>
+                  <SelectItem value="admin">{tCommon("teamRoles.admin")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -766,15 +765,15 @@ export function TeamInviteCard({
                           <SelectContent sideOffset={2}>
                             {canManageRole(member) ? (
                               <>
-                                <SelectItem value="member">{t("roles.member")}</SelectItem>
-                                <SelectItem value="admin">{t("roles.admin")}</SelectItem>
+                                <SelectItem value="member">{tCommon("teamRoles.member")}</SelectItem>
+                                <SelectItem value="admin">{tCommon("teamRoles.admin")}</SelectItem>
                               </>
                             ) : null}
                             {!canManageRole(member) &&
                             member.role === "owner" &&
                             canRemoveMember(member) ? (
                               <SelectItem value="owner" disabled>
-                                {t("roles.owner")}
+                                {tCommon("teamRoles.owner")}
                               </SelectItem>
                             ) : null}
                             {canRemoveMember(member) &&

@@ -1,7 +1,12 @@
 {
   "Common": {
     "brandName": "Démarreur SaaS",
-    "myTeam": "Mon équipe"
+    "myTeam": "Mon équipe",
+    "teamRoles": {
+      "owner": "Propriétaire",
+      "admin": "Administrateur",
+      "member": "Membre"
+    }
   },
   "Metadata": {
     "title": "SaaS Starter | Base SaaS de production avec Next.js",
@@ -210,7 +215,7 @@
     "inviteTeammates": "Inviter des coéquipiers",
     "switch": "Changer",
     "overview": "Aperçu",
-    "ai": "AI",
+    "ai": "IA",
     "billing": "Facturation",
     "usage": "Usage",
     "settings": "Paramètres",
@@ -255,7 +260,7 @@
     "currentPlanFree": "Forfait actuel : Gratuit",
     "visitBillingUpgrade": "Visitez la facturation pour effectuer une mise à niveau à tout moment.",
     "noActiveSubscription": "Aucun abonnement actif. Visitez la facturation pour démarrer un forfait.",
-    "ai": "Chat IA",
+    "ai": "IA",
     "billing": "Facturation",
     "teamNav": "Équipe",
     "inviteTeammates": "Inviter des coéquipiers",
@@ -264,21 +269,21 @@
   },
   "DashboardAiPage": {
     "header": {
-      "eyebrow": "AI",
-      "title": "AI Chat & Agents",
-      "description": "Chat with your configured model using your team billing and usage limits."
+      "eyebrow": "IA",
+      "title": "Chat IA et agents",
+      "description": "Discutez avec votre modèle configuré dans les limites de facturation et d’usage de votre équipe."
     },
     "unavailable": {
-      "title": "AI chat is unavailable",
-      "description": "This workspace cannot use AI chat right now.",
+      "title": "Le chat IA est indisponible",
+      "description": "Cet espace de travail ne peut pas utiliser le chat IA pour le moment.",
       "reason": {
-        "planRequired": "AI access requires an eligible paid plan.",
-        "notConfigured": "AI is not configured for this app yet.",
-        "teamMissing": "AI requires an active team workspace.",
-        "accessMisconfigured": "AI access settings are currently misconfigured."
+        "planRequired": "L’accès à l’IA nécessite un forfait payant éligible.",
+        "notConfigured": "L’IA n’est pas encore configurée pour cette application.",
+        "teamMissing": "L’IA nécessite un espace de travail d’équipe actif.",
+        "accessMisconfigured": "Les paramètres d’accès à l’IA sont mal configurés."
       },
       "actions": {
-        "goToBilling": "Go to billing"
+        "goToBilling": "Aller à la facturation"
       }
     },
     "tabs": {
@@ -286,6 +291,18 @@
       "structuredOutput": "Sortie structurée",
       "ariaLabel": "Mode espace IA",
       "hint": "Passez du chat libre à des résultats structurés typés."
+    }
+  },
+  "AiThreads": {
+    "title": "Conversations",
+    "recents": "Récents",
+    "loading": "Chargement des conversations…",
+    "loadError": "Échec du chargement. Appuyez pour réessayer.",
+    "empty": "Pas encore de conversations.",
+    "untitled": "Sans titre",
+    "actions": {
+      "newThread": "Nouvelle conversation",
+      "delete": "Supprimer la conversation"
     }
   },
   "AiObjectCard": {
@@ -317,6 +334,8 @@
     "description": "Les messages sont diffusés en temps réel et l'utilisation est automatiquement suivie.",
     "placeholder": "Posez des questions sur votre produit, vos documents ou votre flux de travail...",
     "emptyState": "Commencez par envoyer un message ci-dessous.",
+    "emptyConversationHeading": "Comment puis-je vous aider ?",
+    "modelAuto": "Automatique",
     "attachments": {
       "label": "Pièces jointes",
       "selected": "{count} sélectionné"
@@ -465,7 +484,7 @@
   "DashboardUsagePage": {
     "header": {
       "eyebrow": "Usage",
-      "title": "Team AI Usage",
+      "title": "Utilisation IA de l’équipe",
       "description": "Suivez l'utilisation récente des jetons pour votre équipe."
     },
     "table": {
@@ -536,11 +555,6 @@
       "noOtherMembers": "Pas d’autres membres pour l’instant — vous êtes seul dans cet espace.",
       "unnamed": "Coéquipier",
       "actionsSelectAriaLabel": "Actions pour {name}"
-    },
-    "roles": {
-      "owner": "Propriétaire",
-      "admin": "Administrateur",
-      "member": "Membre"
     },
     "actions": {
       "cancel": "Annuler",
@@ -682,8 +696,8 @@
       "hint": "Votre profil et vos données seront supprimés. Confirmez ci-dessous — cette action est irréversible."
     },
     "fields": {
-      "confirmDelete": "Tapez SUPPR pour confirmer",
-      "deleteToken": "SUPPRIMER",
+      "confirmDelete": "Tapez DELETE pour confirmer",
+      "deleteToken": "DELETE",
       "confirmEmail": "Confirmez votre adresse e-mail",
       "confirmEmailPlaceholder": "vous@exemple.com",
       "confirmPermanent": "Je comprends que cette action est permanente et irréversible."

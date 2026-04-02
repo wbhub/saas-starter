@@ -1,7 +1,12 @@
 {
   "Common": {
     "brandName": "SaaS Starter",
-    "myTeam": "내 팀"
+    "myTeam": "내 팀",
+    "teamRoles": {
+      "owner": "소유자",
+      "admin": "관리자",
+      "member": "멤버"
+    }
   },
   "Metadata": {
     "title": "SaaS Starter | 프로덕션급 Next.js SaaS 기반",
@@ -210,7 +215,7 @@
     "inviteTeammates": "팀원 초대",
     "switch": "전환",
     "overview": "개요",
-    "ai": "AI",
+    "ai": "AI 채팅",
     "billing": "결제",
     "usage": "사용량",
     "settings": "설정",
@@ -265,7 +270,7 @@
   "DashboardAiPage": {
     "header": {
       "eyebrow": "AI",
-      "title": "AI Chat & Agents",
+      "title": "AI 채팅 및 에이전트",
       "description": "팀의 결제 및 사용량 한도 안에서 구성된 모델과 채팅하세요."
     },
     "unavailable": {
@@ -286,6 +291,18 @@
       "structuredOutput": "구조화된 출력",
       "ariaLabel": "AI 작업 공간 모드",
       "hint": "자유 형식 채팅과 타입이 지정된 구조화된 결과 사이를 전환합니다."
+    }
+  },
+  "AiThreads": {
+    "title": "스레드",
+    "recents": "최근",
+    "loading": "스레드를 불러오는 중…",
+    "loadError": "불러오지 못했습니다. 탭하여 다시 시도하세요.",
+    "empty": "아직 스레드가 없습니다.",
+    "untitled": "제목 없음",
+    "actions": {
+      "newThread": "새 스레드",
+      "delete": "스레드 삭제"
     }
   },
   "AiObjectCard": {
@@ -317,6 +334,8 @@
     "description": "메시지가 실시간으로 스트리밍되고 사용량이 자동으로 추적됩니다.",
     "placeholder": "제품, 문서, 워크플로에 대해 무엇이든 물어보세요...",
     "emptyState": "아래에서 메시지를 보내며 시작하세요.",
+    "emptyConversationHeading": "무엇을 도와드릴까요?",
+    "modelAuto": "자동",
     "attachments": {
       "label": "첨부파일",
       "selected": "{count}개 선택됨"
@@ -465,7 +484,7 @@
   "DashboardUsagePage": {
     "header": {
       "eyebrow": "사용량",
-      "title": "Team AI Usage",
+      "title": "팀 AI 사용량",
       "description": "팀의 최근 토큰 사용량을 추적하세요."
     },
     "table": {
@@ -536,11 +555,6 @@
       "noOtherMembers": "아직 다른 멤버가 없습니다. 지금은 이 워크스페이스에 본인만 있습니다.",
       "unnamed": "팀원",
       "actionsSelectAriaLabel": "{name} 작업"
-    },
-    "roles": {
-      "owner": "소유자",
-      "admin": "관리자",
-      "member": "멤버"
     },
     "actions": {
       "cancel": "취소",

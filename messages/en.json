@@ -1,7 +1,12 @@
 {
   "Common": {
     "brandName": "SaaS Starter",
-    "myTeam": "My Team"
+    "myTeam": "My Team",
+    "teamRoles": {
+      "owner": "Owner",
+      "admin": "Admin",
+      "member": "Member"
+    }
   },
   "Metadata": {
     "title": "SaaS Starter | Production-Grade Next.js SaaS Foundation",
@@ -255,7 +260,7 @@
     "currentPlanFree": "Current plan: Free",
     "visitBillingUpgrade": "Visit billing to upgrade anytime.",
     "noActiveSubscription": "No active subscription. Visit billing to start a plan.",
-    "ai": "AI Chat",
+    "ai": "AI",
     "billing": "Billing",
     "teamNav": "Team",
     "inviteTeammates": "Invite teammates",
@@ -290,6 +295,7 @@
   },
   "AiThreads": {
     "title": "Threads",
+    "recents": "Recents",
     "loading": "Loading threads...",
     "loadError": "Failed to load threads. Tap to retry.",
     "empty": "No threads yet.",
@@ -343,6 +349,8 @@
     "description": "Messages stream in real time and usage is tracked automatically.",
     "placeholder": "Ask anything about your product, docs, or workflow...",
     "emptyState": "Start by sending a message below.",
+    "emptyConversationHeading": "What can I help with?",
+    "modelAuto": "Auto",
     "attachments": {
       "label": "Attachments",
       "selected": "{count} selected"
@@ -562,11 +570,6 @@
       "noOtherMembers": "No other members yet — it's just you in this workspace for now.",
       "unnamed": "Teammate",
       "actionsSelectAriaLabel": "Actions for {name}"
-    },
-    "roles": {
-      "owner": "Owner",
-      "admin": "Admin",
-      "member": "Member"
     },
     "actions": {
       "cancel": "Cancel",

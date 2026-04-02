@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { ReactNode } from "react";
+import { mockCommonTeamRolesRootKeys } from "@/test-support/i18n-team-role-mocks";
 
 const FREE_PLAN_FLAG = "APP_FREE_PLAN_ENABLED";
 const GROWTH_PRICE_ID = "STRIPE_GROWTH_PRICE_ID";
@@ -90,6 +91,9 @@ function mockDashboardDependencies({
         }
         if (key === "DashboardPage.welcome") {
           return `Welcome back, ${values?.name ?? "there"}.`;
+        }
+        if (key in mockCommonTeamRolesRootKeys) {
+          return mockCommonTeamRolesRootKeys[key];
         }
         return key;
       };

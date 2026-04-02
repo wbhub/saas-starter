@@ -69,7 +69,7 @@ export function ThreadSidebar({
       className={cn("flex min-h-0 w-full shrink-0 flex-col", "pb-3 lg:w-[260px] lg:self-stretch")}
     >
       <div className="flex items-center justify-between gap-2 px-5 py-3 mt-2">
-        <h3 className={cn("truncate text-sm font-normal", "text-muted-foreground")}>Recents</h3>
+        <h3 className={cn("truncate text-sm font-normal", "text-muted-foreground")}>{t("recents")}</h3>
         <Button
           type="button"
           variant="ghost"

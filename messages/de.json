@@ -1,7 +1,12 @@
 {
   "Common": {
     "brandName": "SaaS Starter",
-    "myTeam": "Mein Team"
+    "myTeam": "Mein Team",
+    "teamRoles": {
+      "owner": "Owner",
+      "admin": "Admin",
+      "member": "Mitglied"
+    }
   },
   "Metadata": {
     "title": "SaaS Starter | Produktionsreife Next.js-SaaS-Basis",
@@ -210,7 +215,7 @@
     "inviteTeammates": "Teammitglieder einladen",
     "switch": "Wechseln",
     "overview": "Übersicht",
-    "ai": "AI",
+    "ai": "KI",
     "billing": "Abrechnung",
     "usage": "Nutzung",
     "settings": "Einstellungen",
@@ -255,7 +260,7 @@
     "currentPlanFree": "Aktueller Plan: Kostenlos",
     "visitBillingUpgrade": "Gehe jederzeit zur Abrechnung, um upzugraden.",
     "noActiveSubscription": "Kein aktives Abonnement. Gehe zur Abrechnung, um einen Plan zu starten.",
-    "ai": "KI-Chat",
+    "ai": "KI",
     "billing": "Abrechnung",
     "teamNav": "Team",
     "inviteTeammates": "Teammitglieder einladen",
@@ -265,7 +270,7 @@
   "DashboardAiPage": {
     "header": {
       "eyebrow": "KI",
-      "title": "AI Chat & Agents",
+      "title": "KI-Chat & Agenten",
       "description": "Chatte mit deinem konfigurierten Modell unter Verwendung der Abrechnung und Nutzungslimits deines Teams."
     },
     "unavailable": {
@@ -286,6 +291,18 @@
       "structuredOutput": "Strukturierte Ausgabe",
       "ariaLabel": "KI-Arbeitsmodus",
       "hint": "Wechseln Sie zwischen freiem Chat und typisierten strukturierten Ergebnissen."
+    }
+  },
+  "AiThreads": {
+    "title": "Threads",
+    "recents": "Zuletzt",
+    "loading": "Threads werden geladen...",
+    "loadError": "Threads konnten nicht geladen werden. Tippen zum Wiederholen.",
+    "empty": "Noch keine Threads.",
+    "untitled": "Unbenannter Thread",
+    "actions": {
+      "newThread": "Neuer Thread",
+      "delete": "Thread löschen"
     }
   },
   "AiObjectCard": {
@@ -317,6 +334,8 @@
     "description": "Nachrichten werden in Echtzeit gestreamt und die Nutzung automatisch erfasst.",
     "placeholder": "Frage alles zu deinem Produkt, deinen Docs oder deinem Workflow...",
     "emptyState": "Beginne, indem du unten eine Nachricht sendest.",
+    "emptyConversationHeading": "Womit kann ich helfen?",
+    "modelAuto": "Automatisch",
     "attachments": {
       "label": "Anhänge",
       "selected": "{count} ausgewählt"
@@ -465,7 +484,7 @@
   "DashboardUsagePage": {
     "header": {
       "eyebrow": "Nutzung",
-      "title": "Team AI Usage",
+      "title": "KI-Nutzung des Teams",
       "description": "Verfolge die aktuelle Token-Nutzung deines Teams."
     },
     "table": {
@@ -536,11 +555,6 @@
       "noOtherMembers": "Noch keine weiteren Mitglieder — vorerst bist nur du in diesem Workspace.",
       "unnamed": "Teammitglied",
       "actionsSelectAriaLabel": "Aktionen für {name}"
-    },
-    "roles": {
-      "owner": "Owner",
-      "admin": "Admin",
-      "member": "Mitglied"
     },
     "actions": {
       "cancel": "Abbrechen",
