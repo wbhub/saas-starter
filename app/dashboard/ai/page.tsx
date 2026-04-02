@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { AiChatCard } from "@/components/ai-chat-card";
+import { listThreads } from "@/lib/ai/threads";
 import { env } from "@/lib/env";
 import { getAiToolsEnabled } from "@/lib/ai/config";
 import { AI_TOOL_MAP } from "@/lib/ai/tools";
@@ -13,9 +14,24 @@ import { cn } from "@/lib/utils";
 export default async function DashboardAiPage() {
   const aiProviderName = parseAiProviderName(env.AI_PROVIDER);
   const aiToolsEnabled = getAiToolsEnabled() && Object.keys(AI_TOOL_MAP).length > 0;
-  const t = await getTranslations("DashboardAiPage");
-  const { aiUiGate, displayName } = await getDashboardShellData();
+  const [t, shellData] = await Promise.all([
+    getTranslations("DashboardAiPage"),
+    getDashboardShellData(),
+  ]);
+  const { aiUiGate, displayName, teamContext, user } = shellData;
   const availableModels = getAvailableModels(aiUiGate);
+  const initialThreads =
+    aiUiGate.isVisibleInUi && teamContext
+      ? (await listThreads({
+          teamId: teamContext.teamId,
+          userId: user.id,
+        })).map(({ id, title, createdAt, updatedAt }) => ({
+          id,
+          title,
+          createdAt,
+          updatedAt,
+        }))
+      : undefined;
 
   return (
     <>
@@ -33,6 +49,7 @@ export default async function DashboardAiPage() {
           toolsEnabled={aiToolsEnabled}
           userDisplayName={displayName}
           availableModels={availableModels}
+          initialThreads={initialThreads}
         />
       ) : (
         <section className="rounded-xl bg-card ring-1 ring-border p-6">
