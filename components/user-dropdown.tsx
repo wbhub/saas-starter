@@ -70,6 +70,7 @@ export function UserDropdown({
 }: UserDropdownProps) {
   const t = useTranslations();
   const tLocale = useTranslations("LocaleSwitcher");
+  const tCommon = useTranslations("Common");
   const locale = useLocale() as AppLocale;
   const router = useRouter();
   const pathname = usePathname();
@@ -198,8 +199,8 @@ export function UserDropdown({
                   <span className="truncate text-xs text-muted-foreground">
                     {teamName ?? t("Common.myTeam")}
                   </span>
-                  <Badge variant="secondary" className="capitalize text-[10px] px-1.5 py-0">
-                    {role}
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                    {tCommon(`teamRoles.${role}`)}
                   </Badge>
                 </div>
               )}

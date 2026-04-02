@@ -1,7 +1,12 @@
 {
   "Common": {
     "brandName": "Iniciante SaaS",
-    "myTeam": "Minha equipe"
+    "myTeam": "Minha equipe",
+    "teamRoles": {
+      "owner": "Proprietário",
+      "admin": "Administrador",
+      "member": "Membro"
+    }
   },
   "Metadata": {
     "title": "SaaS Starter | Base SaaS de Produção com Next.js",
@@ -210,7 +215,7 @@
     "inviteTeammates": "Convidar colegas",
     "switch": "Trocar",
     "overview": "Visão geral",
-    "ai": "AI",
+    "ai": "IA",
     "billing": "Cobrança",
     "usage": "Uso",
     "settings": "Configurações",
@@ -255,7 +260,7 @@
     "currentPlanFree": "Plano atual: Gratuito",
     "visitBillingUpgrade": "Visite o faturamento para fazer upgrade a qualquer momento.",
     "noActiveSubscription": "Nenhuma assinatura ativa. Visite o faturamento para iniciar um plano.",
-    "ai": "Bate-papo com IA",
+    "ai": "IA",
     "billing": "Cobrança",
     "teamNav": "Equipe",
     "inviteTeammates": "Convidar colegas",
@@ -264,21 +269,21 @@
   },
   "DashboardAiPage": {
     "header": {
-      "eyebrow": "AI",
-      "title": "AI Chat & Agents",
-      "description": "Chat with your configured model using your team billing and usage limits."
+      "eyebrow": "IA",
+      "title": "Chat de IA e agentes",
+      "description": "Converse com o modelo configurado dentro da faturação e dos limites de uso da sua equipa."
     },
     "unavailable": {
-      "title": "AI chat is unavailable",
-      "description": "This workspace cannot use AI chat right now.",
+      "title": "O chat de IA está indisponível",
+      "description": "Este espaço de trabalho não pode usar o chat de IA neste momento.",
       "reason": {
-        "planRequired": "AI access requires an eligible paid plan.",
-        "notConfigured": "AI is not configured for this app yet.",
-        "teamMissing": "AI requires an active team workspace.",
-        "accessMisconfigured": "AI access settings are currently misconfigured."
+        "planRequired": "O acesso à IA requer um plano pago elegível.",
+        "notConfigured": "A IA ainda não está configurada para esta aplicação.",
+        "teamMissing": "A IA requer um espaço de trabalho de equipa ativo.",
+        "accessMisconfigured": "As definições de acesso à IA estão mal configuradas."
       },
       "actions": {
-        "goToBilling": "Go to billing"
+        "goToBilling": "Ir para faturação"
       }
     },
     "tabs": {
@@ -286,6 +291,30 @@
       "structuredOutput": "Saída estruturada",
       "ariaLabel": "Modo do espaço de IA",
       "hint": "Alterne entre chat livre e resultados estruturados tipados."
+    }
+  },
+  "AiThreads": {
+    "title": "Conversas",
+    "recents": "Recentes",
+    "loading": "A carregar conversas…",
+    "loadError": "Falha ao carregar. Toque para tentar novamente.",
+    "empty": "Ainda não há conversas.",
+    "untitled": "Sem título",
+    "actions": {
+      "newThread": "Nova conversa",
+      "delete": "Eliminar conversa"
+    }
+  },
+  "ApiAiThreads": {
+    "errors": {
+      "unauthorized": "Não autorizado.",
+      "noTeamMembership": "Não foi encontrada qualquer associação de equipa.",
+      "rateLimited": "Demasiados pedidos. Tente novamente dentro de instantes.",
+      "invalidPayload": "Pedido inválido.",
+      "invalidThreadId": "ID da conversa inválido.",
+      "threadNotFound": "Conversa não encontrada.",
+      "createFailed": "Falha ao criar a conversa.",
+      "deleteFailed": "Falha ao eliminar a conversa."
     }
   },
   "AiObjectCard": {
@@ -296,6 +325,9 @@
       "analyze": "Analisar",
       "analyzing": "Analisando...",
       "stop": "Parar"
+    },
+    "schemaSelector": {
+      "label": "Tipo de análise"
     },
     "result": {
       "sentiment": "Sentimento",
@@ -317,6 +349,8 @@
     "description": "As mensagens são transmitidas em tempo real e o uso é rastreado automaticamente.",
     "placeholder": "Pergunte qualquer coisa sobre seu produto, documentos ou fluxo de trabalho...",
     "emptyState": "Comece enviando uma mensagem abaixo.",
+    "emptyConversationHeading": "Em que posso ajudar?",
+    "modelAuto": "Automático",
     "attachments": {
       "label": "Anexos",
       "selected": "{count} selecionado"
@@ -465,7 +499,7 @@
   "DashboardUsagePage": {
     "header": {
       "eyebrow": "Uso",
-      "title": "Team AI Usage",
+      "title": "Utilização de IA da equipa",
       "description": "Acompanhe o uso recente de tokens pela sua equipe."
     },
     "table": {
@@ -536,11 +570,6 @@
       "noOtherMembers": "Ainda não há outros membros — por enquanto só você neste espaço de trabalho.",
       "unnamed": "Colega",
       "actionsSelectAriaLabel": "Ações para {name}"
-    },
-    "roles": {
-      "owner": "Proprietário",
-      "admin": "Administrador",
-      "member": "Membro"
     },
     "actions": {
       "cancel": "Cancelar",
@@ -683,7 +712,7 @@
     },
     "fields": {
       "confirmDelete": "Digite DELETE para confirmar",
-      "deleteToken": "EXCLUIR",
+      "deleteToken": "DELETE",
       "confirmEmail": "Confirme seu endereço de e-mail",
       "confirmEmailPlaceholder": "você@exemplo.com",
       "confirmPermanent": "Entendo que esta ação é permanente e não pode ser desfeita."
@@ -1027,7 +1056,8 @@
       "planRequired": "O acesso à IA requer um plano pago elegível.",
       "upstreamRateLimited": "O provedor de IA está atualmente com taxa limitada. Tente novamente em breve.",
       "upstreamBadRequest": "Esta solicitação de IA não pôde ser processada. Ajuste sua entrada e tente novamente.",
-      "unavailable": "O assistente de IA não está disponível no momento."
+      "unavailable": "O assistente de IA não está disponível no momento.",
+      "threadNotFound": "Conversa não encontrada."
     }
   },
   "ApiStripeCheckout": {

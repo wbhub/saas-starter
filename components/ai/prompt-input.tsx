@@ -156,11 +156,11 @@ export function PromptInput({
                     )}
                   >
                     <span data-slot="select-value" className="flex flex-1 text-left">
-                      {selectedModel ? selectedModel.toUpperCase() : "Auto"}
+                      {selectedModel ? selectedModel.toUpperCase() : t("modelAuto")}
                     </span>
                   </SelectTrigger>
                   <SelectContent align="start" sideOffset={4}>
-                    <SelectItem value="auto">Auto</SelectItem>
+                    <SelectItem value="auto">{t("modelAuto")}</SelectItem>
                     {availableModels.map((model) => (
                       <SelectItem key={model} value={model}>
                         {model.toUpperCase()}

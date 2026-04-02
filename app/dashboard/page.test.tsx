@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { mockCommonTeamRolesRootKeys } from "@/test-support/i18n-team-role-mocks";
 
 describe("Dashboard page billing selection", () => {
   beforeEach(() => {
@@ -30,7 +31,12 @@ describe("Dashboard page billing selection", () => {
         if (namespace === "DashboardBillingPage") {
           return (key: string) => key;
         }
-        return (key: string) => key;
+        return (key: string) => {
+          if (key in mockCommonTeamRolesRootKeys) {
+            return mockCommonTeamRolesRootKeys[key];
+          }
+          return key;
+        };
       }),
     }));
   });

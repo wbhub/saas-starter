@@ -525,7 +525,9 @@ export function AiChatCard({
                     "text-center",
                   )}
                 >
-                  <h2 className="text-2xl font-medium text-foreground">What can I help with?</h2>
+                  <h2 className="text-2xl font-medium text-foreground">
+                    {t("emptyConversationHeading")}
+                  </h2>
                 </div>
               ) : (
                 messages.map((message, index) => (
