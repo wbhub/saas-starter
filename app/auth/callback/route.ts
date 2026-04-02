@@ -151,9 +151,52 @@ function buildImplicitGrantBridgeHtml(confirmUrl: string, missingCodeUrl: string
 </html>`;
 }
 
+function createSupabaseCallbackClient(request: NextRequest, response: NextResponse) {
+  // @supabase/ssr hardcodes flowType: "pkce" and exchangeCodeForSession throws
+  // AuthPKCECodeVerifierMissingError when no code_verifier cookie exists.  For
+  // email-based flows (password recovery, signup confirmation) the reset email
+  // is generated server-side so no browser PKCE flow stores a code_verifier.
+  // Inject a placeholder so the client-side check passes — the Supabase server
+  // accepts it because email-generated codes have no code_challenge to validate.
+  const ref = new URL(env.NEXT_PUBLIC_SUPABASE_URL).hostname.split(".")[0];
+  const codeVerifierCookieName = `sb-${ref}-auth-token-code-verifier`;
+  const hasCodeVerifier = request.cookies.getAll().some((c) => c.name === codeVerifierCookieName);
+  if (!hasCodeVerifier) {
+    request.cookies.set(codeVerifierCookieName, "server-side-email-flow");
+  }
+
+  return createServerClient(
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options),
+          );
+        },
+      },
+    },
+  );
+}
+
+const VALID_OTP_TYPES = new Set([
+  "magiclink",
+  "recovery",
+  "signup",
+  "invite",
+  "email_change",
+  "email",
+]);
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
+  const tokenHash = searchParams.get("token_hash");
+  const otpType = searchParams.get("type");
   const safeNext = getSafeNextPath(searchParams.get("next"));
   const callbackClientId = getCallbackClientId(request);
 
@@ -169,6 +212,42 @@ export async function GET(request: NextRequest) {
         headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
       },
     );
+    return maybeSetCallbackCookie(
+      response,
+      request,
+      callbackClientId.isNew,
+      callbackClientId.value,
+    );
+  }
+
+  // Direct token_hash verification: the email link points straight to this
+  // route with ?token_hash=...&type=magiclink (or recovery, etc.).  We verify
+  // the token server-side via verifyOtp — no client-side page needed.
+  if (tokenHash && otpType && VALID_OTP_TYPES.has(otpType)) {
+    const response = NextResponse.redirect(toAbsoluteUrl(safeNext));
+    const supabase = createSupabaseCallbackClient(request, response);
+
+    const { data, error } = await supabase.auth.verifyOtp({
+      token_hash: tokenHash,
+      type: otpType as "magiclink" | "recovery" | "signup" | "invite" | "email_change" | "email",
+    });
+
+    if (error || !data.session) {
+      const errorResponse = NextResponse.redirect(toAbsoluteUrl("/login?error=invalid_code"));
+      return maybeSetCallbackCookie(
+        errorResponse,
+        request,
+        callbackClientId.isNew,
+        callbackClientId.value,
+      );
+    }
+
+    const userId = data.session.user.id;
+    rotateCsrfTokenOnResponse(response, request);
+    if (userId) {
+      maybeSetPasswordRecoveryCookies(response, request, safeNext, userId);
+    }
+    maybeSetLastAuthProviderCookie(response, request, data.session.user.app_metadata?.provider);
     return maybeSetCallbackCookie(
       response,
       request,
@@ -204,36 +283,7 @@ export async function GET(request: NextRequest) {
   // NextResponse.redirect() is returned — the same issue the proxy/middleware
   // avoids by writing cookies onto the NextResponse object itself.
   const response = NextResponse.redirect(toAbsoluteUrl(safeNext));
-
-  // @supabase/ssr hardcodes flowType: "pkce" and exchangeCodeForSession throws
-  // AuthPKCECodeVerifierMissingError when no code_verifier cookie exists.  For
-  // email-based flows (password recovery, signup confirmation) the reset email
-  // is generated server-side so no browser PKCE flow stores a code_verifier.
-  // Inject a placeholder so the client-side check passes — the Supabase server
-  // accepts it because email-generated codes have no code_challenge to validate.
-  const ref = new URL(env.NEXT_PUBLIC_SUPABASE_URL).hostname.split(".")[0];
-  const codeVerifierCookieName = `sb-${ref}-auth-token-code-verifier`;
-  const hasCodeVerifier = request.cookies.getAll().some((c) => c.name === codeVerifierCookieName);
-  if (!hasCodeVerifier) {
-    request.cookies.set(codeVerifierCookieName, "server-side-email-flow");
-  }
-
-  const supabase = createServerClient(
-    env.NEXT_PUBLIC_SUPABASE_URL,
-    env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options),
-          );
-        },
-      },
-    },
-  );
+  const supabase = createSupabaseCallbackClient(request, response);
 
   const { data, error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
