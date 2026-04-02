@@ -3,10 +3,9 @@ import { renderToStaticMarkup } from "react-dom/server";
 import type { ReactNode } from "react";
 
 const listThreads = vi.fn();
-const aiChatCard = vi.fn(
-  ({ initialThreads }: { initialThreads?: Array<{ id: string }> }) =>
-    <div>AiChatCardMock:{initialThreads?.length ?? 0}</div>,
-);
+const aiChatCard = vi.fn(({ initialThreads }: { initialThreads?: Array<{ id: string }> }) => (
+  <div>AiChatCardMock:{initialThreads?.length ?? 0}</div>
+));
 
 function mockAiPageDependencies({
   isVisibleInUi,

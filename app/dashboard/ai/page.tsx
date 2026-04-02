@@ -22,10 +22,12 @@ export default async function DashboardAiPage() {
   const availableModels = getAvailableModels(aiUiGate);
   const initialThreads =
     aiUiGate.isVisibleInUi && teamContext
-      ? (await listThreads({
-          teamId: teamContext.teamId,
-          userId: user.id,
-        })).map(({ id, title, createdAt, updatedAt }) => ({
+      ? (
+          await listThreads({
+            teamId: teamContext.teamId,
+            userId: user.id,
+          })
+        ).map(({ id, title, createdAt, updatedAt }) => ({
           id,
           title,
           createdAt,
