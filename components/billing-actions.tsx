@@ -1,20 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import { ExternalLink, Loader2, Wallet } from "lucide-react";
+import { CheckCircle2, ExternalLink, Loader2, Wallet } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { CLIENT_IDEMPOTENCY_TTL_MS, SYNC_PENDING_RELOAD_DELAY_MS } from "@/lib/constants/billing";
 import { clientPostJson } from "@/lib/http/client-fetch";
-import { PLAN_KEYS, type PlanKey } from "@/lib/stripe/plans";
+import { type PlanKey, type PlanInterval } from "@/lib/stripe/plans";
+import type { PublicPricingPlan } from "@/lib/stripe/public-pricing";
 import { DashboardPageSection } from "@/components/dashboard-page-section";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 
 type Props = {
   billingEnabled: boolean;
   currentPlanKey: PlanKey | null;
   hasSubscription: boolean;
   canManageBilling: boolean;
+  plans: PublicPricingPlan[];
+  showAnnualToggle: boolean;
+  currentBillingInterval: PlanInterval | null;
 };
 
 type CheckoutPayload = {
@@ -67,11 +74,17 @@ export function BillingActions({
   currentPlanKey,
   hasSubscription,
   canManageBilling,
+  plans,
+  showAnnualToggle,
+  currentBillingInterval,
 }: Props) {
   const t = useTranslations("BillingActions");
   const tPlans = useTranslations("Landing.pricing");
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [selectedInterval, setSelectedInterval] = useState<"month" | "year">(
+    currentBillingInterval ?? "month",
+  );
 
   async function startCheckout(planKey: PlanKey) {
     setLoadingAction(`checkout-${planKey}`);
@@ -79,7 +92,7 @@ export function BillingActions({
     try {
       const payload = await clientPostJson<CheckoutPayload>(
         "/api/stripe/checkout",
-        { planKey },
+        { planKey, interval: selectedInterval },
         {
           fallbackErrorMessage: t("errors.requestFailed"),
           headers: {
@@ -170,9 +183,9 @@ export function BillingActions({
     }
   }
 
-  const availablePlanKeys = PLAN_KEYS.filter((key) => key !== currentPlanKey);
   const showActions = billingEnabled && canManageBilling;
   const isBusy = loadingAction !== null;
+  const isAnnual = selectedInterval === "year";
 
   const description = !billingEnabled
     ? t("description.billingDisabled")
@@ -220,76 +233,159 @@ export function BillingActions({
                 </div>
               </div>
 
-              {availablePlanKeys.length > 0 ? (
-                <>
-                  <Separator />
-                  <div className="space-y-3">
-                    <div className="space-y-1">
-                      <h3 className="text-sm font-medium text-foreground">
-                        {t("changePlan.title")}
-                      </h3>
-                      <p className="text-sm leading-relaxed text-muted-foreground">
-                        {t("changePlan.subtitle")}
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {availablePlanKeys.map((key) => (
-                        <Button
-                          key={key}
-                          type="button"
-                          variant="outline"
-                          size="control"
-                          onClick={() => changePlan(key)}
-                          disabled={isBusy}
-                        >
-                          {loadingAction === `change-${key}` ? (
-                            <>
-                              <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden />
-                              {t("actions.updating")}
-                            </>
-                          ) : (
-                            t("actions.switchTo", { name: tPlans(`plans.${key}.name`) })
-                          )}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              ) : null}
+              <Separator />
             </>
-          ) : (
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">{t("subscribe.hint")}</p>
-              <div className="grid gap-3 sm:grid-cols-3">
-                {PLAN_KEYS.map((key) => (
-                  <Button
-                    key={key}
-                    type="button"
-                    variant="default"
-                    className="h-auto w-full flex-col gap-1 py-3"
-                    onClick={() => startCheckout(key)}
-                    disabled={isBusy}
-                  >
-                    {loadingAction === `checkout-${key}` ? (
-                      <>
-                        <Loader2 className="size-4 animate-spin" aria-hidden />
-                        <span className="text-xs font-normal opacity-90">
-                          {t("actions.opening")}
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-sm font-semibold">{tPlans(`plans.${key}.name`)}</span>
-                        <span className="text-xs font-normal opacity-90">
-                          {t("actions.subscribePlan")}
-                        </span>
-                      </>
-                    )}
-                  </Button>
-                ))}
-              </div>
+          ) : null}
+
+          {/* Plan comparison section */}
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <h3 className="text-sm font-medium text-foreground">
+                {hasSubscription ? t("changePlan.title") : t("subscribe.hint")}
+              </h3>
+              {hasSubscription ? (
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  {t("changePlan.subtitle")}
+                </p>
+              ) : null}
             </div>
-          )}
+
+            {showAnnualToggle ? (
+              <div className="flex items-center gap-3">
+                <SegmentedControl
+                  aria-label={`${t("toggle.monthly")} / ${t("toggle.annual")}`}
+                  value={selectedInterval}
+                  onValueChange={setSelectedInterval}
+                  options={[
+                    { value: "month" as const, label: t("toggle.monthly") },
+                    { value: "year" as const, label: t("toggle.annual") },
+                  ]}
+                />
+                {isAnnual ? (
+                  <span className="rounded-full bg-success/10 px-3 py-1 text-xs font-medium text-success">
+                    {t("toggle.save")}
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
+
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {plans.map((plan) => {
+                const isCurrent = plan.key === currentPlanKey;
+                const priceLabel =
+                  isAnnual && plan.annualPriceLabel ? plan.annualPriceLabel : plan.priceLabel;
+
+                return (
+                  <div
+                    key={plan.key}
+                    className={cn(
+                      "relative flex flex-col rounded-xl p-6 transition-shadow",
+                      isCurrent
+                        ? "bg-primary/5 ring-2 ring-primary"
+                        : plan.popular
+                          ? "bg-card ring-2 ring-primary/50 hover:shadow-md"
+                          : "bg-muted/30 ring-1 ring-border hover:shadow-md",
+                    )}
+                  >
+                    {isCurrent ? (
+                      <div className="absolute -top-2.5 right-4">
+                        <Badge variant="default" className="shadow-sm">
+                          {t("currentPlanBadge")}
+                        </Badge>
+                      </div>
+                    ) : plan.popular && !hasSubscription ? (
+                      <div className="absolute -top-2.5 right-4">
+                        <Badge variant="default" className="shadow-sm">
+                          {tPlans("mostPopular")}
+                        </Badge>
+                      </div>
+                    ) : null}
+
+                    <p className="text-lg font-semibold text-foreground">
+                      {tPlans(`plans.${plan.key}.name`)}
+                    </p>
+
+                    <div className="mt-3 flex items-baseline gap-1.5">
+                      <span className="text-3xl font-bold tracking-tight text-foreground">
+                        {priceLabel}
+                      </span>
+                      {isAnnual && plan.annualPriceLabel ? (
+                        <span className="rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
+                          {t("toggle.save")}
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="mt-1 text-sm text-muted-foreground">{t("perSeat")}</p>
+
+                    <p className="mt-3 text-sm text-muted-foreground">
+                      {tPlans(`plans.${plan.key}.description`)}
+                    </p>
+
+                    <ul className="mt-4 flex-1 space-y-2.5 border-t border-border pt-4">
+                      {plan.features.map((feature) => (
+                        <li key={feature} className="flex items-start gap-2 text-sm">
+                          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
+                          <span className="text-muted-foreground">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    {isCurrent ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="cta"
+                        disabled
+                        className="mt-6 w-full"
+                      >
+                        {t("currentPlanBadge")}
+                      </Button>
+                    ) : hasSubscription ? (
+                      <Button
+                        type="button"
+                        variant={plan.popular ? "default" : "outline"}
+                        size="cta"
+                        onClick={() => changePlan(plan.key as PlanKey)}
+                        disabled={isBusy}
+                        className="mt-6 w-full"
+                      >
+                        {loadingAction === `change-${plan.key}` ? (
+                          <>
+                            <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden />
+                            {t("actions.updating")}
+                          </>
+                        ) : (
+                          t("actions.switchTo", { name: tPlans(`plans.${plan.key}.name`) })
+                        )}
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant={plan.popular ? "default" : "outline"}
+                        size="cta"
+                        onClick={() => startCheckout(plan.key as PlanKey)}
+                        disabled={isBusy}
+                        className="mt-6 w-full"
+                      >
+                        {loadingAction === `checkout-${plan.key}` ? (
+                          <>
+                            <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden />
+                            {t("actions.opening")}
+                          </>
+                        ) : (
+                          t("actions.getStarted")
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {hasSubscription && showAnnualToggle ? (
+              <p className="text-xs text-muted-foreground">{t("intervalNote")}</p>
+            ) : null}
+          </div>
 
           {message ? (
             <div
