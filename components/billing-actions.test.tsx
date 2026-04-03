@@ -184,6 +184,32 @@ describe("BillingActions", () => {
     expect(html).toContain("Switch to Pro");
   });
 
+  it("uses outline variant for downgrade buttons, default variant for upgrades", () => {
+    const html = renderToStaticMarkup(
+      <BillingActions
+        billingEnabled={true}
+        currentPlanKey="growth"
+        hasSubscription={true}
+        canManageBilling={true}
+        plans={mockPlans}
+        showAnnualToggle={false}
+        currentBillingInterval="month"
+      />,
+    );
+
+    // "Switch to Starter" (downgrade) should NOT have the primary bg class
+    const starterButtonMatch = html.match(
+      /<button[^>]*>(?:[^<]*<[^/][^>]*>)*[^<]*Switch to Starter[^<]*/,
+    );
+    expect(starterButtonMatch).not.toBeNull();
+    expect(starterButtonMatch![0]).not.toContain("bg-primary");
+
+    // "Switch to Pro" (upgrade) SHOULD have the primary bg class
+    const proButtonMatch = html.match(/<button[^>]*>(?:[^<]*<[^/][^>]*>)*[^<]*Switch to Pro[^<]*/);
+    expect(proButtonMatch).not.toBeNull();
+    expect(proButtonMatch![0]).toContain("bg-primary");
+  });
+
   it("hides billing actions when billing is disabled", () => {
     const html = renderToStaticMarkup(
       <BillingActions

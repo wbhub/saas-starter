@@ -334,6 +334,13 @@ export function BillingActions({
                   loadingAction === `change-${plan.key}` ||
                   loadingAction === `checkout-${plan.key}`;
 
+                // Determine if this plan is an upgrade relative to the current plan.
+                // Downgrades should use a muted button style, never a blue CTA.
+                const currentPlanAmount = currentPlanKey
+                  ? (plans.find((p) => p.key === currentPlanKey)?.amountMonthly ?? 0)
+                  : 0;
+                const isUpgrade = plan.amountMonthly > currentPlanAmount;
+
                 return (
                   <div
                     key={plan.key}
@@ -380,7 +387,7 @@ export function BillingActions({
                     {isCurrent ? null : hasSubscription ? (
                       <Button
                         type="button"
-                        variant={plan.popular ? "default" : "outline"}
+                        variant={isUpgrade ? "default" : "outline"}
                         size="sm"
                         onClick={() =>
                           requestPlanChange(plan.key as PlanKey, tPlans(`plans.${plan.key}.name`))
