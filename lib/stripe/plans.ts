@@ -102,6 +102,23 @@ export const PLAN_CATALOG: PlanCatalogEntry[] = [
   },
 ];
 
+/**
+ * Shape of a plan returned by `getPublicPricingCatalog()`.
+ * Defined here (not in public-pricing.ts) so client components can import it
+ * without pulling in the "server-only" module.
+ */
+export type PublicPricingPlan = {
+  key: PlanKey;
+  name: string;
+  description: string;
+  priceLabel: string;
+  annualPriceLabel?: string;
+  amountMonthly: number;
+  amountAnnualMonthly?: number;
+  popular?: boolean;
+  features: string[];
+};
+
 export const PLAN_LABELS: Record<PlanKey, string> = Object.fromEntries(
   PLAN_CATALOG.map((plan) => [plan.key, plan.name] as const),
 ) as Record<PlanKey, string>;
