@@ -405,15 +405,35 @@
     "subscribe": {
       "hint": "プランを選んでチェックアウトへ進みます。"
     },
+    "toggle": {
+      "monthly": "月払い",
+      "annual": "年払い",
+      "save": "20% お得"
+    },
+    "currentPlanBadge": "現在のプラン",
+    "intervalNote": "請求サイクルを変更するには、請求ポータルをご利用ください。",
+    "perSeat": "1席あたり / 月",
     "actions": {
-      "opening": "開いています...",
-      "updating": "更新中...",
+      "opening": "開いています…",
+      "updating": "更新中…",
       "subscribePlan": "チェックアウトへ進む",
-      "switchTo": "{name} に切り替え"
+      "switchTo": "{name} に切り替え",
+      "getStarted": "始める"
     },
     "messages": {
       "syncPending": "Stripe でプランを更新しました。同期中です。まもなく再読み込みします…",
       "planUpdated": "プランを更新しました。課金情報を再読み込みしています…"
+    },
+    "confirm": {
+      "title": "{name} に切り替え",
+      "loading": "日割り料金を計算中…",
+      "errorPrefix": "料金の詳細を読み込めませんでした。",
+      "charge": "本日 {amount} が請求されます（現在の請求期間の残り分を日割り計算）。",
+      "credit": "{amount} のクレジットが次回の請求書に適用されます。",
+      "noCharge": "追加料金はありません。次回の請求書に新しいプランが反映されます。",
+      "proration": "新しいプランは即座に有効になります。",
+      "cancel": "キャンセル",
+      "action": "変更を確定"
     },
     "errors": {
       "checkoutFailed": "Checkout に失敗しました",
@@ -421,7 +441,8 @@
       "portalUnavailable": "ポータルを利用できません",
       "missingCheckoutUrl": "Checkout URL がありません",
       "missingPortalUrl": "ポータル URL がありません",
-      "requestFailed": "リクエストに失敗しました"
+      "requestFailed": "リクエストに失敗しました",
+      "previewFailed": "料金プレビューを読み込めませんでした"
     }
   },
   "DashboardBillingPage": {

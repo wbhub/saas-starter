@@ -405,15 +405,35 @@
     "subscribe": {
       "hint": "Plan wählen, um zum Checkout zu gelangen."
     },
+    "toggle": {
+      "monthly": "Monatlich",
+      "annual": "Jährlich",
+      "save": "20 % sparen"
+    },
+    "currentPlanBadge": "Aktueller Plan",
+    "intervalNote": "Um den Abrechnungszyklus zu ändern, besuche das Abrechnungsportal.",
+    "perSeat": "pro Platz / Monat",
     "actions": {
-      "opening": "Wird geöffnet...",
-      "updating": "Wird aktualisiert...",
+      "opening": "Wird geöffnet…",
+      "updating": "Wird aktualisiert…",
       "subscribePlan": "Weiter zum Checkout",
-      "switchTo": "Zu {name} wechseln"
+      "switchTo": "Zu {name} wechseln",
+      "getStarted": "Loslegen"
     },
     "messages": {
-      "syncPending": "Plan in Stripe aktualisiert. Synchronisierung läuft. Seite wird gleich neu geladen...",
-      "planUpdated": "Plan aktualisiert. Abrechnungsdetails werden neu geladen..."
+      "syncPending": "Plan in Stripe aktualisiert. Synchronisierung läuft. Seite wird gleich neu geladen…",
+      "planUpdated": "Plan aktualisiert. Abrechnungsdetails werden neu geladen…"
+    },
+    "confirm": {
+      "title": "Zu {name} wechseln",
+      "loading": "Anteilige Kosten werden berechnet…",
+      "errorPrefix": "Preisdetails konnten nicht geladen werden.",
+      "charge": "Dir werden heute {amount} berechnet, anteilig für den Rest deines aktuellen Abrechnungszeitraums.",
+      "credit": "Du erhältst eine Gutschrift von {amount}, die auf deine nächste Rechnung angerechnet wird.",
+      "noCharge": "Keine zusätzlichen Kosten – deine nächste Rechnung spiegelt den neuen Plan wider.",
+      "proration": "Dein neuer Plan tritt sofort in Kraft.",
+      "cancel": "Abbrechen",
+      "action": "Wechsel bestätigen"
     },
     "errors": {
       "checkoutFailed": "Checkout fehlgeschlagen",
@@ -421,7 +441,8 @@
       "portalUnavailable": "Portal nicht verfügbar",
       "missingCheckoutUrl": "Checkout-URL fehlt",
       "missingPortalUrl": "Portal-URL fehlt",
-      "requestFailed": "Anfrage fehlgeschlagen"
+      "requestFailed": "Anfrage fehlgeschlagen",
+      "previewFailed": "Preisvorschau konnte nicht geladen werden"
     }
   },
   "DashboardBillingPage": {

@@ -405,15 +405,35 @@
     "subscribe": {
       "hint": "Sélectionnez un forfait pour accéder au paiement."
     },
+    "toggle": {
+      "monthly": "Mensuel",
+      "annual": "Annuel",
+      "save": "Économisez 20 %"
+    },
+    "currentPlanBadge": "Forfait actuel",
+    "intervalNote": "Pour changer le cycle de facturation, rendez-vous sur le portail de facturation.",
+    "perSeat": "par poste / mois",
     "actions": {
-      "opening": "Ouverture...",
-      "updating": "Mise à jour...",
+      "opening": "Ouverture…",
+      "updating": "Mise à jour…",
       "subscribePlan": "Continuer vers le paiement",
-      "switchTo": "Passer à {name}"
+      "switchTo": "Passer à {name}",
+      "getStarted": "Commencer"
     },
     "messages": {
       "syncPending": "Forfait mis à jour dans Stripe. Synchronisation en cours. Actualisation sous peu…",
       "planUpdated": "Forfait mis à jour. Actualisation des détails de facturation…"
+    },
+    "confirm": {
+      "title": "Passer à {name}",
+      "loading": "Calcul du coût au prorata…",
+      "errorPrefix": "Impossible de charger les détails tarifaires.",
+      "charge": "Vous serez facturé {amount} aujourd'hui, au prorata du reste de votre période de facturation en cours.",
+      "credit": "Vous recevrez un crédit de {amount} appliqué à votre prochaine facture.",
+      "noCharge": "Aucun frais supplémentaire — votre prochaine facture reflétera le nouveau forfait.",
+      "proration": "Votre nouveau forfait prend effet immédiatement.",
+      "cancel": "Annuler",
+      "action": "Confirmer le changement"
     },
     "errors": {
       "checkoutFailed": "Échec du paiement",
@@ -421,7 +441,8 @@
       "portalUnavailable": "Portail indisponible",
       "missingCheckoutUrl": "URL de paiement manquante",
       "missingPortalUrl": "URL du portail manquante",
-      "requestFailed": "La demande a échoué"
+      "requestFailed": "La demande a échoué",
+      "previewFailed": "Impossible de charger l'aperçu tarifaire"
     }
   },
   "DashboardBillingPage": {
