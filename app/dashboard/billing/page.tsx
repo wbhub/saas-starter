@@ -6,7 +6,6 @@ import {
   CircleDollarSign,
   Coins,
   CreditCard,
-  LayoutGrid,
   Receipt,
   Sparkles,
   Users,
@@ -20,6 +19,7 @@ import { formatStaticUsdMonthlyLabel } from "@/lib/stripe/plan-price-display";
 import { canManageTeamBilling } from "@/lib/team-context";
 import { getDashboardShellData } from "@/lib/dashboard/server";
 import type { PlanKey, SubscriptionStatus } from "@/lib/stripe/plans";
+import { hasAnnualPricing } from "@/lib/stripe/config";
 import { syncCheckoutSuccessForTeam } from "@/lib/stripe/checkout-success";
 import { getPublicPricingCatalog } from "@/lib/stripe/public-pricing";
 import { createClient } from "@/lib/supabase/server";
@@ -175,50 +175,6 @@ export default async function DashboardBillingPage({
             title={t("freeMode.title")}
             description={t("freeMode.description")}
           />
-
-          <DashboardPageSection
-            icon={LayoutGrid}
-            title={t("freeMode.compareTitle")}
-            description={t("freeMode.compareDescription")}
-          >
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {livePricing.map((plan) => (
-                <div
-                  key={plan.key}
-                  className={cn(
-                    "relative rounded-xl bg-muted/30 p-6 ring-1 ring-border transition-shadow hover:shadow-md",
-                    plan.popular &&
-                      "bg-card ring-2 ring-primary ring-offset-2 ring-offset-background dark:ring-offset-card",
-                  )}
-                >
-                  {plan.popular ? (
-                    <div className="absolute -top-2.5 left-6">
-                      <Badge variant="default" className="shadow-sm">
-                        {t("freeMode.popularBadge")}
-                      </Badge>
-                    </div>
-                  ) : null}
-                  <h3 className="text-base font-medium text-foreground">
-                    {tPlanCopy(`plans.${plan.key}.name`)}
-                  </h3>
-                  <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
-                    {plan.priceLabel}
-                  </p>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    {tPlanCopy(`plans.${plan.key}.description`)}
-                  </p>
-                  <div className="mt-4 space-y-2 border-t border-border pt-4">
-                    <p className="text-sm text-muted-foreground">
-                      {t("freeMode.perSeat", { amount: plan.priceLabel })}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {t("freeMode.collaborationIncluded")}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </DashboardPageSection>
         </div>
       ) : (
         <DashboardPageSection
@@ -335,6 +291,9 @@ export default async function DashboardBillingPage({
         currentPlanKey={currentPaidPlanKey}
         hasSubscription={hasSubscription}
         canManageBilling={canManageBilling}
+        plans={livePricing}
+        showAnnualToggle={hasAnnualPricing}
+        currentBillingInterval={billingInterval ?? null}
       />
 
       {aiUiGate.isVisibleInUi ? (

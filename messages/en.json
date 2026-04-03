@@ -400,16 +400,25 @@
     },
     "changePlan": {
       "title": "Upgrade or change plan",
-      "subtitle": "Switch to another tier here. Stripe prorates your subscription automatically."
+      "subtitle": "Compare plans and switch tiers. Stripe prorates your subscription automatically."
     },
     "subscribe": {
       "hint": "Select a plan to continue to checkout."
     },
+    "toggle": {
+      "monthly": "Monthly",
+      "annual": "Annual",
+      "save": "Save 20%"
+    },
+    "currentPlanBadge": "Current plan",
+    "intervalNote": "To change your billing cycle, visit the billing portal.",
+    "perSeat": "per seat / month",
     "actions": {
       "opening": "Opening…",
       "updating": "Updating…",
       "subscribePlan": "Continue to checkout",
-      "switchTo": "Switch to {name}"
+      "switchTo": "Switch to {name}",
+      "getStarted": "Get started"
     },
     "messages": {
       "syncPending": "Plan updated in Stripe. Sync in progress. Refreshing shortly…",
