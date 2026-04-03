@@ -166,6 +166,24 @@ describe("BillingActions", () => {
     expect(html).toContain("AI-powered features");
   });
 
+  it("does not show switch button for the current plan", () => {
+    const html = renderToStaticMarkup(
+      <BillingActions
+        billingEnabled={true}
+        currentPlanKey="starter"
+        hasSubscription={true}
+        canManageBilling={true}
+        plans={mockPlans}
+        showAnnualToggle={false}
+        currentBillingInterval="month"
+      />,
+    );
+
+    expect(html).not.toContain("Switch to Starter");
+    expect(html).toContain("Switch to Growth");
+    expect(html).toContain("Switch to Pro");
+  });
+
   it("hides billing actions when billing is disabled", () => {
     const html = renderToStaticMarkup(
       <BillingActions
