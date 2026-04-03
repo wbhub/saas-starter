@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { BillingActions } from "./billing-actions";
-import type { PublicPricingPlan } from "@/lib/stripe/public-pricing";
+import type { PublicPricingPlan } from "@/lib/stripe/plans";
 
 vi.mock("next-intl", () => ({
   useTranslations: (namespace?: string) => (key: string, values?: Record<string, string>) => {

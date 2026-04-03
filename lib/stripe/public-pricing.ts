@@ -5,18 +5,9 @@ import { logger } from "@/lib/logger";
 import { formatStaticUsdMonthlyLabel } from "@/lib/stripe/plan-price-display";
 import { plans } from "@/lib/stripe/config";
 import { getStripeServerClient } from "@/lib/stripe/server";
+import type { PublicPricingPlan } from "@/lib/stripe/plans";
 
-export type PublicPricingPlan = {
-  key: (typeof plans)[number]["key"];
-  name: string;
-  description: string;
-  priceLabel: string;
-  annualPriceLabel?: string;
-  amountMonthly: number;
-  amountAnnualMonthly?: number;
-  popular?: boolean;
-  features: string[];
-};
+export type { PublicPricingPlan };
 
 let warnedStripePricingDisabled = false;
 
