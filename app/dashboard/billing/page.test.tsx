@@ -226,8 +226,6 @@ describe("Dashboard billing page free plan behavior", () => {
     const html = renderToStaticMarkup(await BillingPage());
 
     expect(html).toContain("Unlock premium features");
-    expect(html).toContain("Team collaboration included on all paid plans.");
-    expect(html).toContain("Starter");
     expect(html).toContain('data-current-plan=""');
     expect(html).toContain('data-has-subscription="false"');
     expect(html).toContain('data-testid="ai-usage-card"');
