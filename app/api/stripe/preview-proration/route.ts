@@ -23,7 +23,7 @@ type ExistingSubscriptionRow = {
   stripe_subscription_id: string | null;
   stripe_customer_id: string | null;
   stripe_price_id: string | null;
-  stripe_subscription_item_id: string | null;
+  stripe_subscription_item_id?: string | null;
   seat_quantity: number;
   status: SubscriptionStatus;
 };
@@ -101,7 +101,13 @@ export async function POST(req: Request) {
     return err(t("errors.invalidTargetPlan"), 400);
   }
 
-  const { data: subscriptionRow, error: subscriptionRowError } = await supabase
+  // Try to select the stripe_subscription_item_id column (added in a later
+  // schema migration). If the column doesn't exist yet, fall back to a query
+  // without it — the Stripe retrieve path handles the missing item ID.
+  let subscriptionRow: ExistingSubscriptionRow | null = null;
+  let subscriptionRowError: { message: string } | null = null;
+
+  const fullQuery = await supabase
     .from("subscriptions")
     .select(
       "stripe_subscription_id,stripe_customer_id,stripe_price_id,stripe_subscription_item_id,seat_quantity,status",
@@ -111,6 +117,23 @@ export async function POST(req: Request) {
     .order("current_period_end", { ascending: false })
     .limit(1)
     .maybeSingle<ExistingSubscriptionRow>();
+
+  if (fullQuery.error) {
+    // Column may not exist — retry without it.
+    const fallbackQuery = await supabase
+      .from("subscriptions")
+      .select("stripe_subscription_id,stripe_customer_id,stripe_price_id,seat_quantity,status")
+      .eq("team_id", teamContext.teamId)
+      .in("status", LIVE_SUBSCRIPTION_STATUSES)
+      .order("current_period_end", { ascending: false })
+      .limit(1)
+      .maybeSingle<ExistingSubscriptionRow>();
+
+    subscriptionRow = fallbackQuery.data;
+    subscriptionRowError = fallbackQuery.error;
+  } else {
+    subscriptionRow = fullQuery.data;
+  }
 
   if (subscriptionRowError) {
     return err(t("errors.couldNotLoadSubscription"), 500);
