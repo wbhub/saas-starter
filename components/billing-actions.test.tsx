@@ -3,6 +3,10 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { BillingActions } from "./billing-actions";
 import type { PublicPricingPlan } from "@/lib/stripe/plans";
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: vi.fn() }),
+}));
+
 vi.mock("next-intl", () => ({
   useTranslations: (namespace?: string) => (key: string, values?: Record<string, string>) => {
     if (namespace === "Landing.pricing") {

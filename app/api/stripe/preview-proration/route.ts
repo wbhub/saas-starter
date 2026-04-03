@@ -10,6 +10,7 @@ import { getRouteTranslator } from "@/lib/i18n/locale";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { verifyCsrfProtection } from "@/lib/security/csrf";
 import { LIVE_SUBSCRIPTION_STATUSES, type SubscriptionStatus } from "@/lib/stripe/plans";
+import { resolvePlanWithIntervalByPriceId } from "@/lib/stripe/price-id-lookup";
 import { parsePlanKey } from "@/lib/validation";
 import { canManageTeamBilling } from "@/lib/team-context";
 import { getCachedTeamContextForUser } from "@/lib/team-context-cache";
@@ -20,6 +21,10 @@ const previewPayloadSchema = z.object({
 
 type ExistingSubscriptionRow = {
   stripe_subscription_id: string | null;
+  stripe_customer_id: string | null;
+  stripe_price_id: string | null;
+  stripe_subscription_item_id: string | null;
+  seat_quantity: number;
   status: SubscriptionStatus;
 };
 
@@ -98,7 +103,9 @@ export async function POST(req: Request) {
 
   const { data: subscriptionRow, error: subscriptionRowError } = await supabase
     .from("subscriptions")
-    .select("stripe_subscription_id,status")
+    .select(
+      "stripe_subscription_id,stripe_customer_id,stripe_price_id,stripe_subscription_item_id,seat_quantity,status",
+    )
     .eq("team_id", teamContext.teamId)
     .in("status", LIVE_SUBSCRIPTION_STATUSES)
     .order("current_period_end", { ascending: false })
@@ -113,34 +120,47 @@ export async function POST(req: Request) {
     return err(t("errors.noActiveSubscription"), 404);
   }
 
+  // Derive the billing interval from the locally cached price ID so we can
+  // skip a stripe.subscriptions.retrieve() round-trip.
+  const currentPlanWithInterval = resolvePlanWithIntervalByPriceId(subscriptionRow.stripe_price_id);
+  const currentInterval = currentPlanWithInterval?.interval ?? "month";
+
+  const targetPriceId = getPlanPriceId(plan.key, currentInterval);
+  if (!targetPriceId) {
+    return err(t("errors.billingPlansNotConfigured"), 503);
+  }
+
+  if (subscriptionRow.stripe_price_id === targetPriceId) {
+    return err(t("errors.alreadyOnPlan"), 409);
+  }
+
+  // If the subscription item ID is cached locally, go straight to the preview
+  // (single Stripe call). Otherwise fall back to a retrieve first.
   try {
-    const stripeSubscription = await stripe.subscriptions.retrieve(
-      subscriptionRow.stripe_subscription_id,
-    );
+    let itemId = subscriptionRow.stripe_subscription_item_id;
+    let customerId = subscriptionRow.stripe_customer_id;
+    const quantity = subscriptionRow.seat_quantity ?? 1;
 
-    const firstItem = stripeSubscription.items.data[0];
-    if (!firstItem) {
-      return err(t("errors.subscriptionItemNotFound"), 400);
-    }
-
-    const currentInterval = firstItem.price.recurring?.interval === "year" ? "year" : "month";
-    const targetPriceId = getPlanPriceId(plan.key, currentInterval);
-    if (!targetPriceId) {
-      return err(t("errors.billingPlansNotConfigured"), 503);
-    }
-
-    if (firstItem.price.id === targetPriceId) {
-      return err(t("errors.alreadyOnPlan"), 409);
+    if (!itemId || !customerId) {
+      const stripeSubscription = await stripe.subscriptions.retrieve(
+        subscriptionRow.stripe_subscription_id,
+      );
+      const firstItem = stripeSubscription.items.data[0];
+      if (!firstItem) {
+        return err(t("errors.subscriptionItemNotFound"), 400);
+      }
+      itemId = firstItem.id;
+      customerId =
+        typeof stripeSubscription.customer === "string"
+          ? stripeSubscription.customer
+          : stripeSubscription.customer.id;
     }
 
     const preview = await stripe.invoices.createPreview({
-      customer:
-        typeof stripeSubscription.customer === "string"
-          ? stripeSubscription.customer
-          : stripeSubscription.customer.id,
-      subscription: stripeSubscription.id,
+      customer: customerId,
+      subscription: subscriptionRow.stripe_subscription_id,
       subscription_details: {
-        items: [{ id: firstItem.id, price: targetPriceId, quantity: firstItem.quantity ?? 1 }],
+        items: [{ id: itemId, price: targetPriceId, quantity }],
         proration_behavior: "create_prorations",
       },
     });

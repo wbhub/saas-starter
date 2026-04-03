@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Check, ExternalLink, Loader2, Wallet } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { CLIENT_IDEMPOTENCY_TTL_MS, SYNC_PENDING_RELOAD_DELAY_MS } from "@/lib/constants/billing";
@@ -110,6 +111,7 @@ export function BillingActions({
   showAnnualToggle,
   currentBillingInterval,
 }: Props) {
+  const router = useRouter();
   const t = useTranslations("BillingActions");
   const tPlans = useTranslations("Landing.pricing");
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
@@ -162,7 +164,7 @@ export function BillingActions({
         setLoadingAction("sync-pending");
         setMessage(t("messages.syncPending"));
         window.setTimeout(() => {
-          window.location.reload();
+          router.refresh();
         }, SYNC_PENDING_RELOAD_DELAY_MS);
         return;
       }
@@ -172,7 +174,7 @@ export function BillingActions({
           waitForSyncRefresh = true;
           setLoadingAction("sync-pending");
           window.setTimeout(() => {
-            window.location.reload();
+            router.refresh();
           }, SYNC_PENDING_RELOAD_DELAY_MS);
         }
         setMessage(payload.warning);
@@ -180,7 +182,7 @@ export function BillingActions({
       }
 
       setMessage(t("messages.planUpdated"));
-      window.location.reload();
+      router.refresh();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : t("errors.planChangeFailed"));
     } finally {

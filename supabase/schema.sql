@@ -55,6 +55,7 @@ create table if not exists public.subscriptions (
   stripe_subscription_id text not null unique,
   stripe_customer_id text not null,
   stripe_price_id text not null,
+  stripe_subscription_item_id text,
   seat_quantity integer not null default 1 check (seat_quantity >= 0),
   stripe_subscription_created_at timestamptz,
   stripe_event_created_at timestamptz,
@@ -752,6 +753,7 @@ create or replace function public.sync_stripe_subscription_atomic(
   p_stripe_customer_id text,
   p_stripe_subscription_id text,
   p_stripe_price_id text,
+  p_stripe_subscription_item_id text,
   p_seat_quantity integer,
   p_status text,
   p_stripe_subscription_created_at timestamptz,
@@ -853,6 +855,7 @@ begin
     stripe_subscription_id,
     stripe_customer_id,
     stripe_price_id,
+    stripe_subscription_item_id,
     seat_quantity,
     status,
     stripe_subscription_created_at,
@@ -866,6 +869,7 @@ begin
     p_stripe_subscription_id,
     p_stripe_customer_id,
     p_stripe_price_id,
+    p_stripe_subscription_item_id,
     p_seat_quantity,
     p_status,
     p_stripe_subscription_created_at,
@@ -878,6 +882,7 @@ begin
   set
     stripe_customer_id = excluded.stripe_customer_id,
     stripe_price_id = excluded.stripe_price_id,
+    stripe_subscription_item_id = excluded.stripe_subscription_item_id,
     seat_quantity = excluded.seat_quantity,
     status = excluded.status,
     stripe_subscription_created_at = excluded.stripe_subscription_created_at,
@@ -893,10 +898,10 @@ begin
 end;
 $$;
 
-revoke execute on function public.sync_stripe_subscription_atomic(uuid, text, text, text, integer, text, timestamptz, timestamptz, timestamptz, boolean, timestamptz) from public;
-revoke execute on function public.sync_stripe_subscription_atomic(uuid, text, text, text, integer, text, timestamptz, timestamptz, timestamptz, boolean, timestamptz) from anon;
-revoke execute on function public.sync_stripe_subscription_atomic(uuid, text, text, text, integer, text, timestamptz, timestamptz, timestamptz, boolean, timestamptz) from authenticated;
-grant execute on function public.sync_stripe_subscription_atomic(uuid, text, text, text, integer, text, timestamptz, timestamptz, timestamptz, boolean, timestamptz) to service_role;
+revoke execute on function public.sync_stripe_subscription_atomic(uuid, text, text, text, text, integer, text, timestamptz, timestamptz, timestamptz, boolean, timestamptz) from public;
+revoke execute on function public.sync_stripe_subscription_atomic(uuid, text, text, text, text, integer, text, timestamptz, timestamptz, timestamptz, boolean, timestamptz) from anon;
+revoke execute on function public.sync_stripe_subscription_atomic(uuid, text, text, text, text, integer, text, timestamptz, timestamptz, timestamptz, boolean, timestamptz) from authenticated;
+grant execute on function public.sync_stripe_subscription_atomic(uuid, text, text, text, text, integer, text, timestamptz, timestamptz, timestamptz, boolean, timestamptz) to service_role;
 
 create or replace function public.delete_stripe_customer_and_cancel_subscriptions(
   p_stripe_customer_id text
