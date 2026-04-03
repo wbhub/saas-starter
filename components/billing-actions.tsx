@@ -351,28 +351,28 @@ export function BillingActions({
                         : "bg-muted/30 ring-1 ring-border hover:shadow-sm",
                     )}
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
+                    <div>
+                      <div className="flex items-center gap-2">
                         <p className="text-sm font-semibold text-foreground">
                           {tPlans(`plans.${plan.key}.name`)}
                         </p>
-                        <div className="mt-1 flex items-baseline gap-1">
-                          <span className="text-xl font-bold tracking-tight text-foreground">
-                            {priceLabel}
-                          </span>
-                          {isAnnual && plan.annualPriceLabel ? (
-                            <span className="rounded-full bg-success/10 px-1.5 py-px text-[10px] font-medium text-success">
-                              {t("toggle.save")}
-                            </span>
-                          ) : null}
-                        </div>
-                        <p className="text-xs text-muted-foreground">{t("perSeat")}</p>
+                        {isCurrent ? (
+                          <Badge variant="outline" className="text-xs">
+                            {t("currentPlanBadge")}
+                          </Badge>
+                        ) : null}
                       </div>
-                      {isCurrent ? (
-                        <Badge variant="outline" className="shrink-0 text-xs">
-                          {t("currentPlanBadge")}
-                        </Badge>
-                      ) : null}
+                      <div className="mt-1 flex items-baseline gap-1">
+                        <span className="text-xl font-bold tracking-tight text-foreground">
+                          {priceLabel}
+                        </span>
+                        {isAnnual && plan.annualPriceLabel ? (
+                          <span className="rounded-full bg-success/10 px-1.5 py-px text-[10px] font-medium text-success">
+                            {t("toggle.save")}
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className="text-xs text-muted-foreground">{t("perSeat")}</p>
                     </div>
 
                     <ul className="mt-3 flex-1 space-y-1.5 border-t border-border pt-3">
