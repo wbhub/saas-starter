@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, ExternalLink, Loader2, Wallet } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -120,6 +120,18 @@ export function BillingActions({
     currentBillingInterval ?? "month",
   );
   const [pendingChange, setPendingChange] = useState<PendingChange | null>(null);
+
+  // When router.refresh() delivers updated server props (e.g. currentPlanKey
+  // changes after a plan switch), clear stale loading/message client state.
+  const prevPlanKeyRef = useRef(currentPlanKey);
+  useEffect(() => {
+    if (prevPlanKeyRef.current !== currentPlanKey) {
+      prevPlanKeyRef.current = currentPlanKey;
+      setLoadingAction(null);
+      setMessage(null);
+      setPendingChange(null);
+    }
+  }, [currentPlanKey]);
 
   async function requestPlanChange(planKey: PlanKey, planName: string) {
     setPendingChange({ planKey, planName, preview: null, loading: true, error: null });
