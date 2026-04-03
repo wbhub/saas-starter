@@ -611,7 +611,8 @@
       "revoke": "Widerrufen",
       "revoking": "Wird widerrufen...",
       "sending": "Wird gesendet...",
-      "sendInvite": "Einladung senden"
+      "sendInvite": "Einladung senden",
+      "sendInvites": "{count} Einladungen senden"
     },
     "inviteForm": {
       "sectionTitle": "Teammitglieder einladen",
@@ -620,7 +621,8 @@
       "teamNamePlaceholder": "Acme Team",
       "emailLabel": "Einladungs-E-Mail",
       "emailPlaceholder": "teammate@example.com",
-      "roleLabel": "Rolle"
+      "roleLabel": "Rolle",
+      "removeEmail": "{email} entfernen"
     },
     "pricing": {
       "perSeat": "Jedes Teammitglied kostet {amount}."
@@ -647,7 +649,10 @@
       "inviteRevoked": "Einladung widerrufen.",
       "inviteResent": "Einladung erneut gesendet.",
       "inviteResentEmailFailedPreserved": "Das erneute Senden ist fehlgeschlagen, aber der bestehende Einladungslink bleibt aktiv.",
-      "inviteResentEmailFailed": "Einladungstoken rotiert, aber der E-Mail-Versand ist fehlgeschlagen."
+      "inviteResentEmailFailed": "Einladungstoken rotiert, aber der E-Mail-Versand ist fehlgeschlagen.",
+      "bulkInvitesSent": "Alle {count} Einladungen gesendet.",
+      "bulkInvitesPartial": "{successCount} von {totalCount} Einladungen gesendet. {failedCount} fehlgeschlagen.",
+      "bulkInvitesFailed": "Alle Einladungen konnten nicht gesendet werden."
     },
     "errors": {
       "sendInvite": "Einladung konnte nicht gesendet werden.",
@@ -657,7 +662,9 @@
       "removeMember": "Mitglied konnte nicht entfernt werden.",
       "updateRole": "Mitgliederrolle konnte nicht aktualisiert werden.",
       "revokeInvite": "Einladung konnte nicht widerrufen werden.",
-      "resendInvite": "Einladung konnte nicht erneut gesendet werden."
+      "resendInvite": "Einladung konnte nicht erneut gesendet werden.",
+      "invalidEmailInList": "\"{email}\" ist keine gültige E-Mail-Adresse.",
+      "duplicateEmail": "\"{email}\" ist bereits in der Liste."
     }
   },
   "ForgotPasswordForm": {
@@ -834,7 +841,8 @@
       "invalidPayload": "Ungültige Anfrage-Nutzlast.",
       "rateLimited": "Zu viele Einladungen gesendet. Bitte warte und versuche es erneut.",
       "invalidEmail": "Bitte gib eine gültige E-Mail-Adresse an.",
-      "invalidRole": "Die Rolle muss admin oder member sein.",
+      "invalidRole": "Die Rolle muss Owner, Admin oder Member sein.",
+      "onlyOwnerCanInviteOwner": "Nur Team-Besitzer können neue Besitzer einladen.",
       "alreadyInTeam": "Du bist bereits Teil dieses Teams.",
       "paidPlanRequired": "Für das Einladen von Teammitgliedern ist ein kostenpflichtiger Plan erforderlich. Gehe zuerst zur Abrechnung, um upzugraden.",
       "unableToCreateInvite": "Einladung kann derzeit nicht erstellt werden.",

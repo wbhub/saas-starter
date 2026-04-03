@@ -611,7 +611,8 @@
       "revoke": "Revocar",
       "revoking": "Revocando...",
       "sending": "Enviando...",
-      "sendInvite": "Enviar invitación"
+      "sendInvite": "Enviar invitación",
+      "sendInvites": "Enviar {count} invitaciones"
     },
     "inviteForm": {
       "sectionTitle": "Invitar compañeros",
@@ -620,7 +621,8 @@
       "teamNamePlaceholder": "Equipo Acme",
       "emailLabel": "Email de invitación",
       "emailPlaceholder": "compañero@ejemplo.com",
-      "roleLabel": "Rol"
+      "roleLabel": "Rol",
+      "removeEmail": "Eliminar {email}"
     },
     "pricing": {
       "perSeat": "Cada compañero cuesta {amount}."
@@ -647,7 +649,10 @@
       "inviteRevoked": "Invitación revocada.",
       "inviteResent": "Invitación reenviada.",
       "inviteResentEmailFailedPreserved": "Falló el reenvío de la invitación, pero el enlace actual sigue activo.",
-      "inviteResentEmailFailed": "Se rotó el token de invitación, pero falló el envío del email."
+      "inviteResentEmailFailed": "Se rotó el token de invitación, pero falló el envío del email.",
+      "bulkInvitesSent": "Las {count} invitaciones fueron enviadas.",
+      "bulkInvitesPartial": "{successCount} de {totalCount} invitaciones enviadas. {failedCount} fallaron.",
+      "bulkInvitesFailed": "Todas las invitaciones fallaron al enviarse."
     },
     "errors": {
       "sendInvite": "No se pudo enviar la invitación.",
@@ -657,7 +662,9 @@
       "removeMember": "No se pudo eliminar al miembro.",
       "updateRole": "No se pudo actualizar el rol del miembro.",
       "revokeInvite": "No se pudo revocar la invitación.",
-      "resendInvite": "No se pudo reenviar la invitación."
+      "resendInvite": "No se pudo reenviar la invitación.",
+      "invalidEmailInList": "\"{email}\" no es una dirección de correo válida.",
+      "duplicateEmail": "\"{email}\" ya está en la lista."
     }
   },
   "ForgotPasswordForm": {
@@ -834,7 +841,8 @@
       "invalidPayload": "Cuerpo de solicitud inválido.",
       "rateLimited": "Se enviaron demasiadas invitaciones. Espera e inténtalo de nuevo.",
       "invalidEmail": "Ingresa un email válido.",
-      "invalidRole": "El rol debe ser admin o member.",
+      "invalidRole": "El rol debe ser propietario, administrador o miembro.",
+      "onlyOwnerCanInviteOwner": "Solo los propietarios del equipo pueden invitar nuevos propietarios.",
       "alreadyInTeam": "Ya formas parte de este equipo.",
       "paidPlanRequired": "Invitar compañeros requiere un plan de pago. Ve a facturación para actualizar primero.",
       "unableToCreateInvite": "No se puede crear la invitación ahora mismo.",

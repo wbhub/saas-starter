@@ -611,7 +611,8 @@
       "revoke": "Revogar",
       "revoking": "Revogando...",
       "sending": "Enviando...",
-      "sendInvite": "Enviar convite"
+      "sendInvite": "Enviar convite",
+      "sendInvites": "Enviar {count} convites"
     },
     "inviteForm": {
       "sectionTitle": "Convidar colegas",
@@ -620,7 +621,8 @@
       "teamNamePlaceholder": "Equipe Acme",
       "emailLabel": "E-mail de convite",
       "emailPlaceholder": "colega de equipe@exemplo.com",
-      "roleLabel": "Papel"
+      "roleLabel": "Papel",
+      "removeEmail": "Remover {email}"
     },
     "pricing": {
       "perSeat": "Cada colega custa {amount}."
@@ -647,7 +649,10 @@
       "inviteRevoked": "Convite revogado.",
       "inviteResent": "Convidar ressentimento.",
       "inviteResentEmailFailedPreserved": "O reenvio do convite falhou, mas o link atual continua ativo.",
-      "inviteResentEmailFailed": "O token de convite foi alternado, mas a entrega do e-mail falhou."
+      "inviteResentEmailFailed": "O token de convite foi alternado, mas a entrega do e-mail falhou.",
+      "bulkInvitesSent": "Todos os {count} convites foram enviados.",
+      "bulkInvitesPartial": "{successCount} de {totalCount} convites enviados. {failedCount} falharam.",
+      "bulkInvitesFailed": "Todos os convites falharam ao enviar."
     },
     "errors": {
       "sendInvite": "Falha ao enviar o convite.",
@@ -657,7 +662,9 @@
       "removeMember": "Falha ao remover membro.",
       "updateRole": "Falha ao atualizar a função do membro.",
       "revokeInvite": "Falha ao revogar o convite.",
-      "resendInvite": "Falha ao reenviar o convite."
+      "resendInvite": "Falha ao reenviar o convite.",
+      "invalidEmailInList": "\"{email}\" não é um endereço de e-mail válido.",
+      "duplicateEmail": "\"{email}\" já está na lista."
     }
   },
   "ForgotPasswordForm": {
@@ -834,7 +841,8 @@
       "invalidPayload": "Carga de solicitação inválida.",
       "rateLimited": "Muitos convites foram enviados. Aguarde e tente novamente.",
       "invalidEmail": "Forneça um e-mail válido.",
-      "invalidRole": "A função deve ser administrador ou membro.",
+      "invalidRole": "A função deve ser proprietário, administrador ou membro.",
+      "onlyOwnerCanInviteOwner": "Apenas proprietários da equipe podem convidar novos proprietários.",
       "alreadyInTeam": "Você já faz parte desta equipe.",
       "paidPlanRequired": "Convidar colegas exige um plano pago. Acesse a cobrança para fazer upgrade primeiro.",
       "unableToCreateInvite": "Não é possível criar o convite no momento.",

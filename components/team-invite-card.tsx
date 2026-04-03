@@ -1,8 +1,8 @@
 "use client";
 
-import { FormEvent, useEffect, useReducer, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Building2, Clock, Mail, UserMinus, Users } from "lucide-react";
+import { Building2, Clock, Mail, UserMinus, Users, X } from "lucide-react";
 import { DashboardPageSection } from "@/components/dashboard-page-section";
 import { useLocale, useTranslations } from "next-intl";
 import { clientFetch, clientPatchJson, clientPostJson } from "@/lib/http/client-fetch";
@@ -46,7 +46,7 @@ type TeamMember = {
 type PendingInvite = {
   id: string;
   email: string;
-  role: "admin" | "member";
+  role: "owner" | "admin" | "member";
   expiresAt: string;
 };
 
@@ -71,8 +71,10 @@ type BannerState = {
 };
 
 type TeamInviteState = {
-  email: string;
-  role: "member" | "admin";
+  emails: string[];
+  currentInput: string;
+  inputError: string | null;
+  role: "member" | "admin" | "owner";
   inviteTeamName: string;
   submitting: boolean;
   removingUserId: string | null;
@@ -83,8 +85,12 @@ type TeamInviteState = {
 };
 
 type TeamInviteAction =
-  | { type: "SET_FIELD"; field: "email" | "inviteTeamName"; value: string }
-  | { type: "SET_FIELD"; field: "role"; value: "member" | "admin" }
+  | { type: "SET_FIELD"; field: "inviteTeamName"; value: string }
+  | { type: "SET_FIELD"; field: "role"; value: "member" | "admin" | "owner" }
+  | { type: "SET_CURRENT_INPUT"; value: string }
+  | { type: "ADD_EMAIL"; email: string }
+  | { type: "REMOVE_EMAIL"; email: string }
+  | { type: "SET_INPUT_ERROR"; error: string | null }
   | { type: "SYNC_TEAM_NAME"; teamName: string }
   | { type: "SUBMIT_START" }
   | { type: "SUBMIT_SUCCESS"; message: string }
@@ -99,11 +105,26 @@ type TeamInviteAction =
   | { type: "RESEND_INVITE_END"; message: string | null; variant: "success" | "error" }
   | { type: "CLEAR_BANNER" };
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 function teamInviteReducer(state: TeamInviteState, action: TeamInviteAction): TeamInviteState {
   const clearBanner = { message: null as string | null, variant: "success" as const };
   switch (action.type) {
     case "SET_FIELD":
       return { ...state, [action.field]: action.value };
+    case "SET_CURRENT_INPUT":
+      return { ...state, currentInput: action.value, inputError: null };
+    case "ADD_EMAIL":
+      return {
+        ...state,
+        emails: [...state.emails, action.email],
+        currentInput: "",
+        inputError: null,
+      };
+    case "REMOVE_EMAIL":
+      return { ...state, emails: state.emails.filter((e) => e !== action.email) };
+    case "SET_INPUT_ERROR":
+      return { ...state, inputError: action.error };
     case "SYNC_TEAM_NAME":
       return { ...state, inviteTeamName: action.teamName };
     case "SUBMIT_START":
@@ -112,7 +133,9 @@ function teamInviteReducer(state: TeamInviteState, action: TeamInviteAction): Te
       return {
         ...state,
         submitting: false,
-        email: "",
+        emails: [],
+        currentInput: "",
+        inputError: null,
         role: "member",
         banner: { message: action.message, variant: "success" },
       };
@@ -198,7 +221,9 @@ export function TeamInviteCard({
   const locale = useLocale() as AppLocale;
   const router = useRouter();
   const [state, dispatch] = useReducer(teamInviteReducer, {
-    email: "",
+    emails: [],
+    currentInput: "",
+    inputError: null,
     role: "member",
     inviteTeamName: teamName,
     submitting: false,
@@ -221,7 +246,9 @@ export function TeamInviteCard({
   const teamNamePersistRef = useRef(false);
 
   const {
-    email,
+    emails,
+    currentInput,
+    inputError,
     role,
     inviteTeamName,
     submitting,
@@ -231,6 +258,26 @@ export function TeamInviteCard({
     resendInviteId,
     banner,
   } = state;
+
+  const emailInputRef = useRef<HTMLInputElement>(null);
+
+  const commitEmail = useCallback(
+    (raw: string): boolean => {
+      const trimmed = raw.trim().toLowerCase();
+      if (!trimmed) return false;
+      if (!EMAIL_RE.test(trimmed)) {
+        dispatch({ type: "SET_INPUT_ERROR", error: t("errors.invalidEmailInList", { email: trimmed }) });
+        return false;
+      }
+      if (emails.includes(trimmed)) {
+        dispatch({ type: "SET_INPUT_ERROR", error: t("errors.duplicateEmail", { email: trimmed }) });
+        return false;
+      }
+      dispatch({ type: "ADD_EMAIL", email: trimmed });
+      return true;
+    },
+    [emails, t],
+  );
 
   useEffect(() => {
     if (teamNameDirtyRef.current) {
@@ -361,6 +408,23 @@ export function TeamInviteCard({
       return;
     }
 
+    // Build the final list: committed chips + whatever is still in the input
+    const finalEmails = [...emails];
+    const trailing = currentInput.trim().toLowerCase();
+    if (trailing) {
+      if (!EMAIL_RE.test(trailing)) {
+        dispatch({ type: "SET_INPUT_ERROR", error: t("errors.invalidEmailInList", { email: trailing }) });
+        return;
+      }
+      if (!finalEmails.includes(trailing)) {
+        finalEmails.push(trailing);
+      }
+    }
+
+    if (finalEmails.length === 0) {
+      return;
+    }
+
     dispatch({ type: "SUBMIT_START" });
     setTeamNameBanner({ message: null, variant: "success" });
 
@@ -385,20 +449,49 @@ export function TeamInviteCard({
         );
       }
 
-      const payload = await clientPostJson<InviteApiResponse>(
-        "/api/team/invites",
-        { email, role },
-        {
-          fallbackErrorMessage: t("errors.sendInvite"),
-        },
-      );
+      // Send invites sequentially
+      let successCount = 0;
+      let failedCount = 0;
 
-      dispatch({
-        type: "SUBMIT_SUCCESS",
-        message: payload?.emailSent
-          ? t("feedback.inviteEmailSent")
-          : t("feedback.inviteCreatedEmailFailed"),
-      });
+      for (const emailAddr of finalEmails) {
+        try {
+          await clientPostJson<InviteApiResponse>(
+            "/api/team/invites",
+            { email: emailAddr, role },
+            {
+              fallbackErrorMessage: t("errors.sendInvite"),
+            },
+          );
+          successCount++;
+        } catch {
+          failedCount++;
+        }
+      }
+
+      const totalCount = finalEmails.length;
+
+      if (failedCount === 0) {
+        dispatch({
+          type: "SUBMIT_SUCCESS",
+          message:
+            totalCount === 1
+              ? t("feedback.inviteEmailSent")
+              : t("feedback.bulkInvitesSent", { count: totalCount }),
+        });
+      } else if (successCount === 0) {
+        dispatch({
+          type: "SUBMIT_ERROR",
+          message:
+            totalCount === 1
+              ? t("errors.sendInvite")
+              : t("feedback.bulkInvitesFailed"),
+        });
+      } else {
+        dispatch({
+          type: "SUBMIT_SUCCESS",
+          message: t("feedback.bulkInvitesPartial", { successCount, totalCount, failedCount }),
+        });
+      }
       router.refresh();
     } catch (error) {
       dispatch({
@@ -433,7 +526,7 @@ export function TeamInviteCard({
     }
   }
 
-  async function updateMemberRole(targetUserId: string, newRole: "member" | "admin") {
+  async function updateMemberRole(targetUserId: string, newRole: "member" | "admin" | "owner") {
     dispatch({ type: "UPDATE_ROLE_START", userId: targetUserId });
     try {
       await clientPatchJson(
@@ -608,19 +701,80 @@ export function TeamInviteCard({
             >
               {t("inviteForm.emailLabel")}
             </Label>
-            <Input
-              id="invite-email"
-              type="email"
-              required
-              disabled={!canInvite || submitting}
-              value={email}
-              onChange={(event) =>
-                dispatch({ type: "SET_FIELD", field: "email", value: event.target.value })
-              }
-              placeholder={t("inviteForm.emailPlaceholder")}
-              autoComplete="off"
-              className="h-10 min-w-0 py-2 text-sm sm:col-start-1 sm:row-start-2 sm:w-full"
-            />
+            {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
+            <div
+              className="flex min-h-10 flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-2.5 py-1.5 text-sm ring-offset-background transition-colors focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 sm:col-start-1 sm:row-start-2 sm:w-full"
+              onClick={() => emailInputRef.current?.focus()}
+            >
+              {emails.map((emailAddr) => (
+                <Badge
+                  key={emailAddr}
+                  variant="secondary"
+                  className="gap-1 pl-2 pr-1 text-xs"
+                >
+                  {emailAddr}
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      dispatch({ type: "REMOVE_EMAIL", email: emailAddr });
+                    }}
+                    className="ml-0.5 inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full text-muted-foreground/70 hover:text-foreground"
+                    aria-label={t("inviteForm.removeEmail", { email: emailAddr })}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              ))}
+              <input
+                ref={emailInputRef}
+                id="invite-email"
+                type="text"
+                disabled={!canInvite || submitting}
+                value={currentInput}
+                onChange={(e) =>
+                  dispatch({ type: "SET_CURRENT_INPUT", value: e.target.value })
+                }
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " " || e.key === "," || e.key === "Tab") {
+                    const val = currentInput.trim().replace(/,+$/, "");
+                    if (val) {
+                      e.preventDefault();
+                      commitEmail(val);
+                    } else if (e.key !== "Enter") {
+                      // Don't submit the form when pressing space/comma/tab on empty input
+                      e.preventDefault();
+                    }
+                    // Enter on empty input: let the form submit naturally
+                  } else if (e.key === "Backspace" && !currentInput) {
+                    const last = emails[emails.length - 1];
+                    if (last) {
+                      dispatch({ type: "REMOVE_EMAIL", email: last });
+                    }
+                  }
+                }}
+                onPaste={(e) => {
+                  const text = e.clipboardData.getData("text");
+                  if (!text) return;
+                  const parts = text.split(/[,;\s\n]+/).filter(Boolean);
+                  if (parts.length > 1) {
+                    e.preventDefault();
+                    for (const part of parts) {
+                      commitEmail(part);
+                    }
+                  }
+                }}
+                placeholder={emails.length === 0 ? t("inviteForm.emailPlaceholder") : ""}
+                autoComplete="off"
+                className="min-w-[8rem] flex-1 border-none bg-transparent py-0.5 outline-none placeholder:text-muted-foreground"
+              />
+            </div>
+            {inputError ? (
+              <p className="text-xs text-destructive sm:col-start-1 sm:row-start-3">
+                {inputError}
+              </p>
+            ) : null}
             <Label className="text-xs sm:col-start-2 sm:row-start-1 sm:self-end">
               {t("inviteForm.roleLabel")}
             </Label>
@@ -632,7 +786,7 @@ export function TeamInviteCard({
                   dispatch({
                     type: "SET_FIELD",
                     field: "role",
-                    value: value as "member" | "admin",
+                    value: value as "member" | "admin" | "owner",
                   })
                 }
               >
@@ -642,6 +796,9 @@ export function TeamInviteCard({
                 <SelectContent sideOffset={2}>
                   <SelectItem value="member">{tCommon("teamRoles.member")}</SelectItem>
                   <SelectItem value="admin">{tCommon("teamRoles.admin")}</SelectItem>
+                  {currentUserRole === "owner" ? (
+                    <SelectItem value="owner">{tCommon("teamRoles.owner")}</SelectItem>
+                  ) : null}
                 </SelectContent>
               </Select>
             </div>
@@ -649,9 +806,13 @@ export function TeamInviteCard({
               <SubmitButton
                 className="h-10 w-full min-w-0 px-4 py-2 text-sm sm:min-w-[7.5rem]"
                 loading={submitting}
-                disabled={!canInvite}
+                disabled={!canInvite || (emails.length === 0 && !currentInput.trim())}
                 pendingLabel={t("actions.sending")}
-                idleLabel={t("actions.sendInvite")}
+                idleLabel={
+                  emails.length > 1
+                    ? t("actions.sendInvites", { count: emails.length })
+                    : t("actions.sendInvite")
+                }
               />
             </div>
           </div>
@@ -730,8 +891,8 @@ export function TeamInviteCard({
                             if (!canManageRole(member)) {
                               return;
                             }
-                            const next = value as "member" | "admin";
-                            const current = member.role === "admin" ? "admin" : "member";
+                            const next = value as "member" | "admin" | "owner";
+                            const current = member.role;
                             if (next === current) {
                               return;
                             }

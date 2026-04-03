@@ -82,7 +82,7 @@ create table if not exists public.team_invites (
   id uuid primary key default gen_random_uuid(),
   team_id uuid not null references public.teams(id) on delete cascade,
   email text not null,
-  role text not null check (role in ('admin', 'member')),
+  role text not null check (role in ('owner', 'admin', 'member')),
   token_hash text not null unique,
   invited_by uuid references auth.users(id) on delete set null,
   accepted_at timestamptz,

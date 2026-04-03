@@ -611,7 +611,8 @@
       "revoke": "取り消す",
       "revoking": "取り消し中...",
       "sending": "送信中...",
-      "sendInvite": "招待を送信"
+      "sendInvite": "招待を送信",
+      "sendInvites": "{count} 件の招待を送信"
     },
     "inviteForm": {
       "sectionTitle": "メンバーを招待",
@@ -620,7 +621,8 @@
       "teamNamePlaceholder": "Acme Team",
       "emailLabel": "招待メールアドレス",
       "emailPlaceholder": "teammate@example.com",
-      "roleLabel": "ロール"
+      "roleLabel": "ロール",
+      "removeEmail": "{email} を削除"
     },
     "pricing": {
       "perSeat": "各チームメイトの料金は {amount} です。"
@@ -647,7 +649,10 @@
       "inviteRevoked": "招待を取り消しました。",
       "inviteResent": "招待を再送しました。",
       "inviteResentEmailFailedPreserved": "招待の再送に失敗しましたが、既存の招待リンクは引き続き有効です。",
-      "inviteResentEmailFailed": "招待トークンは更新されましたが、メール送信に失敗しました。"
+      "inviteResentEmailFailed": "招待トークンは更新されましたが、メール送信に失敗しました。",
+      "bulkInvitesSent": "{count} 件すべての招待を送信しました。",
+      "bulkInvitesPartial": "{totalCount} 件中 {successCount} 件の招待を送信しました。{failedCount} 件が失敗しました。",
+      "bulkInvitesFailed": "すべての招待の送信に失敗しました。"
     },
     "errors": {
       "sendInvite": "招待の送信に失敗しました。",
@@ -657,7 +662,9 @@
       "removeMember": "メンバーの削除に失敗しました。",
       "updateRole": "メンバーのロール更新に失敗しました。",
       "revokeInvite": "招待の取り消しに失敗しました。",
-      "resendInvite": "招待の再送に失敗しました。"
+      "resendInvite": "招待の再送に失敗しました。",
+      "invalidEmailInList": "\"{email}\" は有効なメールアドレスではありません。",
+      "duplicateEmail": "\"{email}\" はすでにリストに含まれています。"
     }
   },
   "ForgotPasswordForm": {
@@ -834,7 +841,8 @@
       "invalidPayload": "無効なリクエストペイロードです。",
       "rateLimited": "招待の送信回数が多すぎます。しばらく待ってから再試行してください。",
       "invalidEmail": "有効なメールアドレスを入力してください。",
-      "invalidRole": "ロールは admin または member である必要があります。",
+      "invalidRole": "ロールは owner、admin、または member である必要があります。",
+      "onlyOwnerCanInviteOwner": "チームオーナーのみが新しいオーナーを招待できます。",
       "alreadyInTeam": "あなたはすでにこのチームのメンバーです。",
       "paidPlanRequired": "チームメイトを招待するには有料プランが必要です。先に課金ページからアップグレードしてください。",
       "unableToCreateInvite": "現在招待を作成できません。",

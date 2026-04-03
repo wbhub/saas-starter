@@ -611,7 +611,8 @@
       "revoke": "Revoke",
       "revoking": "Revoking...",
       "sending": "Sending...",
-      "sendInvite": "Send invite"
+      "sendInvite": "Send invite",
+      "sendInvites": "Send {count} invites"
     },
     "inviteForm": {
       "sectionTitle": "Invite teammates",
@@ -620,7 +621,8 @@
       "teamNamePlaceholder": "Acme Team",
       "emailLabel": "Invite email",
       "emailPlaceholder": "teammate@example.com",
-      "roleLabel": "Role"
+      "roleLabel": "Role",
+      "removeEmail": "Remove {email}"
     },
     "pricing": {
       "perSeat": "Each teammate costs {amount}."
@@ -647,7 +649,10 @@
       "inviteRevoked": "Invite revoked.",
       "inviteResent": "Invite resent.",
       "inviteResentEmailFailedPreserved": "Invite resend failed, but the existing invite link is still active.",
-      "inviteResentEmailFailed": "Invite token rotated, but email delivery failed."
+      "inviteResentEmailFailed": "Invite token rotated, but email delivery failed.",
+      "bulkInvitesSent": "All {count} invites sent.",
+      "bulkInvitesPartial": "{successCount} of {totalCount} invites sent. {failedCount} failed.",
+      "bulkInvitesFailed": "All invites failed to send."
     },
     "errors": {
       "sendInvite": "Failed to send invite.",
@@ -657,7 +662,9 @@
       "removeMember": "Failed to remove member.",
       "updateRole": "Failed to update member role.",
       "revokeInvite": "Failed to revoke invite.",
-      "resendInvite": "Failed to resend invite."
+      "resendInvite": "Failed to resend invite.",
+      "invalidEmailInList": "\"{email}\" is not a valid email address.",
+      "duplicateEmail": "\"{email}\" is already in the list."
     }
   },
   "ForgotPasswordForm": {
@@ -834,7 +841,8 @@
       "invalidPayload": "Invalid request payload.",
       "rateLimited": "Too many invites sent. Please wait and try again.",
       "invalidEmail": "Please provide a valid email.",
-      "invalidRole": "Role must be admin or member.",
+      "invalidRole": "Role must be owner, admin, or member.",
+      "onlyOwnerCanInviteOwner": "Only team owners can invite new owners.",
       "alreadyInTeam": "You are already part of this team.",
       "paidPlanRequired": "Inviting teammates requires a paid plan. Visit billing to upgrade first.",
       "unableToCreateInvite": "Unable to create invite right now.",
