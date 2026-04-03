@@ -405,15 +405,35 @@
     "subscribe": {
       "hint": "요금제를 선택해 결제로 이동합니다."
     },
+    "toggle": {
+      "monthly": "월간",
+      "annual": "연간",
+      "save": "20% 절약"
+    },
+    "currentPlanBadge": "현재 요금제",
+    "intervalNote": "결제 주기를 변경하려면 결제 포털을 방문하세요.",
+    "perSeat": "좌석당 / 월",
     "actions": {
-      "opening": "여는 중...",
-      "updating": "업데이트 중...",
+      "opening": "여는 중…",
+      "updating": "업데이트 중…",
       "subscribePlan": "결제로 계속",
-      "switchTo": "{name}로 변경"
+      "switchTo": "{name}로 변경",
+      "getStarted": "시작하기"
     },
     "messages": {
       "syncPending": "Stripe에서 요금제가 업데이트되었습니다. 동기화 중입니다. 곧 새로고침합니다…",
       "planUpdated": "요금제가 업데이트되었습니다. 결제 상세 정보를 새로고침합니다…"
+    },
+    "confirm": {
+      "title": "{name}로 변경",
+      "loading": "일할 계산 비용 산출 중…",
+      "errorPrefix": "가격 세부 정보를 불러올 수 없습니다.",
+      "charge": "현재 결제 기간의 남은 기간에 대해 오늘 {amount}이(가) 청구됩니다.",
+      "credit": "다음 청구서에 {amount} 크레딧이 적용됩니다.",
+      "noCharge": "추가 요금 없음 — 다음 청구서에 새 요금제가 반영됩니다.",
+      "proration": "새 요금제는 즉시 적용됩니다.",
+      "cancel": "취소",
+      "action": "변경 확인"
     },
     "errors": {
       "checkoutFailed": "체크아웃 실패",
@@ -421,7 +441,8 @@
       "portalUnavailable": "포털을 사용할 수 없습니다",
       "missingCheckoutUrl": "체크아웃 URL이 없습니다",
       "missingPortalUrl": "포털 URL이 없습니다",
-      "requestFailed": "요청 실패"
+      "requestFailed": "요청 실패",
+      "previewFailed": "가격 미리보기를 불러올 수 없습니다"
     }
   },
   "DashboardBillingPage": {

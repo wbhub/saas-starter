@@ -400,20 +400,40 @@
     },
     "changePlan": {
       "title": "Upgrade or change plan",
-      "subtitle": "Switch to another tier here. Stripe prorates your subscription automatically."
+      "subtitle": "Compare plans and switch tiers. Stripe prorates your subscription automatically."
     },
     "subscribe": {
       "hint": "Select a plan to continue to checkout."
     },
+    "toggle": {
+      "monthly": "Monthly",
+      "annual": "Annual",
+      "save": "Save 20%"
+    },
+    "currentPlanBadge": "Current plan",
+    "intervalNote": "To change your billing cycle, visit the billing portal.",
+    "perSeat": "per seat / month",
     "actions": {
       "opening": "Opening…",
       "updating": "Updating…",
       "subscribePlan": "Continue to checkout",
-      "switchTo": "Switch to {name}"
+      "switchTo": "Switch to {name}",
+      "getStarted": "Get started"
     },
     "messages": {
       "syncPending": "Plan updated in Stripe. Sync in progress. Refreshing shortly…",
       "planUpdated": "Plan updated. Refreshing billing details…"
+    },
+    "confirm": {
+      "title": "Switch to {name}",
+      "loading": "Calculating prorated cost…",
+      "errorPrefix": "Could not load pricing details.",
+      "charge": "You will be charged {amount} today, prorated for the remainder of your current billing period.",
+      "credit": "You will receive a {amount} credit applied to your next invoice.",
+      "noCharge": "No additional charge — your next invoice will reflect the new plan.",
+      "proration": "Your new plan takes effect immediately.",
+      "cancel": "Cancel",
+      "action": "Confirm change"
     },
     "errors": {
       "checkoutFailed": "Checkout failed",
@@ -421,7 +441,8 @@
       "portalUnavailable": "Portal unavailable",
       "missingCheckoutUrl": "Missing checkout URL",
       "missingPortalUrl": "Missing portal URL",
-      "requestFailed": "Request failed"
+      "requestFailed": "Request failed",
+      "previewFailed": "Could not load pricing preview"
     }
   },
   "DashboardBillingPage": {

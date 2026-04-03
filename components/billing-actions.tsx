@@ -1,20 +1,37 @@
 "use client";
 
-import { useState } from "react";
-import { ExternalLink, Loader2, Wallet } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Check, ExternalLink, Loader2, Wallet } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { CLIENT_IDEMPOTENCY_TTL_MS, SYNC_PENDING_RELOAD_DELAY_MS } from "@/lib/constants/billing";
 import { clientPostJson } from "@/lib/http/client-fetch";
-import { PLAN_KEYS, type PlanKey } from "@/lib/stripe/plans";
+import { type PlanKey, type PlanInterval, type PublicPricingPlan } from "@/lib/stripe/plans";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { DashboardPageSection } from "@/components/dashboard-page-section";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 
 type Props = {
   billingEnabled: boolean;
   currentPlanKey: PlanKey | null;
   hasSubscription: boolean;
   canManageBilling: boolean;
+  plans: PublicPricingPlan[];
+  showAnnualToggle: boolean;
+  currentBillingInterval: PlanInterval | null;
 };
 
 type CheckoutPayload = {
@@ -22,6 +39,21 @@ type CheckoutPayload = {
   syncPending?: boolean;
   warning?: string;
   planChanged?: boolean;
+};
+
+type ProrationPreview = {
+  amountDue: number;
+  currency: string;
+  isCredit: boolean;
+  targetPlanName: string;
+};
+
+type PendingChange = {
+  planKey: PlanKey;
+  planName: string;
+  preview: ProrationPreview | null;
+  loading: boolean;
+  error: string | null;
 };
 
 function createIdempotencyToken(action: "checkout" | "change-plan", planKey: PlanKey) {
@@ -62,44 +94,69 @@ function createIdempotencyToken(action: "checkout" | "change-plan", planKey: Pla
   return token;
 }
 
+function formatCurrency(amount: number, currency: string) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 2,
+  }).format(Math.abs(amount));
+}
+
 export function BillingActions({
   billingEnabled,
   currentPlanKey,
   hasSubscription,
   canManageBilling,
+  plans,
+  showAnnualToggle,
+  currentBillingInterval,
 }: Props) {
+  const router = useRouter();
   const t = useTranslations("BillingActions");
   const tPlans = useTranslations("Landing.pricing");
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [selectedInterval, setSelectedInterval] = useState<"month" | "year">(
+    currentBillingInterval ?? "month",
+  );
+  const [pendingChange, setPendingChange] = useState<PendingChange | null>(null);
 
-  async function startCheckout(planKey: PlanKey) {
-    setLoadingAction(`checkout-${planKey}`);
-    setMessage(null);
-    try {
-      const payload = await clientPostJson<CheckoutPayload>(
-        "/api/stripe/checkout",
-        { planKey },
-        {
-          fallbackErrorMessage: t("errors.requestFailed"),
-          headers: {
-            "x-idempotency-key": createIdempotencyToken("checkout", planKey),
-          },
-        },
-      );
-      if (!payload.url) throw new Error(t("errors.missingCheckoutUrl"));
-      const opened = window.open(payload.url, "_blank", "noopener,noreferrer");
-      if (!opened) {
-        window.location.assign(payload.url);
-      }
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : t("errors.checkoutFailed"));
-    } finally {
+  // When router.refresh() delivers updated server props (e.g. currentPlanKey
+  // changes after a plan switch), clear stale loading/message client state.
+  const prevPlanKeyRef = useRef(currentPlanKey);
+  useEffect(() => {
+    if (prevPlanKeyRef.current !== currentPlanKey) {
+      prevPlanKeyRef.current = currentPlanKey;
       setLoadingAction(null);
+      setMessage(null);
+      setPendingChange(null);
+    }
+  }, [currentPlanKey]);
+
+  async function requestPlanChange(planKey: PlanKey, planName: string) {
+    setPendingChange({ planKey, planName, preview: null, loading: true, error: null });
+    try {
+      const preview = await clientPostJson<ProrationPreview>(
+        "/api/stripe/preview-proration",
+        { planKey },
+        { fallbackErrorMessage: t("errors.requestFailed") },
+      );
+      setPendingChange({ planKey, planName, preview, loading: false, error: null });
+    } catch (error) {
+      setPendingChange({
+        planKey,
+        planName,
+        preview: null,
+        loading: false,
+        error: error instanceof Error ? error.message : t("errors.previewFailed"),
+      });
     }
   }
 
-  async function changePlan(planKey: PlanKey) {
+  async function confirmPlanChange() {
+    if (!pendingChange) return;
+    const { planKey } = pendingChange;
+    setPendingChange(null);
     setLoadingAction(`change-${planKey}`);
     setMessage(null);
     let waitForSyncRefresh = false;
@@ -119,7 +176,7 @@ export function BillingActions({
         setLoadingAction("sync-pending");
         setMessage(t("messages.syncPending"));
         window.setTimeout(() => {
-          window.location.reload();
+          router.refresh();
         }, SYNC_PENDING_RELOAD_DELAY_MS);
         return;
       }
@@ -129,7 +186,7 @@ export function BillingActions({
           waitForSyncRefresh = true;
           setLoadingAction("sync-pending");
           window.setTimeout(() => {
-            window.location.reload();
+            router.refresh();
           }, SYNC_PENDING_RELOAD_DELAY_MS);
         }
         setMessage(payload.warning);
@@ -137,13 +194,39 @@ export function BillingActions({
       }
 
       setMessage(t("messages.planUpdated"));
-      window.location.reload();
+      router.refresh();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : t("errors.planChangeFailed"));
     } finally {
       if (!waitForSyncRefresh) {
         setLoadingAction(null);
       }
+    }
+  }
+
+  async function startCheckout(planKey: PlanKey) {
+    setLoadingAction(`checkout-${planKey}`);
+    setMessage(null);
+    try {
+      const payload = await clientPostJson<CheckoutPayload>(
+        "/api/stripe/checkout",
+        { planKey, interval: selectedInterval },
+        {
+          fallbackErrorMessage: t("errors.requestFailed"),
+          headers: {
+            "x-idempotency-key": createIdempotencyToken("checkout", planKey),
+          },
+        },
+      );
+      if (!payload.url) throw new Error(t("errors.missingCheckoutUrl"));
+      const opened = window.open(payload.url, "_blank", "noopener,noreferrer");
+      if (!opened) {
+        window.location.assign(payload.url);
+      }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : t("errors.checkoutFailed"));
+    } finally {
+      setLoadingAction(null);
     }
   }
 
@@ -170,9 +253,9 @@ export function BillingActions({
     }
   }
 
-  const availablePlanKeys = PLAN_KEYS.filter((key) => key !== currentPlanKey);
   const showActions = billingEnabled && canManageBilling;
   const isBusy = loadingAction !== null;
+  const isAnnual = selectedInterval === "year";
 
   const description = !billingEnabled
     ? t("description.billingDisabled")
@@ -220,76 +303,149 @@ export function BillingActions({
                 </div>
               </div>
 
-              {availablePlanKeys.length > 0 ? (
-                <>
-                  <Separator />
-                  <div className="space-y-3">
-                    <div className="space-y-1">
-                      <h3 className="text-sm font-medium text-foreground">
-                        {t("changePlan.title")}
-                      </h3>
-                      <p className="text-sm leading-relaxed text-muted-foreground">
-                        {t("changePlan.subtitle")}
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {availablePlanKeys.map((key) => (
-                        <Button
-                          key={key}
-                          type="button"
-                          variant="outline"
-                          size="control"
-                          onClick={() => changePlan(key)}
-                          disabled={isBusy}
-                        >
-                          {loadingAction === `change-${key}` ? (
-                            <>
-                              <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden />
-                              {t("actions.updating")}
-                            </>
-                          ) : (
-                            t("actions.switchTo", { name: tPlans(`plans.${key}.name`) })
-                          )}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              ) : null}
+              <Separator />
             </>
-          ) : (
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">{t("subscribe.hint")}</p>
-              <div className="grid gap-3 sm:grid-cols-3">
-                {PLAN_KEYS.map((key) => (
-                  <Button
-                    key={key}
-                    type="button"
-                    variant="default"
-                    className="h-auto w-full flex-col gap-1 py-3"
-                    onClick={() => startCheckout(key)}
-                    disabled={isBusy}
-                  >
-                    {loadingAction === `checkout-${key}` ? (
-                      <>
-                        <Loader2 className="size-4 animate-spin" aria-hidden />
-                        <span className="text-xs font-normal opacity-90">
-                          {t("actions.opening")}
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-sm font-semibold">{tPlans(`plans.${key}.name`)}</span>
-                        <span className="text-xs font-normal opacity-90">
-                          {t("actions.subscribePlan")}
-                        </span>
-                      </>
-                    )}
-                  </Button>
-                ))}
+          ) : null}
+
+          {/* Plan comparison section */}
+          <div className="space-y-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-0.5">
+                <h3 className="text-sm font-medium text-foreground">
+                  {hasSubscription ? t("changePlan.title") : t("subscribe.hint")}
+                </h3>
+                {hasSubscription ? (
+                  <p className="text-sm text-muted-foreground">{t("changePlan.subtitle")}</p>
+                ) : null}
               </div>
+
+              {showAnnualToggle ? (
+                <div className="flex items-center gap-2">
+                  <SegmentedControl
+                    aria-label={`${t("toggle.monthly")} / ${t("toggle.annual")}`}
+                    value={selectedInterval}
+                    onValueChange={setSelectedInterval}
+                    options={[
+                      { value: "month" as const, label: t("toggle.monthly") },
+                      { value: "year" as const, label: t("toggle.annual") },
+                    ]}
+                  />
+                  {isAnnual ? (
+                    <span className="rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
+                      {t("toggle.save")}
+                    </span>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
-          )}
+
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {plans.map((plan) => {
+                const isCurrent = plan.key === currentPlanKey;
+                const priceLabel =
+                  isAnnual && plan.annualPriceLabel ? plan.annualPriceLabel : plan.priceLabel;
+                const isLoading =
+                  loadingAction === `change-${plan.key}` ||
+                  loadingAction === `checkout-${plan.key}`;
+
+                // Determine if this plan is an upgrade relative to the current plan.
+                // Downgrades should use a muted button style, never a blue CTA.
+                const currentPlanAmount = currentPlanKey
+                  ? (plans.find((p) => p.key === currentPlanKey)?.amountMonthly ?? 0)
+                  : 0;
+                const isUpgrade = plan.amountMonthly > currentPlanAmount;
+
+                return (
+                  <div
+                    key={plan.key}
+                    className={cn(
+                      "relative flex flex-col rounded-lg p-4 transition-shadow",
+                      isCurrent
+                        ? "bg-primary/5 ring-2 ring-primary"
+                        : "bg-muted/30 ring-1 ring-border hover:shadow-sm",
+                    )}
+                  >
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-semibold text-foreground">
+                          {tPlans(`plans.${plan.key}.name`)}
+                        </p>
+                        {isCurrent ? (
+                          <Badge variant="outline" className="text-xs">
+                            {t("currentPlanBadge")}
+                          </Badge>
+                        ) : null}
+                      </div>
+                      <div className="mt-1 flex items-baseline gap-1">
+                        <span className="text-xl font-bold tracking-tight text-foreground">
+                          {priceLabel}
+                        </span>
+                        {isAnnual && plan.annualPriceLabel ? (
+                          <span className="rounded-full bg-success/10 px-1.5 py-px text-[10px] font-medium text-success">
+                            {t("toggle.save")}
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className="text-xs text-muted-foreground">{t("perSeat")}</p>
+                    </div>
+
+                    <ul className="mt-3 flex-1 space-y-1.5 border-t border-border pt-3">
+                      {plan.features.map((feature) => (
+                        <li key={feature} className="flex items-start gap-1.5 text-xs">
+                          <Check className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
+                          <span className="text-muted-foreground">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    {isCurrent ? null : hasSubscription ? (
+                      <Button
+                        type="button"
+                        variant={isUpgrade ? "default" : "outline"}
+                        size="sm"
+                        onClick={() =>
+                          requestPlanChange(plan.key as PlanKey, tPlans(`plans.${plan.key}.name`))
+                        }
+                        disabled={isBusy}
+                        className="mt-3 w-full"
+                      >
+                        {isLoading ? (
+                          <>
+                            <Loader2 className="size-3.5 shrink-0 animate-spin" aria-hidden />
+                            {t("actions.updating")}
+                          </>
+                        ) : (
+                          t("actions.switchTo", { name: tPlans(`plans.${plan.key}.name`) })
+                        )}
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant={plan.popular ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => startCheckout(plan.key as PlanKey)}
+                        disabled={isBusy}
+                        className="mt-3 w-full"
+                      >
+                        {isLoading ? (
+                          <>
+                            <Loader2 className="size-3.5 shrink-0 animate-spin" aria-hidden />
+                            {t("actions.opening")}
+                          </>
+                        ) : (
+                          t("actions.getStarted")
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {hasSubscription && showAnnualToggle ? (
+              <p className="text-xs text-muted-foreground">{t("intervalNote")}</p>
+            ) : null}
+          </div>
 
           {message ? (
             <div
@@ -308,6 +464,70 @@ export function BillingActions({
           ) : null}
         </div>
       ) : null}
+
+      {/* Plan change confirmation dialog */}
+      <AlertDialog
+        open={pendingChange !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingChange(null);
+        }}
+      >
+        <AlertDialogContent size="lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {pendingChange
+                ? t("confirm.title", { name: pendingChange.planName })
+                : t("confirm.title", { name: "" })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingChange?.loading ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                  {t("confirm.loading")}
+                </span>
+              ) : pendingChange?.error ? (
+                <span>
+                  {t("confirm.errorPrefix")} {pendingChange.error}
+                </span>
+              ) : pendingChange?.preview ? (
+                <span className="flex flex-col gap-2">
+                  {pendingChange.preview.isCredit ? (
+                    <span>
+                      {t("confirm.credit", {
+                        amount: formatCurrency(
+                          pendingChange.preview.amountDue,
+                          pendingChange.preview.currency,
+                        ),
+                      })}
+                    </span>
+                  ) : pendingChange.preview.amountDue === 0 ? (
+                    <span>{t("confirm.noCharge")}</span>
+                  ) : (
+                    <span>
+                      {t("confirm.charge", {
+                        amount: formatCurrency(
+                          pendingChange.preview.amountDue,
+                          pendingChange.preview.currency,
+                        ),
+                      })}
+                    </span>
+                  )}
+                  <span>{t("confirm.proration")}</span>
+                </span>
+              ) : null}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("confirm.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmPlanChange}
+              disabled={pendingChange?.loading || !!pendingChange?.error}
+            >
+              {t("confirm.action")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardPageSection>
   );
 }

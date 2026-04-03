@@ -405,15 +405,35 @@
     "subscribe": {
       "hint": "选择方案以进入结账。"
     },
+    "toggle": {
+      "monthly": "月付",
+      "annual": "年付",
+      "save": "节省 20%"
+    },
+    "currentPlanBadge": "当前方案",
+    "intervalNote": "如需更改计费周期，请访问账单门户。",
+    "perSeat": "每席位 / 月",
     "actions": {
       "opening": "正在打开…",
       "updating": "更新中…",
       "subscribePlan": "前往结账",
-      "switchTo": "切换到 {name}"
+      "switchTo": "切换到 {name}",
+      "getStarted": "开始使用"
     },
     "messages": {
       "syncPending": "方案已在 Stripe 更新，正在同步，即将刷新…",
       "planUpdated": "方案已更新，正在刷新账单信息…"
+    },
+    "confirm": {
+      "title": "切换到 {name}",
+      "loading": "正在计算按比例分摊的费用…",
+      "errorPrefix": "无法加载价格详情。",
+      "charge": "今天将向您收取 {amount}，按当前计费周期剩余天数按比例计算。",
+      "credit": "您将获得 {amount} 的抵扣额，应用于下一张账单。",
+      "noCharge": "无额外费用——您的下一张账单将反映新方案。",
+      "proration": "新方案立即生效。",
+      "cancel": "取消",
+      "action": "确认变更"
     },
     "errors": {
       "checkoutFailed": "结帐失败",
@@ -421,7 +441,8 @@
       "portalUnavailable": "门户不可用",
       "missingCheckoutUrl": "缺少结账网址",
       "missingPortalUrl": "缺少门户 URL",
-      "requestFailed": "请求失败"
+      "requestFailed": "请求失败",
+      "previewFailed": "无法加载价格预览"
     }
   },
   "DashboardBillingPage": {

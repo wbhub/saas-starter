@@ -405,15 +405,35 @@
     "subscribe": {
       "hint": "Selecione um plano para ir ao checkout."
     },
+    "toggle": {
+      "monthly": "Mensal",
+      "annual": "Anual",
+      "save": "Economize 20%"
+    },
+    "currentPlanBadge": "Plano atual",
+    "intervalNote": "Para alterar o ciclo de cobrança, acesse o portal de faturamento.",
+    "perSeat": "por assento / mês",
     "actions": {
-      "opening": "Abertura...",
-      "updating": "Atualizando...",
+      "opening": "Abrindo…",
+      "updating": "Atualizando…",
       "subscribePlan": "Continuar para o checkout",
-      "switchTo": "Mudar para {name}"
+      "switchTo": "Mudar para {name}",
+      "getStarted": "Começar"
     },
     "messages": {
       "syncPending": "Plano atualizado no Stripe. A sincronizar. A atualizar em breve…",
       "planUpdated": "Plano atualizado. A atualizar detalhes de faturamento…"
+    },
+    "confirm": {
+      "title": "Mudar para {name}",
+      "loading": "Calculando custo proporcional…",
+      "errorPrefix": "Não foi possível carregar os detalhes do preço.",
+      "charge": "Será cobrado {amount} hoje, proporcional ao restante do seu período de faturamento atual.",
+      "credit": "Você receberá um crédito de {amount} aplicado à sua próxima fatura.",
+      "noCharge": "Sem cobrança adicional — sua próxima fatura refletirá o novo plano.",
+      "proration": "Seu novo plano entra em vigor imediatamente.",
+      "cancel": "Cancelar",
+      "action": "Confirmar alteração"
     },
     "errors": {
       "checkoutFailed": "Falha na finalização da compra",
@@ -421,7 +441,8 @@
       "portalUnavailable": "Portal indisponível",
       "missingCheckoutUrl": "URL de checkout ausente",
       "missingPortalUrl": "URL do portal ausente",
-      "requestFailed": "Falha na solicitação"
+      "requestFailed": "Falha na solicitação",
+      "previewFailed": "Não foi possível carregar a prévia de preço"
     }
   },
   "DashboardBillingPage": {

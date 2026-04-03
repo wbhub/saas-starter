@@ -405,15 +405,35 @@
     "subscribe": {
       "hint": "Selecciona un plan para ir al checkout."
     },
+    "toggle": {
+      "monthly": "Mensual",
+      "annual": "Anual",
+      "save": "Ahorra 20 %"
+    },
+    "currentPlanBadge": "Plan actual",
+    "intervalNote": "Para cambiar el ciclo de facturación, visita el portal de facturación.",
+    "perSeat": "por puesto / mes",
     "actions": {
-      "opening": "Abriendo...",
-      "updating": "Actualizando...",
+      "opening": "Abriendo…",
+      "updating": "Actualizando…",
       "subscribePlan": "Continuar al checkout",
-      "switchTo": "Cambiar a {name}"
+      "switchTo": "Cambiar a {name}",
+      "getStarted": "Comenzar"
     },
     "messages": {
       "syncPending": "Plan actualizado en Stripe. Sincronizando. Actualizando en breve…",
       "planUpdated": "Plan actualizado. Actualizando detalles de facturación…"
+    },
+    "confirm": {
+      "title": "Cambiar a {name}",
+      "loading": "Calculando costo prorrateado…",
+      "errorPrefix": "No se pudieron cargar los detalles del precio.",
+      "charge": "Se te cobrará {amount} hoy, prorrateado por el resto de tu período de facturación actual.",
+      "credit": "Recibirás un crédito de {amount} aplicado a tu próxima factura.",
+      "noCharge": "Sin cargo adicional: tu próxima factura reflejará el nuevo plan.",
+      "proration": "Tu nuevo plan entra en vigencia de inmediato.",
+      "cancel": "Cancelar",
+      "action": "Confirmar cambio"
     },
     "errors": {
       "checkoutFailed": "Falló el checkout",
@@ -421,7 +441,8 @@
       "portalUnavailable": "Portal no disponible",
       "missingCheckoutUrl": "Falta la URL de checkout",
       "missingPortalUrl": "Falta la URL del portal",
-      "requestFailed": "La solicitud falló"
+      "requestFailed": "La solicitud falló",
+      "previewFailed": "No se pudo cargar la vista previa del precio"
     }
   },
   "DashboardBillingPage": {
