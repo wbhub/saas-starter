@@ -424,13 +424,25 @@
       "syncPending": "Plan updated in Stripe. Sync in progress. Refreshing shortly…",
       "planUpdated": "Plan updated. Refreshing billing details…"
     },
+    "confirm": {
+      "title": "Switch to {name}",
+      "loading": "Calculating prorated cost…",
+      "errorPrefix": "Could not load pricing details.",
+      "charge": "You will be charged {amount} today, prorated for the remainder of your current billing period.",
+      "credit": "You will receive a {amount} credit applied to your next invoice.",
+      "noCharge": "No additional charge — your next invoice will reflect the new plan.",
+      "proration": "Your new plan takes effect immediately.",
+      "cancel": "Cancel",
+      "action": "Confirm change"
+    },
     "errors": {
       "checkoutFailed": "Checkout failed",
       "planChangeFailed": "Plan change failed",
       "portalUnavailable": "Portal unavailable",
       "missingCheckoutUrl": "Missing checkout URL",
       "missingPortalUrl": "Missing portal URL",
-      "requestFailed": "Request failed"
+      "requestFailed": "Request failed",
+      "previewFailed": "Could not load pricing preview"
     }
   },
   "DashboardBillingPage": {
