@@ -93,6 +93,10 @@ export async function POST(request: Request) {
         return jsonError(t("errors.invalidRole"), 400);
       }
 
+      if (role === "owner" && teamContext.role !== "owner") {
+        return jsonError(t("errors.onlyOwnerCanInviteOwner"), 403);
+      }
+
       if (user.email && normalizeEmail(user.email) === email) {
         return jsonError(t("errors.alreadyInTeam"), 409);
       }

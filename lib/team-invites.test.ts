@@ -37,9 +37,11 @@ describe("team invite helpers", () => {
     expect(normalizeEmail("  TeSt.User+tag@Example.COM  ")).toBe("test.user+tag@example.com");
   });
 
-  it("accepts only admin/member invite roles", () => {
+  it("accepts owner/admin/member invite roles", () => {
+    expect(isInviteRole("owner")).toBe(true);
     expect(isInviteRole("admin")).toBe(true);
     expect(isInviteRole("member")).toBe(true);
-    expect(isInviteRole("owner")).toBe(false);
+    expect(isInviteRole("superadmin")).toBe(false);
+    expect(isInviteRole("")).toBe(false);
   });
 });

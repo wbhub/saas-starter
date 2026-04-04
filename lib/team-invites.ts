@@ -19,6 +19,6 @@ export function getInviteExpiryIso(now = new Date()) {
   return new Date(now.getTime() + TEAM_INVITE_TTL_DAYS * DAY_MS).toISOString();
 }
 
-export function isInviteRole(value: string): value is "admin" | "member" {
-  return value === "admin" || value === "member";
+export function isInviteRole(value: string): value is "owner" | "admin" | "member" {
+  return value === "owner" || value === "admin" || value === "member";
 }

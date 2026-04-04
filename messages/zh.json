@@ -611,7 +611,8 @@
       "revoke": "撤销",
       "revoking": "撤销...",
       "sending": "正在发送...",
-      "sendInvite": "发送邀请"
+      "sendInvite": "发送邀请",
+      "sendInvites": "发送 {count} 个邀请"
     },
     "inviteForm": {
       "sectionTitle": "邀请队友",
@@ -620,7 +621,8 @@
       "teamNamePlaceholder": "Acme 团队",
       "emailLabel": "邀请邮件",
       "emailPlaceholder": "teammate@example.com",
-      "roleLabel": "角色"
+      "roleLabel": "角色",
+      "removeEmail": "移除 {email}"
     },
     "pricing": {
       "perSeat": "每位队友费用为 {amount}。"
@@ -647,7 +649,10 @@
       "inviteRevoked": "邀请被撤销。",
       "inviteResent": "重新邀请。",
       "inviteResentEmailFailedPreserved": "重新发送邀请失败，但当前邀请链接仍然有效。",
-      "inviteResentEmailFailed": "邀请令牌轮换，但电子邮件发送失败。"
+      "inviteResentEmailFailed": "邀请令牌轮换，但电子邮件发送失败。",
+      "bulkInvitesSent": "全部 {count} 个邀请已发送。",
+      "bulkInvitesPartial": "{totalCount} 个邀请中已发送 {successCount} 个。{failedCount} 个失败。",
+      "bulkInvitesFailed": "所有邀请均发送失败。"
     },
     "errors": {
       "sendInvite": "发送邀请失败。",
@@ -657,7 +662,9 @@
       "removeMember": "删除成员失败。",
       "updateRole": "无法更新成员角色。",
       "revokeInvite": "撤销邀请失败。",
-      "resendInvite": "重新发送邀请失败。"
+      "resendInvite": "重新发送邀请失败。",
+      "invalidEmailInList": "\"{email}\" 不是有效的电子邮件地址。",
+      "duplicateEmail": "\"{email}\" 已在列表中。"
     }
   },
   "ForgotPasswordForm": {
@@ -834,7 +841,8 @@
       "invalidPayload": "请求负载无效。",
       "rateLimited": "发送的邀请过多。请等待并重试。",
       "invalidEmail": "请提供有效的电子邮件。",
-      "invalidRole": "角色必须是管理员或成员。",
+      "invalidRole": "角色必须是所有者、管理员或成员。",
+      "onlyOwnerCanInviteOwner": "只有团队所有者才能邀请新的所有者。",
       "alreadyInTeam": "您已经是这个团队的一员了。",
       "paidPlanRequired": "邀请队友需要付费计划。请先前往账单页面升级。",
       "unableToCreateInvite": "目前无法创建邀请。",

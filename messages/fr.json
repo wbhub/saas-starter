@@ -611,7 +611,8 @@
       "revoke": "Révoquer",
       "revoking": "Révoquer...",
       "sending": "Envoi...",
-      "sendInvite": "Envoyer une invitation"
+      "sendInvite": "Envoyer une invitation",
+      "sendInvites": "Envoyer {count} invitations"
     },
     "inviteForm": {
       "sectionTitle": "Inviter des coéquipiers",
@@ -620,7 +621,8 @@
       "teamNamePlaceholder": "Équipe Acme",
       "emailLabel": "E-mail d'invitation",
       "emailPlaceholder": "coéquipier@exemple.com",
-      "roleLabel": "Rôle"
+      "roleLabel": "Rôle",
+      "removeEmail": "Supprimer {email}"
     },
     "pricing": {
       "perSeat": "Chaque coéquipier coûte {amount}."
@@ -647,7 +649,10 @@
       "inviteRevoked": "Invitation révoquée.",
       "inviteResent": "Invitez le ressentiment.",
       "inviteResentEmailFailedPreserved": "Le renvoi de l'invitation a échoué, mais le lien actuel reste actif.",
-      "inviteResentEmailFailed": "Le jeton d'invitation a effectué une rotation, mais la livraison de l'e-mail a échoué."
+      "inviteResentEmailFailed": "Le jeton d'invitation a effectué une rotation, mais la livraison de l'e-mail a échoué.",
+      "bulkInvitesSent": "Les {count} invitations ont été envoyées.",
+      "bulkInvitesPartial": "{successCount} sur {totalCount} invitations envoyées. {failedCount} ont échoué.",
+      "bulkInvitesFailed": "Toutes les invitations ont échoué."
     },
     "errors": {
       "sendInvite": "Échec de l'envoi de l'invitation.",
@@ -657,7 +662,9 @@
       "removeMember": "Échec de la suppression du membre.",
       "updateRole": "Échec de la mise à jour du rôle de membre.",
       "revokeInvite": "Échec de la révocation de l'invitation.",
-      "resendInvite": "Échec du renvoi de l'invitation."
+      "resendInvite": "Échec du renvoi de l'invitation.",
+      "invalidEmailInList": "\"{email}\" n'est pas une adresse e-mail valide.",
+      "duplicateEmail": "\"{email}\" est déjà dans la liste."
     }
   },
   "ForgotPasswordForm": {
@@ -834,7 +841,8 @@
       "invalidPayload": "Charge utile de la demande non valide.",
       "rateLimited": "Trop d'invitations envoyées. Veuillez patienter et réessayer.",
       "invalidEmail": "Veuillez fournir un e-mail valide.",
-      "invalidRole": "Le rôle doit être administrateur ou membre.",
+      "invalidRole": "Le rôle doit être propriétaire, administrateur ou membre.",
+      "onlyOwnerCanInviteOwner": "Seuls les propriétaires d'équipe peuvent inviter de nouveaux propriétaires.",
       "alreadyInTeam": "Vous faites déjà partie de cette équipe.",
       "paidPlanRequired": "Inviter des coéquipiers nécessite un forfait payant. Visitez la facturation pour mettre à niveau.",
       "unableToCreateInvite": "Impossible de créer une invitation pour le moment.",
