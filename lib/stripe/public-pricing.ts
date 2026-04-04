@@ -5,11 +5,40 @@ import { logger } from "@/lib/logger";
 import { formatStaticUsdMonthlyLabel } from "@/lib/stripe/plan-price-display";
 import { plans } from "@/lib/stripe/config";
 import { getStripeServerClient } from "@/lib/stripe/server";
-import type { PublicPricingPlan } from "@/lib/stripe/plans";
+import type { PlanKey, PublicPricingPlan } from "@/lib/stripe/plans";
 
 export type { PublicPricingPlan };
 
 let warnedStripePricingDisabled = false;
+
+const PLAN_FEATURE_MESSAGE_KEYS: Record<PlanKey, readonly string[]> = {
+  starter: ["teamMembers", "realTimeSync", "basicIntegrations"],
+  growth: ["aiFeatures", "advancedAnalytics", "priorityEmailSupport"],
+  pro: ["unlimitedTeamMembers", "auditLogging", "dedicatedSupport"],
+};
+
+function translateWithFallback(
+  key: string,
+  fallback: string,
+  t: (key: string, values?: Record<string, string>) => string,
+) {
+  const translated = t(key);
+  return translated === key ? fallback : translated;
+}
+
+function getLocalizedPlanFeatures(
+  planKey: PlanKey,
+  fallbackFeatures: string[],
+  t: (key: string, values?: Record<string, string>) => string,
+) {
+  return PLAN_FEATURE_MESSAGE_KEYS[planKey].map((featureKey, index) =>
+    translateWithFallback(
+      `plans.${planKey}.features.${featureKey}`,
+      fallbackFeatures[index] ?? "",
+      t,
+    ),
+  );
+}
 
 function formatIntervalLabel(
   interval: string | null | undefined,
@@ -62,8 +91,8 @@ export const getPublicPricingCatalog = cache(async (): Promise<PublicPricingPlan
     }
     return plans.map((plan) => ({
       key: plan.key,
-      name: plan.name,
-      description: plan.description,
+      name: translateWithFallback(`plans.${plan.key}.name`, plan.name, t),
+      description: translateWithFallback(`plans.${plan.key}.description`, plan.description, t),
       priceLabel: catalogPrice(plan.amountMonthly),
       annualPriceLabel: plan.amountAnnualMonthly
         ? catalogPrice(plan.amountAnnualMonthly)
@@ -71,7 +100,7 @@ export const getPublicPricingCatalog = cache(async (): Promise<PublicPricingPlan
       amountMonthly: plan.amountMonthly,
       amountAnnualMonthly: plan.amountAnnualMonthly,
       popular: plan.popular,
-      features: plan.features,
+      features: getLocalizedPlanFeatures(plan.key, plan.features, t),
     }));
   }
 
@@ -162,8 +191,8 @@ export const getPublicPricingCatalog = cache(async (): Promise<PublicPricingPlan
 
     return {
       key: plan.key,
-      name: plan.name,
-      description: plan.description,
+      name: translateWithFallback(`plans.${plan.key}.name`, plan.name, t),
+      description: translateWithFallback(`plans.${plan.key}.description`, plan.description, t),
       priceLabel: resolvedMonthlyLabel ?? catalogPrice(plan.amountMonthly),
       annualPriceLabel: resolvedAnnualMonthlyLabel
         ? resolvedAnnualMonthlyLabel
@@ -173,7 +202,7 @@ export const getPublicPricingCatalog = cache(async (): Promise<PublicPricingPlan
       amountMonthly: liveAmountMonthly,
       amountAnnualMonthly: liveAmountAnnualMonthly,
       popular: plan.popular,
-      features: plan.features,
+      features: getLocalizedPlanFeatures(plan.key, plan.features, t),
     };
   });
 });

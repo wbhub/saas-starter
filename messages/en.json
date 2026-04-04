@@ -186,15 +186,30 @@
       "plans": {
         "starter": {
           "name": "Starter",
-          "description": "Auth, teams, and billing for founders validating a new product."
+          "description": "Auth, teams, and billing for founders validating a new product.",
+          "features": {
+            "teamMembers": "Up to 5 team members",
+            "realTimeSync": "Real-time data syncing",
+            "basicIntegrations": "Basic integrations"
+          }
         },
         "growth": {
           "name": "Growth",
-          "description": "Add AI access, seat scaling, and usage tracking as your team grows."
+          "description": "Add AI access, seat scaling, and usage tracking as your team grows.",
+          "features": {
+            "aiFeatures": "AI-powered features",
+            "advancedAnalytics": "Advanced analytics",
+            "priorityEmailSupport": "Priority email support"
+          }
         },
         "pro": {
           "name": "Pro",
-          "description": "Full platform with priority support, audit logging, and advanced integrations."
+          "description": "Full platform with priority support, audit logging, and advanced integrations.",
+          "features": {
+            "unlimitedTeamMembers": "Unlimited team members",
+            "auditLogging": "Audit logging",
+            "dedicatedSupport": "Dedicated support"
+          }
         }
       }
     },

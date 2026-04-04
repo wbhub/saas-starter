@@ -181,15 +181,30 @@
       "plans": {
         "starter": {
           "name": "Starter",
-          "description": "新しいプロダクトを検証する創業者向けの認証、チーム、課金。"
+          "description": "新しいプロダクトを検証する創業者向けの認証、チーム、課金。",
+          "features": {
+            "teamMembers": "最大 5 人のチームメンバー",
+            "realTimeSync": "リアルタイムのデータ同期",
+            "basicIntegrations": "基本的な連携"
+          }
         },
         "growth": {
           "name": "Growth",
-          "description": "チームの成長に合わせて AI アクセス、席数の拡張、使用量追跡を追加。"
+          "description": "チームの成長に合わせて AI アクセス、席数の拡張、使用量追跡を追加。",
+          "features": {
+            "aiFeatures": "AI 搭載機能",
+            "advancedAnalytics": "高度な分析",
+            "priorityEmailSupport": "優先メールサポート"
+          }
         },
         "pro": {
           "name": "Pro",
-          "description": "優先サポート、監査ログ、高度な統合まで含むフルプラットフォーム。"
+          "description": "優先サポート、監査ログ、高度な統合まで含むフルプラットフォーム。",
+          "features": {
+            "unlimitedTeamMembers": "無制限のチームメンバー",
+            "auditLogging": "監査ログ",
+            "dedicatedSupport": "専任サポート"
+          }
         }
       },
       "toggle": {

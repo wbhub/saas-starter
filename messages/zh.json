@@ -181,15 +181,30 @@
       "plans": {
         "starter": {
           "name": "入门版",
-          "description": "为验证新产品的创始人提供身份验证、团队和计费。"
+          "description": "为验证新产品的创始人提供身份验证、团队和计费。",
+          "features": {
+            "teamMembers": "最多 5 位团队成员",
+            "realTimeSync": "实时数据同步",
+            "basicIntegrations": "基础集成"
+          }
         },
         "growth": {
           "name": "成长版",
-          "description": "随着团队增长，添加 AI 访问、席位扩展和使用量追踪。"
+          "description": "随着团队增长，添加 AI 访问、席位扩展和使用量追踪。",
+          "features": {
+            "aiFeatures": "AI 驱动功能",
+            "advancedAnalytics": "高级分析",
+            "priorityEmailSupport": "优先电子邮件支持"
+          }
         },
         "pro": {
           "name": "专业版",
-          "description": "完整平台，包含优先支持、审计日志和高级集成。"
+          "description": "完整平台，包含优先支持、审计日志和高级集成。",
+          "features": {
+            "unlimitedTeamMembers": "无限团队成员",
+            "auditLogging": "审计日志",
+            "dedicatedSupport": "专属支持"
+          }
         }
       },
       "toggle": {
