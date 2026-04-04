@@ -53,7 +53,7 @@ type DashboardTeamMembershipRow = {
 type PendingInviteRow = {
   id: string;
   email: string;
-  role: "admin" | "member";
+  role: "owner" | "admin" | "member";
   expires_at: string;
 };
 

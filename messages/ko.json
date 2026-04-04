@@ -652,6 +652,9 @@
       "inviteResentEmailFailed": "초대 토큰은 갱신되었지만 이메일 전송에 실패했습니다.",
       "bulkInvitesSent": "{count}개의 초대가 모두 전송되었습니다.",
       "bulkInvitesPartial": "{totalCount}개 중 {successCount}개의 초대가 전송되었습니다. {failedCount}개 실패.",
+      "bulkInvitesCreatedEmailFailed": "{count}개의 초대가 생성되었지만 이메일 전송에 실패했습니다. 나중에 재전송으로 다시 시도하세요.",
+      "bulkInvitesPartialEmailDelivery": "{totalCount}개 중 {sentCount}개의 초대 이메일이 전송되었습니다. {createdCount}개의 초대는 생성되었지만 이메일 전송에 실패했습니다.",
+      "bulkInvitesMixedResults": "{totalCount}개 중 {sentCount}개의 초대 이메일이 전송되었습니다. {createdCount}개의 초대는 이메일 전송 없이 생성되었고 {failedCount}개는 실패했습니다.",
       "bulkInvitesFailed": "모든 초대 전송에 실패했습니다."
     },
     "errors": {
@@ -866,6 +869,7 @@
       "forbidden": "팀 소유자와 관리자만 초대를 다시 보낼 수 있습니다.",
       "rateLimited": "초대 관리 요청이 너무 많습니다. 잠시 후 다시 시도하세요.",
       "invalidInviteId": "잘못된 초대 id입니다.",
+      "onlyOwnersCanResendOwnerInvite": "팀 소유자만 소유자 초대를 다시 보낼 수 있습니다.",
       "unableToResendInvite": "초대를 다시 보낼 수 없습니다.",
       "pendingInviteNotFound": "대기 중인 초대를 찾을 수 없습니다."
     },

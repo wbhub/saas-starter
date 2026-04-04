@@ -652,6 +652,9 @@
       "inviteResentEmailFailed": "招待トークンは更新されましたが、メール送信に失敗しました。",
       "bulkInvitesSent": "{count} 件すべての招待を送信しました。",
       "bulkInvitesPartial": "{totalCount} 件中 {successCount} 件の招待を送信しました。{failedCount} 件が失敗しました。",
+      "bulkInvitesCreatedEmailFailed": "{count} 件の招待は作成されましたが、メール送信に失敗しました。後で再送して再試行してください。",
+      "bulkInvitesPartialEmailDelivery": "{totalCount} 件中 {sentCount} 件の招待メールを送信しました。{createdCount} 件の招待は作成されましたが、メール送信に失敗しました。",
+      "bulkInvitesMixedResults": "{totalCount} 件中 {sentCount} 件の招待メールを送信しました。{createdCount} 件の招待はメール未送信のまま作成され、{failedCount} 件は失敗しました。",
       "bulkInvitesFailed": "すべての招待の送信に失敗しました。"
     },
     "errors": {
@@ -866,6 +869,7 @@
       "forbidden": "招待を再送できるのはチームオーナーと管理者のみです。",
       "rateLimited": "招待管理リクエストが多すぎます。しばらくしてから再試行してください。",
       "invalidInviteId": "無効な招待 ID です。",
+      "onlyOwnersCanResendOwnerInvite": "チームオーナーのみがオーナー招待を再送できます。",
       "unableToResendInvite": "招待を再送できません。",
       "pendingInviteNotFound": "保留中の招待が見つかりません。"
     },

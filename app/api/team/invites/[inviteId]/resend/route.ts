@@ -22,7 +22,7 @@ type ResendInviteRouteContext = {
 type TeamInviteRow = {
   id: string;
   email: string;
-  role: "admin" | "member";
+  role: "owner" | "admin" | "member";
   token_hash: string;
   expires_at: string;
   invited_by: string | null;
@@ -72,6 +72,9 @@ export async function POST(request: Request, context: ResendInviteRouteContext) 
       }
       if (!invite) {
         return jsonError(t("errors.pendingInviteNotFound"), 404);
+      }
+      if (invite.role === "owner" && teamContext.role !== "owner") {
+        return jsonError(t("errors.onlyOwnersCanResendOwnerInvite"), 403);
       }
 
       if (!isResendCustomEmailConfigured()) {

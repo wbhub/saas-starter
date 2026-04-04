@@ -652,6 +652,9 @@
       "inviteResentEmailFailed": "Le jeton d'invitation a effectué une rotation, mais la livraison de l'e-mail a échoué.",
       "bulkInvitesSent": "Les {count} invitations ont été envoyées.",
       "bulkInvitesPartial": "{successCount} sur {totalCount} invitations envoyées. {failedCount} ont échoué.",
+      "bulkInvitesCreatedEmailFailed": "Les {count} invitations ont bien été créées, mais l'envoi de l'e-mail a échoué. Utilisez renvoyer plus tard pour réessayer.",
+      "bulkInvitesPartialEmailDelivery": "{sentCount} e-mails d'invitation sur {totalCount} ont été envoyés. {createdCount} invitation(s) ont été créées, mais l'envoi de l'e-mail a échoué.",
+      "bulkInvitesMixedResults": "{sentCount} e-mails d'invitation sur {totalCount} ont été envoyés. {createdCount} invitation(s) ont été créées sans envoi d'e-mail. {failedCount} ont échoué.",
       "bulkInvitesFailed": "Toutes les invitations ont échoué."
     },
     "errors": {
@@ -866,6 +869,7 @@
       "forbidden": "Seuls les propriétaires et administrateurs d’équipe peuvent renvoyer des invitations.",
       "rateLimited": "Trop de demandes de gestion d'invitations. Veuillez réessayer sous peu.",
       "invalidInviteId": "Identifiant d'invitation invalide.",
+      "onlyOwnersCanResendOwnerInvite": "Seuls les propriétaires d'équipe peuvent renvoyer des invitations de propriétaire.",
       "unableToResendInvite": "Impossible de renvoyer l'invitation.",
       "pendingInviteNotFound": "Invitation en attente introuvable."
     },

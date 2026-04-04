@@ -652,6 +652,9 @@
       "inviteResentEmailFailed": "Invite token rotated, but email delivery failed.",
       "bulkInvitesSent": "All {count} invites sent.",
       "bulkInvitesPartial": "{successCount} of {totalCount} invites sent. {failedCount} failed.",
+      "bulkInvitesCreatedEmailFailed": "All {count} invites were created, but email delivery failed. Use resend later to retry.",
+      "bulkInvitesPartialEmailDelivery": "{sentCount} of {totalCount} invite emails sent. {createdCount} invite(s) were created, but email delivery failed.",
+      "bulkInvitesMixedResults": "{sentCount} of {totalCount} invite emails sent. {createdCount} invite(s) were created without email delivery. {failedCount} failed.",
       "bulkInvitesFailed": "All invites failed to send."
     },
     "errors": {
@@ -866,6 +869,7 @@
       "forbidden": "Only team owners and admins can resend invites.",
       "rateLimited": "Too many invite management requests. Please try again shortly.",
       "invalidInviteId": "Invalid invite id.",
+      "onlyOwnersCanResendOwnerInvite": "Only team owners can resend owner invites.",
       "unableToResendInvite": "Unable to resend invite.",
       "pendingInviteNotFound": "Pending invite not found."
     },

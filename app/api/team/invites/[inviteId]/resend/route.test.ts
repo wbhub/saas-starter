@@ -9,6 +9,80 @@ describe("POST /api/team/invites/[inviteId]/resend", () => {
     }));
   });
 
+  it("returns 403 when an admin tries to resend an owner invite", async () => {
+    const send = vi.fn();
+    const update = vi.fn();
+    const maybeSingle = vi.fn().mockResolvedValue({
+      data: {
+        id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        email: "person@example.com",
+        role: "owner",
+        token_hash: "previous-hash",
+        expires_at: "2026-06-01T00:00:00.000Z",
+        invited_by: "user_previous",
+      },
+      error: null,
+    });
+
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          getUser: async () => ({ data: { user: { id: "user_1", email: "admin@example.com" } } }),
+        },
+        from: vi.fn((table: string) => {
+          if (table === "team_invites") {
+            return {
+              select: vi.fn().mockReturnThis(),
+              eq: vi.fn().mockReturnThis(),
+              is: vi.fn().mockReturnThis(),
+              maybeSingle,
+              update,
+            };
+          }
+          throw new Error(`Unexpected table: ${table}`);
+        }),
+      }),
+    }));
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
+        teamId: "team_123",
+        teamName: "Acme",
+        role: "admin",
+      }),
+    }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),
+    }));
+    vi.doMock("@/lib/resend/server", () => ({
+      isResendCustomEmailConfigured: () => true,
+      getResendClientIfConfigured: () => ({ emails: { send } }),
+      getResendFromEmailIfConfigured: () => "noreply@example.com",
+      sendResendEmail: vi.fn(async () => {
+        await send();
+      }),
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/team/invites/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/resend", {
+        method: "POST",
+      }),
+      {
+        params: Promise.resolve({
+          inviteId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        }),
+      },
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      ok: false,
+      error: "Only team owners can resend owner invites.",
+    });
+    expect(update).not.toHaveBeenCalled();
+    expect(send).not.toHaveBeenCalled();
+  });
+
   it("logs failure outcome when email delivery fails", async () => {
     const logAuditEvent = vi.fn();
     const send = vi.fn().mockRejectedValue(new Error("resend down"));
