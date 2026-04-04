@@ -25,6 +25,8 @@ describe("Terms of use page", () => {
 
     expect(createClient).not.toHaveBeenCalled();
     expect(html).toContain("site-header");
+    expect(html).toContain("max-w-[1440px]");
+    expect(html).toContain("max-w-4xl");
     expect(html).toContain("Terms of Use");
   });
 });

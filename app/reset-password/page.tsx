@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { PublicCenteredContent, PublicShell } from "@/components/layout-shells";
 import { ResetPasswordForm } from "@/components/reset-password-form";
 import { isPasswordAuthEnabled } from "@/lib/auth/social-auth";
 import { SiteFooter } from "@/components/site-footer";
@@ -21,9 +22,11 @@ export default async function ResetPasswordPage() {
     <div className="app-content flex min-h-screen flex-col bg-background text-foreground">
       <SiteHeader />
 
-      <main className="flex flex-1 flex-col items-center justify-center px-4 py-12">
-        <ResetPasswordForm hasRecoveryProof={hasRecoveryProof} recoveryUserId={recoveryUserId} />
-      </main>
+      <PublicShell as="main" className="flex flex-1 flex-col py-12">
+        <PublicCenteredContent>
+          <ResetPasswordForm hasRecoveryProof={hasRecoveryProof} recoveryUserId={recoveryUserId} />
+        </PublicCenteredContent>
+      </PublicShell>
 
       <SiteFooter />
     </div>

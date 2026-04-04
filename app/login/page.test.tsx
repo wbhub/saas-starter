@@ -69,6 +69,8 @@ describe("Login page social auth config", () => {
 
     expect(html).toContain('data-social="google,microsoft"');
     expect(html).toContain('data-last-used="microsoft"');
+    expect(html).toContain("max-w-[1440px]");
+    expect(html).toContain("max-w-md");
   });
 
   it("passes no social providers when both flags are disabled", async () => {
@@ -106,5 +108,6 @@ describe("Login page social auth config", () => {
     const html = renderToStaticMarkup(await LoginPage({ searchParams: Promise.resolve({}) }));
 
     expect(html).toContain('data-social=""');
+    expect(html).toContain("max-w-[1440px]");
   });
 });

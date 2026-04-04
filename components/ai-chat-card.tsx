@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, TextStreamChatTransport, type UIMessage } from "ai";
+import { PanelLeft } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { Button } from "@/components/ui/button";
 import { getCsrfHeaders } from "@/lib/http/csrf";
 import { resolveUserFacingErrorMessage } from "@/lib/ai/error-message";
 import {
@@ -27,6 +29,7 @@ import { Conversation } from "@/components/ai/conversation";
 import { MessageBubble } from "@/components/ai/message-bubble";
 import { PromptInput } from "@/components/ai/prompt-input";
 import { ThreadSidebar, type ThreadSidebarThread } from "@/components/ai/thread-sidebar";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
 const MAX_ATTACHMENTS_PER_MESSAGE = 8;
@@ -290,11 +293,13 @@ export function AiChatCard({
 }) {
   void userDisplayName;
   const t = useTranslations("AiChatCard");
+  const tThreads = useTranslations("AiThreads");
   const [chatSessionId, setChatSessionId] = useState(() => crypto.randomUUID());
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [initialMessages, setInitialMessages] = useState<UIMessage[]>([]);
   const [threadRefreshSignal, setThreadRefreshSignal] = useState(0);
   const [uploadErrorMessage, setUploadErrorMessage] = useState<string | null>(null);
+  const [mobileThreadsOpen, setMobileThreadsOpen] = useState(false);
   const threadSwitchAbortRef = useRef<AbortController | null>(null);
 
   const [selectedModelId, setSelectedModelId] = useState<string | undefined>();
@@ -509,17 +514,55 @@ export function AiChatCard({
   }
 
   return (
-    <div className="flex h-[min(800px,calc(100vh-200px))] flex-col overflow-hidden lg:flex-row rounded-2xl bg-card ring-1 ring-border">
-      <ThreadSidebar
-        activeThreadId={activeThreadId}
-        onSelectThread={handleSelectThread}
-        onNewThread={handleNewThread}
-        refreshSignal={threadRefreshSignal}
-        initialThreads={initialThreads}
-      />
-      <div className="flex min-w-0 flex-1 flex-col relative before:hidden lg:before:block before:absolute before:inset-y-4 before:left-0 before:w-px before:bg-border/40">
-        <div className="flex min-h-0 flex-1 flex-col gap-0 px-4 py-4 sm:px-6 lg:px-8">
-          <div className="mx-auto w-full max-w-4xl flex-1 flex flex-col min-h-0">
+    <div className="flex min-h-[32rem] flex-col overflow-hidden rounded-2xl bg-card ring-1 ring-border lg:h-[min(48rem,calc(100dvh-18rem))] lg:min-h-0 lg:flex-row">
+      <div className="hidden lg:flex lg:min-h-0 lg:w-[260px] lg:shrink-0">
+        <ThreadSidebar
+          activeThreadId={activeThreadId}
+          onSelectThread={handleSelectThread}
+          onNewThread={handleNewThread}
+          refreshSignal={threadRefreshSignal}
+          initialThreads={initialThreads}
+        />
+      </div>
+
+      <Sheet open={mobileThreadsOpen} onOpenChange={setMobileThreadsOpen}>
+        <SheetContent side="left" className="p-0 lg:hidden">
+          <SheetHeader className="border-b border-border/70 pb-4">
+            <SheetTitle>{tThreads("title")}</SheetTitle>
+          </SheetHeader>
+          <div className="flex h-full min-h-0 flex-1 overflow-y-auto px-3 py-3">
+            <ThreadSidebar
+              activeThreadId={activeThreadId}
+              onSelectThread={(threadId) => {
+                setMobileThreadsOpen(false);
+                void handleSelectThread(threadId);
+              }}
+              onNewThread={() => {
+                setMobileThreadsOpen(false);
+                handleNewThread();
+              }}
+              refreshSignal={threadRefreshSignal}
+              initialThreads={initialThreads}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <div className="relative flex min-w-0 flex-1 flex-col before:hidden lg:before:absolute lg:before:inset-y-4 lg:before:left-0 lg:before:block lg:before:w-px lg:before:bg-border/40">
+        <div className="flex min-h-0 flex-1 flex-col gap-0 px-3 py-3 sm:px-5 sm:py-4 lg:px-8">
+          <div className="mb-3 lg:hidden">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="rounded-full px-3"
+              onClick={() => setMobileThreadsOpen(true)}
+            >
+              <PanelLeft className="size-4" />
+              {tThreads("recents")}
+            </Button>
+          </div>
+          <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col">
             <Conversation>
               {messages.length === 0 ? (
                 <div
@@ -563,8 +606,11 @@ export function AiChatCard({
           </div>
         </div>
 
-        <div className="px-4 py-4 sm:px-6 lg:px-8">
-          <div className="mx-auto w-full max-w-4xl">
+        <div
+          className="border-t border-border/60 px-3 py-3 sm:px-5 sm:py-4 lg:px-8"
+          style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+        >
+          <div className="mx-auto w-full max-w-6xl">
             <PromptInput
               onSubmit={(text, files, modelId) => void handleSubmit(text, files, modelId)}
               isSending={isSending}

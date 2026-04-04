@@ -13,6 +13,7 @@ import {
 import { getLocale, getTranslations } from "next-intl/server";
 import { AiUsageCard, AiUsageCardSkeleton } from "@/components/ai-usage-card";
 import { BillingActions } from "@/components/billing-actions";
+import { DashboardPageHeader, DashboardPageStack } from "@/components/dashboard-page-header";
 import { Badge } from "@/components/ui/badge";
 import { formatUtcDate } from "@/lib/date";
 import { formatStaticUsdMonthlyLabel } from "@/lib/stripe/plan-price-display";
@@ -134,184 +135,184 @@ export default async function DashboardBillingPage({
 
   return (
     <>
-      {checkoutStatus === "success" ? (
-        <section
-          className={cn(billingSectionClass, "bg-success/5 ring-success/30 dark:bg-success/10")}
-        >
-          <div className="flex gap-3 sm:items-start">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-success/15 text-success-foreground dark:text-success">
-              <CheckCircle2 className="h-5 w-5" aria-hidden />
+      <DashboardPageStack>
+        {checkoutStatus === "success" ? (
+          <section
+            className={cn(billingSectionClass, "bg-success/5 ring-success/30 dark:bg-success/10")}
+          >
+            <div className="flex gap-3 sm:items-start">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-success/15 text-success-foreground dark:text-success">
+                <CheckCircle2 className="h-5 w-5" aria-hidden />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-foreground">{t("checkoutSuccess.title")}</p>
+                <p className="text-sm text-muted-foreground">{t("checkoutSuccess.message")}</p>
+              </div>
             </div>
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-foreground">{t("checkoutSuccess.title")}</p>
-              <p className="text-sm text-muted-foreground">{t("checkoutSuccess.message")}</p>
-            </div>
-          </div>
-        </section>
-      ) : null}
+          </section>
+        ) : null}
 
-      <div>
-        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          {t("header.eyebrow")}
-        </p>
-        <h1 className="mt-1.5 text-3xl font-semibold tracking-tight">{t("header.title")}</h1>
-        <p className="mt-2 max-w-2xl text-base text-muted-foreground">{t("header.description")}</p>
-      </div>
+        <DashboardPageHeader
+          eyebrow={t("header.eyebrow")}
+          title={t("header.title")}
+          description={t("header.description")}
+        />
 
-      {!isPaidPlan ? (
-        <div className="space-y-6">
-          {!billingEnabled ? (
+        {!isPaidPlan ? (
+          <>
+            {!billingEnabled ? (
+              <DashboardPageSection
+                icon={AlertCircle}
+                variant="destructive"
+                title={t("billingDisabled.title")}
+                description={t("billingDisabled.description")}
+              />
+            ) : null}
+
             <DashboardPageSection
-              icon={AlertCircle}
-              variant="destructive"
-              title={t("billingDisabled.title")}
-              description={t("billingDisabled.description")}
+              icon={Sparkles}
+              iconTone="primary"
+              title={t("freeMode.title")}
+              description={t("freeMode.description")}
             />
-          ) : null}
-
+          </>
+        ) : (
           <DashboardPageSection
-            icon={Sparkles}
-            iconTone="primary"
-            title={t("freeMode.title")}
-            description={t("freeMode.description")}
-          />
-        </div>
-      ) : (
-        <DashboardPageSection
-          icon={Receipt}
-          borderedHeader
-          title={t("currentSubscription.title")}
-          description={t("currentSubscription.subtitle")}
-          endSlot={
-            subscription ? (
-              <Badge
-                variant={subscriptionStatusBadgeVariant(subscription.status)}
-                className="h-6 w-fit shrink-0 sm:mt-0.5"
-              >
-                {subscriptionStatusLabel(t, subscription.status)}
-              </Badge>
-            ) : null
-          }
-        >
-          <div className="space-y-6">
-            {subscription ? (
-              <>
-                {subscription.cancel_at_period_end ? (
-                  <div
-                    className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning-foreground dark:border-warning/30 dark:bg-warning/15 dark:text-warning"
-                    role="status"
-                  >
-                    {t("currentSubscription.cancelScheduled")}
-                  </div>
-                ) : null}
-                <div className="grid gap-5 sm:grid-cols-2">
-                  <div className="flex flex-col gap-5">
-                    <DashboardDetailField
-                      icon={CreditCard}
-                      label={t("currentSubscription.currentPlan")}
+            icon={Receipt}
+            borderedHeader
+            title={t("currentSubscription.title")}
+            description={t("currentSubscription.subtitle")}
+            endSlot={
+              subscription ? (
+                <Badge
+                  variant={subscriptionStatusBadgeVariant(subscription.status)}
+                  className="h-6 w-fit shrink-0 sm:mt-0.5"
+                >
+                  {subscriptionStatusLabel(t, subscription.status)}
+                </Badge>
+              ) : null
+            }
+          >
+            <div className="space-y-6">
+              {subscription ? (
+                <>
+                  {subscription.cancel_at_period_end ? (
+                    <div
+                      className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning-foreground dark:border-warning/30 dark:bg-warning/15 dark:text-warning"
+                      role="status"
                     >
-                      {currentPaidPlanKey
-                        ? tPlanCopy(`plans.${currentPaidPlanKey}.name`)
-                        : t("currentSubscription.unknown")}
-                    </DashboardDetailField>
-                    {billingInterval ? (
+                      {t("currentSubscription.cancelScheduled")}
+                    </div>
+                  ) : null}
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    <div className="flex flex-col gap-5">
+                      <DashboardDetailField
+                        icon={CreditCard}
+                        label={t("currentSubscription.currentPlan")}
+                      >
+                        {currentPaidPlanKey
+                          ? tPlanCopy(`plans.${currentPaidPlanKey}.name`)
+                          : t("currentSubscription.unknown")}
+                      </DashboardDetailField>
+                      {billingInterval ? (
+                        <DashboardDetailField
+                          icon={CalendarDays}
+                          label={t("currentSubscription.billingInterval")}
+                        >
+                          {billingInterval === "year"
+                            ? t("currentSubscription.annual")
+                            : t("currentSubscription.monthly")}
+                        </DashboardDetailField>
+                      ) : null}
                       <DashboardDetailField
                         icon={CalendarDays}
-                        label={t("currentSubscription.billingInterval")}
+                        label={t("currentSubscription.periodEnd")}
                       >
-                        {billingInterval === "year"
-                          ? t("currentSubscription.annual")
-                          : t("currentSubscription.monthly")}
+                        {subscription.current_period_end
+                          ? formatUtcDate(subscription.current_period_end, undefined, locale)
+                          : t("currentSubscription.notAvailable")}
                       </DashboardDetailField>
-                    ) : null}
-                    <DashboardDetailField
-                      icon={CalendarDays}
-                      label={t("currentSubscription.periodEnd")}
-                    >
-                      {subscription.current_period_end
-                        ? formatUtcDate(subscription.current_period_end, undefined, locale)
-                        : t("currentSubscription.notAvailable")}
-                    </DashboardDetailField>
+                    </div>
+                    <div className="flex flex-col gap-5">
+                      <DashboardDetailField icon={Users} label={t("currentSubscription.seats")}>
+                        {subscription.seat_quantity}
+                      </DashboardDetailField>
+                      {perSeatAmount !== null ? (
+                        <DashboardDetailField
+                          icon={Coins}
+                          label={t("currentSubscription.perSeatCost")}
+                        >
+                          <span>
+                            {catalogSeatPrice(perSeatAmount)}
+                            {billingInterval === "year" ? (
+                              <span className="ml-1.5 text-sm font-normal text-muted-foreground">
+                                ({t("currentSubscription.billedAnnually")})
+                              </span>
+                            ) : null}
+                          </span>
+                        </DashboardDetailField>
+                      ) : null}
+                      {perSeatAmount !== null && estimatedMonthlySeatTotal != null ? (
+                        <DashboardDetailField
+                          icon={CircleDollarSign}
+                          label={t("currentSubscription.totalCost")}
+                        >
+                          {billingInterval === "year"
+                            ? t("currentSubscription.totalYearlyValue", {
+                                amount: new Intl.NumberFormat(locale, {
+                                  style: "currency",
+                                  currency: "USD",
+                                  maximumFractionDigits: 0,
+                                }).format(estimatedMonthlySeatTotal * 12),
+                              })
+                            : t("currentSubscription.totalMonthlyValue", {
+                                amount: new Intl.NumberFormat(locale, {
+                                  style: "currency",
+                                  currency: "USD",
+                                  maximumFractionDigits: 0,
+                                }).format(estimatedMonthlySeatTotal),
+                              })}
+                        </DashboardDetailField>
+                      ) : null}
+                    </div>
                   </div>
-                  <div className="flex flex-col gap-5">
-                    <DashboardDetailField icon={Users} label={t("currentSubscription.seats")}>
-                      {subscription.seat_quantity}
-                    </DashboardDetailField>
-                    {perSeatAmount !== null ? (
-                      <DashboardDetailField
-                        icon={Coins}
-                        label={t("currentSubscription.perSeatCost")}
-                      >
-                        <span>
-                          {catalogSeatPrice(perSeatAmount)}
-                          {billingInterval === "year" ? (
-                            <span className="ml-1.5 text-sm font-normal text-muted-foreground">
-                              ({t("currentSubscription.billedAnnually")})
-                            </span>
-                          ) : null}
-                        </span>
-                      </DashboardDetailField>
-                    ) : null}
-                    {perSeatAmount !== null && estimatedMonthlySeatTotal != null ? (
-                      <DashboardDetailField
-                        icon={CircleDollarSign}
-                        label={t("currentSubscription.totalCost")}
-                      >
-                        {billingInterval === "year"
-                          ? t("currentSubscription.totalYearlyValue", {
-                              amount: new Intl.NumberFormat(locale, {
-                                style: "currency",
-                                currency: "USD",
-                                maximumFractionDigits: 0,
-                              }).format(estimatedMonthlySeatTotal * 12),
-                            })
-                          : t("currentSubscription.totalMonthlyValue", {
-                              amount: new Intl.NumberFormat(locale, {
-                                style: "currency",
-                                currency: "USD",
-                                maximumFractionDigits: 0,
-                              }).format(estimatedMonthlySeatTotal),
-                            })}
-                      </DashboardDetailField>
-                    ) : null}
-                  </div>
+                </>
+              ) : (
+                <div className="rounded-lg border border-dashed border-border bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground">
+                  {t("currentSubscription.noSubscription")}
                 </div>
-              </>
-            ) : (
-              <div className="rounded-lg border border-dashed border-border bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground">
-                {t("currentSubscription.noSubscription")}
-              </div>
-            )}
-          </div>
-        </DashboardPageSection>
-      )}
+              )}
+            </div>
+          </DashboardPageSection>
+        )}
 
-      <BillingActions
-        billingEnabled={billingEnabled}
-        currentPlanKey={currentPaidPlanKey}
-        hasSubscription={hasSubscription}
-        canManageBilling={canManageBilling}
-        plans={livePricing}
-        showAnnualToggle={hasAnnualPricing}
-        currentBillingInterval={billingInterval ?? null}
-      />
+        <BillingActions
+          billingEnabled={billingEnabled}
+          currentPlanKey={currentPaidPlanKey}
+          hasSubscription={hasSubscription}
+          canManageBilling={canManageBilling}
+          plans={livePricing}
+          showAnnualToggle={hasAnnualPricing}
+          currentBillingInterval={billingInterval ?? null}
+        />
 
-      {aiUiGate.isVisibleInUi ? (
-        <Suspense fallback={<AiUsageCardSkeleton />}>
-          <AiUsageCard
-            teamId={teamContext.teamId}
-            locale={locale}
-            copy={{
-              title: tUsage("header.title"),
-              noUsage: tUsage("table.noUsage"),
-              noUsageDescription: tUsage("table.noUsageDescription"),
-              month: tUsage("table.month"),
-              usedTokens: tUsage("table.usedTokens"),
-              reservedTokens: tUsage("table.reservedTokens"),
-            }}
-          />
-        </Suspense>
-      ) : null}
+        {aiUiGate.isVisibleInUi ? (
+          <Suspense fallback={<AiUsageCardSkeleton />}>
+            <AiUsageCard
+              teamId={teamContext.teamId}
+              locale={locale}
+              copy={{
+                title: tUsage("header.title"),
+                noUsage: tUsage("table.noUsage"),
+                noUsageDescription: tUsage("table.noUsageDescription"),
+                month: tUsage("table.month"),
+                usedTokens: tUsage("table.usedTokens"),
+                reservedTokens: tUsage("table.reservedTokens"),
+              }}
+            />
+          </Suspense>
+        ) : null}
+      </DashboardPageStack>
     </>
   );
 }

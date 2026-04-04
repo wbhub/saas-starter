@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
+import { DashboardPageHeader, DashboardPageStack } from "@/components/dashboard-page-header";
 import { TeamInviteCard } from "@/components/team-invite-card";
 import { getDashboardShellData, getTeamMembersAndPendingInvites } from "@/lib/dashboard/server";
 import { formatStaticUsdMonthlyLabel } from "@/lib/stripe/plan-price-display";
@@ -87,15 +88,12 @@ export default async function DashboardTeamPage() {
 
   return (
     <>
-      <div>
-        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          {t("header.eyebrow")}
-        </p>
-        <h1 className="mt-1.5 text-3xl font-semibold tracking-tight">{t("header.title")}</h1>
-        <p className="mt-2 max-w-2xl text-base text-muted-foreground">{t("header.description")}</p>
-      </div>
-
-      <div className="space-y-6">
+      <DashboardPageStack>
+        <DashboardPageHeader
+          eyebrow={t("header.eyebrow")}
+          title={t("header.title")}
+          description={t("header.description")}
+        />
         <Suspense fallback={<TeamInviteSectionSkeleton />}>
           <TeamInviteSection
             teamId={teamContext.teamId}
@@ -108,7 +106,7 @@ export default async function DashboardTeamPage() {
             seatPriceLabel={seatPriceLabel}
           />
         </Suspense>
-      </div>
+      </DashboardPageStack>
     </>
   );
 }

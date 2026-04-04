@@ -3,7 +3,8 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 /** Matches dashboard billing sections (`DashboardBillingPage`) for visual consistency. */
-export const dashboardPageSectionClass = "rounded-xl bg-card ring-1 ring-border p-6";
+export const dashboardPageSectionClass =
+  "rounded-xl bg-card p-5 shadow-sm ring-1 ring-border sm:p-6";
 
 type DashboardPageSectionProps = {
   icon: LucideIcon;
@@ -47,7 +48,9 @@ export function DashboardPageSection({
     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0 space-y-1">
         <h2 className="text-lg font-semibold tracking-tight text-foreground">{title}</h2>
-        {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
+        {description ? (
+          <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">{description}</p>
+        ) : null}
       </div>
       {endSlot}
     </div>
@@ -55,7 +58,9 @@ export function DashboardPageSection({
     <>
       <h2 className="text-lg font-semibold tracking-tight text-foreground">{title}</h2>
       {description ? (
-        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{description}</p>
+        <p className="mt-1 max-w-3xl text-sm leading-relaxed text-muted-foreground">
+          {description}
+        </p>
       ) : null}
     </>
   );
@@ -75,7 +80,7 @@ export function DashboardPageSection({
         </div>
         <div className="min-w-0 flex-1">
           {headerBlock}
-          {children != null ? <div className="mt-6">{children}</div> : null}
+          {children != null ? <div className="mt-5 sm:mt-6">{children}</div> : null}
         </div>
       </div>
     </section>

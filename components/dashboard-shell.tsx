@@ -1,6 +1,11 @@
 import type { ReactNode } from "react";
 import type { TeamRole } from "@/lib/team-context";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
+import {
+  DashboardShellColumns,
+  DashboardShellFrame,
+  DashboardShellSection,
+} from "@/components/layout-shells";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
@@ -45,16 +50,24 @@ export function DashboardShell({
           activeTeamId,
           csrfToken,
         }}
+        dashboardNav={{
+          teamUiMode,
+          showAiNav,
+        }}
       />
       <main className="flex-1">
-        <div className="mx-auto max-w-[1440px] px-6 py-8 lg:px-10 lg:py-12">
-          <div className="grid gap-8 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-14">
+        <DashboardShellFrame className="py-5 sm:py-6 lg:py-8">
+          <DashboardShellColumns>
             <DashboardSidebar teamUiMode={teamUiMode} showAiNav={showAiNav} />
-            <div className="space-y-8">{children}</div>
-          </div>
-        </div>
+            <div className="min-w-0">
+              <DashboardShellSection className="space-y-6 lg:space-y-8">
+                {children}
+              </DashboardShellSection>
+            </div>
+          </DashboardShellColumns>
+        </DashboardShellFrame>
       </main>
-      <SiteFooter />
+      <SiteFooter dashboard />
     </div>
   );
 }

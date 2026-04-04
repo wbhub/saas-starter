@@ -46,4 +46,33 @@ describe("PromptInput", () => {
 
     expect(onSubmit).toHaveBeenCalledWith("", [file], undefined);
   });
+
+  it("auto-grows the textarea until the max composer height", () => {
+    const onSubmit = vi.fn();
+    render(
+      <PromptInput
+        onSubmit={onSubmit}
+        isSending={false}
+        onStop={() => {}}
+        providerName="openai"
+        validateFiles={() => null}
+      />,
+    );
+
+    const textarea = screen.getByPlaceholderText("Ask anything") as HTMLTextAreaElement;
+
+    Object.defineProperty(textarea, "scrollHeight", {
+      configurable: true,
+      value: 172,
+    });
+
+    fireEvent.change(textarea, {
+      target: {
+        value: "A longer message",
+      },
+    });
+
+    expect(textarea.style.height).toBe("172px");
+    expect(textarea.style.overflowY).toBe("hidden");
+  });
 });

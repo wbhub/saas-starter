@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { ArrowUp, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,8 @@ import { type AttachmentProviderName, getSupportedAttachmentAccept } from "@/lib
 import { cn } from "@/lib/utils";
 
 const MAX_ATTACHMENTS_PER_MESSAGE = 8;
+const MIN_TEXTAREA_HEIGHT_PX = 44;
+const MAX_TEXTAREA_HEIGHT_PX = 196;
 
 export function PromptInput({
   onSubmit,
@@ -32,7 +34,24 @@ export function PromptInput({
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const supportedAttachmentAccept = getSupportedAttachmentAccept(providerName);
+
+  function resizeTextarea(element: HTMLTextAreaElement) {
+    element.style.height = "0px";
+    const nextHeight = Math.min(
+      MAX_TEXTAREA_HEIGHT_PX,
+      Math.max(MIN_TEXTAREA_HEIGHT_PX, element.scrollHeight),
+    );
+    element.style.height = `${nextHeight}px`;
+    element.style.overflowY = element.scrollHeight > MAX_TEXTAREA_HEIGHT_PX ? "auto" : "hidden";
+  }
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      resizeTextarea(textareaRef.current);
+    }
+  }, [input]);
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
@@ -68,6 +87,10 @@ export function PromptInput({
     setInput("");
     setPendingFiles([]);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    if (textareaRef.current) {
+      textareaRef.current.style.height = `${MIN_TEXTAREA_HEIGHT_PX}px`;
+      textareaRef.current.style.overflowY = "hidden";
+    }
     onSubmit(draftInput, draftFiles, draftModel || undefined);
   }
 
@@ -110,13 +133,17 @@ export function PromptInput({
           )}
         >
           <Textarea
+            ref={textareaRef}
             value={input}
-            onChange={(event) => setInput(event.target.value)}
+            onChange={(event) => {
+              setInput(event.target.value);
+              resizeTextarea(event.target);
+            }}
             onKeyDown={handleKeyDown}
             rows={1}
             placeholder={t("placeholder")}
             disabled={isSending}
-            className="min-h-[44px] resize-none border-0 bg-transparent px-3 py-2.5 text-sm font-normal leading-relaxed text-foreground shadow-none placeholder:text-muted-foreground focus-visible:ring-0 md:min-h-[44px] md:text-sm"
+            className="min-h-[44px] max-h-48 resize-none overflow-y-hidden border-0 bg-transparent px-3 py-2.5 text-sm font-normal leading-relaxed text-foreground shadow-none placeholder:text-muted-foreground focus-visible:ring-0 md:min-h-[44px] md:text-sm"
           />
           <div className="flex flex-wrap items-center justify-between gap-2 px-2.5 py-1.5">
             <div className="flex min-w-0 flex-1 items-center gap-2">

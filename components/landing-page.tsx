@@ -1,3 +1,4 @@
+import { PublicShell } from "./layout-shells";
 import { SiteHeader } from "./site-header";
 import { SiteFooter } from "./site-footer";
 import {
@@ -15,7 +16,7 @@ export function LandingPage() {
     <div className="app-content min-h-screen bg-background text-foreground">
       <SiteHeader />
 
-      <main className="mx-auto max-w-[1440px] px-6 py-14 md:py-20 lg:px-10">
+      <PublicShell as="main" className="py-14 md:py-20">
         <div className="space-y-16 md:space-y-20">
           <HeroSection />
           <GettingStartedSection />
@@ -25,7 +26,7 @@ export function LandingPage() {
           <PricingSection />
           <CtaFaqSection />
         </div>
-      </main>
+      </PublicShell>
 
       <SiteFooter />
     </div>

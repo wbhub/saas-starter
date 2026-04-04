@@ -50,4 +50,44 @@ test.describe("@smoke ai chat streaming", () => {
     await expect(page.getByText("Hello assistant")).toBeVisible();
     await expect(page.getByText("Mock streamed response from assistant.")).toBeVisible();
   });
+
+  test("keeps the composer visible on laptop-height viewports", async ({ page }) => {
+    test.skip(!hasSeededOwner(), "Missing seeded owner credentials.");
+    test.skip(aiScenario !== "eligible", "Run with E2E_AI_SCENARIO=eligible.");
+
+    await page.setViewportSize({ width: 1440, height: 760 });
+    await page.goto("/dashboard/ai");
+
+    await expect(
+      page.getByPlaceholder("Ask anything about your product, docs, or workflow..."),
+    ).toBeVisible();
+    await expect(page.getByRole("button", { name: "Send" })).toBeVisible();
+
+    const composerWidth = await page
+      .getByPlaceholder("Ask anything about your product, docs, or workflow...")
+      .evaluate((element) => Math.round(element.getBoundingClientRect().width));
+    expect(composerWidth).toBeGreaterThan(950);
+  });
+
+  test("opens recents from a mobile sheet while keeping the composer reachable", async ({
+    page,
+  }) => {
+    test.skip(!hasSeededOwner(), "Missing seeded owner credentials.");
+    test.skip(aiScenario !== "eligible", "Run with E2E_AI_SCENARIO=eligible.");
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/dashboard/ai");
+
+    await expect(
+      page.getByPlaceholder("Ask anything about your product, docs, or workflow..."),
+    ).toBeVisible();
+
+    await page.getByRole("button", { name: "Recents" }).click();
+    await expect(page.getByText("Threads")).toBeVisible();
+
+    await page.getByRole("button", { name: "Close" }).click();
+    await expect(
+      page.getByPlaceholder("Ask anything about your product, docs, or workflow..."),
+    ).toBeVisible();
+  });
 });

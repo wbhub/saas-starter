@@ -125,6 +125,7 @@ describe("Onboarding page signup handoff", () => {
     expect(html).toContain('data-interval="year"');
     expect(html).toContain('data-auto-start="starter"');
     expect(html).toContain('data-auto-complete-free="false"');
+    expect(html).toContain("max-w-[1440px]");
   });
 
   it("passes free signup continuation through to the plan selector", async () => {
@@ -138,5 +139,6 @@ describe("Onboarding page signup handoff", () => {
     expect(html).toContain('data-interval="month"');
     expect(html).toContain('data-auto-start=""');
     expect(html).toContain('data-auto-complete-free="true"');
+    expect(html).toContain("max-w-[1440px]");
   });
 });

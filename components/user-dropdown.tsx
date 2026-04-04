@@ -175,7 +175,7 @@ export function UserDropdown({
     <DropdownMenu open={open} onOpenChange={handleOpenChange}>
       <DropdownMenuTrigger
         aria-label={t("UserDropdown.label")}
-        className="inline-flex items-center gap-2.5 rounded-full border border-border py-1.5 pl-1.5 pr-3 shadow-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border p-0 shadow-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:h-auto sm:w-auto sm:justify-start sm:gap-2.5 sm:py-1.5 sm:pl-1.5 sm:pr-3"
       >
         <Avatar size="default">
           <AvatarImage src={avatarUrl ?? ""} alt={displayName} />
@@ -184,7 +184,7 @@ export function UserDropdown({
           </AvatarFallback>
         </Avatar>
         <span className="hidden text-sm font-medium sm:inline">{displayName}</span>
-        <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+        <ChevronDown className="hidden h-3.5 w-3.5 shrink-0 text-muted-foreground sm:block" />
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" sideOffset={6} className="w-64 rounded-xl p-1.5">

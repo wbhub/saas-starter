@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import { PublicShell } from "@/components/layout-shells";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { OnboardingPlanSelector } from "@/components/onboarding/plan-selector";
@@ -137,8 +138,8 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
     <div className="app-content flex min-h-screen flex-col bg-background text-foreground">
       <SiteHeader />
 
-      <main className="flex flex-1 flex-col items-center px-4 py-12">
-        <div className={cn("my-auto w-full", freePlanEnabled ? "max-w-7xl" : "max-w-5xl")}>
+      <PublicShell as="main" className="flex flex-1 flex-col py-12">
+        <div className={cn("mx-auto my-auto w-full", freePlanEnabled ? "max-w-7xl" : "max-w-5xl")}>
           <div className="text-center">
             <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">{t("title")}</h1>
             <p className="mt-3 text-lg text-muted-foreground">
@@ -157,7 +158,7 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
             autoCompleteFreePlan={autoCompleteFreePlan}
           />
         </div>
-      </main>
+      </PublicShell>
 
       <SiteFooter />
     </div>

@@ -2,6 +2,21 @@
 
 Patterns to follow when adding features to this codebase.
 
+## UI and Layout
+
+Read `DESIGN_SYSTEM.md` before making shared UI, responsiveness, spacing, or layout changes.
+
+When adding or changing page structure:
+
+- Use the shared shell components in `components/layout-shells.tsx` before reaching for raw container classes.
+- Use `PublicShell` for public-facing pages.
+- Use `PublicCenteredContent` for auth-style centered public content instead of hand-rolled centering wrappers.
+- Use `DashboardShellFrame`, `DashboardShellColumns`, and `DashboardShellSection` for signed-in app shell work.
+- Use `DashboardPageHeader` and `DashboardPageStack` for dashboard page intros and vertical rhythm.
+- Put new cross-page width rules in `lib/site-layout.ts`, not in random page files.
+
+If a layout adjustment feels specific to one page, stop and check whether the real fix belongs in the shared shell first.
+
 ## Adding an API Route
 
 Copy an existing route as your starting template. `app/api/auth/signup/route.ts` is a good reference for standalone routes; `app/api/team/invites/route.ts` shows how to use the `withTeamRoute` helper.

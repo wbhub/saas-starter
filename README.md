@@ -11,6 +11,13 @@ A production-ready Next.js SaaS foundation built to help you launch faster:
 - System-aware theming with light and dark mode support
 - Security-first defaults (CSRF protection, rate limiting, secure headers, CSP)
 
+## Project Docs
+
+- `DESIGN_SYSTEM.md` - layout, responsiveness, UI composition, and extension rules
+- `ARCHITECTURE.md` - system structure and data flow
+- `CONVENTIONS.md` - coding conventions and implementation patterns
+- `MAGIC_NUMBERS.md` - rationale for important numeric limits and thresholds
+
 ## Tech Stack
 
 - Next.js 16, React 19, TypeScript, Tailwind CSS 4

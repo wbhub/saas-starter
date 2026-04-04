@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PublicShell } from "@/components/layout-shells";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
@@ -12,7 +13,7 @@ export default function PrivacyPolicyPage() {
   return (
     <div className="app-content min-h-screen bg-background text-foreground">
       <SiteHeader />
-      <main className="mx-auto max-w-[1440px] px-6 py-12 lg:px-10">
+      <PublicShell as="main" className="py-12">
         <div className="mx-auto max-w-4xl space-y-8">
           <div className="space-y-3">
             <h1 className="text-3xl font-semibold tracking-tight">Privacy Policy</h1>
@@ -204,7 +205,7 @@ export default function PrivacyPolicyPage() {
             </Link>
           </div>
         </div>
-      </main>
+      </PublicShell>
       <SiteFooter />
     </div>
   );
