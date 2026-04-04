@@ -181,15 +181,30 @@
       "plans": {
         "starter": {
           "name": "Starter",
-          "description": "새 제품을 검증하는 창업자를 위한 인증, 팀, 결제."
+          "description": "새 제품을 검증하는 창업자를 위한 인증, 팀, 결제.",
+          "features": {
+            "teamMembers": "최대 5명의 팀원",
+            "realTimeSync": "실시간 데이터 동기화",
+            "basicIntegrations": "기본 통합"
+          }
         },
         "growth": {
           "name": "Growth",
-          "description": "팀이 성장함에 따라 AI 접근, 좌석 확장, 사용량 추적을 추가하세요."
+          "description": "팀이 성장함에 따라 AI 접근, 좌석 확장, 사용량 추적을 추가하세요.",
+          "features": {
+            "aiFeatures": "AI 기반 기능",
+            "advancedAnalytics": "고급 분석",
+            "priorityEmailSupport": "우선 이메일 지원"
+          }
         },
         "pro": {
           "name": "Pro",
-          "description": "우선 지원, 감사 로그, 고급 통합까지 포함한 전체 플랫폼."
+          "description": "우선 지원, 감사 로그, 고급 통합까지 포함한 전체 플랫폼.",
+          "features": {
+            "unlimitedTeamMembers": "무제한 팀원",
+            "auditLogging": "감사 로그",
+            "dedicatedSupport": "전담 지원"
+          }
         }
       },
       "toggle": {

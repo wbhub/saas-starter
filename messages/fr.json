@@ -181,15 +181,30 @@
       "plans": {
         "starter": {
           "name": "Starter",
-          "description": "Auth, équipes et facturation pour les fondateurs validant un nouveau produit."
+          "description": "Auth, équipes et facturation pour les fondateurs validant un nouveau produit.",
+          "features": {
+            "teamMembers": "Jusqu'à 5 membres d'équipe",
+            "realTimeSync": "Synchronisation des données en temps réel",
+            "basicIntegrations": "Intégrations de base"
+          }
         },
         "growth": {
           "name": "Croissance",
-          "description": "Ajoutez l'accès AI, la mise à l'échelle des sièges et le suivi d'utilisation à mesure que votre équipe grandit."
+          "description": "Ajoutez l'accès AI, la mise à l'échelle des sièges et le suivi d'utilisation à mesure que votre équipe grandit.",
+          "features": {
+            "aiFeatures": "Fonctionnalités alimentées par l'AI",
+            "advancedAnalytics": "Analyses avancées",
+            "priorityEmailSupport": "Support prioritaire par email"
+          }
         },
         "pro": {
           "name": "Pro",
-          "description": "Plateforme complète avec support prioritaire, journalisation d'audit et intégrations avancées."
+          "description": "Plateforme complète avec support prioritaire, journalisation d'audit et intégrations avancées.",
+          "features": {
+            "unlimitedTeamMembers": "Membres d'équipe illimités",
+            "auditLogging": "Journalisation d'audit",
+            "dedicatedSupport": "Support dédié"
+          }
         }
       },
       "toggle": {

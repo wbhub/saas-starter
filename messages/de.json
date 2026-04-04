@@ -181,15 +181,30 @@
       "plans": {
         "starter": {
           "name": "Starter",
-          "description": "Auth, Teams und Abrechnung für Gründer, die ein neues Produkt validieren."
+          "description": "Auth, Teams und Abrechnung für Gründer, die ein neues Produkt validieren.",
+          "features": {
+            "teamMembers": "Bis zu 5 Teammitglieder",
+            "realTimeSync": "Echtzeit-Datensynchronisierung",
+            "basicIntegrations": "Grundlegende Integrationen"
+          }
         },
         "growth": {
           "name": "Growth",
-          "description": "Erweitere um KI-Zugriff, Seat-Skalierung und Usage-Tracking, wenn dein Team wächst."
+          "description": "Erweitere um KI-Zugriff, Seat-Skalierung und Usage-Tracking, wenn dein Team wächst.",
+          "features": {
+            "aiFeatures": "KI-gestützte Funktionen",
+            "advancedAnalytics": "Erweiterte Analysen",
+            "priorityEmailSupport": "Priorisierter E-Mail-Support"
+          }
         },
         "pro": {
           "name": "Pro",
-          "description": "Vollständige Plattform mit priorisiertem Support, Audit-Logging und erweiterten Integrationen."
+          "description": "Vollständige Plattform mit priorisiertem Support, Audit-Logging und erweiterten Integrationen.",
+          "features": {
+            "unlimitedTeamMembers": "Unbegrenzte Teammitglieder",
+            "auditLogging": "Audit-Logging",
+            "dedicatedSupport": "Dedizierter Support"
+          }
         }
       },
       "toggle": {
