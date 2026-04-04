@@ -25,6 +25,10 @@ vi.mock("./user-dropdown", () => ({
   UserDropdown: () => <div data-testid="user-dropdown" />,
 }));
 
+vi.mock("@/components/dashboard-mobile-nav", () => ({
+  DashboardMobileNav: () => <div data-testid="dashboard-mobile-nav" />,
+}));
+
 vi.mock("@/lib/env", () => ({
   env: {
     APP_FREE_PLAN_ENABLED: true,
@@ -33,14 +37,16 @@ vi.mock("@/lib/env", () => ({
 
 describe("SiteHeader", () => {
   it("links the brand to the homepage on public pages", () => {
-    render(<SiteHeader />);
+    const { container } = render(<SiteHeader />);
 
     expect(screen.getByRole("link", { name: "Common.brandName" })).toHaveAttribute("href", "/");
     expect(screen.getByTestId("public-header-actions")).toBeInTheDocument();
+    expect(container.innerHTML).toContain("max-w-[1440px]");
+    expect(container.innerHTML).not.toContain("max-w-[56rem]");
   });
 
   it("links the brand to the dashboard for signed-in dashboard views", () => {
-    render(
+    const { container } = render(
       <SiteHeader
         dashboardUser={{
           displayName: "Test User",
@@ -53,6 +59,10 @@ describe("SiteHeader", () => {
           activeTeamId: "team_1",
           csrfToken: "csrf_token",
         }}
+        dashboardNav={{
+          teamUiMode: "paid_team",
+          showAiNav: true,
+        }}
       />,
     );
 
@@ -61,5 +71,8 @@ describe("SiteHeader", () => {
       "/dashboard",
     );
     expect(screen.getByTestId("user-dropdown")).toBeInTheDocument();
+    expect(screen.getByTestId("dashboard-mobile-nav")).toBeInTheDocument();
+    expect(container.innerHTML).toContain("max-w-[1680px]");
+    expect(container.innerHTML).toContain("max-w-[56rem]");
   });
 });

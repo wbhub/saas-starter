@@ -38,4 +38,19 @@ test.describe("@smoke sidebar navigation state", () => {
       "page",
     );
   });
+
+  test("uses the mobile sheet navigation on narrow screens", async ({ page }) => {
+    test.skip(!hasSeededOwner(), "Missing seeded owner credentials.");
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/dashboard/support");
+
+    await page.getByRole("button", { name: "App Dashboard" }).click();
+    await expect(page.getByText("App Dashboard")).toBeVisible();
+
+    await page.getByRole("link", { name: "Billing" }).click();
+    await expect(page).toHaveURL(/\/dashboard\/billing$/);
+    await expect(page.getByText("App Dashboard")).not.toBeVisible();
+    await expect(page.getByRole("button", { name: "App Dashboard" })).toBeVisible();
+  });
 });

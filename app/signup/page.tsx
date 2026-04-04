@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { AuthForm } from "@/components/auth-form";
+import { PublicCenteredContent, PublicShell } from "@/components/layout-shells";
 import {
   getEnabledSocialAuthProviders,
   LAST_AUTH_PROVIDER_COOKIE,
@@ -59,17 +60,19 @@ export default async function SignupPage({ searchParams }: SignupPageProps) {
     <div className="app-content flex min-h-screen flex-col bg-background text-foreground">
       <SiteHeader />
 
-      <main className="flex flex-1 flex-col items-center justify-center px-4 py-12">
-        <AuthForm
-          mode="signup"
-          redirectTo={redirectTo}
-          socialProviders={socialProviders}
-          lastUsedProvider={lastUsedProvider}
-        />
-        <Link href="/" className="mt-6 text-sm text-muted-foreground hover:text-foreground">
-          {t("backHome")}
-        </Link>
-      </main>
+      <PublicShell as="main" className="flex flex-1 flex-col py-12">
+        <PublicCenteredContent>
+          <AuthForm
+            mode="signup"
+            redirectTo={redirectTo}
+            socialProviders={socialProviders}
+            lastUsedProvider={lastUsedProvider}
+          />
+          <Link href="/" className="mt-6 text-sm text-muted-foreground hover:text-foreground">
+            {t("backHome")}
+          </Link>
+        </PublicCenteredContent>
+      </PublicShell>
 
       <SiteFooter />
     </div>

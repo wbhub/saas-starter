@@ -70,5 +70,7 @@ describe("Signup page social auth config", () => {
 
     expect(html).toContain('data-social="microsoft"');
     expect(html).toContain('data-last-used="microsoft"');
+    expect(html).toContain("max-w-[1440px]");
+    expect(html).toContain("max-w-md");
   });
 });

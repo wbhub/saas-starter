@@ -13,4 +13,17 @@ test.describe("@smoke dashboard rendering", () => {
     await expect(page.getByRole("heading", { name: "Account" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Subscription snapshot" })).toBeVisible();
   });
+
+  test("uses the broader dashboard shell width on large laptop screens", async ({ page }) => {
+    test.skip(!hasSeededOwner(), "Missing seeded owner credentials.");
+
+    await page.setViewportSize({ width: 1600, height: 900 });
+    await page.goto("/dashboard");
+
+    const shellWidth = await page
+      .locator("main > div")
+      .evaluate((element) => Math.round(element.getBoundingClientRect().width));
+
+    expect(shellWidth).toBeGreaterThan(1500);
+  });
 });

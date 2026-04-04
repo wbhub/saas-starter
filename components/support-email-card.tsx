@@ -55,29 +55,40 @@ export function SupportEmailCard() {
   return (
     <DashboardPageSection icon={Mail} title={t("title")} description={t("description")}>
       <div className="space-y-4">
-        <form className="space-y-4" onSubmit={handleSubmit}>
+        <form className="max-w-2xl space-y-4" onSubmit={handleSubmit}>
           <div>
-            <Label className="mb-1">{t("fields.subject")}</Label>
+            <Label className="mb-1.5 block" htmlFor="support-email-subject">
+              {t("fields.subject")}
+            </Label>
             <Input
+              id="support-email-subject"
               type="text"
               maxLength={120}
               value={subject}
               onChange={(event) => setSubject(event.target.value)}
               placeholder={t("fields.subjectPlaceholder")}
+              className="max-w-xl"
             />
           </div>
 
           <div>
-            <Label className="mb-1">{t("fields.message")}</Label>
+            <Label className="mb-1.5 block" htmlFor="support-email-message">
+              {t("fields.message")}
+            </Label>
             <Textarea
+              id="support-email-message"
               required
               minLength={10}
               maxLength={2000}
-              rows={5}
+              rows={6}
               value={message}
               onChange={(event) => setMessage(event.target.value)}
               placeholder={t("fields.messagePlaceholder")}
+              className="min-h-36"
             />
+            <div className="mt-1.5 flex justify-end text-xs text-muted-foreground">
+              <span aria-live="polite">{message.length}/2000</span>
+            </div>
           </div>
 
           <SubmitButton
