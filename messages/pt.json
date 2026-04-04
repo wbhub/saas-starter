@@ -652,6 +652,9 @@
       "inviteResentEmailFailed": "O token de convite foi alternado, mas a entrega do e-mail falhou.",
       "bulkInvitesSent": "Todos os {count} convites foram enviados.",
       "bulkInvitesPartial": "{successCount} de {totalCount} convites enviados. {failedCount} falharam.",
+      "bulkInvitesCreatedEmailFailed": "Todos os {count} convites foram criados, mas a entrega do e-mail falhou. Use reenviar mais tarde para tentar novamente.",
+      "bulkInvitesPartialEmailDelivery": "{sentCount} de {totalCount} e-mails de convite foram enviados. {createdCount} convite(s) foram criados, mas a entrega do e-mail falhou.",
+      "bulkInvitesMixedResults": "{sentCount} de {totalCount} e-mails de convite foram enviados. {createdCount} convite(s) foram criados sem entrega de e-mail. {failedCount} falharam.",
       "bulkInvitesFailed": "Todos os convites falharam ao enviar."
     },
     "errors": {
@@ -866,6 +869,7 @@
       "forbidden": "Somente proprietários e administradores de equipes podem reenviar convites.",
       "rateLimited": "Muitas solicitações de gerenciamento de convites. Por favor, tente novamente em breve.",
       "invalidInviteId": "ID de convite inválido.",
+      "onlyOwnersCanResendOwnerInvite": "Apenas proprietários da equipe podem reenviar convites de proprietário.",
       "unableToResendInvite": "Não foi possível reenviar o convite.",
       "pendingInviteNotFound": "Convite pendente não encontrado."
     },

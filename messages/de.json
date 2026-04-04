@@ -652,6 +652,9 @@
       "inviteResentEmailFailed": "Einladungstoken rotiert, aber der E-Mail-Versand ist fehlgeschlagen.",
       "bulkInvitesSent": "Alle {count} Einladungen gesendet.",
       "bulkInvitesPartial": "{successCount} von {totalCount} Einladungen gesendet. {failedCount} fehlgeschlagen.",
+      "bulkInvitesCreatedEmailFailed": "Alle {count} Einladungen wurden erstellt, aber die E-Mail-Zustellung ist fehlgeschlagen. Verwende später Erneut senden, um es nochmals zu versuchen.",
+      "bulkInvitesPartialEmailDelivery": "{sentCount} von {totalCount} Einladungs-E-Mails gesendet. {createdCount} Einladung(en) wurden erstellt, aber die E-Mail-Zustellung ist fehlgeschlagen.",
+      "bulkInvitesMixedResults": "{sentCount} von {totalCount} Einladungs-E-Mails gesendet. {createdCount} Einladung(en) wurden ohne E-Mail-Zustellung erstellt. {failedCount} fehlgeschlagen.",
       "bulkInvitesFailed": "Alle Einladungen konnten nicht gesendet werden."
     },
     "errors": {
@@ -866,6 +869,7 @@
       "forbidden": "Nur Team-Owner und Admins können Einladungen erneut senden.",
       "rateLimited": "Zu viele Anfragen zur Einladungsverwaltung. Bitte versuche es in Kürze erneut.",
       "invalidInviteId": "Ungültige Einladungs-ID.",
+      "onlyOwnersCanResendOwnerInvite": "Nur Team-Besitzer können Besitzer-Einladungen erneut senden.",
       "unableToResendInvite": "Einladung konnte nicht erneut gesendet werden.",
       "pendingInviteNotFound": "Ausstehende Einladung nicht gefunden."
     },

@@ -8,6 +8,12 @@ import { useLocale, useTranslations } from "next-intl";
 import { clientFetch, clientPatchJson, clientPostJson } from "@/lib/http/client-fetch";
 import { formatUtcDate } from "@/lib/date";
 import { type AppLocale } from "@/i18n/routing";
+import {
+  describeInviteBatchOutcome,
+  isInviteEmailInputValid,
+  normalizeInviteEmailInput,
+  parseInviteEmailPaste,
+} from "@/lib/team-invite-form";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -90,6 +96,7 @@ type TeamInviteAction =
   | { type: "SET_FIELD"; field: "role"; value: "member" | "admin" | "owner" }
   | { type: "SET_CURRENT_INPUT"; value: string }
   | { type: "ADD_EMAIL"; email: string }
+  | { type: "ADD_EMAILS"; emails: string[] }
   | { type: "REMOVE_EMAIL"; email: string }
   | { type: "SET_INPUT_ERROR"; error: string | null }
   | { type: "SUBMIT_PARTIAL"; message: string; failedEmails: string[] }
@@ -107,8 +114,6 @@ type TeamInviteAction =
   | { type: "RESEND_INVITE_END"; message: string | null; variant: "success" | "error" }
   | { type: "CLEAR_BANNER" };
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 function teamInviteReducer(state: TeamInviteState, action: TeamInviteAction): TeamInviteState {
   const clearBanner = { message: null as string | null, variant: "success" as const };
   switch (action.type) {
@@ -121,6 +126,12 @@ function teamInviteReducer(state: TeamInviteState, action: TeamInviteAction): Te
         ...state,
         emails: [...state.emails, action.email],
         currentInput: "",
+        inputError: null,
+      };
+    case "ADD_EMAILS":
+      return {
+        ...state,
+        emails: [...state.emails, ...action.emails],
         inputError: null,
       };
     case "REMOVE_EMAIL":
@@ -274,9 +285,9 @@ export function TeamInviteCard({
 
   const commitEmail = useCallback(
     (raw: string): boolean => {
-      const trimmed = raw.trim().toLowerCase();
+      const trimmed = normalizeInviteEmailInput(raw);
       if (!trimmed) return false;
-      if (!EMAIL_RE.test(trimmed)) {
+      if (!isInviteEmailInputValid(trimmed)) {
         dispatch({
           type: "SET_INPUT_ERROR",
           error: t("errors.invalidEmailInList", { email: trimmed }),
@@ -427,9 +438,9 @@ export function TeamInviteCard({
 
     // Build the final list: committed chips + whatever is still in the input
     const finalEmails = [...emails];
-    const trailing = currentInput.trim().toLowerCase();
+    const trailing = normalizeInviteEmailInput(currentInput);
     if (trailing) {
-      if (!EMAIL_RE.test(trailing)) {
+      if (!isInviteEmailInputValid(trailing)) {
         dispatch({
           type: "SET_INPUT_ERROR",
           error: t("errors.invalidEmailInList", { email: trailing }),
@@ -470,48 +481,52 @@ export function TeamInviteCard({
       }
 
       // Send invites sequentially, tracking failures for retry
-      let successCount = 0;
+      let deliveredCount = 0;
+      let createdWithoutEmailCount = 0;
       const failedEmails: string[] = [];
 
       for (const emailAddr of finalEmails) {
         try {
-          await clientPostJson<InviteApiResponse>(
+          const payload = await clientPostJson<InviteApiResponse>(
             "/api/team/invites",
             { email: emailAddr, role },
             {
               fallbackErrorMessage: t("errors.sendInvite"),
             },
           );
-          successCount++;
+          if (payload.emailSent === false) {
+            createdWithoutEmailCount++;
+          } else {
+            deliveredCount++;
+          }
         } catch {
           failedEmails.push(emailAddr);
         }
       }
 
-      const totalCount = finalEmails.length;
+      const feedback = describeInviteBatchOutcome({
+        totalCount: finalEmails.length,
+        deliveredCount,
+        createdWithoutEmailCount,
+        failedCount: failedEmails.length,
+      });
+      const message = t(feedback.messageKey, feedback.values);
 
-      if (failedEmails.length === 0) {
+      if (feedback.kind === "success") {
         dispatch({
           type: "SUBMIT_SUCCESS",
-          message:
-            totalCount === 1
-              ? t("feedback.inviteEmailSent")
-              : t("feedback.bulkInvitesSent", { count: totalCount }),
+          message,
         });
-      } else if (successCount === 0) {
+      } else if (feedback.kind === "error") {
         dispatch({
           type: "SUBMIT_ERROR",
-          message: totalCount === 1 ? t("errors.sendInvite") : t("feedback.bulkInvitesFailed"),
+          message,
         });
       } else {
-        // Partial failure: keep failed emails as chips for easy retry
+        // Partial failure: keep only request failures as chips for retry.
         dispatch({
           type: "SUBMIT_PARTIAL",
-          message: t("feedback.bulkInvitesPartial", {
-            successCount,
-            totalCount,
-            failedCount: failedEmails.length,
-          }),
+          message,
           failedEmails,
         });
       }
@@ -722,7 +737,6 @@ export function TeamInviteCard({
               <Label htmlFor="invite-email" className="mb-1 block text-xs">
                 {t("inviteForm.emailLabel")}
               </Label>
-              {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
               <div
                 className={cn(
                   "flex min-h-10 flex-wrap items-center gap-1.5 rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-sm transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 dark:bg-input/30",
@@ -761,7 +775,7 @@ export function TeamInviteCard({
                   onKeyDown={(e) => {
                     if (e.nativeEvent.isComposing) return;
                     if (e.key === "Enter" || e.key === " " || e.key === "," || e.key === "Tab") {
-                      const val = currentInput.trim().replace(/,+$/, "");
+                      const val = normalizeInviteEmailInput(currentInput).replace(/,+$/, "");
                       if (val) {
                         e.preventDefault();
                         commitEmail(val);
@@ -781,8 +795,25 @@ export function TeamInviteCard({
                     const parts = text.split(/[,;\s\n]+/).filter(Boolean);
                     if (parts.length > 1) {
                       e.preventDefault();
-                      for (const part of parts) {
-                        commitEmail(part);
+                      const { emailsToAdd, invalidEmail, duplicateEmail } = parseInviteEmailPaste({
+                        existingEmails: emails,
+                        text,
+                      });
+
+                      if (emailsToAdd.length > 0) {
+                        dispatch({ type: "ADD_EMAILS", emails: emailsToAdd });
+                      }
+
+                      if (invalidEmail) {
+                        dispatch({
+                          type: "SET_INPUT_ERROR",
+                          error: t("errors.invalidEmailInList", { email: invalidEmail }),
+                        });
+                      } else if (duplicateEmail && emailsToAdd.length === 0) {
+                        dispatch({
+                          type: "SET_INPUT_ERROR",
+                          error: t("errors.duplicateEmail", { email: duplicateEmail }),
+                        });
                       }
                     }
                   }}

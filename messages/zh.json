@@ -652,6 +652,9 @@
       "inviteResentEmailFailed": "邀请令牌轮换，但电子邮件发送失败。",
       "bulkInvitesSent": "全部 {count} 个邀请已发送。",
       "bulkInvitesPartial": "{totalCount} 个邀请中已发送 {successCount} 个。{failedCount} 个失败。",
+      "bulkInvitesCreatedEmailFailed": "{count} 个邀请均已创建，但邮件发送失败。请稍后使用重新发送重试。",
+      "bulkInvitesPartialEmailDelivery": "{totalCount} 封邀请邮件中已发送 {sentCount} 封。已有 {createdCount} 个邀请创建成功，但邮件发送失败。",
+      "bulkInvitesMixedResults": "{totalCount} 封邀请邮件中已发送 {sentCount} 封。已有 {createdCount} 个邀请在未发送邮件的情况下创建成功，另有 {failedCount} 个失败。",
       "bulkInvitesFailed": "所有邀请均发送失败。"
     },
     "errors": {
@@ -866,6 +869,7 @@
       "forbidden": "只有团队所有者和管理员可以重新发送邀请。",
       "rateLimited": "邀请管理请求过多。请稍后重试。",
       "invalidInviteId": "邀请 ID 无效。",
+      "onlyOwnersCanResendOwnerInvite": "只有团队所有者才能重新发送所有者邀请。",
       "unableToResendInvite": "无法重新发送邀请。",
       "pendingInviteNotFound": "未找到待处理的邀请。"
     },

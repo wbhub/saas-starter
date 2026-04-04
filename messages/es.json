@@ -652,6 +652,9 @@
       "inviteResentEmailFailed": "Se rotó el token de invitación, pero falló el envío del email.",
       "bulkInvitesSent": "Las {count} invitaciones fueron enviadas.",
       "bulkInvitesPartial": "{successCount} de {totalCount} invitaciones enviadas. {failedCount} fallaron.",
+      "bulkInvitesCreatedEmailFailed": "Se crearon las {count} invitaciones, pero falló la entrega del correo. Usa reenviar más tarde para reintentar.",
+      "bulkInvitesPartialEmailDelivery": "Se enviaron {sentCount} de {totalCount} correos de invitación. Se crearon {createdCount} invitación(es), pero falló la entrega del correo.",
+      "bulkInvitesMixedResults": "Se enviaron {sentCount} de {totalCount} correos de invitación. Se crearon {createdCount} invitación(es) sin entrega de correo. {failedCount} fallaron.",
       "bulkInvitesFailed": "Todas las invitaciones fallaron al enviarse."
     },
     "errors": {
@@ -866,6 +869,7 @@
       "forbidden": "Solo propietarios y administradores del equipo pueden reenviar invitaciones.",
       "rateLimited": "Demasiadas solicitudes de gestión de invitaciones. Inténtalo de nuevo en breve.",
       "invalidInviteId": "ID de invitación inválido.",
+      "onlyOwnersCanResendOwnerInvite": "Solo los propietarios del equipo pueden reenviar invitaciones de propietario.",
       "unableToResendInvite": "No se puede reenviar la invitación.",
       "pendingInviteNotFound": "No se encontró una invitación pendiente."
     },
