@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  describeInviteBatchOutcome,
-  parseInviteEmailPaste,
-} from "./team-invite-form";
+import { describeInviteBatchOutcome, parseInviteEmailPaste } from "./team-invite-form";
 
 describe("team invite form helpers", () => {
   it("deduplicates pasted emails against both existing chips and the same paste", () => {
