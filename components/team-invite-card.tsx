@@ -277,11 +277,17 @@ export function TeamInviteCard({
       const trimmed = raw.trim().toLowerCase();
       if (!trimmed) return false;
       if (!EMAIL_RE.test(trimmed)) {
-        dispatch({ type: "SET_INPUT_ERROR", error: t("errors.invalidEmailInList", { email: trimmed }) });
+        dispatch({
+          type: "SET_INPUT_ERROR",
+          error: t("errors.invalidEmailInList", { email: trimmed }),
+        });
         return false;
       }
       if (emails.includes(trimmed)) {
-        dispatch({ type: "SET_INPUT_ERROR", error: t("errors.duplicateEmail", { email: trimmed }) });
+        dispatch({
+          type: "SET_INPUT_ERROR",
+          error: t("errors.duplicateEmail", { email: trimmed }),
+        });
         return false;
       }
       dispatch({ type: "ADD_EMAIL", email: trimmed });
@@ -424,7 +430,10 @@ export function TeamInviteCard({
     const trailing = currentInput.trim().toLowerCase();
     if (trailing) {
       if (!EMAIL_RE.test(trailing)) {
-        dispatch({ type: "SET_INPUT_ERROR", error: t("errors.invalidEmailInList", { email: trailing }) });
+        dispatch({
+          type: "SET_INPUT_ERROR",
+          error: t("errors.invalidEmailInList", { email: trailing }),
+        });
         return;
       }
       if (!finalEmails.includes(trailing)) {
@@ -492,10 +501,7 @@ export function TeamInviteCard({
       } else if (successCount === 0) {
         dispatch({
           type: "SUBMIT_ERROR",
-          message:
-            totalCount === 1
-              ? t("errors.sendInvite")
-              : t("feedback.bulkInvitesFailed"),
+          message: totalCount === 1 ? t("errors.sendInvite") : t("feedback.bulkInvitesFailed"),
         });
       } else {
         // Partial failure: keep failed emails as chips for easy retry
@@ -751,9 +757,7 @@ export function TeamInviteCard({
                   type="text"
                   disabled={!canInvite || submitting}
                   value={currentInput}
-                  onChange={(e) =>
-                    dispatch({ type: "SET_CURRENT_INPUT", value: e.target.value })
-                  }
+                  onChange={(e) => dispatch({ type: "SET_CURRENT_INPUT", value: e.target.value })}
                   onKeyDown={(e) => {
                     if (e.nativeEvent.isComposing) return;
                     if (e.key === "Enter" || e.key === " " || e.key === "," || e.key === "Tab") {
@@ -787,15 +791,11 @@ export function TeamInviteCard({
                   className="min-w-[8rem] flex-1 border-none bg-transparent py-0.5 text-base text-foreground outline-none placeholder:text-muted-foreground md:text-sm"
                 />
               </div>
-              {inputError ? (
-                <p className="mt-1 text-xs text-destructive">{inputError}</p>
-              ) : null}
+              {inputError ? <p className="mt-1 text-xs text-destructive">{inputError}</p> : null}
             </div>
             <div className="flex flex-row items-end gap-3 sm:shrink-0">
               <div className="min-w-0">
-                <Label className="mb-1 block text-xs">
-                  {t("inviteForm.roleLabel")}
-                </Label>
+                <Label className="mb-1 block text-xs">{t("inviteForm.roleLabel")}</Label>
                 <Select
                   disabled={!canInvite || submitting}
                   value={role}
@@ -826,7 +826,9 @@ export function TeamInviteCard({
                 pendingLabel={t("actions.sending")}
                 idleLabel={
                   emails.length + (currentInput.trim() ? 1 : 0) > 1
-                    ? t("actions.sendInvites", { count: emails.length + (currentInput.trim() ? 1 : 0) })
+                    ? t("actions.sendInvites", {
+                        count: emails.length + (currentInput.trim() ? 1 : 0),
+                      })
                     : t("actions.sendInvite")
                 }
               />
