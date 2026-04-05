@@ -97,7 +97,7 @@ export function MessageBubble({
             return (
               <div
                 key={partIndex}
-                className="ml-auto max-w-[88%] rounded-lg bg-primary/78 px-3 py-2 text-sm font-normal leading-relaxed text-primary-foreground"
+                className="ml-auto w-fit max-w-[88%] rounded-lg bg-primary/78 px-3 py-2 text-sm font-normal leading-relaxed text-primary-foreground"
               >
                 {part.text}
               </div>
@@ -111,11 +111,9 @@ export function MessageBubble({
               key={partIndex}
               className="max-w-[88%] rounded-lg bg-card px-3 py-2 text-sm font-normal leading-relaxed text-foreground"
             >
-              {isStreamingTextPart ? (
-                <div className="whitespace-pre-wrap break-words">{part.text}</div>
-              ) : (
+              <div className="break-words">
                 <MarkdownContent content={part.text} />
-              )}
+              </div>
               {isStreamingTextPart ? (
                 <span className="inline-block h-4 w-0.5 animate-pulse bg-foreground" />
               ) : null}

@@ -5,6 +5,7 @@ import { DashboardPageHeader, DashboardPageStack } from "@/components/dashboard-
 import { DashboardPageSection } from "@/components/dashboard-page-section";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { AiChatCard } from "@/components/ai-chat-card";
+import { resolveAiAccess } from "@/lib/ai/access";
 import { listThreads } from "@/lib/ai/threads";
 import { env } from "@/lib/env";
 import { getAiToolsEnabled } from "@/lib/ai/config";
@@ -23,6 +24,8 @@ export default async function DashboardAiPage() {
   ]);
   const { aiUiGate, displayName, teamContext, user } = shellData;
   const availableModels = getAvailableModels(aiUiGate);
+  const defaultModelId =
+    resolveAiAccess({ effectivePlanKey: aiUiGate.effectivePlanKey }).model ?? undefined;
   const initialThreads =
     aiUiGate.isVisibleInUi && teamContext
       ? (
@@ -54,6 +57,7 @@ export default async function DashboardAiPage() {
             toolsEnabled={aiToolsEnabled}
             userDisplayName={displayName}
             availableModels={availableModels}
+            defaultModelId={defaultModelId}
             initialThreads={initialThreads}
           />
         ) : (

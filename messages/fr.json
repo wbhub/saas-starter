@@ -324,7 +324,9 @@
     "untitled": "Sans titre",
     "actions": {
       "newThread": "Nouvelle conversation",
-      "delete": "Supprimer la conversation"
+      "delete": "Supprimer la conversation",
+      "showRecents": "Afficher les récents",
+      "hideRecents": "Masquer les récents"
     }
   },
   "ApiAiThreads": {

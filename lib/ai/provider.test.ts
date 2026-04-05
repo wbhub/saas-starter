@@ -129,4 +129,46 @@ describe("lib/ai/provider", () => {
       }),
     ).toBe(false);
   });
+
+  it("returns provider-prefixed picker models for every configured provider", async () => {
+    vi.stubEnv("OPENAI_API_KEY", "sk-openai");
+    vi.stubEnv("ANTHROPIC_API_KEY", "sk-ant");
+    vi.stubEnv(
+      "AI_MODEL_MODALITIES_MAP_JSON",
+      JSON.stringify({
+        "openai:gpt-5.4": ["text", "image", "file"],
+        "anthropic:claude-opus-test": ["text", "image", "file"],
+      }),
+    );
+
+    const provider = await import("./provider");
+
+    expect(provider.getAvailableModels()).toEqual(["openai:gpt-5.4", "anthropic:claude-opus-test"]);
+  });
+
+  it("does not surface wildcard-only capability entries as picker model ids", async () => {
+    vi.stubEnv("OPENAI_API_KEY", "sk-openai");
+    vi.stubEnv("AI_ACCESS_MODE", "all");
+    vi.stubEnv("AI_DEFAULT_MODEL", "openai:gpt-5.4");
+    vi.stubEnv(
+      "AI_MODEL_MODALITIES_MAP_JSON",
+      JSON.stringify({
+        "openai:gpt-5.4*": ["text", "image", "file"],
+        "anthropic:claude*": ["text", "image", "file"],
+      }),
+    );
+
+    const provider = await import("./provider");
+
+    expect(provider.getAvailableModels()).toEqual(["openai:gpt-5.4"]);
+  });
+
+  it("resolves language models from explicit provider prefixes", async () => {
+    vi.stubEnv("AI_PROVIDER", "openai");
+    vi.stubEnv("ANTHROPIC_API_KEY", "sk-ant");
+
+    const provider = await import("./provider");
+
+    expect(await provider.getAiLanguageModel("anthropic:claude-test")).toBeTruthy();
+  });
 });

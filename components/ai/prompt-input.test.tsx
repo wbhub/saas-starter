@@ -75,4 +75,20 @@ describe("PromptInput", () => {
     expect(textarea.style.height).toBe("172px");
     expect(textarea.style.overflowY).toBe("hidden");
   });
+
+  it("renders the selected model label when controlled by the parent", () => {
+    render(
+      <PromptInput
+        onSubmit={() => {}}
+        isSending={false}
+        onStop={() => {}}
+        providerName="anthropic"
+        validateFiles={() => null}
+        availableModels={["openai:gpt-5.4", "anthropic:claude-opus-4-6"]}
+        selectedModelId="anthropic:claude-opus-4-6"
+      />,
+    );
+
+    expect(screen.getByText("Claude Opus 4.6")).toBeInTheDocument();
+  });
 });

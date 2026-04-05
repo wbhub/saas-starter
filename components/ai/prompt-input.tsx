@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { type AttachmentProviderName, getSupportedAttachmentAccept } from "@/lib/ai/attachments";
+import { formatAiModelLabel } from "@/lib/ai/model-label";
 import { cn } from "@/lib/utils";
 
 const MAX_ATTACHMENTS_PER_MESSAGE = 8;
@@ -20,6 +21,8 @@ export function PromptInput({
   providerName,
   validateFiles,
   availableModels = [],
+  selectedModelId,
+  onModelChange,
 }: {
   onSubmit: (text: string, files: File[], modelId?: string) => void;
   isSending: boolean;
@@ -27,10 +30,11 @@ export function PromptInput({
   providerName: AttachmentProviderName;
   validateFiles: (files: File[]) => string | null;
   availableModels?: string[];
+  selectedModelId?: string;
+  onModelChange?: (modelId?: string) => void;
 }) {
   const t = useTranslations("AiChatCard");
   const [input, setInput] = useState("");
-  const [selectedModel, setSelectedModel] = useState<string>("");
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -83,7 +87,7 @@ export function PromptInput({
     setValidationMessage(null);
     const draftInput = value;
     const draftFiles = [...pendingFiles];
-    const draftModel = selectedModel;
+    const draftModel = selectedModelId?.trim();
     setInput("");
     setPendingFiles([]);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -170,27 +174,35 @@ export function PromptInput({
               </Button>
               {availableModels.length > 1 ? (
                 <Select
-                  value={selectedModel || "auto"}
-                  onValueChange={(value) => setSelectedModel(value === "auto" ? "" : value || "")}
+                  value={selectedModelId || "auto"}
+                  onValueChange={(value) =>
+                    onModelChange?.(value && value !== "auto" ? value : undefined)
+                  }
                   disabled={isSending}
                 >
                   <SelectTrigger
                     size="sm"
                     className={cn(
-                      "h-8 rounded-full border-0 bg-transparent px-2.5 py-1 text-xs font-medium text-muted-foreground shadow-none",
+                      "h-8 max-w-[13rem] rounded-full border-0 bg-transparent px-2.5 py-1 text-xs font-medium text-muted-foreground shadow-none",
                       "hover:bg-muted/50 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20",
                       "data-[popup-open]:bg-muted/50 data-[popup-open]:text-foreground",
                     )}
                   >
-                    <span data-slot="select-value" className="flex flex-1 text-left">
-                      {selectedModel ? selectedModel.toUpperCase() : t("modelAuto")}
+                    <span data-slot="select-value" className="min-w-0 flex-1 truncate text-left">
+                      {selectedModelId ? formatAiModelLabel(selectedModelId) : t("modelAuto")}
                     </span>
                   </SelectTrigger>
-                  <SelectContent align="start" sideOffset={4}>
-                    <SelectItem value="auto">{t("modelAuto")}</SelectItem>
+                  <SelectContent
+                    align="start"
+                    sideOffset={4}
+                    className="min-w-[14rem] max-w-[min(20rem,calc(100vw-2rem))]"
+                  >
+                    <SelectItem value="auto" className="py-2 font-medium">
+                      <span className="truncate">{t("modelAuto")}</span>
+                    </SelectItem>
                     {availableModels.map((model) => (
-                      <SelectItem key={model} value={model}>
-                        {model.toUpperCase()}
+                      <SelectItem key={model} value={model} className="py-2 font-medium">
+                        <span className="truncate">{formatAiModelLabel(model)}</span>
                       </SelectItem>
                     ))}
                   </SelectContent>

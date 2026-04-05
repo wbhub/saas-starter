@@ -26,9 +26,12 @@ vi.mock("@/lib/ai/provider", () => ({
     return providerMockState.aiProviderName;
   },
   isAiProviderConfigured: true,
+  isAiProviderConfiguredForModel: vi.fn(() => true),
+  getAiProviderForModel: vi.fn(() => providerMockState.aiProviderName),
   get supportsProviderFileIds() {
     return providerMockState.supportsProviderFileIds;
   },
+  modelSupportsProviderFileIds: vi.fn(() => providerMockState.supportsProviderFileIds),
   providerSupportsModalities: providerMockState.providerSupportsModalities,
   isRequestedModelAllowed: providerMockState.isRequestedModelAllowed,
   getAiLanguageModel: providerMockState.getAiLanguageModel,

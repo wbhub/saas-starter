@@ -3,11 +3,19 @@ import type { createAnthropic } from "@ai-sdk/anthropic";
 import type { createGoogleGenerativeAI } from "@ai-sdk/google";
 import type { createOpenAI } from "@ai-sdk/openai";
 import { type AiAccessMode, type AiModality } from "@/lib/ai/config";
-import { parseAiProviderName, type AiProviderName } from "@/lib/ai/provider-name";
+import {
+  AI_PROVIDER_NAMES,
+  getAiProviderNameForModel,
+  getCanonicalAiModelId,
+  parseAiModelId,
+  parseAiProviderName,
+  type AiProviderName,
+} from "@/lib/ai/provider-name";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { type DashboardAiUiGate } from "@/lib/dashboard/team-snapshot";
 import { resolveAiAccess } from "@/lib/ai/access";
+import { providerSupportsFileIds } from "@/lib/ai/attachments";
 
 const KNOWN_TEXT_ONLY_MODEL_PREFIXES = ["gpt-3.5"] as const;
 const ALL_MODALITIES = ["text", "image", "file"] as const satisfies readonly AiModality[];
@@ -109,44 +117,70 @@ function resolveAiProvider(rawValue: string | undefined) {
   return parsed;
 }
 
-const provider = resolveAiProvider(env.AI_PROVIDER);
+const defaultProvider = resolveAiProvider(env.AI_PROVIDER);
 
-const providerApiKey = (() => {
+function getProviderApiKey(providerName: AiProviderName) {
   const genericKey = (env.AI_PROVIDER_API_KEY || "").trim();
-  if (genericKey) {
+  if (genericKey && providerName === defaultProvider) {
     return genericKey;
   }
-  if (provider === "anthropic") {
+  if (providerName === "anthropic") {
     return (env.ANTHROPIC_API_KEY || "").trim();
   }
-  if (provider === "google") {
+  if (providerName === "google") {
     return (env.GOOGLE_GENERATIVE_AI_API_KEY || "").trim();
   }
   return (env.OPENAI_API_KEY || "").trim();
-})();
+}
 
-export const aiProviderName = provider;
-export const supportsProviderFileIds = provider === "openai";
-export const isAiProviderConfigured = Boolean(providerApiKey);
+const configuredProviders = AI_PROVIDER_NAMES.filter((providerName) =>
+  Boolean(getProviderApiKey(providerName)),
+);
+const configuredProviderSet = new Set<AiProviderName>(configuredProviders);
+
+export const aiProviderName = defaultProvider;
+export const supportsProviderFileIds = providerSupportsFileIds(defaultProvider);
+export const isAiProviderConfigured = configuredProviders.length > 0;
 const customModelModalityMap = parseModelModalityMap(env.AI_MODEL_MODALITIES_MAP_JSON);
 
 function normalizeModelName(model: string) {
   return model.trim().toLowerCase();
 }
 
-function getDefaultProviderModelEntries(): ModelModalityMapEntry[] {
-  return DEFAULT_MODEL_MODALITIES_BY_PROVIDER[provider].map((entry) => ({
+function getNormalizedCanonicalModelId(model: string) {
+  const parsedModel = parseAiModelId(model, defaultProvider);
+  if (!parsedModel) {
+    return null;
+  }
+  return `${parsedModel.providerName}:${normalizeModelName(parsedModel.modelId)}`;
+}
+
+function getDefaultProviderModelEntries(providerName: AiProviderName): ModelModalityMapEntry[] {
+  return DEFAULT_MODEL_MODALITIES_BY_PROVIDER[providerName].map((entry) => ({
     ...entry,
-    key: `${provider}:${entry.key.toLowerCase()}`,
+    key: `${providerName}:${entry.key.toLowerCase()}`,
   }));
+}
+
+function getAllDefaultModelEntries() {
+  return AI_PROVIDER_NAMES.flatMap((providerName) => getDefaultProviderModelEntries(providerName));
+}
+
+function getExplicitCustomModelEntries() {
+  return customModelModalityMap.filter((entry) => !entry.key.endsWith("*"));
 }
 
 function findMatchingModelEntry(
   entries: readonly ModelModalityMapEntry[],
   model: string,
 ): ModelModalityMapEntry | null {
-  const normalizedModel = normalizeModelName(model);
-  const providerModelKey = `${provider}:${normalizedModel}`;
+  const parsedModel = parseAiModelId(model, defaultProvider);
+  if (!parsedModel) {
+    return null;
+  }
+
+  const normalizedModel = normalizeModelName(parsedModel.modelId);
+  const providerModelKey = `${parsedModel.providerName}:${normalizedModel}`;
 
   const exactMatch = entries.find(
     (entry) => entry.key === providerModelKey || entry.key === normalizedModel,
@@ -171,35 +205,69 @@ type AiProviderClient =
   | ReturnType<typeof createGoogleGenerativeAI>
   | ReturnType<typeof createOpenAI>;
 
-let aiProviderClient: AiProviderClient | null | undefined;
+const aiProviderClients: Partial<Record<AiProviderName, AiProviderClient | null | undefined>> = {};
 
-async function getAiProviderClient(): Promise<AiProviderClient | null> {
-  if (aiProviderClient !== undefined) {
-    return aiProviderClient;
+export function isAiProviderConfiguredFor(providerName: AiProviderName) {
+  return Boolean(getProviderApiKey(providerName));
+}
+
+export function isAiProviderConfiguredForModel(model: string | undefined) {
+  return isAiProviderConfiguredFor(getAiProviderForModel(model));
+}
+
+export function getConfiguredAiProviders() {
+  return [...configuredProviders];
+}
+
+export function getAiProviderForModel(model: string | undefined) {
+  return getAiProviderNameForModel(model, defaultProvider);
+}
+
+export function modelSupportsProviderFileIds(model: string | undefined) {
+  return providerSupportsFileIds(getAiProviderForModel(model));
+}
+
+async function getAiProviderClient(providerName: AiProviderName): Promise<AiProviderClient | null> {
+  const cached = aiProviderClients[providerName];
+  if (cached !== undefined) {
+    return cached;
   }
-  if (!isAiProviderConfigured) {
-    aiProviderClient = null;
+  if (!isAiProviderConfiguredFor(providerName)) {
+    aiProviderClients[providerName] = null;
     return null;
   }
-  if (provider === "anthropic") {
+
+  const apiKey = getProviderApiKey(providerName);
+  if (!apiKey) {
+    aiProviderClients[providerName] = null;
+    return null;
+  }
+
+  if (providerName === "anthropic") {
     const { createAnthropic } = await import("@ai-sdk/anthropic");
-    aiProviderClient = createAnthropic({ apiKey: providerApiKey });
-  } else if (provider === "google") {
+    aiProviderClients[providerName] = createAnthropic({ apiKey });
+  } else if (providerName === "google") {
     const { createGoogleGenerativeAI } = await import("@ai-sdk/google");
-    aiProviderClient = createGoogleGenerativeAI({ apiKey: providerApiKey });
+    aiProviderClients[providerName] = createGoogleGenerativeAI({ apiKey });
   } else {
     const { createOpenAI } = await import("@ai-sdk/openai");
-    aiProviderClient = createOpenAI({ apiKey: providerApiKey });
+    aiProviderClients[providerName] = createOpenAI({ apiKey });
   }
-  return aiProviderClient;
+
+  return aiProviderClients[providerName] ?? null;
 }
 
 export async function getAiLanguageModel(model: string) {
-  const client = await getAiProviderClient();
+  const parsedModel = parseAiModelId(model, defaultProvider);
+  if (!parsedModel) {
+    return null;
+  }
+
+  const client = await getAiProviderClient(parsedModel.providerName);
   if (!client) {
     return null;
   }
-  return client(model);
+  return client(parsedModel.modelId);
 }
 
 export function isRequestedModelAllowed({
@@ -212,12 +280,13 @@ export function isRequestedModelAllowed({
   allowedModel: string;
 }) {
   const normalizedRequestedModel = normalizeModelName(requestedModel);
-  const normalizedAllowedModel = normalizeModelName(allowedModel);
   if (!normalizedRequestedModel) {
     return false;
   }
 
-  if (normalizedRequestedModel === normalizedAllowedModel) {
+  const canonicalRequestedModel = getNormalizedCanonicalModelId(requestedModel);
+  const canonicalAllowedModel = getNormalizedCanonicalModelId(allowedModel);
+  if (canonicalRequestedModel && canonicalRequestedModel === canonicalAllowedModel) {
     return true;
   }
 
@@ -226,8 +295,8 @@ export function isRequestedModelAllowed({
   }
 
   const allowlistEntries =
-    customModelModalityMap.length > 0 ? customModelModalityMap : getDefaultProviderModelEntries();
-  return findMatchingModelEntry(allowlistEntries, normalizedRequestedModel) !== null;
+    customModelModalityMap.length > 0 ? customModelModalityMap : getAllDefaultModelEntries();
+  return findMatchingModelEntry(allowlistEntries, requestedModel) !== null;
 }
 
 export function providerSupportsModalities(model: string, modalities: AiModality[]) {
@@ -236,44 +305,56 @@ export function providerSupportsModalities(model: string, modalities: AiModality
     return true;
   }
 
-  const normalizedModel = normalizeModelName(model);
+  const parsedModel = parseAiModelId(model, defaultProvider);
+  if (!parsedModel) {
+    return false;
+  }
+
+  const normalizedModel = normalizeModelName(parsedModel.modelId);
   if (KNOWN_TEXT_ONLY_MODEL_PREFIXES.some((prefix) => normalizedModel.startsWith(prefix))) {
     return false;
   }
 
   const matchingEntry = findMatchingModelEntry(
-    [...customModelModalityMap, ...getDefaultProviderModelEntries()],
-    normalizedModel,
+    [...customModelModalityMap, ...getAllDefaultModelEntries()],
+    parsedModel.canonicalModelId,
   );
   if (matchingEntry) {
     return modalities.every((modality) => matchingEntry.modalities.includes(modality));
   }
 
-  // Fail closed for multimodal when no explicit/default capabilities match.
   return false;
 }
 
 export function getAvailableModels(aiUiGate?: DashboardAiUiGate): string[] {
   if (aiUiGate && aiUiGate.accessMode !== "all") {
     const access = resolveAiAccess({ effectivePlanKey: aiUiGate.effectivePlanKey });
-    if (access.model) {
-      return [access.model];
-    }
-    return [];
+    const canonicalModel = access.model
+      ? getCanonicalAiModelId(access.model, defaultProvider)
+      : null;
+    return canonicalModel && isAiProviderConfiguredForModel(access.model ?? undefined)
+      ? [canonicalModel]
+      : [];
   }
 
-  const entries =
-    customModelModalityMap.length > 0 ? customModelModalityMap : getDefaultProviderModelEntries();
+  const entries = getExplicitCustomModelEntries();
+  if (entries.length === 0) {
+    const defaultAccess = resolveAiAccess({ effectivePlanKey: aiUiGate?.effectivePlanKey ?? null });
+    const canonicalModel = defaultAccess.model
+      ? getCanonicalAiModelId(defaultAccess.model, defaultProvider)
+      : null;
+    return canonicalModel && isAiProviderConfiguredForModel(defaultAccess.model ?? undefined)
+      ? [canonicalModel]
+      : [];
+  }
 
   const models = new Set<string>();
   for (const entry of entries) {
-    if (entry.key.startsWith(`${provider}:`)) {
-      let modelName = entry.key.slice(provider.length + 1);
-      if (modelName.endsWith("*")) {
-        modelName = modelName.slice(0, -1);
-      }
-      models.add(modelName);
+    const parsedModel = parseAiModelId(entry.key, defaultProvider);
+    if (!parsedModel || !configuredProviderSet.has(parsedModel.providerName)) {
+      continue;
     }
+    models.add(parsedModel.canonicalModelId);
   }
 
   return Array.from(models);

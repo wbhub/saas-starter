@@ -6,6 +6,7 @@ describe("getDashboardBaseData", () => {
     vi.clearAllMocks();
     vi.doMock("@/lib/ai/provider", () => ({
       isAiProviderConfigured: false,
+      isAiProviderConfiguredForModel: vi.fn().mockReturnValue(false),
     }));
     vi.doMock("next/headers", () => ({
       cookies: async () => ({
@@ -111,6 +112,7 @@ describe("getDashboardAiUiGate", () => {
   it("hides AI UI when OpenAI is not configured", async () => {
     vi.doMock("@/lib/ai/provider", () => ({
       isAiProviderConfigured: false,
+      isAiProviderConfiguredForModel: vi.fn().mockReturnValue(false),
     }));
     vi.doMock("@/lib/ai/config", () => ({
       getAiAccessMode: vi.fn().mockReturnValue("all"),
@@ -156,6 +158,7 @@ describe("getDashboardAiUiGate", () => {
 
     vi.doMock("@/lib/ai/provider", () => ({
       isAiProviderConfigured: true,
+      isAiProviderConfiguredForModel: vi.fn().mockReturnValue(true),
     }));
     vi.doMock("@/lib/ai/config", () => ({
       getAiAccessMode: vi.fn().mockReturnValue("paid"),
@@ -187,6 +190,7 @@ describe("getDashboardAiUiGate", () => {
   it("shows AI UI when policy allows access", async () => {
     vi.doMock("@/lib/ai/provider", () => ({
       isAiProviderConfigured: true,
+      isAiProviderConfiguredForModel: vi.fn().mockReturnValue(true),
     }));
     vi.doMock("@/lib/ai/config", () => ({
       getAiAccessMode: vi.fn().mockReturnValue("all"),
@@ -213,6 +217,36 @@ describe("getDashboardAiUiGate", () => {
     });
   });
 
+  it("hides AI UI when the configured model's provider key is missing", async () => {
+    vi.doMock("@/lib/ai/provider", () => ({
+      isAiProviderConfigured: true,
+      isAiProviderConfiguredForModel: vi.fn().mockReturnValue(false),
+    }));
+    vi.doMock("@/lib/ai/config", () => ({
+      getAiAccessMode: vi.fn().mockReturnValue("all"),
+      getAiAllowedSubscriptionStatuses: vi.fn().mockReturnValue(["active"]),
+    }));
+    vi.doMock("@/lib/ai/access", () => ({
+      resolveAiAccess: vi.fn().mockReturnValue({
+        allowed: true,
+        model: "anthropic:claude-opus-test",
+        monthlyTokenBudget: 0,
+        allowedModalities: ["text"],
+        maxSteps: 1,
+      }),
+    }));
+
+    const { getDashboardAiUiGate } = await import("./server");
+    const gate = await getDashboardAiUiGate({} as never, "team_123");
+
+    expect(gate).toEqual({
+      isVisibleInUi: false,
+      reason: "ai_not_configured",
+      effectivePlanKey: "free",
+      accessMode: "all",
+    });
+  });
+
   it("reuses provided billing context without re-querying subscriptions", async () => {
     const from = vi.fn(() => {
       throw new Error("AI gate should not query subscriptions when billing context is provided");
@@ -221,6 +255,7 @@ describe("getDashboardAiUiGate", () => {
 
     vi.doMock("@/lib/ai/provider", () => ({
       isAiProviderConfigured: true,
+      isAiProviderConfiguredForModel: vi.fn().mockReturnValue(true),
     }));
     vi.doMock("@/lib/ai/config", () => ({
       getAiAccessMode: vi.fn().mockReturnValue("paid"),

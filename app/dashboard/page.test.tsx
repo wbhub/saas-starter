@@ -7,6 +7,7 @@ describe("Dashboard page billing selection", () => {
     vi.clearAllMocks();
     vi.doMock("@/lib/ai/provider", () => ({
       isAiProviderConfigured: false,
+      isAiProviderConfiguredForModel: vi.fn().mockReturnValue(false),
     }));
     vi.doMock("next/headers", () => ({
       cookies: async () => ({

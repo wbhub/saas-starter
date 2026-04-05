@@ -121,6 +121,9 @@ describe("POST /api/ai/chat AI SDK streaming", () => {
     vi.doMock("@/lib/ai/provider", () => ({
       aiProviderName: "openai",
       isAiProviderConfigured: true,
+      isAiProviderConfiguredForModel: vi.fn().mockReturnValue(true),
+      getAiProviderForModel: vi.fn().mockReturnValue("openai"),
+      modelSupportsProviderFileIds: vi.fn().mockReturnValue(true),
       supportsProviderFileIds: true,
       providerSupportsModalities: vi.fn().mockReturnValue(true),
       isRequestedModelAllowed: vi.fn().mockReturnValue(true),
@@ -261,6 +264,9 @@ describe("POST /api/ai/chat AI SDK streaming", () => {
     vi.doMock("@/lib/ai/provider", () => ({
       aiProviderName: "openai",
       isAiProviderConfigured: true,
+      isAiProviderConfiguredForModel: vi.fn().mockReturnValue(true),
+      getAiProviderForModel: vi.fn().mockReturnValue("openai"),
+      modelSupportsProviderFileIds: vi.fn().mockReturnValue(true),
       supportsProviderFileIds: true,
       providerSupportsModalities: vi.fn().mockReturnValue(true),
       isRequestedModelAllowed: vi.fn().mockReturnValue(true),
@@ -493,6 +499,9 @@ describe("POST /api/ai/chat AI SDK streaming", () => {
     vi.doMock("@/lib/ai/provider", () => ({
       aiProviderName: "openai",
       isAiProviderConfigured: true,
+      isAiProviderConfiguredForModel: vi.fn().mockReturnValue(true),
+      getAiProviderForModel: vi.fn().mockReturnValue("openai"),
+      modelSupportsProviderFileIds: vi.fn().mockReturnValue(true),
       supportsProviderFileIds: true,
       providerSupportsModalities: vi.fn().mockReturnValue(true),
       isRequestedModelAllowed: vi.fn().mockReturnValue(true),
@@ -710,6 +719,9 @@ describe("POST /api/ai/chat AI SDK streaming", () => {
     vi.doMock("@/lib/ai/provider", () => ({
       aiProviderName: "openai",
       isAiProviderConfigured: true,
+      isAiProviderConfiguredForModel: vi.fn().mockReturnValue(true),
+      getAiProviderForModel: vi.fn().mockReturnValue("openai"),
+      modelSupportsProviderFileIds: vi.fn().mockReturnValue(true),
       supportsProviderFileIds: true,
       providerSupportsModalities: vi.fn().mockReturnValue(true),
       isRequestedModelAllowed: vi.fn().mockReturnValue(true),
@@ -775,6 +787,239 @@ describe("POST /api/ai/chat AI SDK streaming", () => {
           toolsEnabled: true,
           reason: "client_disconnected",
         }),
+      }),
+    );
+  });
+
+  it("persists follow-up turns to an existing session thread when threadId is omitted", async () => {
+    const existingThreadId = "11111111-1111-4111-8111-111111111111";
+    const rpc = vi
+      .fn()
+      .mockResolvedValueOnce({
+        data: [{ allowed: true, claim_id: "claim_existing_thread", month_start: "2026-03-01" }],
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: null,
+        error: null,
+      });
+    const insert = vi.fn().mockResolvedValue({ error: null });
+    const logAuditEvent = vi.fn();
+    const consumeStream = vi.fn();
+    const createThread = vi.fn();
+    const saveThreadMessages = vi.fn().mockResolvedValue(undefined);
+    const getThread = vi.fn().mockImplementation(async ({ threadId }: { threadId: string }) =>
+      threadId === existingThreadId
+        ? {
+            id: existingThreadId,
+            teamId: "team_123",
+            userId: "user_123",
+            title: "Original question",
+          }
+        : null,
+    );
+    const streamTextFn = vi.fn();
+
+    vi.doMock("ai", async () => {
+      const actual = await vi.importActual<typeof import("ai")>("ai");
+      return {
+        ...actual,
+        consumeStream,
+        streamText: streamTextFn.mockImplementation(
+          (options: {
+            onStepFinish?: (step: {
+              stepNumber: number;
+              text: string;
+              sources: unknown[];
+              toolCalls: unknown[];
+              toolResults: unknown[];
+              usage: { inputTokens: number; outputTokens: number };
+            }) => Promise<void> | void;
+            onFinish?: (event: {
+              finishReason: "stop";
+              totalUsage: { inputTokens: number; outputTokens: number };
+              steps: Array<{
+                stepNumber: number;
+                text: string;
+                sources: unknown[];
+                toolCalls: unknown[];
+                toolResults: unknown[];
+                usage: { inputTokens: number; outputTokens: number };
+              }>;
+            }) => Promise<void> | void;
+          }) => {
+            const step = {
+              stepNumber: 0,
+              text: "Follow-up saved",
+              sources: [],
+              toolCalls: [],
+              toolResults: [],
+              usage: { inputTokens: 9, outputTokens: 4 },
+            };
+
+            return {
+              toUIMessageStream: vi.fn().mockImplementation(() =>
+                makeAsyncStream(
+                  [
+                    { type: "start" },
+                    { type: "text-start", id: "text_1" },
+                    { type: "text-delta", id: "text_1", delta: "Follow-up saved" },
+                    { type: "text-end", id: "text_1" },
+                  ],
+                  async () => {
+                    await options.onStepFinish?.(step);
+                    await options.onFinish?.({
+                      finishReason: "stop",
+                      totalUsage: { inputTokens: 9, outputTokens: 4 },
+                      steps: [step],
+                    });
+                  },
+                ),
+              ),
+            };
+          },
+        ),
+      };
+    });
+    vi.doMock("@/lib/security/csrf", () => ({
+      verifyCsrfProtection: vi.fn().mockReturnValue(null),
+    }));
+    vi.doMock("@/lib/http/content-type", () => ({
+      requireJsonContentType: vi.fn().mockReturnValue(null),
+    }));
+    vi.doMock("@/lib/security/rate-limit", () => ({
+      checkRateLimit: vi.fn().mockResolvedValue({
+        allowed: true,
+        retryAfterSeconds: 0,
+      }),
+    }));
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: {
+          getUser: async () => ({
+            data: { user: { id: "user_123", email: "user@example.com" } },
+          }),
+        },
+        from: vi.fn(() => ({
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          in: vi.fn().mockReturnThis(),
+          order: vi.fn().mockReturnThis(),
+          limit: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({
+            data: { stripe_price_id: "price_growth", status: "active" },
+            error: null,
+          }),
+        })),
+      }),
+    }));
+    vi.doMock("@/lib/supabase/admin", () => ({
+      createAdminClient: () => ({
+        rpc,
+        from: vi.fn(() => ({
+          insert,
+        })),
+      }),
+    }));
+    vi.doMock("@/lib/team-context-cache", () => ({
+      getCachedTeamContextForUser: vi.fn().mockResolvedValue({
+        teamId: "team_123",
+        teamName: "Acme Team",
+        role: "owner",
+      }),
+    }));
+    vi.doMock("@/lib/ai/tools", () => ({
+      AI_TOOL_MAP: {
+        tavilySearch: { description: "Search the web." },
+      },
+      buildAiToolMapForUser: vi.fn().mockResolvedValue({
+        tavilySearch: { description: "Search the web." },
+      }),
+    }));
+    vi.doMock("@/lib/ai/threads", () => ({
+      createThread,
+      saveThreadMessages,
+      getThread,
+    }));
+    vi.doMock("@/lib/stripe/config", () => ({
+      getPlanByPriceId: vi.fn().mockReturnValue({ key: "growth" }),
+    }));
+    vi.doMock("@/lib/ai/config", () => ({
+      getAiAccessMode: vi.fn().mockReturnValue("paid"),
+      getAiToolsEnabled: vi.fn().mockReturnValue(true),
+      getAiMaxSteps: vi.fn().mockReturnValue(5),
+      getAiAllowedSubscriptionStatuses: vi.fn().mockReturnValue(["trialing", "active", "past_due"]),
+      getAiDefaultModel: vi.fn().mockReturnValue("gpt-4.1-mini"),
+      getAiDefaultMonthlyTokenBudget: vi.fn().mockReturnValue(2_000_000),
+      getAiRuleForPlan: vi.fn().mockReturnValue({
+        enabled: true,
+        model: "gpt-4.1-mini",
+        monthlyBudget: 2_000_000,
+        allowedModalities: ["text", "image", "file"],
+        maxSteps: 5,
+      }),
+      getAiModelForPlan: vi.fn().mockReturnValue("gpt-4.1-mini"),
+      getAiMonthlyTokenBudgetForPlan: vi.fn().mockReturnValue(2_000_000),
+      getAiAllowedModalities: vi.fn().mockReturnValue(["text", "image", "file"]),
+      getAiAllowedModalitiesForPlan: vi.fn().mockReturnValue(["text", "image", "file"]),
+    }));
+    vi.doMock("@/lib/ai/provider", () => ({
+      aiProviderName: "openai",
+      isAiProviderConfigured: true,
+      isAiProviderConfiguredForModel: vi.fn().mockReturnValue(true),
+      getAiProviderForModel: vi.fn().mockReturnValue("openai"),
+      modelSupportsProviderFileIds: vi.fn().mockReturnValue(true),
+      supportsProviderFileIds: true,
+      providerSupportsModalities: vi.fn().mockReturnValue(true),
+      isRequestedModelAllowed: vi.fn().mockReturnValue(true),
+      getAiLanguageModel: vi.fn().mockReturnValue("provider-model"),
+    }));
+    vi.doMock("@/lib/audit", () => ({
+      logAuditEvent,
+    }));
+    vi.doMock("@/lib/ai/budget-finalize-retries", () => ({
+      enqueueAiBudgetFinalizeRetry: vi.fn().mockResolvedValue(undefined),
+      maybeProcessAiBudgetFinalizeRetries: vi.fn().mockResolvedValue({ ran: false }),
+    }));
+    vi.doMock("@/lib/logger", () => ({
+      logger: {
+        error: vi.fn(),
+        warn: vi.fn(),
+      },
+    }));
+
+    const { POST } = await import("./route");
+    const response = await POST(
+      new Request("http://localhost/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: existingThreadId,
+          messages: [
+            { role: "user", content: "Original question" },
+            { role: "assistant", content: "Original answer" },
+            { role: "user", content: "Follow-up question" },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.text()).resolves.toContain("Follow-up saved");
+    expect(createThread).not.toHaveBeenCalled();
+    expect(saveThreadMessages).toHaveBeenCalledWith(
+      expect.objectContaining({
+        threadId: existingThreadId,
+        messages: expect.arrayContaining([
+          expect.objectContaining({
+            role: "user",
+            parts: [{ type: "text", text: "Follow-up question" }],
+          }),
+          expect.objectContaining({
+            role: "assistant",
+            parts: [{ type: "text", text: "Follow-up saved" }],
+          }),
+        ]),
       }),
     );
   });

@@ -14,12 +14,15 @@ import {
 import { maybeProcessAiBudgetFinalizeRetries } from "@/lib/ai/budget-finalize-retries";
 import { resolveAiAccess } from "@/lib/ai/access";
 import {
-  aiProviderName,
+  getAiProviderForModel,
   getAiLanguageModel,
   isAiProviderConfigured,
+  isAiProviderConfiguredForModel,
   isRequestedModelAllowed,
+  modelSupportsProviderFileIds,
   providerSupportsModalities,
 } from "@/lib/ai/provider";
+import type { AiProviderName } from "@/lib/ai/provider-name";
 import { type EffectivePlanKey, resolveEffectivePlanKey } from "@/lib/billing/effective-plan";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { jsonError } from "@/lib/http/api-json";
@@ -101,6 +104,8 @@ export type AiRequestContext<TBody> = {
   teamContext: { teamId: string };
   body: TBody;
   model: string;
+  providerName: AiProviderName;
+  supportsProviderFileIds: boolean;
   languageModel: LanguageModel;
   effectivePlanKey: EffectivePlanKey | null;
   aiAccessMode: AiAccessMode;
@@ -324,7 +329,7 @@ export async function resolveAiRequestContext<TSchema extends ZodType>(
         planKey: effectivePlanKey,
         accessMode: aiAccessMode,
         model: aiAccess.model,
-        provider: aiProviderName,
+        provider: getAiProviderForModel(aiAccess.model),
         requestModalities,
         attachmentCounts,
       },
@@ -369,6 +374,30 @@ export async function resolveAiRequestContext<TSchema extends ZodType>(
   }
 
   const model = requestedModel || aiAccess.model;
+  const providerName = getAiProviderForModel(model);
+  const supportsProviderFileIds = modelSupportsProviderFileIds(model);
+
+  if (!isAiProviderConfiguredForModel(model)) {
+    logAuditEvent({
+      action: config.auditAction,
+      outcome: "denied",
+      actorUserId: user.id,
+      teamId: teamContext.teamId,
+      metadata: {
+        reason: "ai_provider_not_configured",
+        planKey: effectivePlanKey,
+        accessMode: aiAccessMode,
+        model,
+        provider: providerName,
+        requestModalities,
+        attachmentCounts,
+      },
+    });
+    return {
+      ok: false,
+      response: err(aiUnavailableMessage, AI_UNAVAILABLE_STATUS, { code: "upstream_error" }),
+    };
+  }
 
   // ── Modality validation ──
   const disallowedModality = requestModalities.find(
@@ -524,7 +553,7 @@ export async function resolveAiRequestContext<TSchema extends ZodType>(
         planKey: effectivePlanKey,
         accessMode: aiAccessMode,
         model,
-        provider: aiProviderName,
+        provider: providerName,
         requestModalities,
         attachmentCounts,
       },
@@ -546,6 +575,8 @@ export async function resolveAiRequestContext<TSchema extends ZodType>(
       teamContext,
       body,
       model,
+      providerName,
+      supportsProviderFileIds,
       languageModel,
       effectivePlanKey,
       aiAccessMode,

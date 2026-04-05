@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Trash2 } from "lucide-react";
 import { clientFetch } from "@/lib/http/client-fetch";
@@ -20,12 +20,14 @@ export function ThreadSidebar({
   onNewThread,
   refreshSignal,
   initialThreads,
+  headerLeading,
 }: {
   activeThreadId: string | null;
   onSelectThread: (threadId: string) => void;
   onNewThread: () => void;
   refreshSignal?: number;
   initialThreads?: ThreadSidebarThread[];
+  headerLeading?: ReactNode;
 }) {
   const t = useTranslations("AiThreads");
   const hasInitialThreads = (initialThreads?.length ?? 0) > 0;
@@ -86,9 +88,12 @@ export function ThreadSidebar({
       className={cn("flex min-h-0 w-full shrink-0 flex-col", "pb-3 lg:w-[260px] lg:self-stretch")}
     >
       <div className="flex items-center justify-between gap-2 px-5 py-3 mt-2">
-        <h3 className={cn("truncate text-sm font-normal", "text-muted-foreground")}>
-          {t("recents")}
-        </h3>
+        <div className="flex min-w-0 items-center gap-2">
+          {headerLeading ? <div className="shrink-0">{headerLeading}</div> : null}
+          <h3 className={cn("truncate text-sm font-normal", "text-muted-foreground")}>
+            {t("recents")}
+          </h3>
+        </div>
         <Button
           type="button"
           variant="ghost"

@@ -7,7 +7,7 @@ import {
   getAiAllowedSubscriptionStatuses,
   type AiAccessMode,
 } from "@/lib/ai/config";
-import { isAiProviderConfigured } from "@/lib/ai/provider";
+import { isAiProviderConfigured, isAiProviderConfiguredForModel } from "@/lib/ai/provider";
 import { isBillingEnabled } from "@/lib/billing/capabilities";
 import { hasFeatureAccess } from "@/lib/billing/entitlements";
 import { resolveEffectivePlanKey, type EffectivePlanKey } from "@/lib/billing/effective-plan";
@@ -245,6 +245,15 @@ export async function getDashboardAiUiGate(
           aiAccess.denialReason === "plan_model_missing"
             ? "access_mode_invalid"
             : "plan_not_allowed",
+        effectivePlanKey,
+        accessMode,
+      };
+    }
+
+    if (!isAiProviderConfiguredForModel(aiAccess.model)) {
+      return {
+        isVisibleInUi: false,
+        reason: "ai_not_configured",
         effectivePlanKey,
         accessMode,
       };

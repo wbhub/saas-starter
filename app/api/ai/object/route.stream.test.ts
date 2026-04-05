@@ -84,6 +84,9 @@ describe("POST /api/ai/object streaming and finalization", () => {
     vi.doMock("@/lib/ai/provider", () => ({
       aiProviderName: "openai",
       isAiProviderConfigured: true,
+      isAiProviderConfiguredForModel: vi.fn().mockReturnValue(true),
+      getAiProviderForModel: vi.fn().mockReturnValue("openai"),
+      modelSupportsProviderFileIds: vi.fn().mockReturnValue(true),
       supportsOpenAiFileIds: true,
       providerSupportsModalities: vi.fn().mockReturnValue(true),
       isRequestedModelAllowed: vi.fn().mockReturnValue(true),
