@@ -6,7 +6,7 @@ function mockBillingPageDependencies(options: {
   billingContext: {
     billingEnabled?: boolean;
     subscription: {
-      status: "active";
+      status: "active" | "trialing" | "past_due" | "unpaid" | "paused" | "incomplete";
       stripe_price_id: string;
       seat_quantity: number;
       current_period_end: string | null;
@@ -56,6 +56,11 @@ function mockBillingPageDependencies(options: {
             "currentSubscription.unknown": "Unknown",
             "currentSubscription.status": "Status",
             "currentSubscription.statusLabels.active": "ACTIVE",
+            "currentSubscription.statusLabels.trialing": "TRIALING",
+            "currentSubscription.statusLabels.past_due": "PAST DUE",
+            "currentSubscription.statusLabels.unpaid": "UNPAID",
+            "currentSubscription.statusLabels.paused": "PAUSED",
+            "currentSubscription.statusLabels.incomplete": "INCOMPLETE",
             "currentSubscription.seats": "Seats",
             "currentSubscription.perSeatCost": "Per-seat cost",
             "currentSubscription.totalCost": "Total cost",
@@ -156,6 +161,24 @@ function mockBillingPageDependencies(options: {
       },
     ]),
   }));
+  vi.doMock("@/lib/stripe/price-id-lookup", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("@/lib/stripe/price-id-lookup")>();
+    return {
+      ...actual,
+      resolvePlanKeyByPriceId: vi.fn((priceId: string | null | undefined) => {
+        switch (priceId) {
+          case "price_starter":
+            return "starter";
+          case "price_growth":
+            return "growth";
+          case "price_pro":
+            return "pro";
+          default:
+            return null;
+        }
+      }),
+    };
+  });
   vi.doMock("@/lib/supabase/server", () => ({
     createClient: vi.fn().mockResolvedValue({
       auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: "user_1" } } }) },
@@ -287,6 +310,35 @@ describe("Dashboard billing page free plan behavior", () => {
     expect(html).toContain("$150/mo");
     expect(html).toContain('data-current-plan="growth"');
     expect(html).toContain('data-has-subscription="true"');
+  });
+
+  it("keeps current subscription details visible for unpaid subscriptions", async () => {
+    mockBillingPageDependencies({
+      billingContext: {
+        billingEnabled: true,
+        subscription: {
+          status: "unpaid",
+          stripe_price_id: "price_growth",
+          seat_quantity: 2,
+          current_period_end: null,
+          cancel_at_period_end: false,
+        },
+        effectivePlanKey: "free",
+        billingInterval: "month",
+        memberCount: 2,
+        isPaidPlan: false,
+        canInviteMembers: false,
+      },
+    });
+
+    const BillingPage = (await import("./page")).default;
+    const html = renderToStaticMarkup(await BillingPage());
+
+    expect(html).toContain("Current subscription");
+    expect(html).toContain("Growth");
+    expect(html).toContain('data-current-plan="growth"');
+    expect(html).toContain('data-has-subscription="true"');
+    expect(html).not.toContain("Unlock premium features");
   });
 
   it("shows checkout success banner when redirected from Stripe", async () => {

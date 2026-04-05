@@ -11,7 +11,12 @@ export const ALL_SUBSCRIPTION_STATUSES = [
 
 export type SubscriptionStatus = (typeof ALL_SUBSCRIPTION_STATUSES)[number];
 
-/** Statuses that represent an in-force subscription (excludes terminal states). */
+/**
+ * Statuses that represent a non-terminal subscription record.
+ *
+ * These are still useful for operational flows like sync and portal actions,
+ * but they do not all grant paid product entitlements.
+ */
 export const LIVE_SUBSCRIPTION_STATUSES: readonly SubscriptionStatus[] = [
   "incomplete",
   "trialing",
@@ -19,6 +24,13 @@ export const LIVE_SUBSCRIPTION_STATUSES: readonly SubscriptionStatus[] = [
   "past_due",
   "unpaid",
   "paused",
+];
+
+/** Statuses that should unlock paid plan entitlements inside the product. */
+export const PAID_ENTITLEMENT_SUBSCRIPTION_STATUSES: readonly SubscriptionStatus[] = [
+  "trialing",
+  "active",
+  "past_due",
 ];
 
 /** Statuses that are allowed to access paid AI features. */

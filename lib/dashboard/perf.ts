@@ -1,8 +1,9 @@
 import "server-only";
 
+import { isDevelopmentEnvironment } from "@/lib/env";
 import { logger } from "@/lib/logger";
 
-const SHOULD_LOG_DASHBOARD_TIMINGS = process.env.NODE_ENV === "development";
+const SHOULD_LOG_DASHBOARD_TIMINGS = isDevelopmentEnvironment();
 
 export async function measureDashboardTask<T>(
   task: string,

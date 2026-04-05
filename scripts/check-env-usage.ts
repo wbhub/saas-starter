@@ -9,6 +9,7 @@ const ROOT = process.cwd();
 
 const ALLOWLIST = new Set([
   "lib/env.ts",
+  "lib/public-env.ts",
   "lib/billing/provider.ts",
   "instrumentation.ts",
   "instrumentation-client.ts",

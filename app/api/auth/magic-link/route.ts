@@ -1,7 +1,7 @@
-import { NextResponse, after } from "next/server";
+import { after } from "next/server";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
-import { getAppUrl } from "@/lib/env";
-import { jsonError } from "@/lib/http/api-json";
+import { getAppUrl, isDevelopmentEnvironment } from "@/lib/env";
+import { jsonError, jsonSuccess } from "@/lib/http/api-json";
 import { getClientRateLimitIdentifier } from "@/lib/http/client-ip";
 import { requireJsonContentType } from "@/lib/http/content-type";
 import { getOrCreateRequestId, withRequestId } from "@/lib/http/request-id";
@@ -30,7 +30,7 @@ const magicLinkPayloadSchema = z.object({
   redirectTo: z.string().optional(),
 });
 
-const IS_DEVELOPMENT = process.env.NODE_ENV === "development";
+const IS_DEVELOPMENT = isDevelopmentEnvironment();
 
 function isProviderOutageError(error: unknown) {
   if (!error || typeof error !== "object") {
@@ -203,7 +203,7 @@ export async function POST(request: Request) {
   const requestId = getOrCreateRequestId(request);
   const genericSuccessMessage = t("messages.genericSuccess");
   const genericSuccess = () =>
-    withRequestId(NextResponse.json({ message: genericSuccessMessage }), requestId);
+    withRequestId(jsonSuccess({ message: genericSuccessMessage }), requestId);
 
   if (getLoginMethod() === "password") {
     return withRequestId(jsonError(t("errors.magicLinkDisabled"), 403), requestId);

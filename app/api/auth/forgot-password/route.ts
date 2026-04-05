@@ -1,6 +1,6 @@
 import { NextResponse, after } from "next/server";
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
-import { getAppUrl } from "@/lib/env";
+import { getAppUrl, isDevelopmentEnvironment } from "@/lib/env";
 import { jsonError } from "@/lib/http/api-json";
 import { getOrCreateRequestId, withRequestId } from "@/lib/http/request-id";
 import {
@@ -27,7 +27,7 @@ const forgotPasswordPayloadSchema = z.object({
   email: z.string().trim().toLowerCase(),
 });
 
-const IS_DEVELOPMENT = process.env.NODE_ENV === "development";
+const IS_DEVELOPMENT = isDevelopmentEnvironment();
 
 function isProviderOutageError(error: unknown) {
   if (!error || typeof error !== "object") {

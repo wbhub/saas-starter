@@ -109,6 +109,7 @@ function optionalEnv(key: OptionalEnvKey) {
 }
 
 const DEFAULT_APP_URL = "http://localhost:3000";
+const DEFAULT_NODE_ENV = "development";
 
 export function getAppUrl() {
   const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
@@ -121,6 +122,18 @@ export function getAppUrl() {
   } catch {
     return DEFAULT_APP_URL;
   }
+}
+
+export function getNodeEnv() {
+  return process.env.NODE_ENV?.trim() || DEFAULT_NODE_ENV;
+}
+
+export function isDevelopmentEnvironment() {
+  return getNodeEnv() === "development";
+}
+
+export function isTestEnvironment() {
+  return getNodeEnv() === "test";
 }
 
 const envBase = {

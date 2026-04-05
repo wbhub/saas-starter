@@ -1,7 +1,7 @@
 import { env } from "@/lib/env";
 import { resolvePlanKeyByPriceId } from "@/lib/stripe/price-id-lookup";
 import {
-  LIVE_SUBSCRIPTION_STATUSES,
+  PAID_ENTITLEMENT_SUBSCRIPTION_STATUSES,
   type PlanKey,
   type SubscriptionStatus,
 } from "@/lib/stripe/plans";
@@ -13,25 +13,25 @@ type SubscriptionPlanInput = {
   stripe_price_id?: string | null;
 };
 
-function isLiveSubscriptionStatus(
+function isPaidEntitlementSubscriptionStatus(
   status: SubscriptionStatus | null | undefined,
 ): status is SubscriptionStatus {
   if (!status) {
     return false;
   }
-  return LIVE_SUBSCRIPTION_STATUSES.includes(status);
+  return PAID_ENTITLEMENT_SUBSCRIPTION_STATUSES.includes(status);
 }
 
 export function resolveEffectivePlanKey(
   subscription: SubscriptionPlanInput | null | undefined,
 ): EffectivePlanKey | null {
-  if (isLiveSubscriptionStatus(subscription?.status)) {
+  if (isPaidEntitlementSubscriptionStatus(subscription?.status)) {
     const paidPlanKey = resolvePlanKeyByPriceId(subscription?.stripe_price_id);
     if (paidPlanKey) {
       return paidPlanKey;
     }
 
-    // Live paid subscription exists but price ID is unknown to app config.
+    // Paid subscription exists but price ID is unknown to app config.
     // Do not fall back to app-level free in this case.
     return null;
   }

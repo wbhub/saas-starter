@@ -273,4 +273,49 @@ describe("POST /api/ai/files", () => {
     });
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it("rejects oversized streamed uploads even without a content-length header", async () => {
+    providerMockState.aiProviderName = "openai";
+    vi.stubEnv("OPENAI_API_KEY", "test-openai-key");
+
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { POST } = await import("./route");
+    const boundary = "test-boundary";
+    const encoder = new TextEncoder();
+    const oneMegabyteChunk = new Uint8Array(1024 * 1024).fill(0x61);
+    const body = new ReadableStream({
+      start(controller) {
+        controller.enqueue(
+          encoder.encode(
+            `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="contract.pdf"\r\nContent-Type: application/pdf\r\n\r\n`,
+          ),
+        );
+        for (let index = 0; index < 26; index += 1) {
+          controller.enqueue(oneMegabyteChunk);
+        }
+        controller.enqueue(encoder.encode(`\r\n--${boundary}--\r\n`));
+        controller.close();
+      },
+    });
+
+    const response = await POST(
+      new Request("http://localhost/api/ai/files", {
+        method: "POST",
+        headers: {
+          "content-type": `multipart/form-data; boundary=${boundary}`,
+        },
+        body,
+        duplex: "half",
+      } as RequestInit & { duplex: "half" }),
+    );
+
+    expect(response.status).toBe(413);
+    await expect(response.json()).resolves.toEqual({
+      ok: false,
+      error: "Request payload is too large.",
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 });

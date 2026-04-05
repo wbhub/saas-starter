@@ -17,6 +17,7 @@ import { DashboardPageHeader, DashboardPageStack } from "@/components/dashboard-
 import { Badge } from "@/components/ui/badge";
 import { formatUtcDate } from "@/lib/date";
 import { formatStaticUsdMonthlyLabel } from "@/lib/stripe/plan-price-display";
+import { resolvePlanKeyByPriceId } from "@/lib/stripe/price-id-lookup";
 import { canManageTeamBilling } from "@/lib/team-context";
 import { getDashboardShellData } from "@/lib/dashboard/server";
 import type { PlanKey, SubscriptionStatus } from "@/lib/stripe/plans";
@@ -111,17 +112,17 @@ export default async function DashboardBillingPage({
     return null;
   }
 
-  const { billingEnabled, subscription, effectivePlanKey, billingInterval, isPaidPlan } =
-    billingContext;
-  const currentPaidPlanKey: PlanKey | null =
-    isPaidPlan && effectivePlanKey && effectivePlanKey !== "free" ? effectivePlanKey : null;
+  const { billingEnabled, subscription, effectivePlanKey, billingInterval } = billingContext;
+  const currentSubscriptionPlanKey: PlanKey | null =
+    resolvePlanKeyByPriceId(subscription?.stripe_price_id) ??
+    (effectivePlanKey && effectivePlanKey !== "free" ? effectivePlanKey : null);
 
   // Fetch live Stripe pricing for both free-user plan grid and paid-user
   // per-seat display, so prices always match what Stripe actually charges.
   // cache() deduplicates within the same React request.
   const livePricing = await getPublicPricingCatalog();
-  const livePlan = currentPaidPlanKey
-    ? (livePricing.find((plan) => plan.key === currentPaidPlanKey) ?? null)
+  const livePlan = currentSubscriptionPlanKey
+    ? (livePricing.find((plan) => plan.key === currentSubscriptionPlanKey) ?? null)
     : null;
   const perSeatAmount = livePlan
     ? billingInterval === "year" && livePlan.amountAnnualMonthly
@@ -158,7 +159,7 @@ export default async function DashboardBillingPage({
           description={t("header.description")}
         />
 
-        {!isPaidPlan ? (
+        {!subscription ? (
           <>
             {!billingEnabled ? (
               <DashboardPageSection
@@ -210,8 +211,8 @@ export default async function DashboardBillingPage({
                         icon={CreditCard}
                         label={t("currentSubscription.currentPlan")}
                       >
-                        {currentPaidPlanKey
-                          ? tPlanCopy(`plans.${currentPaidPlanKey}.name`)
+                        {currentSubscriptionPlanKey
+                          ? tPlanCopy(`plans.${currentSubscriptionPlanKey}.name`)
                           : t("currentSubscription.unknown")}
                       </DashboardDetailField>
                       {billingInterval ? (
@@ -288,7 +289,7 @@ export default async function DashboardBillingPage({
 
         <BillingActions
           billingEnabled={billingEnabled}
-          currentPlanKey={currentPaidPlanKey}
+          currentPlanKey={currentSubscriptionPlanKey}
           hasSubscription={hasSubscription}
           canManageBilling={canManageBilling}
           plans={livePricing}
