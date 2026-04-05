@@ -188,3 +188,21 @@
   font-size: 0.8125rem;
   line-height: 1.5;
 }
+
+@media (min-width: 1024px) {
+  .ai-chat-card-shell {
+    height: min(58rem, calc(100dvh - 11rem));
+  }
+}
+
+@media (min-width: 1024px) and (max-height: 980px) {
+  .ai-chat-card-shell {
+    height: min(54rem, calc(100dvh - 15rem));
+  }
+}
+
+@media (min-width: 1024px) and (max-height: 860px) {
+  .ai-chat-card-shell {
+    height: min(48rem, calc(100dvh - 17rem));
+  }
+}
