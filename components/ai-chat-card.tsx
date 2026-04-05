@@ -642,7 +642,7 @@ export function AiChatCard({
   const newThreadLabel = tThreads("actions.newThread");
 
   return (
-    <div className="ai-chat-card-shell flex min-h-[32rem] flex-col overflow-hidden rounded-2xl bg-card ring-1 ring-border lg:min-h-0 lg:flex-row">
+    <div className="flex min-h-[32rem] flex-col overflow-hidden rounded-2xl bg-card ring-1 ring-border lg:min-h-0 lg:flex-1 lg:flex-row lg:max-h-[58rem]">
       {!desktopThreadsCollapsed ? (
         <div className="hidden lg:flex lg:min-h-0 lg:w-[260px] lg:shrink-0">
           <ThreadSidebar

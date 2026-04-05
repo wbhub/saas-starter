@@ -44,6 +44,8 @@ describe("DashboardShell", () => {
     expect(html).toContain('data-dashboard="true"');
     expect(html).toContain("max-w-[1680px]");
     expect(html).toContain("max-w-[56rem]");
+    expect(html).toContain("flex min-h-0 flex-1 flex-col");
+    expect(html).toContain("min-h-0 flex-1");
     expect(html).toContain("dashboard child");
   });
 });

@@ -43,7 +43,9 @@ export default async function DashboardAiPage() {
 
   return (
     <>
-      <DashboardPageStack>
+      <DashboardPageStack
+        className={aiUiGate.isVisibleInUi ? "flex min-h-0 flex-1 flex-col" : undefined}
+      >
         <DashboardPageHeader
           eyebrow={t("header.eyebrow")}
           title={t("header.title")}

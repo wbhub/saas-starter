@@ -55,12 +55,12 @@ export function DashboardShell({
           showAiNav,
         }}
       />
-      <main className="flex-1">
-        <DashboardShellFrame className="py-5 sm:py-6 lg:py-8">
-          <DashboardShellColumns>
+      <main className="flex min-h-0 flex-1 flex-col">
+        <DashboardShellFrame className="flex min-h-0 flex-1 flex-col py-5 sm:py-6 lg:py-8">
+          <DashboardShellColumns className="min-h-0 flex-1">
             <DashboardSidebar teamUiMode={teamUiMode} showAiNav={showAiNav} />
-            <div className="min-w-0">
-              <DashboardShellSection className="space-y-6 lg:space-y-8">
+            <div className="flex min-h-0 min-w-0 flex-col">
+              <DashboardShellSection className="flex min-h-0 flex-1 flex-col space-y-6 lg:space-y-8">
                 {children}
               </DashboardShellSection>
             </div>
