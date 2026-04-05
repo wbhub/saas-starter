@@ -3,10 +3,7 @@ import { type ToolSet } from "ai";
 import { currentTimeTool } from "./current-time";
 import { tavilySearchTool } from "./tavily";
 import { firecrawlScrapeTool } from "./firecrawl";
-import {
-  buildComposioSessionToolMap,
-  hasComposioSessionToolsConfigured,
-} from "./composio-session";
+import { buildComposioSessionToolMap, hasComposioSessionToolsConfigured } from "./composio-session";
 import { e2bRunCodeTool } from "./e2b";
 
 function buildToolMap(): ToolSet {

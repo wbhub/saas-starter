@@ -52,7 +52,10 @@ function parseToolkitRecord(rawValue: string | undefined, envKey: string) {
 
   return Object.fromEntries(
     Object.entries(parsed as Record<string, unknown>)
-      .map(([toolkit, value]) => [toolkit.trim().toLowerCase(), typeof value === "string" ? value.trim() : ""])
+      .map(([toolkit, value]) => [
+        toolkit.trim().toLowerCase(),
+        typeof value === "string" ? value.trim() : "",
+      ])
       .filter(([toolkit, value]) => toolkit.length > 0 && value.length > 0),
   );
 }
@@ -75,9 +78,7 @@ function buildComposioSessionConfig(userTimezone?: string | null) {
     ...(toolkits.length > 0 ? { toolkits } : {}),
     ...(Object.keys(authConfigs).length > 0 ? { authConfigs } : {}),
     ...(Object.keys(connectedAccounts).length > 0 ? { connectedAccounts } : {}),
-    ...(userTimezone
-      ? { experimental: { assistivePrompt: { userTimezone } } }
-      : {}),
+    ...(userTimezone ? { experimental: { assistivePrompt: { userTimezone } } } : {}),
   };
 }
 
