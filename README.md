@@ -70,7 +70,7 @@ Use `.env.example` as the source of truth for all available variables.
 ## Enable by Feature (Optional)
 
 - Billing: Stripe (`BILLING_PROVIDER=stripe` + Stripe env vars). Set `APP_FREE_PLAN_ENABLED=true` to allow a free tier alongside paid plans.
-- AI chat + structured output: Vercel AI SDK (`AI_PROVIDER` + provider keys). Optional tool integrations: `E2B_API_KEY` (sandboxed code execution), `TAVILY_API_KEY` (web search), `FIRECRAWL_API_KEY` (web scraping), `COMPOSIO_API_KEY` (third-party actions). Optional resumable streams: `AI_RESUMABLE_STREAMS_ENABLED=true` (requires Redis).
+- AI chat + structured output: Vercel AI SDK (`AI_PROVIDER` + provider keys). Optional tool integrations: `E2B_API_KEY` (sandboxed code execution), `TAVILY_API_KEY` (web search), `FIRECRAWL_API_KEY` (web scraping), `COMPOSIO_API_KEY` (Composio Sessions for third-party tools + in-chat auth). Optional resumable streams: `AI_RESUMABLE_STREAMS_ENABLED=true` (requires Redis).
 - In-app messenger: Intercom (`NEXT_PUBLIC_INTERCOM_APP_ID`, `INTERCOM_IDENTITY_SECRET`)
 - Multi-instance rate limiting/cache: Redis via Upstash (`UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`)
 - Background job offloading: Trigger.dev (`TRIGGER_SECRET_KEY`, `TRIGGER_PROJECT_REF`)

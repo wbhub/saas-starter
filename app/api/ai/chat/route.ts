@@ -10,7 +10,7 @@ import {
 import { jsonError } from "@/lib/http/api-json";
 import { withRequestId } from "@/lib/http/request-id";
 import { finalizeTeamAiBudgetClaimWithRetry } from "@/lib/ai/chat-budget";
-import { AI_TOOL_MAP } from "@/lib/ai/tools";
+import { buildAiToolMapForUser } from "@/lib/ai/tools";
 import { type AiModality } from "@/lib/ai/config";
 import { estimatePromptTokens } from "@/lib/ai/token-estimation";
 import { logAuditEvent } from "@/lib/audit";
@@ -409,6 +409,9 @@ export async function POST(request: Request) {
       // ── Agent path: tools + multi-step + UI message stream ──
       const resolvedTeamId = teamContext.teamId;
       const resolvedUserId = user.id;
+      const aiToolMap = await buildAiToolMapForUser({
+        userId: resolvedUserId,
+      });
       const accumulatedUsage: UsageTotals = { promptTokens: 0, completionTokens: 0 };
       const toolCallNames: string[] = [];
       let finalized = false;
@@ -491,7 +494,7 @@ export async function POST(request: Request) {
       const aiResult = streamText({
         model: languageModel,
         messages: toModelMessages(body.messages),
-        tools: AI_TOOL_MAP,
+        tools: aiToolMap,
         stopWhen: stepCountIs(maxSteps),
         abortSignal: upstreamAbortController.signal,
         maxOutputTokens: AI_COMPLETION_MAX_TOKENS,
