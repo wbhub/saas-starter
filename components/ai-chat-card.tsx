@@ -1,6 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, TextStreamChatTransport, type UIMessage } from "ai";
 import { ChevronLeft, ChevronRight, PanelLeft, Plus } from "lucide-react";
@@ -43,6 +51,8 @@ const DESKTOP_RECENTS_AUTO_COLLAPSE_WIDTH_PX = 1280;
 const DESKTOP_RECENTS_STORAGE_KEY = "aiChat.desktopRecentsCollapsed";
 const DESKTOP_RECENTS_PREFERENCE_EVENT = "ai-chat.desktop-recents-preference-changed";
 const CHAT_COLUMN_MAX_WIDTH_CLASS = "max-w-4xl";
+const DESKTOP_CHAT_MAX_HEIGHT_PX = 58 * 16;
+const DESKTOP_CHAT_BOTTOM_GAP_PX = 24;
 let desktopThreadsManualFallback: boolean | null = null;
 
 type DesktopThreadsPreferenceSnapshot = "auto:0" | "auto:1" | "manual:0" | "manual:1";
@@ -382,7 +392,9 @@ export function AiChatCard({
   const [threadRefreshSignal, setThreadRefreshSignal] = useState(0);
   const [uploadErrorMessage, setUploadErrorMessage] = useState<string | null>(null);
   const [mobileThreadsOpen, setMobileThreadsOpen] = useState(false);
+  const [desktopMeasuredHeight, setDesktopMeasuredHeight] = useState<number | null>(null);
   const threadSwitchAbortRef = useRef<AbortController | null>(null);
+  const chatCardRef = useRef<HTMLDivElement | null>(null);
   const desktopThreadsCollapsed = desktopThreadsPreference.collapsed;
 
   const [selectedModelId, setSelectedModelId] = useState<string | undefined>();
@@ -493,6 +505,51 @@ export function AiChatCard({
       threadSwitchAbortRef.current?.abort();
     };
   }, []);
+
+  useLayoutEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const mediaQuery =
+      typeof window.matchMedia === "function"
+        ? window.matchMedia("(min-width: 1024px)")
+        : ({
+            matches: false,
+            addEventListener: () => {},
+            removeEventListener: () => {},
+          } as Pick<MediaQueryList, "matches" | "addEventListener" | "removeEventListener">);
+    let animationFrameId = 0;
+
+    const measure = () => {
+      cancelAnimationFrame(animationFrameId);
+      animationFrameId = window.requestAnimationFrame(() => {
+        const card = chatCardRef.current;
+        if (!card || !mediaQuery.matches) {
+          setDesktopMeasuredHeight(null);
+          return;
+        }
+
+        const top = card.getBoundingClientRect().top;
+        const availableHeight = Math.floor(window.innerHeight - top - DESKTOP_CHAT_BOTTOM_GAP_PX);
+        const nextHeight = Math.max(0, Math.min(DESKTOP_CHAT_MAX_HEIGHT_PX, availableHeight));
+
+        setDesktopMeasuredHeight((currentHeight) =>
+          currentHeight === nextHeight ? currentHeight : nextHeight,
+        );
+      });
+    };
+
+    measure();
+    window.addEventListener("resize", measure);
+    mediaQuery.addEventListener("change", measure);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      window.removeEventListener("resize", measure);
+      mediaQuery.removeEventListener("change", measure);
+    };
+  }, [desktopThreadsCollapsed]);
 
   const setDesktopThreadsCollapsedPersisted = useCallback((collapsed: boolean) => {
     if (typeof window === "undefined") {
@@ -642,7 +699,13 @@ export function AiChatCard({
   const newThreadLabel = tThreads("actions.newThread");
 
   return (
-    <div className="flex min-h-[32rem] flex-col overflow-hidden rounded-2xl bg-card ring-1 ring-border lg:h-full lg:min-h-0 lg:flex-row lg:max-h-[58rem]">
+    <div
+      ref={chatCardRef}
+      className="flex min-h-[32rem] flex-col overflow-hidden rounded-2xl bg-card ring-1 ring-border lg:min-h-0 lg:flex-row"
+      style={
+        desktopMeasuredHeight !== null ? { height: `${desktopMeasuredHeight}px` } : undefined
+      }
+    >
       {!desktopThreadsCollapsed ? (
         <div className="hidden lg:flex lg:min-h-0 lg:w-[260px] lg:shrink-0 lg:self-stretch lg:overflow-hidden">
           <ThreadSidebar
