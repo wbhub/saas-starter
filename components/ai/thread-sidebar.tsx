@@ -86,7 +86,7 @@ export function ThreadSidebar({
   return (
     <div
       className={cn(
-        "flex h-full min-h-0 w-full shrink-0 flex-col overflow-hidden",
+        "flex min-h-0 w-full shrink-0 flex-col overflow-hidden",
         "pb-3 lg:w-[260px] lg:self-stretch",
       )}
     >
