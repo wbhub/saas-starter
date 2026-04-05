@@ -46,7 +46,7 @@ export default async function DashboardAiPage() {
       <DashboardPageStack
         className={
           aiUiGate.isVisibleInUi
-            ? "grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] gap-5 sm:gap-6 space-y-0"
+            ? "grid h-full min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] gap-5 sm:gap-6 space-y-0"
             : undefined
         }
       >
