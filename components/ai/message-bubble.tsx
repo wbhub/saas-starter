@@ -36,6 +36,7 @@ export function MessageBubble({
       result: part.state === "output-available" ? part.output : undefined,
       state: part.state,
     }));
+  const firstToolPartIndex = message.parts.findIndex((part) => isToolUIPart(part));
   const stepCount = message.parts.filter((part) => part.type === "step-start").length;
   const hasAssistantNarrativeContent = message.parts.some(
     (part) =>
@@ -90,68 +91,63 @@ export function MessageBubble({
         </div>
       ) : null}
 
-      {(() => {
-        let renderedToolGroup = false;
-
-        return message.parts.map((part, partIndex) => {
-          if (part.type === "text" && part.text.length > 0) {
-            if (isUser) {
-              return (
-                <div
-                  key={partIndex}
-                  className="ml-auto max-w-[88%] rounded-lg bg-primary/78 px-3 py-2 text-sm font-normal leading-relaxed text-primary-foreground"
-                >
-                  {part.text}
-                </div>
-              );
-            }
-
-            const isStreamingTextPart = isStreaming && partIndex === message.parts.length - 1;
-
+      {message.parts.map((part, partIndex) => {
+        if (part.type === "text" && part.text.length > 0) {
+          if (isUser) {
             return (
               <div
                 key={partIndex}
-                className="max-w-[88%] rounded-lg bg-card px-3 py-2 text-sm font-normal leading-relaxed text-foreground"
+                className="ml-auto max-w-[88%] rounded-lg bg-primary/78 px-3 py-2 text-sm font-normal leading-relaxed text-primary-foreground"
               >
-                {isStreamingTextPart ? (
-                  <div className="whitespace-pre-wrap break-words">{part.text}</div>
-                ) : (
-                  <MarkdownContent content={part.text} />
-                )}
-                {isStreamingTextPart ? (
-                  <span className="inline-block h-4 w-0.5 animate-pulse bg-foreground" />
-                ) : null}
+                {part.text}
               </div>
             );
           }
 
-          if (part.type === "step-start") {
+          const isStreamingTextPart = isStreaming && partIndex === message.parts.length - 1;
+
+          return (
+            <div
+              key={partIndex}
+              className="max-w-[88%] rounded-lg bg-card px-3 py-2 text-sm font-normal leading-relaxed text-foreground"
+            >
+              {isStreamingTextPart ? (
+                <div className="whitespace-pre-wrap break-words">{part.text}</div>
+              ) : (
+                <MarkdownContent content={part.text} />
+              )}
+              {isStreamingTextPart ? (
+                <span className="inline-block h-4 w-0.5 animate-pulse bg-foreground" />
+              ) : null}
+            </div>
+          );
+        }
+
+        if (part.type === "step-start") {
+          return null;
+        }
+
+        if (part.type === "reasoning") {
+          return (
+            <div key={partIndex} className="max-w-[88%]">
+              <ReasoningDisplay
+                reasoning={part.text}
+                isStreaming={isStreaming && partIndex === message.parts.length - 1}
+              />
+            </div>
+          );
+        }
+
+        if (isToolUIPart(part)) {
+          if (partIndex !== firstToolPartIndex) {
             return null;
           }
 
-          if (part.type === "reasoning") {
-            return (
-              <div key={partIndex} className="max-w-[88%]">
-                <ReasoningDisplay
-                  reasoning={part.text}
-                  isStreaming={isStreaming && partIndex === message.parts.length - 1}
-                />
-              </div>
-            );
-          }
+          return <ToolGroupCard key={partIndex} calls={toolCalls} stepCount={stepCount} />;
+        }
 
-          if (isToolUIPart(part)) {
-            if (renderedToolGroup) {
-              return null;
-            }
-
-            renderedToolGroup = true;
-            return <ToolGroupCard key={partIndex} calls={toolCalls} stepCount={stepCount} />;
-          }
-
-          return null;
-        });
-      })()}
+        return null;
+      })}
 
       {sourceParts.length > 0 ? (
         <div className="max-w-[88%]">

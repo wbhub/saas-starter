@@ -6,10 +6,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const markdownContentMock = vi.fn(({ content }: { content: string }) => (
   <div data-testid="markdown-content">{content}</div>
 ));
-const toolGroupCardMock = vi.fn((_props: unknown) => (
-  <div data-testid="tool-group-card">AI Agent</div>
-));
-const isToolUIPartMock = vi.fn((_part?: { type?: string }) => false);
+const toolGroupCardMock = vi.fn((props: unknown) => {
+  void props;
+  return <div data-testid="tool-group-card">AI Agent</div>;
+});
+const isToolUIPartMock = vi.fn((part?: { type?: string }) => {
+  void part;
+  return false;
+});
 
 vi.mock("ai", () => ({
   isToolUIPart: (part: { type?: string }) => isToolUIPartMock(part),
