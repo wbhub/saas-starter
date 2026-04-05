@@ -61,6 +61,32 @@ describe("resolveEffectivePlanKey", () => {
     expect(result).toBe("growth");
   });
 
+  it("does not grant paid access for non-billable subscription states", async () => {
+    process.env[FREE_PLAN_FLAG] = "true";
+    process.env[GROWTH_PRICE_ID] = "price_growth";
+
+    const { resolveEffectivePlanKey } = await import("./effective-plan");
+
+    expect(
+      resolveEffectivePlanKey({
+        status: "incomplete",
+        stripe_price_id: "price_growth",
+      }),
+    ).toBe("free");
+    expect(
+      resolveEffectivePlanKey({
+        status: "unpaid",
+        stripe_price_id: "price_growth",
+      }),
+    ).toBe("free");
+    expect(
+      resolveEffectivePlanKey({
+        status: "paused",
+        stripe_price_id: "price_growth",
+      }),
+    ).toBe("free");
+  });
+
   it("does not fall back to free when live subscription price is unknown", async () => {
     process.env[FREE_PLAN_FLAG] = "true";
     process.env[STARTER_PRICE_ID] = "price_starter";

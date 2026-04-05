@@ -5,6 +5,7 @@ import {
   resolveDashboardTeamSnapshot,
   type DashboardTeamSnapshot,
 } from "@/lib/dashboard/team-snapshot";
+import { isTestEnvironment } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { getRedisClient } from "@/lib/redis/client";
 
@@ -40,7 +41,7 @@ declare global {
   var __saasStarterDashboardTeamSnapshotCacheLastSweepAt: number | undefined;
 }
 
-if (process.env.NODE_ENV === "test") {
+if (isTestEnvironment()) {
   globalThis.__saasStarterDashboardTeamSnapshotCache = undefined;
   globalThis.__saasStarterDashboardTeamSnapshotCacheLastSweepAt = undefined;
 }

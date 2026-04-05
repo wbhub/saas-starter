@@ -177,6 +177,54 @@ function logUploadFailure({
   });
 }
 
+async function parseMultipartFormDataWithinLimit(
+  request: Request,
+  maxBytes: number,
+): Promise<
+  { ok: true; formData: FormData } | { ok: false; reason: "payload_too_large" | "invalid_payload" }
+> {
+  if (!request.body) {
+    return { ok: false, reason: "invalid_payload" };
+  }
+
+  const reader = request.body.getReader();
+  const chunks: BlobPart[] = [];
+  let totalBytes = 0;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
+      }
+      if (!value) {
+        continue;
+      }
+
+      totalBytes += value.byteLength;
+      if (totalBytes > maxBytes) {
+        await reader.cancel().catch(() => undefined);
+        return { ok: false, reason: "payload_too_large" };
+      }
+
+      chunks.push(new Uint8Array(value));
+    }
+  } catch {
+    return { ok: false, reason: "invalid_payload" };
+  } finally {
+    reader.releaseLock();
+  }
+
+  try {
+    const headers = new Headers(request.headers);
+    headers.delete("content-length");
+    const formData = await new Response(new Blob(chunks), { headers }).formData();
+    return { ok: true, formData };
+  } catch {
+    return { ok: false, reason: "invalid_payload" };
+  }
+}
+
 export async function POST(request: Request) {
   const t = await getRouteTranslator("ApiAiChat", request);
 
@@ -202,8 +250,17 @@ export async function POST(request: Request) {
         return jsonError(t("errors.payloadTooLarge"), 413);
       }
 
-      const formData = await request.formData();
-      const file = formData.get("file");
+      const parsedFormData = await parseMultipartFormDataWithinLimit(
+        request,
+        MAX_AI_MULTIPART_BODY_BYTES,
+      );
+      if (!parsedFormData.ok) {
+        return parsedFormData.reason === "payload_too_large"
+          ? jsonError(t("errors.payloadTooLarge"), 413)
+          : jsonError(t("errors.invalidPayload"), 400);
+      }
+
+      const file = parsedFormData.formData.get("file");
 
       if (!(file instanceof File)) {
         return jsonError(t("errors.invalidPayload"), 400);

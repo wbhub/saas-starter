@@ -23,7 +23,7 @@ import {
 import { logger } from "@/lib/logger";
 import { getTeamMaxMembers } from "@/lib/team/limits";
 import { getRouteTranslator } from "@/lib/i18n/locale";
-import { LIVE_SUBSCRIPTION_STATUSES } from "@/lib/stripe/plans";
+import { PAID_ENTITLEMENT_SUBSCRIPTION_STATUSES } from "@/lib/stripe/plans";
 import { isTriggerConfigured } from "@/lib/trigger/config";
 import { triggerSendEmailTask } from "@/lib/trigger/dispatch";
 
@@ -105,13 +105,13 @@ export async function POST(request: Request) {
         .from("subscriptions")
         .select("stripe_subscription_id")
         .eq("team_id", teamContext.teamId)
-        .in("status", LIVE_SUBSCRIPTION_STATUSES)
+        .in("status", PAID_ENTITLEMENT_SUBSCRIPTION_STATUSES)
         .order("current_period_end", { ascending: false })
         .limit(1)
         .maybeSingle<{ stripe_subscription_id: string | null }>();
       if (liveSubscriptionError) {
         logger.error(
-          "Failed to verify live subscription before invite creation",
+          "Failed to verify paid subscription before invite creation",
           liveSubscriptionError,
           {
             requestId,

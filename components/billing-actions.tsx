@@ -120,6 +120,7 @@ export function BillingActions({
     currentBillingInterval ?? "month",
   );
   const [pendingChange, setPendingChange] = useState<PendingChange | null>(null);
+  const showIntervalToggle = showAnnualToggle && !hasSubscription;
 
   // When router.refresh() delivers updated server props (e.g. currentPlanKey
   // changes after a plan switch), clear stale loading/message client state.
@@ -132,6 +133,12 @@ export function BillingActions({
       setPendingChange(null);
     }
   }, [currentPlanKey]);
+
+  useEffect(() => {
+    if (hasSubscription) {
+      setSelectedInterval(currentBillingInterval ?? "month");
+    }
+  }, [currentBillingInterval, hasSubscription]);
 
   async function requestPlanChange(planKey: PlanKey, planName: string) {
     setPendingChange({ planKey, planName, preview: null, loading: true, error: null });
@@ -319,7 +326,7 @@ export function BillingActions({
                 ) : null}
               </div>
 
-              {showAnnualToggle ? (
+              {showIntervalToggle ? (
                 <div className="flex items-center gap-2">
                   <SegmentedControl
                     aria-label={`${t("toggle.monthly")} / ${t("toggle.annual")}`}
@@ -441,10 +448,6 @@ export function BillingActions({
                 );
               })}
             </div>
-
-            {hasSubscription && showAnnualToggle ? (
-              <p className="text-xs text-muted-foreground">{t("intervalNote")}</p>
-            ) : null}
           </div>
 
           {message ? (

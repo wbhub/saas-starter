@@ -30,7 +30,7 @@ export default async function DashboardLayout({ children }: Readonly<{ children:
     );
   }
 
-  // Onboarding / paywall gate: redirect users who haven't completed onboarding
+  // Onboarding / paywall gate: redirect users who have not completed onboarding.
   if (isBillingEnabled()) {
     const { effectivePlanKey } = shellData.billingContext;
 
@@ -39,14 +39,13 @@ export default async function DashboardLayout({ children }: Readonly<{ children:
       redirect("/onboarding");
     }
 
-    // Free plan but hasn't completed onboarding → auto-complete on the free plan
-    if (effectivePlanKey === "free" && shellData.profile) {
-      if (!shellData.profile.onboarding_completed_at) {
-        await shellData.supabase
-          .from("profiles")
-          .update({ onboarding_completed_at: new Date().toISOString() })
-          .eq("id", shellData.user.id);
-      }
+    // Free plan but onboarding is still incomplete → keep the user in onboarding.
+    if (
+      effectivePlanKey === "free" &&
+      shellData.profile &&
+      !shellData.profile.onboarding_completed_at
+    ) {
+      redirect("/onboarding");
     }
   }
 

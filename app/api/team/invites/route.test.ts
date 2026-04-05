@@ -2,21 +2,26 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("POST /api/team/invites", () => {
   function createSubscriptionsTable(hasLive = true) {
-    return {
-      select: vi.fn(() => ({
-        eq: vi.fn().mockReturnValue({
-          in: vi.fn().mockReturnValue({
-            order: vi.fn().mockReturnValue({
-              limit: vi.fn().mockReturnValue({
-                maybeSingle: vi.fn().mockResolvedValue({
-                  data: hasLive ? { stripe_subscription_id: "sub_123" } : null,
-                  error: null,
-                }),
-              }),
-            }),
+    const inFn = vi.fn().mockReturnValue({
+      order: vi.fn().mockReturnValue({
+        limit: vi.fn().mockReturnValue({
+          maybeSingle: vi.fn().mockResolvedValue({
+            data: hasLive ? { stripe_subscription_id: "sub_123" } : null,
+            error: null,
           }),
         }),
-      })),
+      }),
+    });
+
+    return {
+      inFn,
+      query: {
+        select: vi.fn(() => ({
+          eq: vi.fn().mockReturnValue({
+            in: inFn,
+          }),
+        })),
+      },
     };
   }
 
@@ -87,6 +92,7 @@ describe("POST /api/team/invites", () => {
     });
     const send = vi.fn().mockResolvedValue({});
     const { cleanupDelete, delete: deleteFn } = createCleanupDeleteChain();
+    const subscriptions = createSubscriptionsTable(true);
 
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: async () => ({
@@ -100,7 +106,7 @@ describe("POST /api/team/invites", () => {
             return { delete: deleteFn };
           }
           if (table === "subscriptions") {
-            return createSubscriptionsTable(true);
+            return subscriptions.query;
           }
           throw new Error(`Unexpected table: ${table}`);
         }),
@@ -168,6 +174,7 @@ describe("POST /api/team/invites", () => {
     );
     expect(cleanupDelete).toHaveBeenCalledOnce();
     expect(send).toHaveBeenCalledOnce();
+    expect(subscriptions.inFn).toHaveBeenCalledWith("status", ["trialing", "active", "past_due"]);
     expect(logAuditEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         action: "team.invite.create",
@@ -187,6 +194,7 @@ describe("POST /api/team/invites", () => {
       error: null,
     });
     const { cleanupDelete, delete: deleteFn } = createCleanupDeleteChain();
+    const subscriptions = createSubscriptionsTable(true);
 
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: async () => ({
@@ -200,7 +208,7 @@ describe("POST /api/team/invites", () => {
             return { delete: deleteFn };
           }
           if (table === "subscriptions") {
-            return createSubscriptionsTable(true);
+            return subscriptions.query;
           }
           throw new Error(`Unexpected table: ${table}`);
         }),
@@ -256,6 +264,7 @@ describe("POST /api/team/invites", () => {
     });
     expect(rpc).toHaveBeenCalledOnce();
     expect(cleanupDelete).toHaveBeenCalledOnce();
+    expect(subscriptions.inFn).toHaveBeenCalledWith("status", ["trialing", "active", "past_due"]);
     expect(logAuditEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         action: "team.invite.create",
@@ -269,6 +278,8 @@ describe("POST /api/team/invites", () => {
   });
 
   it("returns 402 when team does not have a paid subscription", async () => {
+    const subscriptions = createSubscriptionsTable(false);
+
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: async () => ({
         auth: {
@@ -278,7 +289,7 @@ describe("POST /api/team/invites", () => {
         },
         from: vi.fn((table: string) => {
           if (table === "subscriptions") {
-            return createSubscriptionsTable(false);
+            return subscriptions.query;
           }
           throw new Error(`Unexpected table: ${table}`);
         }),
@@ -309,6 +320,7 @@ describe("POST /api/team/invites", () => {
       ok: false,
       error: "Inviting teammates requires a paid plan. Visit billing to upgrade first.",
     });
+    expect(subscriptions.inFn).toHaveBeenCalledWith("status", ["trialing", "active", "past_due"]);
   });
 
   it("returns 409 when a pending invite already exists (duplicate from RPC)", async () => {
@@ -317,6 +329,7 @@ describe("POST /api/team/invites", () => {
       error: null,
     });
     const { delete: deleteFn } = createCleanupDeleteChain();
+    const subscriptions = createSubscriptionsTable(true);
 
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: async () => ({
@@ -330,7 +343,7 @@ describe("POST /api/team/invites", () => {
             return { delete: deleteFn };
           }
           if (table === "subscriptions") {
-            return createSubscriptionsTable(true);
+            return subscriptions.query;
           }
           throw new Error(`Unexpected table: ${table}`);
         }),
@@ -389,6 +402,7 @@ describe("POST /api/team/invites", () => {
       error: null,
     });
     const { delete: deleteFn } = createCleanupDeleteChain();
+    const subscriptions = createSubscriptionsTable(true);
 
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: async () => ({
@@ -402,7 +416,7 @@ describe("POST /api/team/invites", () => {
             return { delete: deleteFn };
           }
           if (table === "subscriptions") {
-            return createSubscriptionsTable(true);
+            return subscriptions.query;
           }
           throw new Error(`Unexpected table: ${table}`);
         }),

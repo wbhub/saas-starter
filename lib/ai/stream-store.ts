@@ -1,4 +1,5 @@
 import "server-only";
+import { env } from "@/lib/env";
 import { getRedisClient } from "@/lib/redis/client";
 import { logger } from "@/lib/logger";
 
@@ -16,7 +17,7 @@ const STREAM_KEY_PREFIX = "ai:stream:";
  * Streams expire after 1 hour to prevent unbounded storage growth.
  */
 export function isResumableStreamsEnabled(): boolean {
-  return process.env.AI_RESUMABLE_STREAMS_ENABLED === "true" && getRedisClient() !== null;
+  return env.AI_RESUMABLE_STREAMS_ENABLED && getRedisClient() !== null;
 }
 
 export async function saveStreamChunk(streamId: string, chunk: string): Promise<void> {

@@ -25,6 +25,9 @@ vi.mock("next-intl", () => ({
     if (key === "actions.switchTo") return `Switch to ${values?.name ?? ""}`.trim();
     if (key === "currentPlanBadge") return "Current plan";
     if (key === "actions.getStarted") return "Get started";
+    if (key === "toggle.monthly") return "Monthly";
+    if (key === "toggle.annual") return "Annual";
+    if (key === "intervalNote") return "Use the billing portal to change cycle.";
     return key;
   },
 }));
@@ -115,6 +118,41 @@ describe("BillingActions", () => {
 
     expect(html).toContain("Switch to Growth");
     expect(html).toContain("Switch to Pro");
+  });
+
+  it("hides the billing interval toggle for existing subscribers", () => {
+    const html = renderToStaticMarkup(
+      <BillingActions
+        billingEnabled={true}
+        currentPlanKey="starter"
+        hasSubscription={true}
+        canManageBilling={true}
+        plans={mockPlans}
+        showAnnualToggle={true}
+        currentBillingInterval="month"
+      />,
+    );
+
+    expect(html).not.toContain("Monthly");
+    expect(html).not.toContain("Annual");
+    expect(html).not.toContain("Use the billing portal to change cycle.");
+  });
+
+  it("keeps the billing interval toggle for new checkouts", () => {
+    const html = renderToStaticMarkup(
+      <BillingActions
+        billingEnabled={true}
+        currentPlanKey={null}
+        hasSubscription={false}
+        canManageBilling={true}
+        plans={mockPlans}
+        showAnnualToggle={true}
+        currentBillingInterval={null}
+      />,
+    );
+
+    expect(html).toContain("Monthly");
+    expect(html).toContain("Annual");
   });
 
   it("shows current plan badge on the active plan", () => {

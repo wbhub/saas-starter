@@ -1,6 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("POST /api/auth/magic-link", () => {
+  function mockEnvModule() {
+    return {
+      env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
+      getAppUrl: () => "http://localhost:3000",
+      isDevelopmentEnvironment: () => process.env.NODE_ENV === "development",
+    };
+  }
+
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
@@ -40,10 +48,7 @@ describe("POST /api/auth/magic-link", () => {
       getResendFromEmailIfConfigured: vi.fn(),
       sendResendEmail: vi.fn(),
     }));
-    vi.doMock("@/lib/env", () => ({
-      env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
-      getAppUrl: () => "http://localhost:3000",
-    }));
+    vi.doMock("@/lib/env", mockEnvModule);
 
     const { POST } = await import("./route");
     const response = await POST(
@@ -97,10 +102,7 @@ describe("POST /api/auth/magic-link", () => {
       getResendFromEmailIfConfigured: vi.fn(),
       sendResendEmail: vi.fn(),
     }));
-    vi.doMock("@/lib/env", () => ({
-      env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
-      getAppUrl: () => "http://localhost:3000",
-    }));
+    vi.doMock("@/lib/env", mockEnvModule);
 
     const { POST } = await import("./route");
     const response = await POST(
@@ -109,6 +111,7 @@ describe("POST /api/auth/magic-link", () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
+      ok: true,
       message: "If an account exists for that email, a sign-in link has been sent.",
     });
     expect(checkRateLimit).toHaveBeenCalledTimes(2);

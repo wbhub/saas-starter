@@ -1,4 +1,4 @@
-import { env } from "@/lib/env";
+import { publicEnv } from "@/lib/public-env";
 
 export const LAST_AUTH_PROVIDER_COOKIE = "auth_last_provider";
 
@@ -29,10 +29,10 @@ function isEnabledFlag(value: string | undefined) {
 export function getEnabledSocialAuthProviders(): AuthProvider[] {
   const providers: AuthProvider[] = [];
 
-  if (isEnabledFlag(env.NEXT_PUBLIC_AUTH_GOOGLE_ENABLED)) {
+  if (isEnabledFlag(publicEnv.NEXT_PUBLIC_AUTH_GOOGLE_ENABLED)) {
     providers.push("google");
   }
-  if (isEnabledFlag(env.NEXT_PUBLIC_AUTH_MICROSOFT_ENABLED)) {
+  if (isEnabledFlag(publicEnv.NEXT_PUBLIC_AUTH_MICROSOFT_ENABLED)) {
     providers.push("microsoft");
   }
 
@@ -76,7 +76,7 @@ export function getProviderLabel(provider: AuthProvider) {
 }
 
 export function getLoginMethod(): LoginMethod {
-  const value = process.env.NEXT_PUBLIC_AUTH_LOGIN_METHOD?.trim().toLowerCase() as LoginMethod;
+  const value = publicEnv.NEXT_PUBLIC_AUTH_LOGIN_METHOD?.toLowerCase() as LoginMethod | undefined;
   if (value && VALID_LOGIN_METHODS.has(value)) return value;
   return "magic-link";
 }

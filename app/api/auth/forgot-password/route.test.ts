@@ -12,6 +12,14 @@ vi.mock("next/server", async (importOriginal) => {
 });
 
 describe("POST /api/auth/forgot-password", () => {
+  function mockEnvModule() {
+    return {
+      env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
+      getAppUrl: () => "http://localhost:3000",
+      isDevelopmentEnvironment: () => process.env.NODE_ENV === "development",
+    };
+  }
+
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
@@ -38,10 +46,7 @@ describe("POST /api/auth/forgot-password", () => {
       getResendFromEmailIfConfigured: vi.fn(),
       sendResendEmail: vi.fn(),
     }));
-    vi.doMock("@/lib/env", () => ({
-      env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
-      getAppUrl: () => "http://localhost:3000",
-    }));
+    vi.doMock("@/lib/env", mockEnvModule);
 
     const { POST } = await import("./route");
     const response = await POST(
@@ -75,10 +80,7 @@ describe("POST /api/auth/forgot-password", () => {
       getResendFromEmailIfConfigured: vi.fn(),
       sendResendEmail: vi.fn(),
     }));
-    vi.doMock("@/lib/env", () => ({
-      env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
-      getAppUrl: () => "http://localhost:3000",
-    }));
+    vi.doMock("@/lib/env", mockEnvModule);
 
     const { POST } = await import("./route");
     const response = await POST(
@@ -133,10 +135,7 @@ describe("POST /api/auth/forgot-password", () => {
         await send();
       }),
     }));
-    vi.doMock("@/lib/env", () => ({
-      env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
-      getAppUrl: () => "http://localhost:3000",
-    }));
+    vi.doMock("@/lib/env", mockEnvModule);
 
     const { POST } = await import("./route");
     const response = await POST(
@@ -197,10 +196,7 @@ describe("POST /api/auth/forgot-password", () => {
       getResendFromEmailIfConfigured: vi.fn(),
       sendResendEmail: vi.fn(),
     }));
-    vi.doMock("@/lib/env", () => ({
-      env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
-      getAppUrl: () => "http://localhost:3000",
-    }));
+    vi.doMock("@/lib/env", mockEnvModule);
 
     const { POST } = await import("./route");
     const response = await POST(
@@ -256,10 +252,7 @@ describe("POST /api/auth/forgot-password", () => {
       getResendFromEmailIfConfigured: vi.fn(),
       sendResendEmail: vi.fn(),
     }));
-    vi.doMock("@/lib/env", () => ({
-      env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
-      getAppUrl: () => "http://localhost:3000",
-    }));
+    vi.doMock("@/lib/env", mockEnvModule);
 
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
 
@@ -318,10 +311,7 @@ describe("POST /api/auth/forgot-password", () => {
       getResendFromEmailIfConfigured: vi.fn(),
       sendResendEmail: vi.fn(),
     }));
-    vi.doMock("@/lib/env", () => ({
-      env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
-      getAppUrl: () => "http://localhost:3000",
-    }));
+    vi.doMock("@/lib/env", mockEnvModule);
 
     const { POST } = await import("./route");
     const response = await POST(
@@ -380,10 +370,7 @@ describe("POST /api/auth/forgot-password", () => {
       getResendFromEmailIfConfigured: vi.fn(),
       sendResendEmail: vi.fn(),
     }));
-    vi.doMock("@/lib/env", () => ({
-      env: { NEXT_PUBLIC_APP_URL: "http://localhost:3000" },
-      getAppUrl: () => "http://localhost:3000",
-    }));
+    vi.doMock("@/lib/env", mockEnvModule);
 
     const { POST } = await import("./route");
     const response = await POST(
