@@ -702,9 +702,7 @@ export function AiChatCard({
     <div
       ref={chatCardRef}
       className="flex min-h-[32rem] flex-col overflow-hidden rounded-2xl bg-card ring-1 ring-border lg:min-h-0 lg:flex-row"
-      style={
-        desktopMeasuredHeight !== null ? { height: `${desktopMeasuredHeight}px` } : undefined
-      }
+      style={desktopMeasuredHeight !== null ? { height: `${desktopMeasuredHeight}px` } : undefined}
     >
       {!desktopThreadsCollapsed ? (
         <div className="hidden lg:flex lg:min-h-0 lg:w-[260px] lg:shrink-0 lg:self-stretch lg:overflow-hidden">
