@@ -644,7 +644,7 @@ export function AiChatCard({
   return (
     <div className="flex min-h-[32rem] flex-col overflow-hidden rounded-2xl bg-card ring-1 ring-border lg:h-full lg:min-h-0 lg:flex-row lg:max-h-[58rem]">
       {!desktopThreadsCollapsed ? (
-        <div className="hidden lg:flex lg:min-h-0 lg:w-[260px] lg:shrink-0">
+        <div className="hidden lg:flex lg:h-full lg:min-h-0 lg:w-[260px] lg:shrink-0 lg:overflow-hidden">
           <ThreadSidebar
             activeThreadId={activeThreadId}
             onSelectThread={handleSelectThread}

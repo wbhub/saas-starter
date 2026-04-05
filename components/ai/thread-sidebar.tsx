@@ -85,7 +85,10 @@ export function ThreadSidebar({
 
   return (
     <div
-      className={cn("flex min-h-0 w-full shrink-0 flex-col", "pb-3 lg:w-[260px] lg:self-stretch")}
+      className={cn(
+        "flex h-full min-h-0 w-full shrink-0 flex-col overflow-hidden",
+        "pb-3 lg:w-[260px] lg:self-stretch",
+      )}
     >
       <div className="flex items-center justify-between gap-2 px-5 py-3 mt-2">
         <div className="flex min-w-0 items-center gap-2">
@@ -114,7 +117,7 @@ export function ThreadSidebar({
           </svg>
         </Button>
       </div>
-      <div className="flex-1 space-y-0.5 overflow-y-auto scroll-pb-4 px-3 pb-5">
+      <div className="min-h-0 flex-1 space-y-0.5 overflow-y-auto scroll-pb-4 px-3 pb-5">
         {isLoading ? (
           <div className="space-y-2 p-1">
             {[0, 1, 2].map((i) => (
