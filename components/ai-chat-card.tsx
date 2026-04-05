@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, TextStreamChatTransport, type UIMessage } from "ai";
 import { ChevronLeft, ChevronRight, PanelLeft, Plus } from "lucide-react";
@@ -41,28 +41,73 @@ const MAX_MESSAGES_PER_REQUEST = 30;
 const MAX_MESSAGE_CONTENT_CHARS = 8_000;
 const DESKTOP_RECENTS_AUTO_COLLAPSE_WIDTH_PX = 1280;
 const DESKTOP_RECENTS_STORAGE_KEY = "aiChat.desktopRecentsCollapsed";
+const DESKTOP_RECENTS_PREFERENCE_EVENT = "ai-chat.desktop-recents-preference-changed";
 const CHAT_COLUMN_MAX_WIDTH_CLASS = "max-w-4xl";
+let desktopThreadsManualFallback: boolean | null = null;
 
-function getInitialDesktopThreadsPreference() {
+type DesktopThreadsPreferenceSnapshot = "auto:0" | "auto:1" | "manual:0" | "manual:1";
+
+function getDesktopThreadsPreferenceSnapshot(): DesktopThreadsPreferenceSnapshot {
   if (typeof window === "undefined") {
-    return { collapsed: false, hasManualPreference: false };
+    return "auto:0";
   }
 
   try {
     const storedPreference = window.localStorage.getItem(DESKTOP_RECENTS_STORAGE_KEY);
     if (storedPreference === "true" || storedPreference === "false") {
-      return {
-        collapsed: storedPreference === "true",
-        hasManualPreference: true,
-      };
+      return storedPreference === "true" ? "manual:1" : "manual:0";
     }
   } catch {
-    // Ignore localStorage issues and fall back to viewport-based defaults.
+    if (desktopThreadsManualFallback !== null) {
+      return desktopThreadsManualFallback ? "manual:1" : "manual:0";
+    }
   }
 
+  return window.innerWidth < DESKTOP_RECENTS_AUTO_COLLAPSE_WIDTH_PX ? "auto:1" : "auto:0";
+}
+
+function getServerDesktopThreadsPreferenceSnapshot(): DesktopThreadsPreferenceSnapshot {
+  return "auto:0";
+}
+
+function subscribeDesktopThreadsPreference(onStoreChange: () => void) {
+  if (typeof window === "undefined") {
+    return () => {};
+  }
+
+  const handleResize = () => {
+    if (getDesktopThreadsPreferenceSnapshot().startsWith("auto:")) {
+      onStoreChange();
+    }
+  };
+
+  const handleStorage = (event: StorageEvent) => {
+    if (event.key !== null && event.key !== DESKTOP_RECENTS_STORAGE_KEY) {
+      return;
+    }
+    desktopThreadsManualFallback = null;
+    onStoreChange();
+  };
+
+  const handlePreferenceChange = () => {
+    onStoreChange();
+  };
+
+  window.addEventListener("resize", handleResize);
+  window.addEventListener("storage", handleStorage);
+  window.addEventListener(DESKTOP_RECENTS_PREFERENCE_EVENT, handlePreferenceChange);
+
+  return () => {
+    window.removeEventListener("resize", handleResize);
+    window.removeEventListener("storage", handleStorage);
+    window.removeEventListener(DESKTOP_RECENTS_PREFERENCE_EVENT, handlePreferenceChange);
+  };
+}
+
+function parseDesktopThreadsPreferenceSnapshot(snapshot: DesktopThreadsPreferenceSnapshot) {
   return {
-    collapsed: window.innerWidth < DESKTOP_RECENTS_AUTO_COLLAPSE_WIDTH_PX,
-    hasManualPreference: false,
+    collapsed: snapshot.endsWith(":1"),
+    hasManualPreference: snapshot.startsWith("manual:"),
   };
 }
 
@@ -324,20 +369,21 @@ export function AiChatCard({
   void userDisplayName;
   const t = useTranslations("AiChatCard");
   const tThreads = useTranslations("AiThreads");
-  const initialDesktopThreadsPreference = useMemo(() => getInitialDesktopThreadsPreference(), []);
+  const desktopThreadsPreference = parseDesktopThreadsPreferenceSnapshot(
+    useSyncExternalStore(
+      subscribeDesktopThreadsPreference,
+      getDesktopThreadsPreferenceSnapshot,
+      getServerDesktopThreadsPreferenceSnapshot,
+    ),
+  );
   const [chatSessionId, setChatSessionId] = useState(() => crypto.randomUUID());
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [initialMessages, setInitialMessages] = useState<UIMessage[]>([]);
   const [threadRefreshSignal, setThreadRefreshSignal] = useState(0);
   const [uploadErrorMessage, setUploadErrorMessage] = useState<string | null>(null);
   const [mobileThreadsOpen, setMobileThreadsOpen] = useState(false);
-  const [desktopThreadsCollapsed, setDesktopThreadsCollapsed] = useState(
-    initialDesktopThreadsPreference.collapsed,
-  );
   const threadSwitchAbortRef = useRef<AbortController | null>(null);
-  const hasManualDesktopThreadsPreferenceRef = useRef(
-    initialDesktopThreadsPreference.hasManualPreference,
-  );
+  const desktopThreadsCollapsed = desktopThreadsPreference.collapsed;
 
   const [selectedModelId, setSelectedModelId] = useState<string | undefined>();
   const activeProviderName = getAiProviderNameForModel(
@@ -448,36 +494,20 @@ export function AiChatCard({
     };
   }, []);
 
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    const syncDesktopRecentsState = () => {
-      if (!hasManualDesktopThreadsPreferenceRef.current) {
-        setDesktopThreadsCollapsed(window.innerWidth < DESKTOP_RECENTS_AUTO_COLLAPSE_WIDTH_PX);
-      }
-    };
-
-    window.addEventListener("resize", syncDesktopRecentsState);
-    return () => {
-      window.removeEventListener("resize", syncDesktopRecentsState);
-    };
-  }, []);
-
   const setDesktopThreadsCollapsedPersisted = useCallback((collapsed: boolean) => {
-    setDesktopThreadsCollapsed(collapsed);
-    hasManualDesktopThreadsPreferenceRef.current = true;
-
     if (typeof window === "undefined") {
       return;
     }
 
     try {
       window.localStorage.setItem(DESKTOP_RECENTS_STORAGE_KEY, collapsed ? "true" : "false");
+      desktopThreadsManualFallback = null;
     } catch {
       // Ignore localStorage issues and still honor the in-memory toggle.
+      desktopThreadsManualFallback = collapsed;
     }
+
+    window.dispatchEvent(new Event(DESKTOP_RECENTS_PREFERENCE_EVENT));
   }, []);
 
   const errorMessagesByCode = {
