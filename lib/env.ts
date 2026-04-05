@@ -61,6 +61,9 @@ type OptionalEnvKey =
   | "TAVILY_API_KEY"
   | "FIRECRAWL_API_KEY"
   | "COMPOSIO_API_KEY"
+  | "COMPOSIO_TOOLKITS"
+  | "COMPOSIO_AUTH_CONFIGS_JSON"
+  | "COMPOSIO_CONNECTED_ACCOUNTS_JSON"
   | "AI_RESUMABLE_STREAMS_ENABLED"
   | StripeAnnualPriceIdEnvKey;
 
@@ -286,6 +289,15 @@ const envBase = {
   },
   get COMPOSIO_API_KEY() {
     return optionalEnv("COMPOSIO_API_KEY");
+  },
+  get COMPOSIO_TOOLKITS() {
+    return optionalEnv("COMPOSIO_TOOLKITS");
+  },
+  get COMPOSIO_AUTH_CONFIGS_JSON() {
+    return optionalEnv("COMPOSIO_AUTH_CONFIGS_JSON");
+  },
+  get COMPOSIO_CONNECTED_ACCOUNTS_JSON() {
+    return optionalEnv("COMPOSIO_CONNECTED_ACCOUNTS_JSON");
   },
   get AI_RESUMABLE_STREAMS_ENABLED() {
     return optionalEnv("AI_RESUMABLE_STREAMS_ENABLED") === "true";

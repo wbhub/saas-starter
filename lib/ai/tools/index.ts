@@ -3,7 +3,10 @@ import { type ToolSet } from "ai";
 import { currentTimeTool } from "./current-time";
 import { tavilySearchTool } from "./tavily";
 import { firecrawlScrapeTool } from "./firecrawl";
-import { composioActionTool } from "./composio";
+import {
+  buildComposioSessionToolMap,
+  hasComposioSessionToolsConfigured,
+} from "./composio-session";
 import { e2bRunCodeTool } from "./e2b";
 
 function buildToolMap(): ToolSet {
@@ -19,10 +22,6 @@ function buildToolMap(): ToolSet {
     tools.firecrawlScrape = firecrawlScrapeTool;
   }
 
-  if (env.COMPOSIO_API_KEY) {
-    tools.composioAction = composioActionTool;
-  }
-
   if (env.E2B_API_KEY) {
     tools.e2bRunCode = e2bRunCodeTool;
   }
@@ -31,3 +30,25 @@ function buildToolMap(): ToolSet {
 }
 
 export const AI_TOOL_MAP: ToolSet = buildToolMap();
+
+export async function buildAiToolMapForUser({
+  userId,
+  userTimezone,
+}: {
+  userId: string;
+  userTimezone?: string | null;
+}): Promise<ToolSet> {
+  const tools: ToolSet = { ...AI_TOOL_MAP };
+
+  if (hasComposioSessionToolsConfigured()) {
+    Object.assign(
+      tools,
+      await buildComposioSessionToolMap({
+        userId,
+        userTimezone,
+      }),
+    );
+  }
+
+  return tools;
+}

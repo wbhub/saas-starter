@@ -5,6 +5,9 @@ const OPTIONAL_TOOL_ENV_KEYS = [
   "TAVILY_API_KEY",
   "FIRECRAWL_API_KEY",
   "COMPOSIO_API_KEY",
+  "COMPOSIO_TOOLKITS",
+  "COMPOSIO_AUTH_CONFIGS_JSON",
+  "COMPOSIO_CONNECTED_ACCOUNTS_JSON",
 ] as const;
 
 function clearOptionalToolEnv() {
@@ -41,5 +44,23 @@ describe("AI_TOOL_MAP", () => {
 
     expect(AI_TOOL_MAP).toHaveProperty("currentTime");
     expect(AI_TOOL_MAP).toHaveProperty("e2bRunCode");
+  });
+
+  it("loads Composio session tools per user instead of registering a static Composio tool", async () => {
+    vi.stubEnv("COMPOSIO_API_KEY", "composio_test_key");
+    vi.doMock("./composio-session", () => ({
+      hasComposioSessionToolsConfigured: vi.fn().mockReturnValue(true),
+      buildComposioSessionToolMap: vi.fn().mockResolvedValue({
+        COMPOSIO_SEARCH_TOOLS: { description: "Search Composio tools." },
+      }),
+    }));
+
+    const { AI_TOOL_MAP, buildAiToolMapForUser } = await import("./index");
+    const tools = await buildAiToolMapForUser({ userId: "user_123" });
+
+    expect(AI_TOOL_MAP).toHaveProperty("currentTime");
+    expect(AI_TOOL_MAP).not.toHaveProperty("composioAction");
+    expect(tools).toHaveProperty("currentTime");
+    expect(tools).toHaveProperty("COMPOSIO_SEARCH_TOOLS");
   });
 });
