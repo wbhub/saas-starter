@@ -324,7 +324,9 @@
     "untitled": "无标题对话",
     "actions": {
       "newThread": "新对话",
-      "delete": "删除对话"
+      "delete": "删除对话",
+      "showRecents": "显示最近记录",
+      "hideRecents": "隐藏最近记录"
     }
   },
   "ApiAiThreads": {

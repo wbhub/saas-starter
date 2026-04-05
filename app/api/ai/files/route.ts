@@ -1,10 +1,11 @@
 import { RATE_LIMITS } from "@/lib/constants/rate-limits";
 import { isSupportedFileMimeType, resolveAttachmentMimeType } from "@/lib/ai/attachments";
+import { isAiProviderName, type AiProviderName } from "@/lib/ai/provider-name";
 import { env } from "@/lib/env";
 import { withTeamRoute } from "@/lib/http/team-route";
 import { jsonError, jsonSuccess } from "@/lib/http/api-json";
 import { getRouteTranslator } from "@/lib/i18n/locale";
-import { aiProviderName, isAiProviderConfigured } from "@/lib/ai/provider";
+import { aiProviderName, isAiProviderConfiguredFor } from "@/lib/ai/provider";
 import { logger } from "@/lib/logger";
 
 const OPENAI_FILES_API_URL = "https://api.openai.com/v1/files";
@@ -28,17 +29,17 @@ type UploadedAttachmentResult =
       mimeType: string;
     };
 
-function getProviderApiKey() {
+function getProviderApiKey(providerName: AiProviderName) {
   const genericKey = (env.AI_PROVIDER_API_KEY || "").trim();
-  if (genericKey) {
+  if (genericKey && providerName === aiProviderName) {
     return genericKey;
   }
 
-  if (aiProviderName === "anthropic") {
+  if (providerName === "anthropic") {
     return (env.ANTHROPIC_API_KEY || "").trim();
   }
 
-  if (aiProviderName === "google") {
+  if (providerName === "google") {
     return (env.GOOGLE_GENERATIVE_AI_API_KEY || "").trim();
   }
 
@@ -240,10 +241,6 @@ export async function POST(request: Request) {
       },
     ],
     handler: async ({ user, teamContext }) => {
-      if (!isAiProviderConfigured) {
-        return jsonError(t("errors.unavailable"), 503);
-      }
-
       const contentLengthHeader = request.headers.get("content-length");
       const contentLength = contentLengthHeader ? Number(contentLengthHeader) : Number.NaN;
       if (Number.isFinite(contentLength) && contentLength > MAX_AI_MULTIPART_BODY_BYTES) {
@@ -261,10 +258,23 @@ export async function POST(request: Request) {
       }
 
       const file = parsedFormData.formData.get("file");
+      const providerField = parsedFormData.formData.get("provider");
 
       if (!(file instanceof File)) {
         return jsonError(t("errors.invalidPayload"), 400);
       }
+      if (providerField !== null && typeof providerField !== "string") {
+        return jsonError(t("errors.invalidPayload"), 400);
+      }
+
+      const providerName = (providerField?.trim() || aiProviderName) as string;
+      if (!isAiProviderName(providerName)) {
+        return jsonError(t("errors.invalidPayload"), 400);
+      }
+      if (!isAiProviderConfiguredFor(providerName)) {
+        return jsonError(t("errors.unavailable"), 503);
+      }
+
       if (file.size > MAX_AI_FILE_UPLOAD_BYTES) {
         return jsonError(t("errors.payloadTooLarge"), 413);
       }
@@ -274,11 +284,11 @@ export async function POST(request: Request) {
         fileName: file.name,
       });
 
-      if (!isSupportedFileMimeType(mimeType, aiProviderName)) {
+      if (!isSupportedFileMimeType(mimeType, providerName)) {
         return jsonError(t("errors.unsupportedAttachmentType"), 400);
       }
 
-      const apiKey = getProviderApiKey();
+      const apiKey = getProviderApiKey(providerName);
       if (!apiKey) {
         return jsonError(t("errors.unavailable"), 503);
       }
@@ -286,7 +296,7 @@ export async function POST(request: Request) {
       let result: UploadedAttachmentResult;
 
       try {
-        if (aiProviderName === "openai") {
+        if (providerName === "openai") {
           const upstreamResponse = await uploadToOpenAi(file, apiKey, request.signal);
           if (!upstreamResponse.ok) {
             const upstreamErrorText = await upstreamResponse.text().catch(() => "");
@@ -322,7 +332,7 @@ export async function POST(request: Request) {
             name: file.name,
             mimeType,
           };
-        } else if (aiProviderName === "anthropic") {
+        } else if (providerName === "anthropic") {
           const upstreamResponse = await uploadToAnthropic(file, apiKey, request.signal);
           if (!upstreamResponse.ok) {
             const upstreamErrorText = await upstreamResponse.text().catch(() => "");
@@ -426,7 +436,7 @@ export async function POST(request: Request) {
         }
       } catch (error) {
         logUploadFailure({
-          message: `Failed to upload AI attachment to ${aiProviderName}`,
+          message: `Failed to upload AI attachment to ${providerName}`,
           error: error instanceof Error ? error : new Error("upload_failed"),
           userId: user.id,
           teamId: teamContext.teamId,

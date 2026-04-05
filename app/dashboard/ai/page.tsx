@@ -5,6 +5,7 @@ import { DashboardPageHeader, DashboardPageStack } from "@/components/dashboard-
 import { DashboardPageSection } from "@/components/dashboard-page-section";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { AiChatCard } from "@/components/ai-chat-card";
+import { resolveAiAccess } from "@/lib/ai/access";
 import { listThreads } from "@/lib/ai/threads";
 import { env } from "@/lib/env";
 import { getAiToolsEnabled } from "@/lib/ai/config";
@@ -23,6 +24,8 @@ export default async function DashboardAiPage() {
   ]);
   const { aiUiGate, displayName, teamContext, user } = shellData;
   const availableModels = getAvailableModels(aiUiGate);
+  const defaultModelId =
+    resolveAiAccess({ effectivePlanKey: aiUiGate.effectivePlanKey }).model ?? undefined;
   const initialThreads =
     aiUiGate.isVisibleInUi && teamContext
       ? (
@@ -40,7 +43,13 @@ export default async function DashboardAiPage() {
 
   return (
     <>
-      <DashboardPageStack>
+      <DashboardPageStack
+        className={
+          aiUiGate.isVisibleInUi
+            ? "grid h-full min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] gap-5 sm:gap-6 space-y-0"
+            : undefined
+        }
+      >
         <DashboardPageHeader
           eyebrow={t("header.eyebrow")}
           title={t("header.title")}
@@ -54,6 +63,7 @@ export default async function DashboardAiPage() {
             toolsEnabled={aiToolsEnabled}
             userDisplayName={displayName}
             availableModels={availableModels}
+            defaultModelId={defaultModelId}
             initialThreads={initialThreads}
           />
         ) : (

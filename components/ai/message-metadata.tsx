@@ -1,5 +1,7 @@
 "use client";
 
+import { formatAiModelLabel } from "@/lib/ai/model-label";
+
 type MessageMetadataProps = {
   model?: string;
   timestamp?: string;
@@ -29,7 +31,7 @@ export function MessageMetadata({
   const chips: Array<{ label: string; value: string }> = [];
 
   if (model) {
-    chips.push({ label: "Model", value: model });
+    chips.push({ label: "Model", value: formatAiModelLabel(model) });
   }
   if (promptTokens !== undefined && completionTokens !== undefined) {
     const total = promptTokens + completionTokens;

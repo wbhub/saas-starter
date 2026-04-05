@@ -1,9 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, TextStreamChatTransport, type UIMessage } from "ai";
-import { PanelLeft } from "lucide-react";
+import { ChevronLeft, ChevronRight, PanelLeft, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { getCsrfHeaders } from "@/lib/http/csrf";
@@ -18,6 +26,7 @@ import {
   SUPPORTED_IMAGE_MIME_TYPES,
   toProviderFilePlaceholderUrl,
 } from "@/lib/ai/attachments";
+import { getAiProviderNameForModel } from "@/lib/ai/provider-name";
 import {
   CHAT_IMAGE_COMPRESS_LONG_EDGE_PX,
   ChatImageCompressionError,
@@ -38,6 +47,79 @@ const MAX_ATTACHMENT_DATA_CHARS = 180_000;
 const MAX_TOTAL_ATTACHMENT_DATA_CHARS = 220_000;
 const MAX_MESSAGES_PER_REQUEST = 30;
 const MAX_MESSAGE_CONTENT_CHARS = 8_000;
+const DESKTOP_RECENTS_AUTO_COLLAPSE_WIDTH_PX = 1280;
+const DESKTOP_RECENTS_STORAGE_KEY = "aiChat.desktopRecentsCollapsed";
+const DESKTOP_RECENTS_PREFERENCE_EVENT = "ai-chat.desktop-recents-preference-changed";
+const CHAT_COLUMN_MAX_WIDTH_CLASS = "max-w-4xl";
+const DESKTOP_CHAT_MAX_HEIGHT_PX = 58 * 16;
+const DESKTOP_CHAT_BOTTOM_GAP_PX = 24;
+let desktopThreadsManualFallback: boolean | null = null;
+
+type DesktopThreadsPreferenceSnapshot = "auto:0" | "auto:1" | "manual:0" | "manual:1";
+
+function getDesktopThreadsPreferenceSnapshot(): DesktopThreadsPreferenceSnapshot {
+  if (typeof window === "undefined") {
+    return "auto:0";
+  }
+
+  try {
+    const storedPreference = window.localStorage.getItem(DESKTOP_RECENTS_STORAGE_KEY);
+    if (storedPreference === "true" || storedPreference === "false") {
+      return storedPreference === "true" ? "manual:1" : "manual:0";
+    }
+  } catch {
+    if (desktopThreadsManualFallback !== null) {
+      return desktopThreadsManualFallback ? "manual:1" : "manual:0";
+    }
+  }
+
+  return window.innerWidth < DESKTOP_RECENTS_AUTO_COLLAPSE_WIDTH_PX ? "auto:1" : "auto:0";
+}
+
+function getServerDesktopThreadsPreferenceSnapshot(): DesktopThreadsPreferenceSnapshot {
+  return "auto:0";
+}
+
+function subscribeDesktopThreadsPreference(onStoreChange: () => void) {
+  if (typeof window === "undefined") {
+    return () => {};
+  }
+
+  const handleResize = () => {
+    if (getDesktopThreadsPreferenceSnapshot().startsWith("auto:")) {
+      onStoreChange();
+    }
+  };
+
+  const handleStorage = (event: StorageEvent) => {
+    if (event.key !== null && event.key !== DESKTOP_RECENTS_STORAGE_KEY) {
+      return;
+    }
+    desktopThreadsManualFallback = null;
+    onStoreChange();
+  };
+
+  const handlePreferenceChange = () => {
+    onStoreChange();
+  };
+
+  window.addEventListener("resize", handleResize);
+  window.addEventListener("storage", handleStorage);
+  window.addEventListener(DESKTOP_RECENTS_PREFERENCE_EVENT, handlePreferenceChange);
+
+  return () => {
+    window.removeEventListener("resize", handleResize);
+    window.removeEventListener("storage", handleStorage);
+    window.removeEventListener(DESKTOP_RECENTS_PREFERENCE_EVENT, handlePreferenceChange);
+  };
+}
+
+function parseDesktopThreadsPreferenceSnapshot(snapshot: DesktopThreadsPreferenceSnapshot) {
+  return {
+    collapsed: snapshot.endsWith(":1"),
+    hasManualPreference: snapshot.startsWith("manual:"),
+  };
+}
 
 function getMessageText(message: UIMessage) {
   return message.parts
@@ -193,6 +275,7 @@ async function providerFileToUiPart(file: File, providerName: AttachmentProvider
     body: (() => {
       const formData = new FormData();
       formData.set("file", file);
+      formData.set("provider", providerName);
       return formData;
     })(),
   });
@@ -282,6 +365,7 @@ export function AiChatCard({
   toolsEnabled,
   userDisplayName,
   availableModels,
+  defaultModelId,
   initialThreads,
 }: {
   providerName: AttachmentProviderName;
@@ -289,94 +373,38 @@ export function AiChatCard({
   /** Passed from the dashboard for future personalization (e.g. greeting). */
   userDisplayName: string;
   availableModels?: string[];
+  defaultModelId?: string;
   initialThreads?: ThreadSidebarThread[];
 }) {
   void userDisplayName;
   const t = useTranslations("AiChatCard");
   const tThreads = useTranslations("AiThreads");
+  const desktopThreadsPreference = parseDesktopThreadsPreferenceSnapshot(
+    useSyncExternalStore(
+      subscribeDesktopThreadsPreference,
+      getDesktopThreadsPreferenceSnapshot,
+      getServerDesktopThreadsPreferenceSnapshot,
+    ),
+  );
   const [chatSessionId, setChatSessionId] = useState(() => crypto.randomUUID());
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [initialMessages, setInitialMessages] = useState<UIMessage[]>([]);
   const [threadRefreshSignal, setThreadRefreshSignal] = useState(0);
   const [uploadErrorMessage, setUploadErrorMessage] = useState<string | null>(null);
   const [mobileThreadsOpen, setMobileThreadsOpen] = useState(false);
+  const [desktopMeasuredHeight, setDesktopMeasuredHeight] = useState<number | null>(null);
   const threadSwitchAbortRef = useRef<AbortController | null>(null);
+  const chatCardRef = useRef<HTMLDivElement | null>(null);
+  const desktopThreadsCollapsed = desktopThreadsPreference.collapsed;
 
   const [selectedModelId, setSelectedModelId] = useState<string | undefined>();
+  const activeProviderName = getAiProviderNameForModel(
+    selectedModelId || defaultModelId,
+    providerName,
+  );
 
-  const transport = useMemo(() => {
-    const prepareSendMessagesRequest = ({
-      body,
-      messages,
-      ...request
-    }: {
-      body: Record<string, unknown> | undefined;
-      messages: UIMessage[];
-      [key: string]: unknown;
-    }) => {
-      const requestedModelId =
-        typeof body?.modelId === "string" && body.modelId.trim().length > 0
-          ? body.modelId.trim()
-          : selectedModelId;
-      return {
-        ...request,
-        body: {
-          ...body,
-          messages: toApiChatMessages(messages, providerName),
-          sessionId: chatSessionId,
-          ...(activeThreadId ? { threadId: activeThreadId } : {}),
-          ...(requestedModelId ? { modelId: requestedModelId } : {}),
-        },
-      };
-    };
-
-    if (toolsEnabled) {
-      return new DefaultChatTransport({
-        api: "/api/ai/chat",
-        headers: getCsrfHeaders,
-        prepareSendMessagesRequest,
-      });
-    }
-    return new TextStreamChatTransport({
-      api: "/api/ai/chat",
-      headers: getCsrfHeaders,
-      prepareSendMessagesRequest,
-    });
-  }, [toolsEnabled, activeThreadId, providerName, chatSessionId, selectedModelId]);
-
-  const { messages, sendMessage, status, stop, error, clearError, setMessages } = useChat({
-    id: chatSessionId,
-    transport,
-  });
-
-  // Rehydrate messages when initialMessages changes (thread load or clear)
-  useEffect(() => {
-    if (initialMessages.length > 0 || activeThreadId === null) {
-      setMessages(initialMessages);
-    }
-  }, [initialMessages, activeThreadId, setMessages]);
-
-  // Abort in-flight thread load on unmount
-  useEffect(() => {
-    return () => {
-      threadSwitchAbortRef.current?.abort();
-    };
-  }, []);
-
-  const errorMessagesByCode = {
-    budget_exceeded: t("errors.budgetExceeded"),
-    invalid_model: t("errors.requestFailed"),
-    modality_not_allowed: t("errors.modalityNotAllowed"),
-    plan_required: t("errors.planRequired"),
-    upstream_rate_limited: t("errors.upstreamRateLimited"),
-    upstream_bad_request: t("errors.upstreamBadRequest"),
-    upstream_error: t("errors.upstreamError"),
-  };
-
-  const isSending = status === "submitted" || status === "streaming";
-
-  const validateFiles = useCallback(
-    (files: File[]) => {
+  const validateFilesForProvider = useCallback(
+    (files: File[], activeProviderName: AttachmentProviderName) => {
       if (files.length > MAX_ATTACHMENTS_PER_MESSAGE) {
         return t("errors.maxAttachments", { max: MAX_ATTACHMENTS_PER_MESSAGE });
       }
@@ -385,13 +413,13 @@ export function AiChatCard({
         const mimeType = resolveMimeType(file);
         if (
           !SUPPORTED_IMAGE_MIME_TYPES.has(mimeType) &&
-          !isSupportedFileMimeType(mimeType, providerName)
+          !isSupportedFileMimeType(mimeType, activeProviderName)
         ) {
           return t("errors.unsupportedType", { mimeType: mimeType || file.name || "unknown" });
         }
         if (
-          isSupportedFileMimeType(mimeType, providerName) &&
-          providerSupportsUploadedFileReferences(providerName)
+          isSupportedFileMimeType(mimeType, activeProviderName) &&
+          providerSupportsUploadedFileReferences(activeProviderName)
         ) {
           continue;
         }
@@ -412,22 +440,175 @@ export function AiChatCard({
       }
       return null;
     },
-    [t, providerName],
+    [t],
+  );
+
+  const transport = useMemo(() => {
+    const prepareSendMessagesRequest = ({
+      body,
+      messages,
+      ...request
+    }: {
+      body: Record<string, unknown> | undefined;
+      messages: UIMessage[];
+      [key: string]: unknown;
+    }) => {
+      const explicitRequestedModelId =
+        typeof body?.modelId === "string" && body.modelId.trim().length > 0
+          ? body.modelId.trim()
+          : selectedModelId;
+      const requestProviderName = getAiProviderNameForModel(
+        explicitRequestedModelId || defaultModelId,
+        providerName,
+      );
+      return {
+        ...request,
+        body: {
+          ...body,
+          messages: toApiChatMessages(messages, requestProviderName),
+          sessionId: chatSessionId,
+          ...(activeThreadId ? { threadId: activeThreadId } : {}),
+          ...(explicitRequestedModelId ? { modelId: explicitRequestedModelId } : {}),
+        },
+      };
+    };
+
+    if (toolsEnabled) {
+      return new DefaultChatTransport({
+        api: "/api/ai/chat",
+        headers: getCsrfHeaders,
+        prepareSendMessagesRequest,
+      });
+    }
+    return new TextStreamChatTransport({
+      api: "/api/ai/chat",
+      headers: getCsrfHeaders,
+      prepareSendMessagesRequest,
+    });
+  }, [toolsEnabled, activeThreadId, providerName, chatSessionId, selectedModelId, defaultModelId]);
+
+  const { messages, sendMessage, status, stop, error, clearError, setMessages } = useChat({
+    id: chatSessionId,
+    transport,
+  });
+
+  // Rehydrate messages when initialMessages changes (thread load or clear)
+  useEffect(() => {
+    if (initialMessages.length > 0 || activeThreadId === null) {
+      setMessages(initialMessages);
+    }
+  }, [initialMessages, activeThreadId, setMessages]);
+
+  // Abort in-flight thread load on unmount
+  useEffect(() => {
+    return () => {
+      threadSwitchAbortRef.current?.abort();
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const mediaQuery =
+      typeof window.matchMedia === "function"
+        ? window.matchMedia("(min-width: 1024px)")
+        : ({
+            matches: false,
+            addEventListener: () => {},
+            removeEventListener: () => {},
+          } as Pick<MediaQueryList, "matches" | "addEventListener" | "removeEventListener">);
+    let animationFrameId = 0;
+
+    const measure = () => {
+      cancelAnimationFrame(animationFrameId);
+      animationFrameId = window.requestAnimationFrame(() => {
+        const card = chatCardRef.current;
+        if (!card || !mediaQuery.matches) {
+          setDesktopMeasuredHeight(null);
+          return;
+        }
+
+        const top = card.getBoundingClientRect().top;
+        const availableHeight = Math.floor(window.innerHeight - top - DESKTOP_CHAT_BOTTOM_GAP_PX);
+        const nextHeight = Math.max(0, Math.min(DESKTOP_CHAT_MAX_HEIGHT_PX, availableHeight));
+
+        setDesktopMeasuredHeight((currentHeight) =>
+          currentHeight === nextHeight ? currentHeight : nextHeight,
+        );
+      });
+    };
+
+    measure();
+    window.addEventListener("resize", measure);
+    mediaQuery.addEventListener("change", measure);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      window.removeEventListener("resize", measure);
+      mediaQuery.removeEventListener("change", measure);
+    };
+  }, [desktopThreadsCollapsed]);
+
+  const setDesktopThreadsCollapsedPersisted = useCallback((collapsed: boolean) => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(DESKTOP_RECENTS_STORAGE_KEY, collapsed ? "true" : "false");
+      desktopThreadsManualFallback = null;
+    } catch {
+      // Ignore localStorage issues and still honor the in-memory toggle.
+      desktopThreadsManualFallback = collapsed;
+    }
+
+    window.dispatchEvent(new Event(DESKTOP_RECENTS_PREFERENCE_EVENT));
+  }, []);
+
+  const errorMessagesByCode = {
+    budget_exceeded: t("errors.budgetExceeded"),
+    invalid_model: t("errors.requestFailed"),
+    modality_not_allowed: t("errors.modalityNotAllowed"),
+    plan_required: t("errors.planRequired"),
+    upstream_rate_limited: t("errors.upstreamRateLimited"),
+    upstream_bad_request: t("errors.upstreamBadRequest"),
+    upstream_error: t("errors.upstreamError"),
+  };
+
+  const isSending = status === "submitted" || status === "streaming";
+
+  const validateFiles = useCallback(
+    (files: File[]) => {
+      return validateFilesForProvider(files, activeProviderName);
+    },
+    [activeProviderName, validateFilesForProvider],
   );
 
   async function handleSubmit(text: string, files: File[], modelId?: string) {
-    setSelectedModelId(modelId);
+    const explicitModelId = modelId?.trim() || undefined;
+    setSelectedModelId(explicitModelId);
     clearError();
     setUploadErrorMessage(null);
+    const targetProviderName = getAiProviderNameForModel(
+      explicitModelId || defaultModelId,
+      providerName,
+    );
+    const validationError = validateFilesForProvider(files, targetProviderName);
+    if (validationError) {
+      setUploadErrorMessage(validationError);
+      return;
+    }
     try {
       const fileParts = await Promise.all(
         files.map((file) => {
           const mimeType = resolveMimeType(file);
           if (
-            isSupportedFileMimeType(mimeType, providerName) &&
-            providerSupportsUploadedFileReferences(providerName)
+            isSupportedFileMimeType(mimeType, targetProviderName) &&
+            providerSupportsUploadedFileReferences(targetProviderName)
           ) {
-            return providerFileToUiPart(file, providerName);
+            return providerFileToUiPart(file, targetProviderName);
           }
           return fileToUiPart(file);
         }),
@@ -447,7 +628,7 @@ export function AiChatCard({
           text,
           ...(fileParts.length > 0 ? { files: fileParts } : {}),
         },
-        modelId ? { body: { modelId } } : undefined,
+        explicitModelId ? { body: { modelId: explicitModelId } } : undefined,
       );
 
       if (!activeThreadId) {
@@ -513,17 +694,40 @@ export function AiChatCard({
     setMessages([]);
   }
 
+  const showRecentsLabel = tThreads("actions.showRecents");
+  const hideRecentsLabel = tThreads("actions.hideRecents");
+  const newThreadLabel = tThreads("actions.newThread");
+
   return (
-    <div className="flex min-h-[32rem] flex-col overflow-hidden rounded-2xl bg-card ring-1 ring-border lg:h-[min(48rem,calc(100dvh-18rem))] lg:min-h-0 lg:flex-row">
-      <div className="hidden lg:flex lg:min-h-0 lg:w-[260px] lg:shrink-0">
-        <ThreadSidebar
-          activeThreadId={activeThreadId}
-          onSelectThread={handleSelectThread}
-          onNewThread={handleNewThread}
-          refreshSignal={threadRefreshSignal}
-          initialThreads={initialThreads}
-        />
-      </div>
+    <div
+      ref={chatCardRef}
+      className="flex min-h-[32rem] flex-col overflow-hidden rounded-2xl bg-card ring-1 ring-border lg:min-h-0 lg:flex-row"
+      style={desktopMeasuredHeight !== null ? { height: `${desktopMeasuredHeight}px` } : undefined}
+    >
+      {!desktopThreadsCollapsed ? (
+        <div className="hidden lg:flex lg:min-h-0 lg:w-[260px] lg:shrink-0 lg:self-stretch lg:overflow-hidden">
+          <ThreadSidebar
+            activeThreadId={activeThreadId}
+            onSelectThread={handleSelectThread}
+            onNewThread={handleNewThread}
+            refreshSignal={threadRefreshSignal}
+            initialThreads={initialThreads}
+            headerLeading={
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => setDesktopThreadsCollapsedPersisted(true)}
+                className="h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+                title={hideRecentsLabel}
+                aria-label={hideRecentsLabel}
+              >
+                <ChevronLeft className="size-4" />
+              </Button>
+            }
+          />
+        </div>
+      ) : null}
 
       <Sheet open={mobileThreadsOpen} onOpenChange={setMobileThreadsOpen}>
         <SheetContent side="left" className="p-0 lg:hidden">
@@ -548,8 +752,40 @@ export function AiChatCard({
         </SheetContent>
       </Sheet>
 
-      <div className="relative flex min-w-0 flex-1 flex-col before:hidden lg:before:absolute lg:before:inset-y-4 lg:before:left-0 lg:before:block lg:before:w-px lg:before:bg-border/40">
+      <div
+        className={cn(
+          "relative flex min-w-0 flex-1 flex-col overflow-hidden before:hidden",
+          !desktopThreadsCollapsed &&
+            "lg:before:absolute lg:before:inset-y-4 lg:before:left-0 lg:before:block lg:before:w-px lg:before:bg-border/40",
+        )}
+      >
         <div className="flex min-h-0 flex-1 flex-col gap-0 px-3 py-3 sm:px-5 sm:py-4 lg:px-8">
+          {desktopThreadsCollapsed ? (
+            <div className="mb-3 hidden lg:flex items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 shrink-0 rounded-full text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                onClick={() => setDesktopThreadsCollapsedPersisted(false)}
+                title={showRecentsLabel}
+                aria-label={showRecentsLabel}
+              >
+                <ChevronRight className="size-4" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 shrink-0 rounded-full text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                onClick={handleNewThread}
+                title={newThreadLabel}
+                aria-label={newThreadLabel}
+              >
+                <Plus className="size-4" />
+              </Button>
+            </div>
+          ) : null}
           <div className="mb-3 lg:hidden">
             <Button
               type="button"
@@ -562,7 +798,12 @@ export function AiChatCard({
               {tThreads("recents")}
             </Button>
           </div>
-          <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col">
+          <div
+            className={cn(
+              "mx-auto flex min-h-0 w-full flex-1 flex-col",
+              CHAT_COLUMN_MAX_WIDTH_CLASS,
+            )}
+          >
             <Conversation>
               {messages.length === 0 ? (
                 <div
@@ -607,17 +848,19 @@ export function AiChatCard({
         </div>
 
         <div
-          className="border-t border-border/60 px-3 py-3 sm:px-5 sm:py-4 lg:px-8"
+          className="px-3 py-3 sm:px-5 sm:py-4 lg:px-8"
           style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
         >
-          <div className="mx-auto w-full max-w-6xl">
+          <div className={cn("mx-auto w-full", CHAT_COLUMN_MAX_WIDTH_CLASS)}>
             <PromptInput
               onSubmit={(text, files, modelId) => void handleSubmit(text, files, modelId)}
               isSending={isSending}
               onStop={() => void stop()}
-              providerName={providerName}
+              providerName={activeProviderName}
               validateFiles={validateFiles}
               availableModels={availableModels}
+              selectedModelId={selectedModelId}
+              onModelChange={setSelectedModelId}
             />
           </div>
         </div>

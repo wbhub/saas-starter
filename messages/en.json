@@ -324,7 +324,9 @@
     "untitled": "Untitled thread",
     "actions": {
       "newThread": "New thread",
-      "delete": "Delete thread"
+      "delete": "Delete thread",
+      "showRecents": "Show recents",
+      "hideRecents": "Hide recents"
     }
   },
   "ApiAiThreads": {

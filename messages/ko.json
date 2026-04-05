@@ -324,7 +324,9 @@
     "untitled": "제목 없음",
     "actions": {
       "newThread": "새 스레드",
-      "delete": "스레드 삭제"
+      "delete": "스레드 삭제",
+      "showRecents": "최근 항목 표시",
+      "hideRecents": "최근 항목 숨기기"
     }
   },
   "ApiAiThreads": {

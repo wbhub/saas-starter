@@ -5,7 +5,6 @@ import { logAuditEvent } from "@/lib/audit";
 import { resolveActualTokenUsage } from "@/lib/ai/usage";
 import { z } from "@/lib/http/request-validation";
 import { logger } from "@/lib/logger";
-import { aiProviderName } from "@/lib/ai/provider";
 import { AI_SCHEMA_MAP } from "@/lib/ai/schemas";
 import {
   resolveAiRequestContext,
@@ -43,6 +42,7 @@ export async function POST(request: Request) {
     teamContext,
     body,
     model,
+    providerName,
     languageModel,
     effectivePlanKey,
     aiAccessMode,
@@ -192,7 +192,7 @@ export async function POST(request: Request) {
       userId: user.id,
       model,
       schemaName: body.schemaName,
-      aiProvider: aiProviderName,
+      aiProvider: providerName,
       providerStatus: (error as { status?: number } | null)?.status,
       providerCode: (error as { code?: string } | null)?.code,
       providerType: (error as { type?: string } | null)?.type,

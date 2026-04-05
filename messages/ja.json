@@ -324,7 +324,9 @@
     "untitled": "無題のスレッド",
     "actions": {
       "newThread": "新しいスレッド",
-      "delete": "スレッドを削除"
+      "delete": "スレッドを削除",
+      "showRecents": "最近の履歴を表示",
+      "hideRecents": "最近の履歴を非表示"
     }
   },
   "ApiAiThreads": {

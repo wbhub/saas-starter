@@ -101,7 +101,7 @@ describe("MessageBubble", () => {
     );
   });
 
-  it("renders assistant streaming text without reparsing markdown on every chunk", async () => {
+  it("renders assistant markdown while streaming", async () => {
     isToolUIPartMock.mockReturnValue(false);
 
     const { MessageBubble } = await import("./message-bubble");
@@ -117,9 +117,10 @@ describe("MessageBubble", () => {
       />,
     );
 
-    expect(screen.getByText("# Heading", { exact: false })).toBeInTheDocument();
-    expect(screen.queryByTestId("markdown-content")).not.toBeInTheDocument();
-    expect(markdownContentMock).not.toHaveBeenCalled();
+    expect(screen.getByTestId("markdown-content")).toBeInTheDocument();
+    expect(markdownContentMock).toHaveBeenCalledWith(
+      expect.objectContaining({ content: "# Heading\n\n- item" }),
+    );
   });
 
   it("renders assistant markdown once streaming has finished", async () => {

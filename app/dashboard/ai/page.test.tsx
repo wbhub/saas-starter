@@ -104,6 +104,9 @@ describe("Dashboard AI page UI gating", () => {
 
     expect(html).toContain("AI Chat &amp; Agents");
     expect(html).toContain("AiChatCardMock:1");
+    expect(html).toContain("grid h-full min-h-0 flex-1");
+    expect(html).toContain("grid-rows-[auto_minmax(0,1fr)]");
+    expect(html).toContain("space-y-0");
     expect(html).not.toContain("AI chat is unavailable");
     expect(listThreads).toHaveBeenCalledWith({
       teamId: "team-123",

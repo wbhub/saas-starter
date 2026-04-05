@@ -22,7 +22,6 @@ import { resolveActualTokenUsage } from "@/lib/ai/usage";
 import { z } from "@/lib/http/request-validation";
 import { logger } from "@/lib/logger";
 import { createThread, saveThreadMessages, getThread } from "@/lib/ai/threads";
-import { aiProviderName, supportsProviderFileIds } from "@/lib/ai/provider";
 import {
   SUPPORTED_IMAGE_MIME_TYPES,
   isSupportedFileMimeType,
@@ -159,7 +158,15 @@ function getAttachmentCounts(messages: ChatMessage[]): AttachmentCounts {
   return counts;
 }
 
-function validateAttachmentTypes(messages: ChatMessage[]): AttachmentValidationFailure | null {
+function validateAttachmentTypes({
+  messages,
+  providerName,
+  supportsProviderFileIds,
+}: {
+  messages: ChatMessage[];
+  providerName: "openai" | "anthropic" | "google";
+  supportsProviderFileIds: boolean;
+}): AttachmentValidationFailure | null {
   for (const message of messages) {
     for (const attachment of message.attachments ?? []) {
       if (attachment.fileId && !supportsProviderFileIds) {
@@ -179,7 +186,7 @@ function validateAttachmentTypes(messages: ChatMessage[]): AttachmentValidationF
       }
       if (
         attachment.type === "file" &&
-        !isSupportedFileMimeType(attachment.mimeType, aiProviderName)
+        !isSupportedFileMimeType(attachment.mimeType, providerName)
       ) {
         return {
           reason: "unsupported_file_type",
@@ -192,7 +199,7 @@ function validateAttachmentTypes(messages: ChatMessage[]): AttachmentValidationF
   return null;
 }
 
-function toAttachmentUrl(attachment: ChatAttachment) {
+function toAttachmentUrl(attachment: ChatAttachment, supportsProviderFileIds: boolean) {
   if (attachment.url) {
     return attachment.url;
   }
@@ -212,7 +219,7 @@ function toAttachmentUrl(attachment: ChatAttachment) {
  * the SDK's download pass parses strings with `new URL()` and tries to fetch `data:` URLs,
  * which fails validateDownloadUrl (http/https only). Persistence still uses {@link toAttachmentUrl}.
  */
-function toModelFileData(attachment: ChatAttachment): string {
+function toModelFileData(attachment: ChatAttachment, supportsProviderFileIds: boolean): string {
   if (attachment.fileId && supportsProviderFileIds) {
     return attachment.fileId;
   }
@@ -249,7 +256,7 @@ function getUserMessageTitle(message: ChatMessage | undefined) {
   return undefined;
 }
 
-function toPersistedUserMessageParts(message: ChatMessage) {
+function toPersistedUserMessageParts(message: ChatMessage, supportsProviderFileIds: boolean) {
   const parts: Array<Record<string, unknown>> = [];
 
   if (message.content.length > 0) {
@@ -259,24 +266,18 @@ function toPersistedUserMessageParts(message: ChatMessage) {
   for (const attachment of message.attachments ?? []) {
     const providerMetadata =
       attachment.fileId && supportsProviderFileIds
-        ? aiProviderName === "anthropic"
-          ? {
-              anthropic: {
-                fileId: attachment.fileId,
-              },
-            }
-          : {
-              openai: {
-                fileId: attachment.fileId,
-              },
-            }
+        ? {
+            openai: {
+              fileId: attachment.fileId,
+            },
+          }
         : undefined;
 
     parts.push({
       type: "file",
       mediaType: attachment.mimeType,
       ...(attachment.name ? { filename: attachment.name } : {}),
-      url: toAttachmentUrl(attachment),
+      url: toAttachmentUrl(attachment, supportsProviderFileIds),
       ...(providerMetadata ? { providerMetadata } : {}),
     });
   }
@@ -284,7 +285,7 @@ function toPersistedUserMessageParts(message: ChatMessage) {
   return parts;
 }
 
-function toUserMessageContent(message: ChatMessage): UserContent {
+function toUserMessageContent(message: ChatMessage, supportsProviderFileIds: boolean): UserContent {
   const attachments = message.attachments ?? [];
   if (!attachments.length) {
     return message.content;
@@ -302,7 +303,7 @@ function toUserMessageContent(message: ChatMessage): UserContent {
   for (const attachment of attachments) {
     content.push({
       type: "file",
-      data: toModelFileData(attachment),
+      data: toModelFileData(attachment, supportsProviderFileIds),
       mediaType: attachment.mimeType,
       filename: attachment.name ?? "attachment",
     });
@@ -311,7 +312,10 @@ function toUserMessageContent(message: ChatMessage): UserContent {
   return content as unknown as UserContent;
 }
 
-function toModelMessages(messages: ChatMessage[]): ModelMessage[] {
+function toModelMessages(
+  messages: ChatMessage[],
+  supportsProviderFileIds: boolean,
+): ModelMessage[] {
   return messages.map((message): UserModelMessage | AssistantModelMessage => {
     if (message.role === "assistant") {
       return { role: "assistant", content: message.content };
@@ -319,7 +323,7 @@ function toModelMessages(messages: ChatMessage[]): ModelMessage[] {
 
     return {
       role: "user",
-      content: toUserMessageContent(message),
+      content: toUserMessageContent(message, supportsProviderFileIds),
     };
   });
 }
@@ -463,6 +467,23 @@ function extractAssistantText(parts: Array<{ type: string; text?: string }>) {
     .trim();
 }
 
+async function resolveExistingThreadId({
+  threadId,
+  teamId,
+  userId,
+}: {
+  threadId: string | null | undefined;
+  teamId: string;
+  userId: string;
+}) {
+  if (!threadId) {
+    return null;
+  }
+
+  const thread = await getThread({ threadId, teamId, userId });
+  return thread?.id ?? null;
+}
+
 // ---------------------------------------------------------------------------
 // Route handler
 // ---------------------------------------------------------------------------
@@ -489,6 +510,8 @@ export async function POST(request: Request) {
     teamContext,
     body,
     model,
+    providerName,
+    supportsProviderFileIds,
     languageModel,
     effectivePlanKey,
     aiAccessMode,
@@ -509,7 +532,11 @@ export async function POST(request: Request) {
       requestId,
     );
   }
-  const unsupportedAttachment = validateAttachmentTypes(body.messages);
+  const unsupportedAttachment = validateAttachmentTypes({
+    messages: body.messages,
+    providerName,
+    supportsProviderFileIds,
+  });
   if (unsupportedAttachment) {
     if (unsupportedAttachment.reason === "unsupported_attachment_source") {
       return withRequestId(jsonError(t("errors.invalidPayload"), 400), requestId);
@@ -530,14 +557,21 @@ export async function POST(request: Request) {
   // ── Thread persistence setup ──
   let resolvedThreadId = body.threadId ?? null;
   if (resolvedThreadId) {
-    const thread = await getThread({
+    const threadId = await resolveExistingThreadId({
       threadId: resolvedThreadId,
       teamId: teamContext.teamId,
       userId: user.id,
     });
-    if (!thread) {
+    if (!threadId) {
       return withRequestId(jsonError(t("errors.threadNotFound"), 404), requestId);
     }
+    resolvedThreadId = threadId;
+  } else if (body.sessionId) {
+    resolvedThreadId = await resolveExistingThreadId({
+      threadId: body.sessionId,
+      teamId: teamContext.teamId,
+      userId: user.id,
+    });
   }
 
   const requestStartTime = Date.now();
@@ -556,6 +590,49 @@ export async function POST(request: Request) {
       },
       { once: true },
     );
+
+    async function ensureResolvedThreadId({ title }: { title?: string }): Promise<string | null> {
+      if (resolvedThreadId) {
+        return resolvedThreadId;
+      }
+
+      if (body.sessionId) {
+        const existingThreadId = await resolveExistingThreadId({
+          threadId: body.sessionId,
+          teamId: teamContext.teamId,
+          userId: user.id,
+        });
+        if (existingThreadId) {
+          resolvedThreadId = existingThreadId;
+          return resolvedThreadId;
+        }
+      }
+
+      const thread = await createThread({
+        id: body.sessionId,
+        teamId: teamContext.teamId,
+        userId: user.id,
+        title,
+      });
+      if (thread) {
+        resolvedThreadId = thread.id;
+        return resolvedThreadId;
+      }
+
+      if (body.sessionId) {
+        const existingThreadId = await resolveExistingThreadId({
+          threadId: body.sessionId,
+          teamId: teamContext.teamId,
+          userId: user.id,
+        });
+        if (existingThreadId) {
+          resolvedThreadId = existingThreadId;
+          return resolvedThreadId;
+        }
+      }
+
+      return null;
+    }
 
     if (toolsEnabled) {
       // ── Agent path: tools + multi-step + UI message stream ──
@@ -665,7 +742,7 @@ export async function POST(request: Request) {
           const aiResult = streamText({
             model: languageModel,
             system: AGENT_SYSTEM_PROMPT,
-            messages: toModelMessages(body.messages),
+            messages: toModelMessages(body.messages, supportsProviderFileIds),
             tools: aiToolMap,
             stopWhen: stepCountIs(maxSteps),
             abortSignal: upstreamAbortController.signal,
@@ -841,23 +918,20 @@ export async function POST(request: Request) {
           }
 
           try {
-            if (!resolvedThreadId) {
-              const thread = await createThread({
-                id: body.sessionId,
-                teamId: resolvedTeamId,
-                userId: resolvedUserId,
-                title: getUserMessageTitle(lastUserMessage),
-              });
-              if (thread) resolvedThreadId = thread.id;
-            }
+            const threadId = await ensureResolvedThreadId({
+              title: getUserMessageTitle(lastUserMessage),
+            });
 
-            if (resolvedThreadId) {
+            if (threadId) {
               const messagesToSave = [
                 ...(lastUserMessage?.role === "user"
                   ? [
                       {
                         role: "user" as const,
-                        parts: toPersistedUserMessageParts(lastUserMessage),
+                        parts: toPersistedUserMessageParts(
+                          lastUserMessage,
+                          supportsProviderFileIds,
+                        ),
                         attachments: lastUserMessage.attachments,
                       },
                     ]
@@ -875,7 +949,7 @@ export async function POST(request: Request) {
                 },
               ];
               await saveThreadMessages({
-                threadId: resolvedThreadId,
+                threadId,
                 teamId: resolvedTeamId,
                 userId: resolvedUserId,
                 messages: messagesToSave,
@@ -904,7 +978,7 @@ export async function POST(request: Request) {
     // ── Single-turn path: plain text stream (unchanged behavior) ──
     const aiResult = streamText({
       model: languageModel,
-      messages: toModelMessages(body.messages),
+      messages: toModelMessages(body.messages, supportsProviderFileIds),
       abortSignal: upstreamAbortController.signal,
       maxOutputTokens: AI_COMPLETION_MAX_TOKENS,
     });
@@ -1034,24 +1108,21 @@ export async function POST(request: Request) {
           // Persist messages to thread (single-turn path)
           if (completionText.length > 0 && (resolvedThreadId || body.threadId === undefined)) {
             try {
-              if (!resolvedThreadId) {
-                const lastUserMessage = body.messages.findLast((m) => m.role === "user");
-                const thread = await createThread({
-                  id: body.sessionId,
-                  teamId: teamContext.teamId,
-                  userId: user.id,
-                  title: getUserMessageTitle(lastUserMessage),
-                });
-                if (thread) resolvedThreadId = thread.id;
-              }
-              if (resolvedThreadId) {
+              const lastUserMessage = body.messages.findLast((m) => m.role === "user");
+              const threadId = await ensureResolvedThreadId({
+                title: getUserMessageTitle(lastUserMessage),
+              });
+              if (threadId) {
                 const lastUserMessage = body.messages.findLast((m) => m.role === "user");
                 const messagesToSave = [
                   ...(lastUserMessage?.role === "user"
                     ? [
                         {
                           role: "user" as const,
-                          parts: toPersistedUserMessageParts(lastUserMessage),
+                          parts: toPersistedUserMessageParts(
+                            lastUserMessage,
+                            supportsProviderFileIds,
+                          ),
                           attachments: lastUserMessage.attachments,
                         },
                       ]
@@ -1068,7 +1139,7 @@ export async function POST(request: Request) {
                   },
                 ];
                 await saveThreadMessages({
-                  threadId: resolvedThreadId,
+                  threadId,
                   teamId: teamContext.teamId,
                   userId: user.id,
                   messages: messagesToSave,
@@ -1119,7 +1190,7 @@ export async function POST(request: Request) {
       teamId: teamContext.teamId,
       userId: user.id,
       model,
-      aiProvider: aiProviderName,
+      aiProvider: providerName,
       providerStatus: (error as { status?: number } | null)?.status,
       providerCode: (error as { code?: string } | null)?.code,
       providerType: (error as { type?: string } | null)?.type,

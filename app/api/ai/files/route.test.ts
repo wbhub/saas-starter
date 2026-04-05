@@ -9,6 +9,7 @@ vi.mock("@/lib/ai/provider", () => ({
     return providerMockState.aiProviderName;
   },
   isAiProviderConfigured: true,
+  isAiProviderConfiguredFor: vi.fn().mockReturnValue(true),
 }));
 
 describe("POST /api/ai/files", () => {
@@ -141,6 +142,48 @@ describe("POST /api/ai/files", () => {
           "anthropic-beta": "files-api-2025-04-14",
         },
         body: expect.any(FormData),
+      }),
+    );
+  });
+
+  it("uses the requested provider field instead of the default provider", async () => {
+    providerMockState.aiProviderName = "openai";
+    vi.stubEnv("ANTHROPIC_API_KEY", "test-anthropic-key");
+
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ id: "file_ant_456" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { POST } = await import("./route");
+    const formData = new FormData();
+    formData.set("provider", "anthropic");
+    formData.set("file", new File(["notes"], "notes.txt", { type: "text/plain" }));
+
+    const response = await POST(
+      new Request("http://localhost/api/ai/files", {
+        method: "POST",
+        body: formData,
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      ok: true,
+      fileId: "file_ant_456",
+      name: "notes.txt",
+      mimeType: "text/plain",
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://api.anthropic.com/v1/files",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          "x-api-key": "test-anthropic-key",
+        }),
       }),
     );
   });
