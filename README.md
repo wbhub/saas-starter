@@ -70,7 +70,7 @@ Use `.env.example` as the source of truth for all available variables.
 ## Enable by Feature (Optional)
 
 - Billing: Stripe (`BILLING_PROVIDER=stripe` + Stripe env vars). Set `APP_FREE_PLAN_ENABLED=true` to allow a free tier alongside paid plans.
-- AI chat + structured output: Vercel AI SDK (`AI_PROVIDER` + provider keys). Optional tool integrations: `E2B_API_KEY` (sandboxed code execution), `TAVILY_API_KEY` (web search), `FIRECRAWL_API_KEY` (web scraping), `COMPOSIO_API_KEY` (Composio Sessions for third-party tools + in-chat auth). Optional resumable streams: `AI_RESUMABLE_STREAMS_ENABLED=true` (requires Redis).
+- AI chat + structured output: Vercel AI SDK (`AI_PROVIDER` + provider keys). Optional tool integrations: `E2B_API_KEY` (sandboxed code execution), `TAVILY_API_KEY` (web search), `FIRECRAWL_API_KEY` (web scraping), `COMPOSIO_API_KEY` (Composio Sessions for third-party tools + in-chat auth). No built-in tool is registered by default; tool-calling becomes available once at least one integration is configured. Optional resumable streams: `AI_RESUMABLE_STREAMS_ENABLED=true` (requires Redis).
 - In-app messenger: Intercom (`NEXT_PUBLIC_INTERCOM_APP_ID`, `INTERCOM_IDENTITY_SECRET`)
 - Multi-instance rate limiting/cache: Redis via Upstash (`UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`)
 - Background job offloading: Trigger.dev (`TRIGGER_SECRET_KEY`, `TRIGGER_PROJECT_REF`)
@@ -171,7 +171,7 @@ If you want `/dashboard/ai` and `/api/ai/chat`:
 - (Recommended) Set `AI_MODEL_MODALITIES_MAP_JSON` so model capability checks are explicit per provider/model
 - Configure AI policy vars in `.env.example` (`AI_ACCESS_MODE`, plan/model/budget settings)
 - AI file uploads are capped server-side at 25 MiB per file, with about 256 KiB of extra multipart overhead allowed before the route buffers the body. See `MAGIC_NUMBERS.md` for the rationale.
-- (Optional) Enable agent tool-calling: set `AI_TOOLS_ENABLED=true` and `NEXT_PUBLIC_AI_TOOLS_ENABLED=true`. Set `AI_MAX_STEPS` to control how many steps the agent loop can take per request (default 5 when tools are enabled). When tools are disabled, chat remains single-turn. Tools are defined in `lib/ai/tools/`. Per-plan `maxSteps` can be configured via `AI_PLAN_RULES_JSON`.
+- (Optional) Enable agent tool-calling: set `AI_TOOLS_ENABLED=true` and `NEXT_PUBLIC_AI_TOOLS_ENABLED=true`. Tool-calling only activates when at least one tool integration is configured. Set `AI_MAX_STEPS` to control how many steps the agent loop can take per request (default 5 when tool-calling is active). When tools are disabled or no integrations are configured, chat remains single-turn. Tools are defined in `lib/ai/tools/`. Per-plan `maxSteps` can be configured via `AI_PLAN_RULES_JSON`.
 - (Optional) Tool integrations (each enabled when its API key is set):
   - `E2B_API_KEY` -- isolated code execution via E2B Code Interpreter
   - `TAVILY_API_KEY` -- web search via Tavily

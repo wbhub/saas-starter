@@ -261,7 +261,7 @@ A single `getAiLanguageModel(model)` function that returns a Vercel AI SDK model
    - Estimate prompt tokens, project total with 4,096 completion max
    - Atomically claim budget from team's monthly token budget (RPC)
    - If tools disabled (default): plain text stream via streamText()
-   - If tools enabled (AI_TOOLS_ENABLED=true):
+   - If tool-calling is enabled and at least one tool integration is configured:
      - streamText() with tools from AI_TOOL_MAP, stopWhen: stepCountIs(maxSteps)
      - Agent loop runs server-side; onStepFinish accumulates usage and aborts on budget
      - Response via toUIMessageStreamResponse() (UI message stream protocol)
@@ -333,23 +333,23 @@ Both `/api/ai/chat` and `/api/ai/object` share the same pre-flight pipeline via 
 
 Most features are toggled via environment variables, not code flags:
 
-| Feature               | Enabled when                                              | Controlled by                                                  |
-| --------------------- | --------------------------------------------------------- | -------------------------------------------------------------- |
-| Stripe billing        | `BILLING_PROVIDER=stripe` + Stripe env vars set           | `isBillingEnabled()` in `lib/billing/capabilities.ts`          |
-| Free plan             | `APP_FREE_PLAN_ENABLED=true` (default)                    | `isFreePlanEnabled()` in `lib/billing/capabilities.ts`         |
-| AI chat + object      | AI provider env var set (e.g., `OPENAI_API_KEY`)          | `isAiProviderConfigured` in `lib/ai/provider.ts`               |
-| AI access mode        | `AI_ACCESS_MODE` = `paid` / `all` / `by_plan`             | `getAiAccessMode()` in `lib/ai/config.ts`                      |
-| AI agent tools        | `AI_TOOLS_ENABLED=true` + tools registered in AI_TOOL_MAP | `getAiToolsEnabled()` in `lib/ai/config.ts`                    |
-| Email (Resend)        | `RESEND_API_KEY` + `RESEND_FROM_EMAIL` set                | `isResendCustomEmailConfigured()` in `lib/resend/server.ts`    |
-| Background jobs       | `TRIGGER_SECRET_KEY` set                                  | `isTriggerConfigured()` in `lib/trigger/config.ts`             |
-| Redis caching         | `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` set | `getRedisClient()` returns non-null in `lib/redis/client.ts`   |
-| Intercom              | `NEXT_PUBLIC_INTERCOM_APP_ID` set                         | Checked in dashboard layout                                    |
-| Sentry                | `NEXT_PUBLIC_SENTRY_DSN` set                              | `SENTRY_ENABLED` in `lib/logger.ts`                            |
-| AI tool: Tavily       | `TAVILY_API_KEY` set                                      | Conditional registration in `lib/ai/tools/index.ts`            |
-| AI tool: Firecrawl    | `FIRECRAWL_API_KEY` set                                   | Conditional registration in `lib/ai/tools/index.ts`            |
-| AI tool: Composio     | `COMPOSIO_API_KEY` set                                    | Conditional registration in `lib/ai/tools/index.ts`            |
-| AI tool: E2B          | `E2B_API_KEY` set                                         | Conditional registration in `lib/ai/tools/index.ts`            |
-| Resumable streams     | `AI_RESUMABLE_STREAMS_ENABLED=true` + Redis configured    | `isResumableStreamsEnabled()` in `lib/ai/stream-store.ts`      |
-| Social auth providers | `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true`, etc.              | `getEnabledSocialAuthProviders()` in `lib/auth/social-auth.ts` |
+| Feature               | Enabled when                                                       | Controlled by                                                                                        |
+| --------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| Stripe billing        | `BILLING_PROVIDER=stripe` + Stripe env vars set                    | `isBillingEnabled()` in `lib/billing/capabilities.ts`                                                |
+| Free plan             | `APP_FREE_PLAN_ENABLED=true` (default)                             | `isFreePlanEnabled()` in `lib/billing/capabilities.ts`                                               |
+| AI chat + object      | AI provider env var set (e.g., `OPENAI_API_KEY`)                   | `isAiProviderConfigured` in `lib/ai/provider.ts`                                                     |
+| AI access mode        | `AI_ACCESS_MODE` = `paid` / `all` / `by_plan`                      | `getAiAccessMode()` in `lib/ai/config.ts`                                                            |
+| AI agent tools        | `AI_TOOLS_ENABLED=true` + at least one tool integration configured | `getAiToolsEnabled()` in `lib/ai/config.ts` + `hasAnyAiToolsConfigured()` in `lib/ai/tools/index.ts` |
+| Email (Resend)        | `RESEND_API_KEY` + `RESEND_FROM_EMAIL` set                         | `isResendCustomEmailConfigured()` in `lib/resend/server.ts`                                          |
+| Background jobs       | `TRIGGER_SECRET_KEY` set                                           | `isTriggerConfigured()` in `lib/trigger/config.ts`                                                   |
+| Redis caching         | `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` set          | `getRedisClient()` returns non-null in `lib/redis/client.ts`                                         |
+| Intercom              | `NEXT_PUBLIC_INTERCOM_APP_ID` set                                  | Checked in dashboard layout                                                                          |
+| Sentry                | `NEXT_PUBLIC_SENTRY_DSN` set                                       | `SENTRY_ENABLED` in `lib/logger.ts`                                                                  |
+| AI tool: Tavily       | `TAVILY_API_KEY` set                                               | Conditional registration in `lib/ai/tools/index.ts`                                                  |
+| AI tool: Firecrawl    | `FIRECRAWL_API_KEY` set                                            | Conditional registration in `lib/ai/tools/index.ts`                                                  |
+| AI tool: Composio     | `COMPOSIO_API_KEY` set                                             | Conditional registration in `lib/ai/tools/index.ts`                                                  |
+| AI tool: E2B          | `E2B_API_KEY` set                                                  | Conditional registration in `lib/ai/tools/index.ts`                                                  |
+| Resumable streams     | `AI_RESUMABLE_STREAMS_ENABLED=true` + Redis configured             | `isResumableStreamsEnabled()` in `lib/ai/stream-store.ts`                                            |
+| Social auth providers | `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true`, etc.                       | `getEnabledSocialAuthProviders()` in `lib/auth/social-auth.ts`                                       |
 
 Core integrations degrade gracefully when dependencies are missing. For example, if Trigger.dev isn't configured, webhook processing falls back to inline execution. If Redis isn't configured, rate limiting falls back to Supabase RPC, then to in-memory.

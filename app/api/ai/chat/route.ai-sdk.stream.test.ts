@@ -465,6 +465,7 @@ describe("POST /api/ai/chat AI SDK streaming", () => {
       AI_TOOL_MAP: {
         tavilySearch: { description: "Search the web." },
       },
+      hasAnyAiToolsConfigured: vi.fn().mockReturnValue(true),
       buildAiToolMapForUser: vi.fn().mockResolvedValue({
         tavilySearch: { description: "Search the web." },
       }),
@@ -685,6 +686,7 @@ describe("POST /api/ai/chat AI SDK streaming", () => {
       AI_TOOL_MAP: {
         tavilySearch: { description: "Search the web." },
       },
+      hasAnyAiToolsConfigured: vi.fn().mockReturnValue(true),
       buildAiToolMapForUser: vi.fn().mockResolvedValue({
         tavilySearch: { description: "Search the web." },
       }),
@@ -932,6 +934,7 @@ describe("POST /api/ai/chat AI SDK streaming", () => {
       AI_TOOL_MAP: {
         tavilySearch: { description: "Search the web." },
       },
+      hasAnyAiToolsConfigured: vi.fn().mockReturnValue(true),
       buildAiToolMapForUser: vi.fn().mockResolvedValue({
         tavilySearch: { description: "Search the web." },
       }),

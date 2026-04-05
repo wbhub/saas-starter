@@ -457,8 +457,8 @@ export async function resolveAiRequestContext<TSchema extends ZodType>(
   if (!config.skipTools) {
     // Imported lazily to avoid circular dependencies in routes that don't need tools.
     const { getAiToolsEnabled } = await import("@/lib/ai/config");
-    const { AI_TOOL_MAP } = await import("@/lib/ai/tools");
-    toolsEnabled = getAiToolsEnabled() && Object.keys(AI_TOOL_MAP).length > 0;
+    const { hasAnyAiToolsConfigured } = await import("@/lib/ai/tools");
+    toolsEnabled = getAiToolsEnabled() && hasAnyAiToolsConfigured();
     maxSteps = toolsEnabled ? aiAccess.maxSteps : 1;
   }
 
