@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Bot } from "lucide-react";
 
-type ToolState =
+export type ToolState =
   | "input-streaming"
   | "input-available"
   | "approval-requested"
@@ -11,6 +11,13 @@ type ToolState =
   | "output-available"
   | "output-error"
   | "output-denied";
+
+export type ToolCallItem = {
+  toolName: string;
+  args: unknown;
+  result: unknown;
+  state: ToolState;
+};
 
 function ToolStateIndicator({ state }: { state: ToolState }) {
   if (state === "output-available") {
@@ -174,22 +181,64 @@ const TOOL_RENDERERS: Record<string, React.ComponentType<{ result: unknown }>> =
   e2bRunCode: E2BResultCard,
 };
 
-export function ToolCard({
-  toolName,
-  args,
-  result,
-  state,
-}: {
-  toolName: string;
-  args: unknown;
-  result: unknown;
-  state: ToolState;
-}) {
-  const [isOpen, setIsOpen] = useState(false);
+function ToolCallDetails({ toolName, args, result, state }: ToolCallItem) {
   const ResultRenderer = TOOL_RENDERERS[toolName] ?? GenericResultCard;
 
   return (
-    <div className="max-w-[88%] rounded-xl border border-primary/20 bg-primary/5 text-sm text-foreground shadow-sm overflow-hidden">
+    <div className="space-y-3 rounded-lg border border-primary/10 bg-background/60 p-3">
+      <div className="flex items-center gap-2">
+        <span className="inline-block rounded bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] text-primary/70">
+          {toolName}
+        </span>
+        <ToolStateIndicator state={state} />
+      </div>
+      <div>
+        <p className="text-xs font-medium text-muted-foreground">Input</p>
+        <pre className="mt-0.5 overflow-x-auto rounded bg-accent p-2 font-mono text-xs">
+          {JSON.stringify(args, null, 2)}
+        </pre>
+      </div>
+      {result !== undefined ? (
+        <div>
+          <p className="text-xs font-medium text-muted-foreground">Output</p>
+          <ResultRenderer result={result} />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function getGroupedToolState(calls: ToolCallItem[]): ToolState {
+  if (calls.some((call) => call.state === "output-error" || call.state === "output-denied")) {
+    return "output-error";
+  }
+
+  if (calls.every((call) => call.state === "output-available")) {
+    return "output-available";
+  }
+
+  return "input-streaming";
+}
+
+function formatSummary(calls: ToolCallItem[], stepCount?: number) {
+  const actionLabel = `${calls.length} ${calls.length === 1 ? "action" : "actions"}`;
+  if (!stepCount || stepCount < 1) {
+    return actionLabel;
+  }
+
+  return `${actionLabel} in ${stepCount} ${stepCount === 1 ? "step" : "steps"}`;
+}
+
+export function ToolGroupCard({ calls, stepCount }: { calls: ToolCallItem[]; stepCount?: number }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const groupedState = getGroupedToolState(calls);
+
+  if (calls.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="max-w-[88%] overflow-hidden rounded-xl border border-primary/20 bg-primary/5 text-sm text-foreground shadow-sm">
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
@@ -198,13 +247,15 @@ export function ToolCard({
         <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary">
           <Bot className="h-3.5 w-3.5" />
         </div>
-        <div className="flex-1 flex items-center gap-2 min-w-0">
-          <span className="font-medium text-primary text-sm truncate">AI Agent</span>
-          <span className="inline-block rounded bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] text-primary/70 truncate max-w-[120px]">
-            {toolName}
-          </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="truncate font-medium text-primary text-sm">AI Agent</span>
+          </div>
+          <p className="mt-0.5 truncate text-xs text-primary/70">
+            {formatSummary(calls, stepCount)}
+          </p>
         </div>
-        <ToolStateIndicator state={state} />
+        <ToolStateIndicator state={groupedState} />
         <svg
           className={`h-4 w-4 shrink-0 text-primary/50 transition-transform ${isOpen ? "rotate-180" : ""}`}
           fill="none"
@@ -216,19 +267,16 @@ export function ToolCard({
         </svg>
       </button>
       {isOpen ? (
-        <div className="border-t border-primary/10 bg-background/50 px-4 py-3 space-y-3">
-          <div>
-            <p className="text-xs font-medium text-muted-foreground">Input</p>
-            <pre className="mt-0.5 overflow-x-auto rounded bg-accent p-2 font-mono text-xs">
-              {JSON.stringify(args, null, 2)}
-            </pre>
-          </div>
-          {result !== undefined ? (
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">Output</p>
-              <ResultRenderer result={result} />
-            </div>
-          ) : null}
+        <div className="space-y-3 border-t border-primary/10 bg-background/50 px-4 py-3">
+          {calls.map((call, index) => (
+            <ToolCallDetails
+              key={`${call.toolName}-${index}`}
+              toolName={call.toolName}
+              args={call.args}
+              result={call.result}
+              state={call.state}
+            />
+          ))}
         </div>
       ) : null}
     </div>

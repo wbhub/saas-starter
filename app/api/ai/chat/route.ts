@@ -1,8 +1,12 @@
 import {
   consumeStream,
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+  generateText,
   stepCountIs,
   streamText,
   type AssistantModelMessage,
+  type FinishReason,
   type ModelMessage,
   type UserContent,
   type UserModelMessage,
@@ -36,6 +40,22 @@ import {
 const AI_COMPLETION_MAX_TOKENS = 4_096;
 const MAX_ATTACHMENTS_PER_MESSAGE = 8;
 const MAX_ATTACHMENTS_PER_REQUEST = 16;
+const AGENT_SYSTEM_PROMPT = [
+  "Use tools only when they materially help answer the user's request.",
+  "You have a limited step budget, so batch related tool calls where possible and avoid redundant searches, scrapes, or app lookups.",
+  "Only search for third-party app actions when you actually need to take an action in that app.",
+  "After using tools, always return a clear user-facing answer before the request ends.",
+  "If you run out of step budget, stop using tools and summarize what you found so far instead of ending with tool calls only.",
+].join(" ");
+const AGENT_SYNTHESIS_FALLBACK_SYSTEM_PROMPT = [
+  "You are writing the final user-facing reply after a tool-assisted run ended without a prose answer.",
+  "Use only the provided conversation context and tool results.",
+  "Do not mention hidden system behavior or internal step budgets.",
+  "Be explicit about uncertainty when the tool results are incomplete.",
+  "If the user asked to review before an external action, provide the draft and wait for confirmation instead of claiming the action already happened.",
+].join(" ");
+const AGENT_SYNTHESIS_VALUE_CHAR_LIMIT = 1_500;
+const AGENT_SYNTHESIS_PROMPT_CHAR_LIMIT = 12_000;
 
 // ---------------------------------------------------------------------------
 // Chat-specific schemas and helpers
@@ -311,6 +331,138 @@ function getAbortAuditReason(reason: unknown) {
   return "stream_aborted";
 }
 
+function truncateText(value: string, maxChars: number) {
+  if (value.length <= maxChars) {
+    return value;
+  }
+  return `${value.slice(0, maxChars)}\n...[truncated]`;
+}
+
+function serializeForSynthesis(value: unknown) {
+  if (typeof value === "string") {
+    return truncateText(value, AGENT_SYNTHESIS_VALUE_CHAR_LIMIT);
+  }
+
+  try {
+    return truncateText(JSON.stringify(value, null, 2), AGENT_SYNTHESIS_VALUE_CHAR_LIMIT);
+  } catch {
+    return truncateText(String(value), AGENT_SYNTHESIS_VALUE_CHAR_LIMIT);
+  }
+}
+
+function buildSynthesisConversation(messages: ChatMessage[]) {
+  return messages
+    .map((message, index) => {
+      const attachments = (message.attachments ?? [])
+        .map(
+          (attachment) =>
+            `${attachment.type}:${attachment.mimeType}${attachment.name ? ` (${attachment.name})` : ""}`,
+        )
+        .join(", ");
+      const content = message.content.trim().length > 0 ? message.content.trim() : "(no text)";
+      return [
+        `${index + 1}. ${message.role.toUpperCase()}`,
+        content,
+        ...(attachments ? [`Attachments: ${attachments}`] : []),
+      ].join("\n");
+    })
+    .join("\n\n");
+}
+
+function buildSynthesisToolActivity(
+  steps: Array<{
+    stepNumber: number;
+    text: string;
+    sources?: Array<{ title?: string; url?: string }>;
+    toolCalls: Array<{ toolName: string; input: unknown }>;
+    toolResults: Array<{ toolName: string; output: unknown }>;
+  }>,
+) {
+  const activity = steps
+    .map((step) => {
+      const sections = [`Step ${step.stepNumber + 1}`];
+
+      if (step.toolCalls.length > 0) {
+        sections.push(
+          "Tool calls:",
+          ...step.toolCalls.map(
+            (toolCall) =>
+              `- ${toolCall.toolName}\nInput:\n${serializeForSynthesis(toolCall.input)}`,
+          ),
+        );
+      }
+
+      if (step.toolResults.length > 0) {
+        sections.push(
+          "Tool results:",
+          ...step.toolResults.map(
+            (toolResult) =>
+              `- ${toolResult.toolName}\nOutput:\n${serializeForSynthesis(toolResult.output)}`,
+          ),
+        );
+      }
+
+      if ((step.sources?.length ?? 0) > 0) {
+        sections.push(
+          "Sources:",
+          ...step.sources!.map((source) => `- ${source.title ?? source.url ?? "Untitled source"}`),
+        );
+      }
+
+      if (step.text.trim().length > 0) {
+        sections.push(`Generated text:\n${serializeForSynthesis(step.text)}`);
+      }
+
+      return sections.join("\n");
+    })
+    .join("\n\n");
+
+  return truncateText(activity, AGENT_SYNTHESIS_PROMPT_CHAR_LIMIT);
+}
+
+function shouldForceAgentSynthesis(
+  steps: Array<{
+    text: string;
+    toolCalls: unknown[];
+    toolResults: unknown[];
+  }>,
+) {
+  const hasNarrativeText = steps.some((step) => step.text.trim().length > 0);
+  const hasToolActivity = steps.some(
+    (step) => step.toolCalls.length > 0 || step.toolResults.length > 0,
+  );
+  return hasToolActivity && !hasNarrativeText;
+}
+
+function buildAgentSynthesisPrompt(
+  messages: ChatMessage[],
+  steps: Array<{
+    stepNumber: number;
+    text: string;
+    sources?: Array<{ title?: string; url?: string }>;
+    toolCalls: Array<{ toolName: string; input: unknown }>;
+    toolResults: Array<{ toolName: string; output: unknown }>;
+  }>,
+) {
+  return [
+    "Conversation:",
+    buildSynthesisConversation(messages),
+    "",
+    "Tool activity:",
+    buildSynthesisToolActivity(steps),
+    "",
+    "Write the final assistant reply to the latest user request.",
+  ].join("\n");
+}
+
+function extractAssistantText(parts: Array<{ type: string; text?: string }>) {
+  return parts
+    .filter((part) => part.type === "text" && typeof part.text === "string" && part.text.length > 0)
+    .map((part) => part.text)
+    .join("\n\n")
+    .trim();
+}
+
 // ---------------------------------------------------------------------------
 // Route handler
 // ---------------------------------------------------------------------------
@@ -412,8 +564,23 @@ export async function POST(request: Request) {
       const aiToolMap = await buildAiToolMapForUser({
         userId: resolvedUserId,
       });
+      const lastUserMessage = body.messages.findLast((message) => message.role === "user");
       const accumulatedUsage: UsageTotals = { promptTokens: 0, completionTokens: 0 };
+      const fallbackUsage: UsageTotals = { promptTokens: 0, completionTokens: 0 };
       const toolCallNames: string[] = [];
+      const agentSteps: Array<{
+        stepNumber: number;
+        text: string;
+        sources?: Array<{ title?: string; url?: string }>;
+        toolCalls: Array<{ toolName: string; input: unknown }>;
+        toolResults: Array<{ toolName: string; output: unknown }>;
+      }> = [];
+      let agentFinishReason: FinishReason | undefined;
+      let agentCompleted = false;
+      let agentAborted = false;
+      let streamFailureReason: string | undefined;
+      let forcedSynthesisMode: "model" | "manual" | undefined;
+      let forcedSynthesisFailed = false;
       let finalized = false;
 
       async function finalizeAgentStream(
@@ -480,6 +647,8 @@ export async function POST(request: Request) {
             toolsEnabled: true,
             maxSteps,
             toolCalls: toolCallNames.length > 0 ? toolCallNames : undefined,
+            forcedSynthesisMode,
+            forcedSynthesisFailed: forcedSynthesisFailed || undefined,
             budgetClaimId: budgetClaim?.claimId,
             promptTokens: resolvedUsage.promptTokens,
             completionTokens: resolvedUsage.completionTokens,
@@ -491,125 +660,242 @@ export async function POST(request: Request) {
         });
       }
 
-      const aiResult = streamText({
-        model: languageModel,
-        messages: toModelMessages(body.messages),
-        tools: aiToolMap,
-        stopWhen: stepCountIs(maxSteps),
-        abortSignal: upstreamAbortController.signal,
-        maxOutputTokens: AI_COMPLETION_MAX_TOKENS,
-        onStepFinish: ({ usage: stepUsage, toolCalls }) => {
-          accumulatedUsage.promptTokens += stepUsage.inputTokens ?? 0;
-          accumulatedUsage.completionTokens += stepUsage.outputTokens ?? 0;
-          for (const tc of toolCalls) {
-            toolCallNames.push(tc.toolName);
-          }
-
-          if (budgetClaim) {
-            const actualTokens = accumulatedUsage.promptTokens + accumulatedUsage.completionTokens;
-            if (actualTokens >= projectedRequestTokens) {
-              upstreamAbortController.abort("budget_exhausted");
-            }
-          }
-        },
-        onFinish: async ({ totalUsage, text }) => {
-          await finalizeAgentStream(
-            totalUsage.inputTokens ?? 0,
-            totalUsage.outputTokens ?? 0,
-            "success",
-          );
-
-          // Persist messages to thread
-          if (resolvedThreadId || body.threadId === undefined) {
-            try {
-              if (!resolvedThreadId) {
-                const lastUserMessage = body.messages.findLast((m) => m.role === "user");
-                const thread = await createThread({
-                  id: body.sessionId,
-                  teamId: resolvedTeamId,
-                  userId: resolvedUserId,
-                  title: getUserMessageTitle(lastUserMessage),
-                });
-                if (thread) resolvedThreadId = thread.id;
+      const uiMessageStream = createUIMessageStream({
+        execute: async ({ writer }) => {
+          const aiResult = streamText({
+            model: languageModel,
+            system: AGENT_SYSTEM_PROMPT,
+            messages: toModelMessages(body.messages),
+            tools: aiToolMap,
+            stopWhen: stepCountIs(maxSteps),
+            abortSignal: upstreamAbortController.signal,
+            maxOutputTokens: AI_COMPLETION_MAX_TOKENS,
+            onStepFinish: (step) => {
+              accumulatedUsage.promptTokens += step.usage.inputTokens ?? 0;
+              accumulatedUsage.completionTokens += step.usage.outputTokens ?? 0;
+              for (const toolCall of step.toolCalls) {
+                toolCallNames.push(toolCall.toolName);
               }
-              if (resolvedThreadId) {
-                const lastUserMessage = body.messages.findLast((m) => m.role === "user");
-                const messagesToSave = [
-                  ...(lastUserMessage?.role === "user"
-                    ? [
-                        {
-                          role: "user" as const,
-                          parts: toPersistedUserMessageParts(lastUserMessage),
-                          attachments: lastUserMessage.attachments,
-                        },
-                      ]
-                    : []),
-                  {
-                    role: "assistant" as const,
-                    parts: [{ type: "text", text }],
-                    metadata: {
-                      model,
-                      promptTokens: totalUsage.inputTokens ?? 0,
-                      completionTokens: totalUsage.outputTokens ?? 0,
-                      toolCalls: toolCallNames.length > 0 ? toolCallNames : undefined,
-                      durationMs: Date.now() - requestStartTime,
-                    },
-                  },
-                ];
-                await saveThreadMessages({
-                  threadId: resolvedThreadId,
-                  teamId: resolvedTeamId,
-                  userId: resolvedUserId,
-                  messages: messagesToSave,
-                  ownershipVerified: true,
-                });
+
+              if (budgetClaim) {
+                const actualTokens =
+                  accumulatedUsage.promptTokens + accumulatedUsage.completionTokens;
+                if (actualTokens >= projectedRequestTokens) {
+                  upstreamAbortController.abort("budget_exhausted");
+                }
               }
-            } catch (error) {
-              logger.error("Failed to persist thread messages", error, {
-                threadId: resolvedThreadId,
+            },
+            onFinish: async (event) => {
+              agentCompleted = true;
+              agentFinishReason = event.finishReason;
+              agentSteps.splice(
+                0,
+                agentSteps.length,
+                ...event.steps.map((step) => ({
+                  stepNumber: step.stepNumber,
+                  text: step.text,
+                  sources: step.sources.map((source) => ({
+                    title: source.title,
+                    url: "url" in source ? source.url : undefined,
+                  })),
+                  toolCalls: step.toolCalls.map((toolCall) => ({
+                    toolName: toolCall.toolName,
+                    input: toolCall.input,
+                  })),
+                  toolResults: step.toolResults.map((toolResult) => ({
+                    toolName: toolResult.toolName,
+                    output: toolResult.output,
+                  })),
+                })),
+              );
+              accumulatedUsage.promptTokens =
+                event.totalUsage.inputTokens ?? accumulatedUsage.promptTokens;
+              accumulatedUsage.completionTokens =
+                event.totalUsage.outputTokens ?? accumulatedUsage.completionTokens;
+            },
+            onError: async ({ error }) => {
+              streamFailureReason = "stream_failed";
+              logger.error("Agent stream error", error, {
                 teamId: resolvedTeamId,
+                userId: resolvedUserId,
+                model,
               });
+            },
+            onAbort: async () => {
+              agentAborted = true;
+            },
+          });
+
+          try {
+            for await (const chunk of aiResult.toUIMessageStream({
+              sendSources: true,
+              sendFinish: false,
+              messageMetadata: ({ part }) => {
+                if (part.type === "start" || part.type === "finish") {
+                  return {
+                    model,
+                    timestamp: new Date().toISOString(),
+                    threadId: resolvedThreadId,
+                  };
+                }
+                return undefined;
+              },
+            })) {
+              writer.write(chunk);
             }
+          } catch (error) {
+            streamFailureReason = "stream_failed";
+            logger.error("Failed to forward agent UI stream", error, {
+              teamId: resolvedTeamId,
+              userId: resolvedUserId,
+              model,
+            });
+            writer.write({ type: "error", errorText: aiUnavailableMessage });
+            return;
           }
+
+          if (agentAborted || upstreamAbortController.signal.aborted || !agentCompleted) {
+            return;
+          }
+
+          if (shouldForceAgentSynthesis(agentSteps)) {
+            const textId = globalThis.crypto.randomUUID();
+            let synthesisText =
+              "I completed the tool run, but I couldn't turn it into a final written answer before the request ended. Please retry with a narrower request.";
+
+            const canSpendAnotherModelTurn =
+              !budgetClaim ||
+              accumulatedUsage.promptTokens + accumulatedUsage.completionTokens <
+                projectedRequestTokens;
+
+            if (canSpendAnotherModelTurn) {
+              try {
+                const synthesisResult = await generateText({
+                  model: languageModel,
+                  system: AGENT_SYNTHESIS_FALLBACK_SYSTEM_PROMPT,
+                  prompt: buildAgentSynthesisPrompt(body.messages, agentSteps),
+                  abortSignal: upstreamAbortController.signal,
+                  maxOutputTokens: AI_COMPLETION_MAX_TOKENS,
+                });
+                synthesisText = synthesisResult.text.trim() || synthesisText;
+                fallbackUsage.promptTokens += synthesisResult.totalUsage.inputTokens ?? 0;
+                fallbackUsage.completionTokens += synthesisResult.totalUsage.outputTokens ?? 0;
+                forcedSynthesisMode = "model";
+              } catch (error) {
+                forcedSynthesisMode = "manual";
+                forcedSynthesisFailed = true;
+                logger.error("Forced agent synthesis failed", error, {
+                  teamId: resolvedTeamId,
+                  userId: resolvedUserId,
+                  model,
+                });
+              }
+            } else {
+              forcedSynthesisMode = "manual";
+            }
+
+            writer.write({ type: "text-start", id: textId });
+            writer.write({ type: "text-delta", id: textId, delta: synthesisText });
+            writer.write({ type: "text-end", id: textId });
+          }
+
+          writer.write({
+            type: "finish",
+            finishReason: forcedSynthesisMode ? "stop" : agentFinishReason,
+            messageMetadata: {
+              model,
+              timestamp: new Date().toISOString(),
+              threadId: resolvedThreadId,
+            },
+          });
         },
-        onError: async ({ error }) => {
-          logger.error("Agent stream error", error, {
+        onError: (error) => {
+          logger.error("Agent UI message stream error", error, {
             teamId: resolvedTeamId,
             userId: resolvedUserId,
             model,
           });
-          await finalizeAgentStream(
-            accumulatedUsage.promptTokens,
-            accumulatedUsage.completionTokens,
-            "failure",
-            "stream_failed",
-          );
+          return aiUnavailableMessage;
         },
-        onAbort: async () => {
-          await finalizeAgentStream(
-            accumulatedUsage.promptTokens,
-            accumulatedUsage.completionTokens,
-            "failure",
-            getAbortAuditReason(upstreamAbortController.signal.reason),
+        onFinish: async ({ isAborted, responseMessage }) => {
+          const totalPromptTokens = accumulatedUsage.promptTokens + fallbackUsage.promptTokens;
+          const totalCompletionTokens =
+            accumulatedUsage.completionTokens + fallbackUsage.completionTokens;
+          const outcome = isAborted || streamFailureReason ? "failure" : "success";
+          const reason = isAborted
+            ? getAbortAuditReason(upstreamAbortController.signal.reason)
+            : streamFailureReason;
+
+          await finalizeAgentStream(totalPromptTokens, totalCompletionTokens, outcome, reason);
+
+          if (outcome === "failure") {
+            return;
+          }
+
+          const assistantText = extractAssistantText(
+            responseMessage.parts as Array<{ type: string; text?: string }>,
           );
+
+          if (!assistantText.length || (!resolvedThreadId && body.threadId !== undefined)) {
+            return;
+          }
+
+          try {
+            if (!resolvedThreadId) {
+              const thread = await createThread({
+                id: body.sessionId,
+                teamId: resolvedTeamId,
+                userId: resolvedUserId,
+                title: getUserMessageTitle(lastUserMessage),
+              });
+              if (thread) resolvedThreadId = thread.id;
+            }
+
+            if (resolvedThreadId) {
+              const messagesToSave = [
+                ...(lastUserMessage?.role === "user"
+                  ? [
+                      {
+                        role: "user" as const,
+                        parts: toPersistedUserMessageParts(lastUserMessage),
+                        attachments: lastUserMessage.attachments,
+                      },
+                    ]
+                  : []),
+                {
+                  role: "assistant" as const,
+                  parts: [{ type: "text", text: assistantText }],
+                  metadata: {
+                    model,
+                    promptTokens: totalPromptTokens,
+                    completionTokens: totalCompletionTokens,
+                    toolCalls: toolCallNames.length > 0 ? toolCallNames : undefined,
+                    durationMs: Date.now() - requestStartTime,
+                  },
+                },
+              ];
+              await saveThreadMessages({
+                threadId: resolvedThreadId,
+                teamId: resolvedTeamId,
+                userId: resolvedUserId,
+                messages: messagesToSave,
+                ownershipVerified: true,
+              });
+            }
+          } catch (error) {
+            logger.error("Failed to persist thread messages", error, {
+              threadId: resolvedThreadId,
+              teamId: resolvedTeamId,
+            });
+          }
         },
       });
 
       return withRequestId(
-        aiResult.toUIMessageStreamResponse({
+        createUIMessageStreamResponse({
+          stream: uiMessageStream,
           headers: { "Cache-Control": "no-store" },
           consumeSseStream: consumeStream,
-          sendSources: true,
-          messageMetadata: ({ part }) => {
-            if (part.type === "start" || part.type === "finish") {
-              return {
-                model,
-                timestamp: new Date().toISOString(),
-                threadId: resolvedThreadId,
-              };
-            }
-            return undefined;
-          },
         }),
         requestId,
       );

@@ -5,7 +5,7 @@ import { isToolUIPart, getToolName } from "ai";
 import { MarkdownContent } from "./markdown-content";
 import { ReasoningDisplay } from "./reasoning-display";
 import { SourceCitation } from "./source-citation";
-import { ToolCard } from "./tool-card";
+import { ToolGroupCard, type ToolCallItem } from "./tool-card";
 import { AttachmentPreview } from "./attachment-preview";
 import { MessageMetadata } from "./message-metadata";
 
@@ -28,6 +28,23 @@ export function MessageBubble({
 }) {
   const isUser = message.role === "user";
   const metadata = (message.metadata ?? {}) as MessageMetadataType;
+  const toolCalls: ToolCallItem[] = message.parts
+    .filter((part) => isToolUIPart(part))
+    .map((part) => ({
+      toolName: getToolName(part),
+      args: part.input,
+      result: part.state === "output-available" ? part.output : undefined,
+      state: part.state,
+    }));
+  const firstToolPartIndex = message.parts.findIndex((part) => isToolUIPart(part));
+  const stepCount = message.parts.filter((part) => part.type === "step-start").length;
+  const hasAssistantNarrativeContent = message.parts.some(
+    (part) =>
+      (part.type === "text" && part.text.length > 0) ||
+      part.type === "reasoning" ||
+      part.type === "source-url" ||
+      part.type === "source-document",
+  );
 
   const hasContent = message.parts.some(
     (part) =>
@@ -86,17 +103,28 @@ export function MessageBubble({
               </div>
             );
           }
+
+          const isStreamingTextPart = isStreaming && partIndex === message.parts.length - 1;
+
           return (
             <div
               key={partIndex}
               className="max-w-[88%] rounded-lg bg-card px-3 py-2 text-sm font-normal leading-relaxed text-foreground"
             >
-              <MarkdownContent content={part.text} />
-              {isStreaming && partIndex === message.parts.length - 1 ? (
+              {isStreamingTextPart ? (
+                <div className="whitespace-pre-wrap break-words">{part.text}</div>
+              ) : (
+                <MarkdownContent content={part.text} />
+              )}
+              {isStreamingTextPart ? (
                 <span className="inline-block h-4 w-0.5 animate-pulse bg-foreground" />
               ) : null}
             </div>
           );
+        }
+
+        if (part.type === "step-start") {
+          return null;
         }
 
         if (part.type === "reasoning") {
@@ -110,20 +138,12 @@ export function MessageBubble({
           );
         }
 
-        if (part.type === "step-start") {
-          return null; // Removed the weird grey divider
-        }
-
         if (isToolUIPart(part)) {
-          return (
-            <ToolCard
-              key={partIndex}
-              toolName={getToolName(part)}
-              args={part.input}
-              result={part.state === "output-available" ? part.output : undefined}
-              state={part.state}
-            />
-          );
+          if (partIndex !== firstToolPartIndex) {
+            return null;
+          }
+
+          return <ToolGroupCard key={partIndex} calls={toolCalls} stepCount={stepCount} />;
         }
 
         return null;
@@ -132,6 +152,13 @@ export function MessageBubble({
       {sourceParts.length > 0 ? (
         <div className="max-w-[88%]">
           <SourceCitation sources={sourceParts} />
+        </div>
+      ) : null}
+
+      {!isUser && !isStreaming && toolCalls.length > 0 && !hasAssistantNarrativeContent ? (
+        <div className="max-w-[88%] rounded-lg border border-warning/35 bg-warning/10 px-3 py-2 text-sm text-warning-foreground dark:text-warning">
+          The agent finished its tool work but did not produce a written summary. Expand the AI
+          Agent dropdown to inspect the actions, or retry with a narrower request.
         </div>
       ) : null}
 
