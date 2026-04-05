@@ -1,100 +1,200 @@
 # Design System
 
-How the UI in this codebase is currently structured, and why it was shaped this way.
+How layout, shared UI, and responsive behavior are organized in this codebase.
 
-This repo does not treat the design system as a separate theme layer sitting above the app. Most of the system lives in layout rails, shared shell primitives, and a small number of components that make those decisions easy to recognize in code. The goal has been to make the product feel orderly and extensible, not to turn the docs into a style guide with a long list of rules.
+This document covers the current UI structure. `ARCHITECTURE.md` covers application structure and data flow. `CONVENTIONS.md` covers implementation patterns contributors are expected to follow. This file is narrower than both. It describes the layout tokens, shared shell components, and page primitives that currently shape the UI.
 
-`ARCHITECTURE.md` explains how the application is assembled. `CONVENTIONS.md` explains how contributors usually extend it. This document is narrower than both: it describes the visual and responsive structure that the current codebase already expresses.
+## UI Stack
 
-## Visual Language
+- **Styling**: Tailwind CSS 4
+- **Primitives**: shadcn/ui components in `components/ui/`
+- **Layout tokens**: `lib/site-layout.ts`
+- **Shared shell components**: `components/layout-shells.tsx`
+- **Shared dashboard page primitives**: `components/dashboard-page-header.tsx`, `components/dashboard-page-section.tsx`, `components/dashboard-detail-field.tsx`
 
-The interface is built from shadcn/ui primitives, Tailwind CSS 4, and a restrained product UI vocabulary. Most surfaces use light borders, moderate corner radii, low-contrast backgrounds, and limited shadow. The palette and component styling are intentionally quiet; the layout and spacing are doing most of the work.
+## Layout Tokens
 
-That choice was deliberate. The app is trying to read as a polished SaaS foundation rather than a branded marketing site. It needed to feel calm in the dashboard, predictable when new pages are added, and easy to adapt without every feature author inventing a new visual pattern.
+The shared layout tokens live in `lib/site-layout.ts`.
 
-## Shell Model
+| Token                            | Current value                                                               | Purpose                                                                        |
+| -------------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `publicContainerClassName`       | `mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-10`                       | Outer shell for public pages                                                   |
+| `siteContainerClassName`         | `mx-auto w-full max-w-[1680px] px-4 sm:px-6 lg:px-10`                       | Outer shell for signed-in dashboard pages                                      |
+| `dashboardShellColumnsClassName` | `lg:grid-cols-[240px_minmax(0,1fr)] ... xl:grid-cols-[260px_minmax(0,1fr)]` | Sidebar/content column layout for the dashboard shell                          |
+| `dashboardContentRailClassName`  | `w-full max-w-[56rem] xl:max-w-[64rem] 2xl:max-w-[72rem]`                   | Inner content rail for dashboard page bodies, header actions, and footer links |
 
-The most important layout decision in the repo is the split between public surfaces and signed-in product surfaces. Those two groups were pushed apart after it became clear they had different width and reading needs.
+The current layout uses two outer shells rather than one:
 
-### Public surfaces
+- Public pages use the `1440px` shell.
+- Signed-in dashboard pages use the `1680px` shell.
 
-Public pages use the narrower container defined in `lib/site-layout.ts` as `publicContainerClassName`. It currently resolves to a centered shell with `max-w-[1440px]` and shared horizontal padding.
+The dashboard shell is wider, but the page body still sits on `dashboardContentRailClassName`. The content rail is narrower than the shell and is what keeps dashboard pages, header controls, and footer links aligned.
 
-That width is used by the landing page, pricing, auth flows, onboarding, and legal pages. These pages generally contain a mix of reading, explanation, and forms, so they benefit from a more editorial outer frame. Earlier iterations reused the wider app shell everywhere, but that made public pages feel loose and slightly detached from their actual content density.
+## Shell Components
 
-Public layouts often introduce a second, tighter measure inside that shell. Auth flows, for example, use `PublicCenteredContent` to keep forms centered and narrow without making the whole page feel cramped.
+The shared shell components live in `components/layout-shells.tsx`.
 
-### Dashboard surfaces
+| Component               | Purpose                                                         |
+| ----------------------- | --------------------------------------------------------------- |
+| `PublicShell`           | Wraps public pages in `publicContainerClassName`                |
+| `PublicCenteredContent` | Centers and constrains narrow public content such as auth forms |
+| `DashboardShellFrame`   | Wraps dashboard pages in `siteContainerClassName`               |
+| `DashboardShellColumns` | Applies the dashboard sidebar/content column layout             |
+| `DashboardShellSection` | Applies the dashboard content rail                              |
 
-The signed-in application uses `siteContainerClassName`, also defined in `lib/site-layout.ts`. That shell currently tops out at `max-w-[1680px]`.
+These components are thin wrappers over the shared tokens. Their main job is to make shell selection explicit in page and layout code.
 
-The wider frame exists because the dashboard has persistent chrome that public pages do not: a left navigation column, page headers, data cards, and product surfaces like AI chat. On a 14-inch laptop the narrower public shell left too much usable space on the table, while on large monitors an unconstrained dashboard felt pinned to the outer edges of the screen. The current shell is a compromise between those two extremes.
+## Header and Footer
 
-The dashboard shell is intentionally not the same thing as the dashboard content width. The shell provides room for navigation and overall composition, while the page body sits on a separate inner rail so the main column does not stretch indefinitely just because more viewport width is available.
+The shared header and footer select their shell based on page type.
 
-### Dashboard columns and rail
+### Header
 
-The dashboard shell is structured as a fixed sidebar plus a flexible content column. In `lib/site-layout.ts`, `dashboardShellColumnsClassName` currently maps to a `240px` sidebar at `lg`, widening to `260px` at `xl`, with a fluid main column beside it.
+`components/site-header.tsx` uses:
 
-Inside that main column, `dashboardContentRailClassName` constrains the readable working area to `56rem`, then `64rem` at `xl`, and `72rem` at `2xl`. That inner rail is what keeps dashboard pages from feeling overextended after the outer shell widens. It is also the reason the signed-in header controls and footer links now align with the page body instead of drifting farther right than the main content.
+- `PublicShell` for public pages
+- `DashboardShellFrame` for dashboard pages
+- `DashboardShellSection` to align dashboard right-side controls with the main content rail
 
-## Shared Layout Primitives
+On dashboard pages, the header also reuses `dashboardShellColumnsClassName` so the brand area and the right-side user controls sit on the same column structure as the page body.
 
-Most of the layout intent in the repo now lives in a small set of shared components rather than scattered one-off class strings.
+### Footer
 
-`components/layout-shells.tsx` holds the shell primitives:
+`components/site-footer.tsx` follows the same split:
 
-- `PublicShell`
-- `PublicCenteredContent`
-- `DashboardShellFrame`
-- `DashboardShellColumns`
-- `DashboardShellSection`
+- `PublicShell` for public pages
+- `DashboardShellFrame` for dashboard pages
+- `DashboardShellSection` for dashboard legal-link alignment
 
-These are deliberately thin wrappers. Their job is not to abstract Tailwind away; it is to make the shell choice visible in component code. Reading a page file should make it obvious whether that page belongs to the public surface, the dashboard frame, or a centered auth-style composition.
+This is the reason header controls, footer links, and dashboard content now share the same inner rail.
 
-`components/dashboard-page-header.tsx` plays a similar role at the page level. It captures the repeated dashboard intro pattern of eyebrow, title, description, and optional actions, while `DashboardPageStack` normalizes the vertical rhythm between that intro block and the sections below it. The benefit there is not just visual consistency. It also means the intent of a dashboard page is legible before anyone reads the individual card content.
+## Dashboard Shell
 
-Supporting components such as `components/dashboard-page-section.tsx` and `components/dashboard-detail-field.tsx` carry some of the same system work farther down the tree. Those components centralize the spacing, wrapping, and dense metadata behavior that used to be re-authored page by page.
+The signed-in dashboard shell lives in `components/dashboard-shell.tsx`.
 
-## Header, Footer, and Body Alignment
+The current structure is:
 
-One of the more important refinements in this codebase was aligning the header and footer to the same underlying rails as the page body.
+1. `SiteHeader`
+2. `DashboardShellFrame`
+3. `DashboardShellColumns`
+4. `DashboardSidebar`
+5. `DashboardShellSection`
+6. `SiteFooter dashboard`
 
-That mismatch became obvious once the dashboard shell widened. The main content had one visual alignment, while the user dropdown and footer links appeared to belong to a wider, unrelated frame. The current setup fixes that by letting the header and footer select their shell based on context: public surfaces use the public container, while dashboard surfaces use the wider shell and align their right-side content to the same inner rail as the main column.
+That composition gives the dashboard three separate layers:
 
-This is a small detail in code, but it changes how the product reads. The sidebar, page body, user menu, and footer now look like parts of the same layout system instead of separate layers that happen to share a screen.
+- an outer shell for the overall page width
+- a two-column shell for sidebar plus content
+- an inner content rail for the page body
 
-## Responsive Structure
+## Page Primitives
 
-The responsive work in this repo is based less on shrinking a desktop layout and more on changing presentation when the interaction model actually changes.
+The dashboard page primitives are split across three components.
 
-The dashboard navigation is the clearest example. On larger screens it lives as a sticky left sidebar. On smaller screens the same navigation moves into a `Sheet`. The information architecture stays the same, but the delivery changes because a permanent sidebar stops being useful once it begins to crowd the page body.
+### `components/dashboard-page-header.tsx`
 
-The AI surface was the other major forcing function. It had to remain usable on shorter laptop screens, narrow mobile screens, and desktop layouts with a recent-threads column. That is why the current implementation keeps the composer visible on shorter viewports, moves recents behind a sheet on smaller screens, and lets the AI card follow the dashboard content rail instead of stretching to the full shell width. The AI page behaves more like a product tool than a static marketing composition, so its responsive strategy is more structural than decorative.
+This file exports:
 
-Public pages follow a different pattern. They keep the narrower public shell, then add tighter inner measures only where the content type clearly benefits from it. Auth flows stay centered and compact. Legal pages keep article-like reading widths. Landing and pricing sections have more horizontal room than auth or legal, but they still remain more controlled than the signed-in dashboard.
+- `DashboardPageHeader`
+- `DashboardPageStack`
 
-## Why the System Landed Here
+`DashboardPageHeader` is the standard dashboard intro block: eyebrow, title, description, and optional actions. `DashboardPageStack` sets the vertical spacing between the page header and the sections below it.
 
-The current layout model came out of a few concrete tensions rather than an abstract desire to have a design system:
+### `components/dashboard-page-section.tsx`
 
-- The dashboard needed to use more of a laptop screen.
-- The same dashboard could not feel pinned to the extreme edges of a large monitor.
-- Public pages needed a different width story than signed-in product pages.
-- Header, footer, sidebar, and body needed to agree on the same rails.
-- Mobile navigation and AI interaction needed alternate presentations, not just smaller versions of desktop layouts.
+`DashboardPageSection` is the standard section card for dashboard pages. It handles:
 
-Most of the recent UI work has been about turning those tensions into shared primitives and naming them clearly enough that the reasoning survives in the codebase.
+- section container styling
+- icon tile styling
+- section title and description layout
+- optional bordered headers with right-side content
+- standard content spacing
 
-## Stability and Drift
+### `components/dashboard-detail-field.tsx`
 
-The layout system is also reflected in tests, not just components. Shell selection, shared layout primitives, and responsive behavior now have focused coverage so that the overall structure is harder to accidentally erode during feature work.
+`DashboardDetailField` is the standard label/value primitive for dashboard metadata. It also exports the shared class names used for:
 
-That matters because the design system here is mostly structural. If those rails move silently, the app starts to feel inconsistent long before any single component looks obviously broken. Keeping the shells, page primitives, and responsive breakpoints covered makes the system more durable than a purely visual review process would.
+- labels
+- values
+- monospaced values
+- detail grids
+- stacked text blocks
 
-## Key Files
+This component is where long values such as IDs and email addresses are wrapped consistently.
 
-The files below define most of the layout intent a new contributor will run into first:
+## Public Pages
+
+Public pages use the narrower outer shell. The current public surface includes:
+
+- landing page
+- pricing sections
+- auth pages
+- onboarding
+- legal pages
+- public header and footer
+
+Some public pages add a second inner constraint. Auth pages use `PublicCenteredContent` to keep forms at `max-w-md`. Legal pages keep their article text on a narrower content width inside the broader public shell.
+
+## Dashboard Pages
+
+Dashboard pages use the wider outer shell and the narrower inner content rail. The current dashboard surface includes:
+
+- persistent left navigation
+- page headers
+- section cards
+- billing, settings, support, team, and overview pages
+- AI chat and thread navigation
+
+The left navigation occupies the fixed sidebar column defined by `dashboardShellColumnsClassName`. The page body occupies the second column and is then constrained again by `dashboardContentRailClassName`.
+
+## Responsive Behavior
+
+The responsive behavior is split between shared shell structure and component-level changes.
+
+### Navigation
+
+Dashboard navigation has two presentations:
+
+- desktop: sticky left sidebar
+- small screens: `Sheet`-based navigation opened from the header
+
+The navigation items are shared between both presentations.
+
+### Header controls
+
+The header keeps the same shell split on all screen sizes. On dashboard pages, the user dropdown stays on the dashboard rail rather than following the full outer shell width.
+
+### AI chat
+
+`components/ai-chat-card.tsx` uses a different responsive structure from the rest of the dashboard because it combines conversation history, recents, message composition, and file/image attachments in one surface.
+
+The current AI behavior includes:
+
+- a two-pane layout on larger screens
+- recents moved into a `Sheet` on smaller screens
+- a composer that remains visible on shorter laptop-height viewports
+- safe-area-aware spacing around the input area
+
+## Testing
+
+The layout system is covered by focused component tests and smoke tests.
+
+Current coverage includes:
+
+- `components/layout-shells.test.tsx`
+- `components/dashboard-shell.test.tsx`
+- `components/site-header.test.tsx`
+- `components/site-footer.test.tsx`
+- `e2e/smoke-public-layout.spec.ts`
+- `e2e/smoke-auth-layout.spec.ts`
+- `e2e/smoke-sidebar-nav.spec.ts`
+- `e2e/smoke-ai-chat.spec.ts`
+
+These tests cover shell selection, shared layout primitives, public/auth shell behavior, dashboard navigation, and AI chat responsiveness.
+
+## File Map
+
+The files below define most of the current UI structure:
 
 - `lib/site-layout.ts`
 - `components/layout-shells.tsx`
@@ -106,4 +206,4 @@ The files below define most of the layout intent a new contributor will run into
 - `components/dashboard-detail-field.tsx`
 - `components/ai-chat-card.tsx`
 
-Taken together, those files describe the current UI more accurately than a standalone style guide would. The design system in this repo is not a parallel document to the implementation; it is the implementation, with a few shared rails and abstractions doing most of the heavy lifting.
+Those files hold the shared width tokens, shell composition, page-level primitives, and responsive behavior that the rest of the UI builds on.
