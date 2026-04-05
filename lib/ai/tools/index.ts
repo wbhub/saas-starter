@@ -1,15 +1,12 @@
 import { env } from "@/lib/env";
 import { type ToolSet } from "ai";
-import { currentTimeTool } from "./current-time";
 import { tavilySearchTool } from "./tavily";
 import { firecrawlScrapeTool } from "./firecrawl";
 import { buildComposioSessionToolMap, hasComposioSessionToolsConfigured } from "./composio-session";
 import { e2bRunCodeTool } from "./e2b";
 
 function buildToolMap(): ToolSet {
-  const tools: ToolSet = {
-    currentTime: currentTimeTool,
-  };
+  const tools: ToolSet = {};
 
   if (env.TAVILY_API_KEY) {
     tools.tavilySearch = tavilySearchTool;
@@ -27,6 +24,10 @@ function buildToolMap(): ToolSet {
 }
 
 export const AI_TOOL_MAP: ToolSet = buildToolMap();
+
+export function hasAnyAiToolsConfigured() {
+  return Object.keys(AI_TOOL_MAP).length > 0 || hasComposioSessionToolsConfigured();
+}
 
 export async function buildAiToolMapForUser({
   userId,

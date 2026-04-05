@@ -235,7 +235,7 @@ Use the route's i18n translator `t()` for user-facing error messages. Do **not**
 **Documented exceptions** (routes that intentionally deviate from the canonical envelope):
 
 - **Stripe webhook** (`/api/stripe/webhook`): Returns `{ received: true }` on success -- Stripe expects this acknowledgment shape. Error responses still use `{ ok: false, error }`.
-- **AI chat** (`/api/ai/chat`): Returns a streaming `text/plain` response on success (single-turn), or a UI message stream via `toUIMessageStreamResponse()` when agent tools are enabled. Error responses use the standard `{ ok: false, error, code }` envelope.
+- **AI chat** (`/api/ai/chat`): Returns a streaming `text/plain` response on success (single-turn), or a UI message stream via `toUIMessageStreamResponse()` when agent tool-calling is active (enabled and at least one tool integration is configured). Error responses use the standard `{ ok: false, error, code }` envelope.
 - **AI object** (`/api/ai/object`): Returns a streaming partial-JSON response via `streamObject().toTextStreamResponse()`. Consumed by `useObject` on the client. Error responses use the standard `{ ok: false, error, code }` envelope.
 - **Forgot password** (`/api/auth/forgot-password`): Always returns `{ message }` (no `ok`) to avoid leaking whether the email exists.
 
@@ -391,6 +391,8 @@ export const myTool = tool({
 ```ts
 if (process.env.MY_TOOL_API_KEY) tools.myTool = myTool;
 ```
+
+The shared tool registry is intentionally empty by default. Tool-calling becomes available only after at least one integration is configured (or a per-user provider like Composio can supply tools at runtime).
 
 3. Add the env var to `lib/env.ts` as an `OptionalEnvKey` and to `.env.example`.
 4. (Optional) Add a custom result renderer in `components/ai/tool-card.tsx` by adding an entry to `TOOL_RENDERERS`.

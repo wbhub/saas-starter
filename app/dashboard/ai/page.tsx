@@ -9,7 +9,7 @@ import { resolveAiAccess } from "@/lib/ai/access";
 import { listThreads } from "@/lib/ai/threads";
 import { env } from "@/lib/env";
 import { getAiToolsEnabled } from "@/lib/ai/config";
-import { AI_TOOL_MAP } from "@/lib/ai/tools";
+import { hasAnyAiToolsConfigured } from "@/lib/ai/tools";
 import { parseAiProviderName } from "@/lib/ai/provider-name";
 import { getAvailableModels } from "@/lib/ai/provider";
 import { getDashboardShellData } from "@/lib/dashboard/server";
@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 
 export default async function DashboardAiPage() {
   const aiProviderName = parseAiProviderName(env.AI_PROVIDER);
-  const aiToolsEnabled = getAiToolsEnabled() && Object.keys(AI_TOOL_MAP).length > 0;
+  const aiToolsEnabled = getAiToolsEnabled() && hasAnyAiToolsConfigured();
   const [t, shellData] = await Promise.all([
     getTranslations("DashboardAiPage"),
     getDashboardShellData(),
@@ -46,7 +46,7 @@ export default async function DashboardAiPage() {
       <DashboardPageStack
         className={
           aiUiGate.isVisibleInUi
-            ? "grid h-full min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] gap-5 sm:gap-6 space-y-0"
+            ? "grid h-full min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] gap-5 space-y-0 sm:gap-6 sm:space-y-0"
             : undefined
         }
       >

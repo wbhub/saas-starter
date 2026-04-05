@@ -27,26 +27,27 @@ describe("AI_TOOL_MAP", () => {
     vi.unstubAllEnvs();
   });
 
-  it("includes only the always-on tool when optional integrations are not configured", async () => {
-    const { AI_TOOL_MAP } = await import("./index");
+  it("is empty when optional integrations are not configured", async () => {
+    const { AI_TOOL_MAP, hasAnyAiToolsConfigured } = await import("./index");
 
-    expect(AI_TOOL_MAP).toHaveProperty("currentTime");
+    expect(AI_TOOL_MAP).toEqual({});
     expect(AI_TOOL_MAP).not.toHaveProperty("e2bRunCode");
     expect(AI_TOOL_MAP).not.toHaveProperty("tavilySearch");
     expect(AI_TOOL_MAP).not.toHaveProperty("firecrawlScrape");
     expect(AI_TOOL_MAP).not.toHaveProperty("composioAction");
+    expect(hasAnyAiToolsConfigured()).toBe(false);
   });
 
   it("registers the E2B tool when E2B_API_KEY is configured", async () => {
     vi.stubEnv("E2B_API_KEY", "e2b_test_key");
 
-    const { AI_TOOL_MAP } = await import("./index");
+    const { AI_TOOL_MAP, hasAnyAiToolsConfigured } = await import("./index");
 
-    expect(AI_TOOL_MAP).toHaveProperty("currentTime");
     expect(AI_TOOL_MAP).toHaveProperty("e2bRunCode");
+    expect(hasAnyAiToolsConfigured()).toBe(true);
   });
 
-  it("loads Composio session tools per user instead of registering a static Composio tool", async () => {
+  it("treats Composio session tools as configured even without static tools", async () => {
     vi.stubEnv("COMPOSIO_API_KEY", "composio_test_key");
     vi.doMock("./composio-session", () => ({
       hasComposioSessionToolsConfigured: vi.fn().mockReturnValue(true),
@@ -55,12 +56,12 @@ describe("AI_TOOL_MAP", () => {
       }),
     }));
 
-    const { AI_TOOL_MAP, buildAiToolMapForUser } = await import("./index");
+    const { AI_TOOL_MAP, buildAiToolMapForUser, hasAnyAiToolsConfigured } = await import("./index");
     const tools = await buildAiToolMapForUser({ userId: "user_123" });
 
-    expect(AI_TOOL_MAP).toHaveProperty("currentTime");
+    expect(AI_TOOL_MAP).toEqual({});
     expect(AI_TOOL_MAP).not.toHaveProperty("composioAction");
-    expect(tools).toHaveProperty("currentTime");
+    expect(hasAnyAiToolsConfigured()).toBe(true);
     expect(tools).toHaveProperty("COMPOSIO_SEARCH_TOOLS");
   });
 });
