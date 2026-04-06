@@ -48,7 +48,7 @@ describe("AuthForm social OAuth", () => {
     window.history.replaceState({}, "", "http://localhost:3000/login");
   });
 
-  it("requests the email scope for Microsoft OAuth", async () => {
+  it("prompts Microsoft OAuth to let the user pick an account", async () => {
     render(<AuthForm mode="login" socialProviders={["microsoft"]} />);
 
     fireEvent.click(screen.getByRole("button", { name: "continueWith:Microsoft" }));
@@ -58,6 +58,9 @@ describe("AuthForm social OAuth", () => {
         provider: "azure",
         options: {
           redirectTo: "http://localhost:3000/auth/callback?next=%2Fdashboard",
+          queryParams: {
+            prompt: "select_account",
+          },
           scopes: "email",
         },
       });
