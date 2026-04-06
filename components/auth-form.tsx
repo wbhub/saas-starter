@@ -245,6 +245,13 @@ export function AuthForm({
         provider: toSupabaseOAuthProvider(provider),
         options: {
           redirectTo: callbackUrl.toString(),
+          ...(provider === "google" || provider === "microsoft"
+            ? {
+                queryParams: {
+                  prompt: "select_account",
+                },
+              }
+            : {}),
           ...(provider === "microsoft" ? { scopes: "email" } : {}),
         },
       });
